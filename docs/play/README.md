@@ -4,7 +4,7 @@ For Dinis. Written 8 November 2026 by dev.android.play@promptugal.ai. The app is
 
 Nothing here has been done. No account exists, nothing was submitted, nothing was sent. Every step marked **Dinis** needs a person with a Google account and a payment card.
 
-Companion files: `listing.md` (store text and graphics), `privacy-policy.md` and `privacy.html` (the policy, as a page to host), `data-safety.md` (Data safety, IARC, audience), `open-source.md`, `minimal-functionality.md` (review risk and feature proposals), `store-assets.md`, `release-notes.md`.
+Companion files: `listing.md` (store text and graphics), `privacy-policy.md` and `privacy.html` (the policy, as a page to host), `data-safety.md` (Data safety, IARC, audience), `open-source.md`, `minimal-functionality.md` (review risk and feature proposals), `store-assets.md`, `release-notes.md`, `tester-guide-firebase.md` (M1), `tester-guide-m3.md`, `device-test-checklist.md`.
 
 ## What I verified and what I could not
 

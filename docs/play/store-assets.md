@@ -35,7 +35,7 @@ Corrections to `listing.md`: the 3840 px maximum and the 2:1 limit apply to ever
 
 ## Screenshots: which come from where
 
-**The Robolectric renders do not exist yet.** There is no screenshot code in `app/` and no `app/build/screenshots/` on `dev` or on this branch (searched 8 November 2026). The plan assumes app.android adds a JVM test that renders `HomeScreen` to PNG into `app/build/screenshots/` (see "For app" in `status/play.md`).
+**Update (8 November 2026, later):** app.android's `work/app` (commit 44131ad, not yet on `dev`) adds `ScreenshotTest`: home and licences, phone (1080x2400), 7" (1200x1920), 10" (1600x2560), portrait and landscape, light and dark, 24 PNGs, written by `./gradlew testDebugUnitTest` to `app/build/screenshots/<screen>-<device>-<orientation>-<theme>.png`. I have not built or looked at them. The harness request in "For app" is therefore met; the scenes below still wait on the feature decision. Before that update, no screenshot code existed on `dev` or this branch.
 
 Plan for the renders, once they exist, per device class (phone 1080 x 1920 or 1080 x 2400 portrait; 7-inch tablet and 10-inch tablet in landscape and portrait; each in light and dark), all from real composables with fixed fake data:
 
