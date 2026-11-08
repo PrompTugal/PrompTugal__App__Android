@@ -245,6 +245,13 @@ for (const argv of DRY) {
       assert.ok(r.stdout.includes(path.join(dir, 'out', json)), 'prints where the payload is');
       assert.ok(fs.readFileSync(path.join(dir, 'out', qr), 'utf8').includes('SECRET-ENROL-TOKEN'), 'payload file holds the token');
       assert.equal(fs.statSync(path.join(dir, 'out', qr)).mode & 0o077, 0, 'payload file is private (0600)');
+      const svg = files.find((f) => f.endsWith('.qr.svg'));
+      const png = files.find((f) => f.endsWith('.qr.png'));
+      assert.ok(svg && png, 'enrol draws the QR images itself');
+      for (const f of [svg, png]) assert.equal(fs.statSync(path.join(dir, 'out', f)).mode & 0o077, 0, `${f} is private (0600)`);
+      assert.ok(r.stdout.includes(path.join(dir, 'out', png)), 'prints where the PNG is');
+      assert.ok(!r.stdout.includes('SECRET-ENROL-TOKEN'));
+      assert.deepEqual([...fs.readFileSync(path.join(dir, 'out', png)).subarray(1, 4)], [0x50, 0x4e, 0x47]);
     }
     if (argv[0] === 'web-token') {
       const f = fs.readdirSync(path.join(dir, 'out')).find((x) => x.startsWith('web-token-'));
@@ -396,4 +403,50 @@ test('A-10: the out dir is tightened to 700 when it exists, and existing files a
   assert.equal(w.code, 1);
   assert.equal(fs.readFileSync(victim, 'utf8'), 'old');
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('qr command: draws a text file as SVG and PNG, needs no credentials, refuses to overwrite', async () => {
+  const dir = tmpDir();
+  const input = path.join(dir, 'in.txt');
+  fs.writeFileSync(input, 'hello rehearsal\n');
+  const env = { AMAPI_OUT_DIR: path.join(dir, 'out') };
+  const r = await run(['qr', '--in', input], { env });
+  assert.equal(r.code, 0, r.stderr);
+  const files = fs.readdirSync(path.join(dir, 'out'));
+  assert.equal(files.filter((f) => f.endsWith('.qr.svg')).length, 1);
+  assert.equal(files.filter((f) => f.endsWith('.qr.png')).length, 1);
+  const again = await run(['qr', '--in', input], { env });
+  assert.equal(again.code, 1);
+  assert.match(again.stderr, /already exists/);
+  assert.equal((await run(['qr', '--in', input, '--ecc', 'Z'], { env })).code, 2);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('device-delete needs --yes, validates the name, and dry-run shows the request without credentials', async () => {
+  const dev = `${ENT}/devices/3abc`;
+  const no = await run(['device-delete', '--enterprise-device', dev]);
+  assert.equal(no.code, 2);
+  assert.match(no.stderr, /--yes/);
+  assert.equal((await run(['device-delete', '--enterprise-device', 'devices/x', '--yes'])).code, 2);
+  const dry = await run(['device-delete', '--enterprise-device', dev, '--dry-run']);
+  assert.equal(dry.code, 0);
+  assert.equal(JSON.parse(dry.stdout).method, 'DELETE');
+  const dir = tmpDir();
+  const calls = [];
+  const fetch = async (url, init) => {
+    calls.push({ url, init });
+    return url === TOKEN_URL ? { ok: true, status: 200, json: async () => ({ access_token: 'ya29.T' }) } : { ok: true, status: 200, text: async () => '{}' };
+  };
+  const ok = await run(['device-delete', '--enterprise-device', dev, '--yes'], { env: { GOOGLE_APPLICATION_CREDENTIALS: writeSa(dir) }, fetch });
+  assert.equal(ok.code, 0, ok.stderr);
+  assert.equal(calls[1].init.method, 'DELETE');
+  assert.equal(calls[1].url, `${API}/${dev}`);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('token-revoke: DELETE on the token name; refuses a malformed name', async () => {
+  assert.equal((await run(['token-revoke', '--token', 'nonsense'])).code, 2);
+  const dry = await run(['token-revoke', '--token', `${ENT}/enrollmentTokens/xyz`, '--dry-run']);
+  assert.equal(dry.code, 0);
+  assert.equal(JSON.parse(dry.stdout).url, `${API}/${ENT}/enrollmentTokens/xyz`);
 });
