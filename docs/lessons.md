@@ -18,3 +18,11 @@ RiskMandate is the app we learn on (Dinis, 8 November 2026); the PrompTugal app 
 - The Android Management API's terms list in-house-only solutions as not permitted; check the route before relying on it (see `devices/README.md`).
 - AMAPI device quota beyond the default needs a business justification to Google.
 - Fully managed enrolment happens only at the welcome screen: a device already set up must be factory-reset.
+
+## Open source and for sale
+At Dinis's word (8 November 2026): these apps are open source and will be put for sale eventually. What follows from that:
+- The code is Apache 2.0 (`LICENSE`). Anyone may build it; what is sold is the signed, supported build on the store. Nothing secret may ever be in the repository or its history: keys, service accounts and tester lists stay in GitHub secrets and Google's consoles.
+- Publish private builds through **Play Console** (internal testing, or a private app targeted to our managed Google Play organisation), never through the managed Play iframe alone: Google's docs say an app published only through the iframe can never be made public, which would close the route to selling it.
+- Selling on Google Play needs a payments (merchant) profile on the Play Console account, owned by the selling company.
+- The names and icons (RiskMandate, PrompTugal) are best kept as trademarks, outside the code licence, so a fork cannot sell itself as the original. A `NOTICE`/`TRADEMARKS` file says so once Dinis confirms.
+- Every dependency must have a licence compatible with Apache 2.0 and with sale; CI should list them (a follow-up).

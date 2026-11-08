@@ -19,11 +19,13 @@
     "Dinis: the Play Console account (organisation, which company) and its D-U-N-S check: on the critical path for M2.",
     "Dinis: make dev the default branch of the repository, if you agree, so CI and readers land on it.",
     "Dinis: AMAPI permissible usage: Google lists in-house-only solutions as not permitted; confirm the route (test on a Gmail-bound enterprise, or Workspace/Cloud Identity device management). See devices/README.md.",
-    "Dinis: which account owns the managed Google Play enterprise (Gmail, or a Workspace/Cloud Identity domain); factory reset protection, screen lock and kiosk mode for the policy."
+    "Dinis: which account owns the managed Google Play enterprise (Gmail, or a Workspace/Cloud Identity domain); factory reset protection, screen lock and kiosk mode for the policy.",
+    "Dinis: for sale on Google Play, the Play Console account needs a payments (merchant) profile, owned by the selling company; and whether the name and icon are kept as trademarks outside the Apache 2.0 licence."
   ],
   "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
   "decisions": [
     "Application ID: ai.riskmandate.app (Dinis, 8 Nov 2026 ~21:35 UTC). Final: fixed once on Google Play.",
-    "Order (Dinis, 8 Nov 2026 ~21:40 UTC): RiskMandate is the first app and the one we learn Android development and publishing on; the PrompTugal app comes after it. Lessons go in docs/lessons.md so the PrompTugal app starts from them."
+    "Order (Dinis, 8 Nov 2026 ~21:40 UTC): RiskMandate is the first app and the one we learn Android development and publishing on; the PrompTugal app comes after it. Lessons go in docs/lessons.md so the PrompTugal app starts from them.",
+    "Open source and for sale (Dinis, 8 Nov 2026 ~21:45 UTC): all these apps are open source (Apache 2.0, the repo's LICENSE) and will be put for sale eventually."
   ]
 }
