@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">RiskMandate</string>
+    <string name="restriction_start_url_title">Start page</string>
+    <string name="restriction_start_url_description">The riskmandate.ai page the app opens (HTTPS on riskmandate.ai only; anything else falls back to https://riskmandate.ai/).</string>
+    <string name="restriction_device_label_title">Device label</string>
+    <string name="restriction_device_label_description">A label shown on the app\'s home screen to identify this device.</string>
 </resources>
