@@ -44,15 +44,18 @@
   <p><strong>In short.</strong> The app collects no personal data. It has no accounts, no analytics, no advertising and no third-party software that sends data anywhere. It sends nothing to us or to anyone else.</p>
 
   <h2>What the app does</h2>
-  <p>The app shows one screen. A button opens <a href="https://riskmandate.ai/">https://riskmandate.ai/</a> (or another riskmandate.ai page) in your web browser. The app also tells you whether an organisation manages your device and shows a label your organisation may have set.</p>
+  <p>The app shows one screen. A button opens <a href="https://riskmandate.ai/">https://riskmandate.ai/</a> (or another riskmandate.ai page) in your web browser. The app also tells you whether an organisation manages your device, shows a label your organisation may have set, and has a Diagnostics screen (below).</p>
 
   <h2>What the app collects</h2>
   <p>Nothing. The app does not collect, transmit, store, share or sell personal or sensitive data. It does not ask for your name, email address, location, contacts, photos, files, microphone, camera or any account.</p>
-  <p>The only permission it asks for is internet access. The app declares the permission so that it can hand a riskmandate.ai address to your browser; the app does not itself download or upload any content.</p>
+  <p>The app asks for two permissions, both ordinary ones that Android grants at install without a prompt: internet access, so that it can hand a riskmandate.ai address to your browser (the app does not itself download or upload any content), and network state, so that it can show a hint when your device appears to be offline. The app only checks whether a network connection exists; it does not read or keep your network name or address.</p>
   <p>The app keeps no files, no database and no preferences of its own, and the app's data is excluded from Android's cloud backup and device-to-device transfer.</p>
 
   <h2>Managed configuration</h2>
   <p>If your device is managed by an organisation (for example by your employer), that organisation can set two values for the app: the riskmandate.ai page the app opens (<code>start_url</code>) and a label for the device (<code>device_label</code>). Android delivers these values to the app on your device. The app reads them, shows the label on its home screen and opens the page. The values stay on your device: the app does not send them anywhere, and does not keep a copy beyond what Android already holds. Your organisation, not us, chooses these values and can see them in its own management console. The app can also tell whether your device is managed (a fully managed device or a work profile); it shows this on the screen and does not send it anywhere.</p>
+
+  <h2>Diagnostics screen</h2>
+  <p>A Diagnostics screen shows the app's version, the Android version, the make and model of the device, whether and how the device is managed, the managed configuration as received (<code>start_url</code> and <code>device_label</code>, and whether the start page was refused), and which app installed this app (for example Google Play or Firebase App Distribution). These values are shown on the screen and are put on your clipboard only when you tap Copy. The app never sends them anywhere. The screen shows no serial number, IMEI, Android ID, account or network address.</p>
 
   <h2>The website the app opens</h2>
   <p>When you tap the button, your browser opens riskmandate.ai. From that moment the website, not the app, handles what happens. riskmandate.ai has its own privacy page at <a href="https://riskmandate.ai/privacy">https://riskmandate.ai/privacy</a>, which says that the site has no analytics, no cookies and no advertising pixel, and describes what its forms and its hosting do. The app only allows https addresses on riskmandate.ai and www.riskmandate.ai.</p>

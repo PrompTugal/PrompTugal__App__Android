@@ -21,7 +21,7 @@ Not used, on purpose: the insurance and "Licence to Operate" pages (linked from 
 - One screen, titled RiskMandate, with a button "Open riskmandate.ai" (`app/src/main/java/ai/riskmandate/app/HomeScreen.kt`) that opens the site in a Custom Tab, or a browser if none supports Custom Tabs (`Browser.kt`). It only opens HTTPS pages on riskmandate.ai or www.riskmandate.ai (`Links.kt`).
 - A "Device" section says whether the device is managed by an organisation (fully managed, work profile, or not detected) and shows an optional device label (`DeviceStatus.kt`).
 - An organisation's device management can set the page the app opens (`start_url`) and a device label (`device_label`) as managed configuration (`ManagedConfig.kt`, `app/src/main/res/xml/app_restrictions.xml`).
-- Shows the build version. Needs INTERNET only. No accounts, no data collected.
+- Shows the build version. A Diagnostics screen (`DiagnosticsScreen.kt`) lists version, Android version, device model, management state, managed configuration and installer, with a Copy button (clipboard only on tap). Needs INTERNET and ACCESS_NETWORK_STATE only. No accounts, no data collected.
 
 ## Title (max 30)
 
@@ -46,11 +46,12 @@ What the app does
 - Opens riskmandate.ai in a Custom Tab (your browser), only on riskmandate.ai over HTTPS.
 - Shows whether your device is managed by an organisation, and an optional label your organisation sets, so that the people who run your devices can tell them apart.
 - Lets your organisation choose which riskmandate.ai page the app opens, through managed configuration.
+- Has a Diagnostics screen with the app version, device model, Android version and management state, which you can copy to share with support. Nothing is sent by the app.
 
 What the app does not do
 - It has no account and no sign-in.
 - It collects no data, has no analytics and shows no ads.
-- It asks for one permission: internet access.
+- It asks for two ordinary permissions: internet access and network state (to show an offline hint).
 
 The app is open source under the Apache 2.0 licence. [TODO Dinis: add the repository URL once he decides it is public]
 
