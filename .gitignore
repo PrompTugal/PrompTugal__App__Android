@@ -20,3 +20,20 @@ google-services.json
 
 # M2 device outputs (enrolment tokens, web tokens): never committed
 devices/out/
+
+# Added by the 2026-11-08 security review (docs/security/review-2026-11-08.md)
+# More spellings of key and credential files, and the make-upload-key.sh output
+*.b64
+*.p12
+*.pfx
+*.pem
+*.key
+*service_account*.json
+*serviceaccount*.json
+*-sa-key.json
+*credentials*.json
+.env
+.env.*
+upload.jks*
+fad.json
+play.json
