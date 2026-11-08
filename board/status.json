@@ -1,13 +1,14 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-08T23:30Z",
+  "updated": "2026-11-08T23:35Z",
   "state": "Five sessions running on their work/<role> branches; conductor merges PASS-reviewed, green branches onto dev hourly. M1 waits on the Firebase project and secrets; M2 on the route and the private build's package ID.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
     "devices/: AMAPI CLI (27 tests), fully managed policy, M2 runbook",
     "docs/ci.md, docs/lessons.md; application ID decided (ai.riskmandate.app)",
-    "Security review (no secrets; 84 libraries all Apache-2.0); High A-1 URL allow-list bypass fixed (exact riskmandate.ai and www, 26 tests); findings A-2 to A-12 fixed; licences screen; Play Console groundwork in docs/play/. 52 app tests, 35 devices tests."
+    "Security review (no secrets; 84 libraries all Apache-2.0); High A-1 URL allow-list bypass fixed (exact riskmandate.ai and www, 26 tests); findings A-2 to A-12 fixed; licences screen; Play Console groundwork in docs/play/. 52 app tests, 35 devices tests.",
+    "Merged after security PASS (23:20 to 23:35): app (tablets, themes, pt-PT, screenshots, full Apache text; 61 tests), play (privacy page, minimal-functionality review, store assets plan, release notes, tester guides, device checklist), release (emulator smoke job, screenshot artifact, licence gate, Dependabot, release notes), devices (zero-dependency QR encoder verified on 204 symbols, offline policy schema validation, Workspace vs AMAPI side by side, REHEARSAL.md, hardened policy options; 68 tests), security (OSV 0 known vulns, M2 threat model, GitHub settings checklist)."
   ],
   "next": [
     "merge work/app (44131ad: tablets, themes, pt-PT, screenshots, full Apache text) and work/play (6ee3f6b: privacy page, minimal-functionality review) once security.android says PASS",
@@ -25,7 +26,9 @@
     "Dinis: the package plan for the private M2 build: recommended B, a separate ID (e.g. ai.riskmandate.app.managed) for the organisation-private build, keeping ai.riskmandate.app for the public paid app (an org-private Play app can never go public). docs/play/README.md step 8.",
     "Dinis: create the GitHub Environment 'release' (optionally with you as required reviewer) and put the secrets in it, not at repo level (docs/ci.md).",
     "Dinis: the copyright holder for the Apache 2.0 notice, and whether to adopt docs/security/NOTICE.draft.",
-    "Dinis: for the Play listing: owner of the account (also the publisher in the privacy policy), free or paid at creation, a role contact email, the privacy policy's public URL, approval of the listing claims (docs/play/)."
+    "Dinis: for the Play listing: owner of the account (also the publisher in the privacy policy), free or paid at creation, a role contact email, the privacy policy's public URL, approval of the listing claims (docs/play/).",
+    "Dinis: devices/README.md ends with ten questions only you can answer; the three that unblock M2: the route (AMAPI test enterprise, Cloud Identity Premium, or a commercial EMM), the private build's package ID, and whether AMAPI's permissible-usage terms allow us. Note: Google's pages disagree on whether Workspace device management supports a userless fully managed tablet, and that route signs private apps with a Google-held key.",
+    "Dinis: optional: run the emulator smoke test on pull requests too; Dependabot PRs targeting dev (they start only once there is a main release)."
   ],
   "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
   "decisions": [
