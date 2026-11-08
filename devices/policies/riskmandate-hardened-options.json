@@ -1,0 +1,92 @@
+{
+  "_comment": "NOT APPLIED. The fully managed policy plus every hardening option from the security review (A-11), as one complete policy, so each option can be copied across or the whole file applied. Nothing here is used unless Dinis runs policy-apply with this file. Each _note_* key explains the setting next to it; amapi.mjs strips notes before sending. Why each option, and what it costs: devices/README.md, section 'Hardening options (not applied)'. Every field was checked against the AMAPI discovery document of 4 November 2026 (devices/test/policy-schema.test.mjs). Left out on purpose, because they need a decision or cannot be verified offline: frpAdminEmails, a Chrome URL allow-list, kiosk mode, Wi-Fi lockdown, support messages.",
+  "applications": [
+    {
+      "packageName": "__PACKAGE__",
+      "installType": "FORCE_INSTALLED",
+      "autoUpdateMode": "AUTO_UPDATE_HIGH_PRIORITY",
+      "managedConfiguration": {
+        "start_url": "__START_URL__",
+        "device_label": "__DEVICE_LABEL__"
+      }
+    },
+    {
+      "packageName": "com.android.chrome",
+      "installType": "FORCE_INSTALLED",
+      "autoUpdateMode": "AUTO_UPDATE_DEFAULT"
+    }
+  ],
+  "playStoreMode": "WHITELIST",
+  "statusReportingSettings": {
+    "applicationReportsEnabled": true,
+    "deviceSettingsEnabled": true,
+    "softwareInfoEnabled": true,
+    "hardwareStatusEnabled": true,
+    "memoryInfoEnabled": true,
+    "displayInfoEnabled": true,
+    "powerManagementEventsEnabled": true,
+    "networkInfoEnabled": false
+  },
+  "systemUpdate": {
+    "_note": "OPTION H1. The base policy installs OS updates only 02:00 to 05:00, which can delay a security patch by a day. AUTOMATIC installs as soon as the device has one. Cost: an update may reboot the tablet while someone uses it.",
+    "type": "AUTOMATIC"
+  },
+  "advancedSecurityOverrides": {
+    "untrustedAppsPolicy": "DISALLOW_INSTALL",
+    "developerSettings": "DEVELOPER_SETTINGS_DISABLED",
+    "googlePlayProtectVerifyApps": "VERIFY_APPS_ENFORCED",
+    "_note_mtePolicy": "OPTION H9. Memory tagging (MTE) makes memory-corruption bugs in any app crash instead of being exploitable. Only devices whose hardware supports it (a few recent models) act on it; others ignore it. Cost: a small slowdown on devices that have it.",
+    "mtePolicy": "MTE_ENFORCED"
+  },
+  "autoDateAndTimeZone": "AUTO_DATE_AND_TIME_ZONE_ENFORCED",
+  "addUserDisabled": true,
+  "modifyAccountsDisabled": true,
+  "_note_removeUserDisabled": "OPTION H8. With addUserDisabled already true there is no second user to remove; this closes the same door from the other side. No cost on a one-user tablet.",
+  "removeUserDisabled": true,
+  "_note_installAppsDisabled": "OPTION H8. Blocks the user from installing anything from Play on their own. Apps installed by policy (RiskMandate, Chrome) are not affected. playStoreMode WHITELIST already limits what Play offers; this removes the install button's reach as well. No cost for a one-app tablet.",
+  "installAppsDisabled": true,
+  "_note_factoryResetDisabled": "OPTION H2. Blocks 'Erase all data' in Settings. A thief cannot wipe the enrolment from the screen. Cost: you cannot reset the tablet either, except by recovery mode on some models, or by deleting the device through the API (which wipes it). Turn this off while rehearsing M2. Pair it with frpAdminEmails (not included: it needs Dinis's choice of Google accounts).",
+  "factoryResetDisabled": true,
+  "_note_safeBootDisabled": "OPTION H3. Blocks safe mode, which starts the tablet without third-party apps. DEPRECATED in the AMAPI schema with no replacement listed; Google may stop honouring it. Kept because the security review asked for it. Cost: none that we know of.",
+  "safeBootDisabled": true,
+  "_note_usb": "OPTION H4. No file transfer and no data over USB (charging still works). Stops someone copying data off, or pushing files on, over a cable. Cost: you cannot copy a file to the tablet by cable; adb is already off because developer settings are off. DISALLOW_USB_FILE_TRANSFER is the milder choice.",
+  "deviceConnectivityManagement": {
+    "usbDataAccess": "DISALLOW_USB_DATA_TRANSFER",
+    "_note_tethering": "OPTION H6. No hotspot or tethering from the tablet. Cost: none for an app-only tablet.",
+    "tetheringSettings": "DISALLOW_ALL_TETHERING",
+    "_note_bluetoothSharing": "OPTION H6. No Bluetooth file sharing.",
+    "bluetoothSharing": "BLUETOOTH_SHARING_DISALLOWED"
+  },
+  "_note_mountPhysicalMediaDisabled": "OPTION H4. Refuses SD cards and USB sticks. Cost: none for an app-only tablet.",
+  "mountPhysicalMediaDisabled": true,
+  "_note_bluetoothConfigDisabled": "OPTION H6. The user cannot pair Bluetooth devices. Cost: no keyboard, mouse or headset can be paired by whoever holds the tablet; an admin cannot pair one either except by policy.",
+  "bluetoothConfigDisabled": true,
+  "_note_passwordPolicies": "OPTION H5. Requires a screen lock. Without one, whoever picks up the tablet sees whatever the app and Chrome show. The device itself asks for a PIN at setup. COMPLEXITY_MEDIUM means at least a 4-digit PIN with no repeating or ascending runs, per Android's complexity levels; confirm in the API reference before relying on exact wording. maximumFailedPasswordsForWipe 10 wipes the tablet after ten wrong PINs: the tablet holds no data worth keeping, but it then has to be enrolled again. Cost: a userless tablet needs a person who knows the PIN.",
+  "passwordPolicies": [
+    {
+      "passwordQuality": "COMPLEXITY_MEDIUM",
+      "maximumFailedPasswordsForWipe": 10,
+      "requirePasswordUnlock": "REQUIRE_EVERY_DAY"
+    }
+  ],
+  "_note_keyguardDisabledFeatures": "OPTION H5. On the lock screen: no camera, no notification text. Only has an effect when a lock is set (H5). Cost: no quick camera from the lock screen.",
+  "keyguardDisabledFeatures": ["CAMERA", "UNREDACTED_NOTIFICATIONS"],
+  "_note_screenCaptureDisabled": "OPTION H7. No screenshots and no screen recording, which also blacks out the app in the recent-apps view. Cost: nobody can screenshot the app for a bug report.",
+  "screenCaptureDisabled": true,
+  "_note_cameraAccess": "OPTION H7. The app does not use the camera. Cost: none for RiskMandate today; a later feature that scans a code needs this removed.",
+  "cameraAccess": "CAMERA_ACCESS_DISABLED",
+  "_note_microphoneAccess": "OPTION H7. The app does not use the microphone.",
+  "microphoneAccess": "MICROPHONE_ACCESS_DISABLED",
+  "_note_locationMode": "OPTION H7. The app needs no location. LOCATION_DISABLED turns it off for every app. Cost: no location for 'find my device' style use.",
+  "locationMode": "LOCATION_DISABLED",
+  "deviceRadioState": {
+    "_note_nfc": "OPTION H6. NFC off: no tap-to-pay or tap-to-share. Cost: none for this tablet.",
+    "nfc": "NFC_DISABLED",
+    "_note_uwb": "OPTION H6. Ultra-wideband off. Cost: none.",
+    "ultraWidebandState": "ULTRA_WIDEBAND_DISABLED",
+    "_note_2g": "OPTION H6. 2G off, which closes a known downgrade attack on cellular models. Cost: none where 3G or better exists; irrelevant on Wi-Fi-only tablets.",
+    "cellularTwoGState": "CELLULAR_TWO_G_DISABLED",
+    "_note_wifi": "OPTION H6. Refuses open (no password) Wi-Fi. Cost: a captive portal or café Wi-Fi will not connect; the QR enrolment itself needs a network the tablet accepts, so do not enable this until you know the rehearsal network is WPA2 or better.",
+    "minimumWifiSecurityLevel": "PERSONAL_NETWORK_SECURITY"
+  }
+}

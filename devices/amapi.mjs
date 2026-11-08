@@ -12,6 +12,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { encode as qrEncode, toSvg, toPng } from './qr.mjs';
 
 export const API = 'https://androidmanagement.googleapis.com/v1';
 export const TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -34,6 +35,9 @@ const USAGE = `amapi.mjs: Android Management API helper (M2). Every command acce
                     [--personal-usage PERSONAL_USAGE_DISALLOWED_USERLESS|PERSONAL_USAGE_DISALLOWED]
   devices-list      --enterprise <enterprises/x> [--package <appId>]
   web-token         --enterprise <enterprises/x> --parent-frame-url <https url>
+  device-delete     --enterprise-device <enterprises/x/devices/y> --yes   (wipes the tablet and removes it; --yes is required)
+  token-revoke      --token <enterprises/x/enrollmentTokens/y>            (invalidates an enrolment token and its QR code)
+  qr                --in <text file> [--ecc L|M|Q|H]   (draws any text file as QR images into the output folder)
 
 Credentials: GOOGLE_APPLICATION_CREDENTIALS=<path to service-account json> (never in this repo).
 Outputs: devices/out/ (gitignored, mode 700), or AMAPI_OUT_DIR. Files are never overwritten.`;
@@ -48,7 +52,7 @@ export function b64url(input) {
 export function parseArgs(argv) {
   const [cmd, ...rest] = argv;
   const opts = {};
-  const BOOL = new Set(['dry-run', 'one-time', 'reusable', 'help']);
+  const BOOL = new Set(['dry-run', 'one-time', 'reusable', 'help', 'yes']);
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
     if (!a.startsWith('--')) throw new UsageError(`unexpected argument: ${a}`);
@@ -76,6 +80,8 @@ function q(params) {
 }
 
 const ENTERPRISE_RE = /^enterprises\/[A-Za-z0-9_-]+$/;
+const DEVICE_RE = /^enterprises\/[A-Za-z0-9_-]+\/devices\/[A-Za-z0-9_-]+$/;
+const TOKEN_NAME_RE = /^enterprises\/[A-Za-z0-9_-]+\/enrollmentTokens\/[A-Za-z0-9_-]+$/;
 const POLICY_RE = /^[A-Za-z0-9_.-]+$/;
 const PACKAGE_RE = /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/;
 
@@ -214,6 +220,22 @@ export function buildRequest(cmd, opts, env = {}) {
       const warnings = opts.reusable ? [`--reusable: this token can enrol any number of devices until it expires (${duration}); keep the QR code private`] : [];
       return { method: 'POST', url: `${API}/${opts.enterprise}/enrollmentTokens`, body, warnings };
     }
+    case 'device-delete': {
+      need(opts, 'enterprise-device');
+      if (!DEVICE_RE.test(opts['enterprise-device'])) throw new UsageError('--enterprise-device must look like enterprises/LC0abc/devices/3abc (the `name` from devices-list)');
+      if (!opts.yes && !opts['dry-run']) throw new UsageError('device-delete wipes the tablet and removes it from the enterprise: add --yes to confirm (or --dry-run to look)');
+      return { method: 'DELETE', url: `${API}/${opts['enterprise-device']}`, warnings: ['this wipes the tablet; it must be enrolled again from a factory reset'] };
+    }
+    case 'token-revoke': {
+      need(opts, 'token');
+      if (!TOKEN_NAME_RE.test(opts.token)) throw new UsageError('--token must look like enterprises/LC0abc/enrollmentTokens/xyz (the `name` that enrol printed)');
+      return { method: 'DELETE', url: `${API}/${opts.token}` };
+    }
+    case 'qr': {
+      need(opts, 'in');
+      if (opts.ecc && !['L', 'M', 'Q', 'H'].includes(opts.ecc)) throw new UsageError('--ecc must be L, M, Q or H');
+      return { method: 'LOCAL', url: 'file://' + path.resolve(opts.in) };
+    }
     case 'devices-list': {
       need(opts, 'enterprise');
       checkEnterprise(opts.enterprise);
@@ -342,6 +364,15 @@ function writeSecretFile(file, content) {
   return file;
 }
 
+// Draws `text` as <base>.qr.svg and <base>.qr.png (no overwrite, mode 600: the image is a credential).
+// Level L by default: the enrolment payload is long, and a screen needs no damage tolerance, so fewer, larger modules scan best.
+export function writeQrImages(base, text, ecc = 'L') {
+  const qr = qrEncode(text, { ecc });
+  const svg = writeSecretFile(`${base}.qr.svg`, toSvg(qr));
+  const png = writeSecretFile(`${base}.qr.png`, toPng(qr, { scale: 8 }));
+  return { svg, png, version: qr.version, ecc: qr.ecc };
+}
+
 // ---------- main ----------
 
 export async function main(argv, io = {}) {
@@ -367,7 +398,7 @@ export async function main(argv, io = {}) {
       return 0;
     }
 
-    const token = await getAccessToken(env, fetchImpl, Math.floor(now / 1000));
+    const token = cmd === 'qr' ? null : await getAccessToken(env, fetchImpl, Math.floor(now / 1000));
 
     switch (cmd) {
       case 'signup-url': {
@@ -393,10 +424,25 @@ export async function main(argv, io = {}) {
         const base = path.join(dir, `enrol-${stamp(now)}`);
         const jsonFile = writeSecretFile(`${base}.json`, `${JSON.stringify({ name: r.name, policyName: r.policyName, expirationTimestamp: r.expirationTimestamp, oneTimeOnly: !!r.oneTimeOnly, allowPersonalUsage: r.allowPersonalUsage, qrCode: r.qrCode ? JSON.parse(r.qrCode) : null }, null, 2)}\n`);
         const qrFile = r.qrCode ? writeSecretFile(`${base}.qr.txt`, r.qrCode) : null;
+        const images = r.qrCode ? writeQrImages(base, r.qrCode) : null;
         out(JSON.stringify({ name: r.name, policyName: r.policyName, expirationTimestamp: r.expirationTimestamp, oneTimeOnly: !!r.oneTimeOnly }, null, 2));
         out(`QR payload written to ${jsonFile}`);
-        if (qrFile) out(`Raw qrCode string (paste into a QR generator, e.g. \`qrencode -o qr.png < ${path.basename(qrFile)}\`) written to ${qrFile}`);
+        if (qrFile) out(`Raw qrCode string written to ${qrFile}`);
+        if (images) out(`QR images (QR version ${images.version}, level ${images.ecc}) written to ${images.svg} and ${images.png}: show the PNG full screen on a laptop, or print it.`);
         out('These files hold an enrolment token: do not commit, share or paste them. They expire at expirationTimestamp.');
+        return 0;
+      }
+      case 'device-delete':
+      case 'token-revoke': {
+        await send(req, token, fetchImpl);
+        out(cmd === 'device-delete' ? `Deleted ${opts['enterprise-device']}: the tablet is told to wipe itself (not guaranteed if it stays offline).` : `Revoked ${opts.token}: its QR code no longer enrols anything.`);
+        return 0;
+      }
+      case 'qr': {
+        const text = fs.readFileSync(opts.in, 'utf8').replace(/\r?\n$/, '');
+        const dir = outDir(env);
+        const images = writeQrImages(path.join(dir, `qr-${stamp(now)}`), text, opts.ecc);
+        out(`QR images (QR version ${images.version}, level ${images.ecc}) written to ${images.svg} and ${images.png}`);
         return 0;
       }
       case 'devices-list': {
@@ -408,7 +454,8 @@ export async function main(argv, io = {}) {
             const app = opts.package ? (d.applicationReports || []).find((a) => a.packageName === opts.package) : undefined;
             rows.push({
               name: d.name, state: d.state, managementMode: d.managementMode, ownership: d.ownership,
-              policy: d.appliedPolicyName, policyCompliant: d.policyCompliant,
+              policy: d.appliedPolicyName, policyCompliant: d.policyCompliant, appliedState: d.appliedState,
+              nonCompliance: (d.nonComplianceDetails || []).map((n) => [n.settingName, n.nonComplianceReason, n.packageName].filter(Boolean).join(' ')),
               model: d.hardwareInfo ? `${d.hardwareInfo.brand || ''} ${d.hardwareInfo.model || ''}`.trim() : undefined,
               androidVersion: d.softwareInfo && d.softwareInfo.androidVersion,
               lastStatusReportTime: d.lastStatusReportTime,
