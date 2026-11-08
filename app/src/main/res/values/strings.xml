@@ -1,5 +1,27 @@
 <resources>
-    <string name="app_name">RiskMandate</string>
+    <string name="app_name" translatable="false">RiskMandate</string>
+
+    <string name="home_open">Open riskmandate.ai</string>
+    <string name="home_open_action">Opens riskmandate.ai in your web browser</string>
+    <string name="home_device_heading">Device</string>
+    <string name="home_device_label">Label: %1$s</string>
+    <string name="home_about_heading">About</string>
+    <string name="home_about_text">RiskMandate: this app opens riskmandate.ai.</string>
+    <string name="home_licences">Open source licences</string>
+    <string name="home_build">Build %1$s</string>
+
+    <string name="device_fully_managed">Managed by an organisation (fully managed device)</string>
+    <string name="device_work_profile">Managed by an organisation (work profile)</string>
+    <string name="device_not_detected">Not managed (no device owner or work profile detected)</string>
+
+    <string name="message_no_browser">No web browser is installed on this device, so riskmandate.ai cannot be opened.</string>
+    <string name="message_refused">That address is not on riskmandate.ai, so the app will not open it.</string>
+
+    <string name="licences_title">Open source licences</string>
+    <string name="licences_back">Back</string>
+    <string name="licences_back_description">Back to the home screen</string>
+    <string name="licences_apache_heading">Apache License, Version 2.0 (full text)</string>
+
     <string name="restriction_start_url_title">Start page</string>
     <string name="restriction_start_url_description">The riskmandate.ai page the app opens (HTTPS on riskmandate.ai only; anything else falls back to https://riskmandate.ai/).</string>
     <string name="restriction_device_label_title">Device label</string>

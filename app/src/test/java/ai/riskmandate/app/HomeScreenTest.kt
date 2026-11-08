@@ -18,7 +18,7 @@ import org.junit.runner.RunWith
 class HomeScreenTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun show(device: DeviceStatus, message: String? = null, onOpen: () -> Unit = {}) =
+    private fun show(device: DeviceStatus, message: Int? = null, onOpen: () -> Unit = {}) =
         compose.setContent {
             MaterialTheme { HomeScreen(version = "0.1.7 (7)", device = device, onOpen = onOpen, message = message) }
         }

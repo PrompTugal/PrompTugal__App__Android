@@ -4,6 +4,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.os.Build
 import android.os.UserManager
+import androidx.annotation.StringRes
 
 /** What the app can tell, through public APIs, about whether an organisation manages this device. */
 enum class Management {
@@ -16,11 +17,12 @@ enum class Management {
 }
 
 data class DeviceStatus(val management: Management, val label: String?) {
-    val managementText: String
+    @get:StringRes
+    val managementTextRes: Int
         get() = when (management) {
-            Management.FULLY_MANAGED -> "Managed by an organisation (fully managed device)"
-            Management.WORK_PROFILE -> "Managed by an organisation (work profile)"
-            Management.NOT_DETECTED -> "Not managed (no device owner or work profile detected)"
+            Management.FULLY_MANAGED -> R.string.device_fully_managed
+            Management.WORK_PROFILE -> R.string.device_work_profile
+            Management.NOT_DETECTED -> R.string.device_not_detected
         }
 
     companion object {
