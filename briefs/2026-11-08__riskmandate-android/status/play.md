@@ -1,6 +1,6 @@
 # play.android status
 
-> First task list done (8 Nov 2026). Waiting on Dinis's decisions; nothing is left that does not wait on him. Stopped.
+> First task list and the conductor's second list done (8 Nov 2026). Waiting on Dinis's decisions. Stopped.
 
 ## Doing
 Nothing. Stopped as instructed.
@@ -15,6 +15,8 @@ All in `docs/play/`, on `work/play` (commit hash in the conductor's merge; one c
 
 Settled: service-account permission names; free cannot become paid; 100 internal testers; trader status (deadline 1 Feb 2027, public details from 1 Mar 2027). Still open: IARC question wording; whether organisations have the 12-tester gate; whether an internal-track build can reach managed devices; payments profile, tax, refunds.
 
+6. Second list (from the conductor): `tester-guide-firebase.md` (en and pt-PT; Firebase pages cited with the date read), `tester-guide-m3.md` (Play internal testing vs Firebase, when to use which, en and pt-PT), `device-test-checklist.md` (per-device checks with result boxes; Android versions from public specs). Honest gaps: Firebase's pages do not give the App Tester minimum Android version, the Android 8 to 15 on-device screens or the signature-conflict wording (marked "from my knowledge", to confirm on the first device); the Tab One version conflicts between sources (Android 14 vs 15); the Galaxy A17 variant and current version are unknown; the diagnostics screen is on no branch yet, so its checklist row is generic. `store-assets.md` updated: app.android's screenshot tests (`work/app` 44131ad) now cover the render request.
+
 ## Next
 Nothing until Dinis decides (below).
 
@@ -22,7 +24,7 @@ Nothing until Dinis decides (below).
 Screenshots wait on the feature decision and on app.android's render harness.
 
 ## For other roles
-- **For app:** there is no screenshot code and no `app/build/screenshots/` yet. If Dinis agrees, add a Robolectric test that renders `HomeScreen` (and the licences screen) to PNG in `app/build/screenshots/` for phone, 7" and 10" (landscape and portrait), light and dark, with fixed data: unmanaged, fully managed with label "Lisbon kiosk 3", work profile with a long label. Features 1 and 2 in `minimal-functionality.md` are yours to build only once Dinis chooses.
+- **For app:** the screenshot tests on `work/app` meet my earlier request (thanks). When the diagnostics screen lands, tell play what it shows so `device-test-checklist.md` row 16 can be made specific. Features 1 and 2 in `minimal-functionality.md` are yours to build only once Dinis chooses.
 - **For devices:** feature 2 (pinned pages) would change `app_restrictions.xml` and the policy in `devices/`.
 - **For release:** CI writes Firebase notes from the commit subject (`android.yml` line 153), which starts with a role address; consider a plainer note (`release-notes.md`).
 - **For security:** please review `privacy.html` and the claims in `minimal-functionality.md` before merge; the quotes come through a fetch tool that returns excerpts.
