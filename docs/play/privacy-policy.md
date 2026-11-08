@@ -16,19 +16,23 @@ Last updated: [TODO: date of publication]
 
 ## What the app does
 
-The app shows one screen. A button opens https://riskmandate.ai/ (or another riskmandate.ai page) in your web browser. The app also tells you whether an organisation manages your device and shows a label your organisation may have set.
+The app shows one screen. A button opens https://riskmandate.ai/ (or another riskmandate.ai page) in your web browser. The app also tells you whether an organisation manages your device, shows a label your organisation may have set, and has a Diagnostics screen (below).
 
 ## What the app collects
 
 Nothing. The app does not collect, transmit, store, share or sell personal or sensitive data. It does not ask for your name, email address, location, contacts, photos, files, microphone, camera or any account.
 
-The only permission it asks for is internet access. The app declares the permission so that it can hand a riskmandate.ai address to your browser; the app does not itself download or upload any content.
+The app asks for two permissions, both ordinary ones that Android grants at install without a prompt: internet access, so that it can hand a riskmandate.ai address to your browser (the app does not itself download or upload any content), and network state, so that it can show a hint when your device appears to be offline. The app only checks whether a network connection exists; it does not read or keep your network name or address.
 
 The app keeps no files, no database and no preferences of its own, and the app's data is excluded from Android's cloud backup and device-to-device transfer.
 
 ## Managed configuration
 
 If your device is managed by an organisation (for example by your employer), that organisation can set two values for the app: the riskmandate.ai page the app opens (`start_url`) and a label for the device (`device_label`). Android delivers these values to the app on your device. The app reads them, shows the label on its home screen and opens the page. The values stay on your device: the app does not send them anywhere, and does not keep a copy beyond what Android already holds. Your organisation, not us, chooses these values and can see them in its own management console. The app can also tell whether your device is managed (a fully managed device or a work profile); it shows this on the screen and does not send it anywhere.
+
+## Diagnostics screen
+
+A Diagnostics screen shows the app's version, the Android version, the make and model of the device, whether and how the device is managed, the managed configuration as received (`start_url` and `device_label`, and whether the start page was refused), and which app installed this app (for example Google Play or Firebase App Distribution). These values are shown on the screen and are put on your clipboard only when you tap Copy. The app never sends them anywhere. The screen shows no serial number, IMEI, Android ID, account or network address.
 
 ## The website the app opens
 

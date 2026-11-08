@@ -21,6 +21,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 8. Checklist row 16 now describes the diagnostics screen as the conductor listed it (version and versionCode, Android version and model, managed state, managed config as received, installer package, Copy). R-play-1 was already done in 3bf16dc.
 
+9. R-app-4/R-play-6: `privacy-policy.md`, `privacy.html`, `data-safety.md`, `listing.md` now list two permissions (INTERNET, ACCESS_NETWORK_STATE, the latter only for the offline hint) and describe the Diagnostics screen (values shown on screen, copied only on Copy, never sent; no serial, IMEI, Android ID, account or network address). Checked against `Diagnostics.kt`, `Browser.isOffline` and the manifest on `dev` f699d2d. Data safety stays "no data collected". `origin/dev` merged first.
+
 ## Next
 Nothing until Dinis decides (below).
 

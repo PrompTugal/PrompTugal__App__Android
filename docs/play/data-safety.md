@@ -8,7 +8,7 @@ Google's definition (verified): "Collect" means transmitting data from your app 
 
 | Check | Evidence |
 |---|---|
-| Permissions | `app/src/main/AndroidManifest.xml` declares only `android.permission.INTERNET`. The `<queries>` entry (Custom Tabs service intent) is package visibility, not a permission. |
+| Permissions | `app/src/main/AndroidManifest.xml` declares only `android.permission.INTERNET` and `android.permission.ACCESS_NETWORK_STATE` (both normal permissions; the second is used by `Browser.isOffline` only to read whether a network with internet capability exists, for an offline hint; nothing is sent). The `<queries>` entry (Custom Tabs service intent) is package visibility, not a permission. |
 | No network code | No `HttpURLConnection`, OkHttp, Retrofit, WebView or socket use in `app/src/main`. The only outward act is handing a URL to the browser: `Browser.kt` (`CustomTabsIntent.launchUrl`, or `Intent.ACTION_VIEW`). The app opens riskmandate.ai in the user's browser, which is the browser's traffic, not the app's. No WebView exists, so Google's webview clause does not apply. |
 | No SDKs | `app/build.gradle.kts` dependencies: AndroidX (core, activity, lifecycle, browser), Compose and Material 3, plus test libraries. No Firebase, analytics, ads, crash reporting or Google Play services library. (Firebase App Distribution is a CI delivery step, not in the app.) |
 | No storage | Search of `app/src/main` found no SharedPreferences, DataStore, database, file writing or logging. The app reads managed configuration and device state at runtime and holds them in memory (`MainActivity.kt`). |
@@ -16,6 +16,7 @@ Google's definition (verified): "Collect" means transmitting data from your app 
 | Encryption in transit | `network_security_config.xml` and `usesCleartextTraffic="false"`: cleartext is off; `Links.kt` accepts only `https://` on riskmandate.ai and www.riskmandate.ai. The app transmits nothing itself. |
 | Accounts | None: no sign-in code exists. |
 | Managed values | `ManagedConfig.kt` reads `start_url` and `device_label` from `RestrictionsManager`, trims and validates them, keeps them in memory; they are never sent anywhere. Device status (`DeviceStatus.kt`) uses `DevicePolicyManager` and `UserManager` locally, shown on screen only. |
+| Diagnostics screen | `Diagnostics.kt`, `DiagnosticsScreen.kt` (merged 8 November 2026): shows app version and code, application ID, build type, Android version, make and model, management state, managed configuration, installer package. No IMEI, serial, Android ID, account or network address. Written to the clipboard only on the user's tap on Copy; not transmitted. Model and installer package are not advertising or device identifiers (every unit of a model shares the model string), so Data safety stays "no data collected". |
 
 ## Data safety form, question by question
 
