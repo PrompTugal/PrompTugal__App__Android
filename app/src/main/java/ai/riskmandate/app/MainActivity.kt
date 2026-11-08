@@ -6,11 +6,13 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -19,6 +21,7 @@ import androidx.core.content.ContextCompat
 class MainActivity : ComponentActivity() {
     private var config by mutableStateOf(ManagedConfig.DEFAULT)
     private var device by mutableStateOf(DeviceStatus(Management.NOT_DETECTED, null))
+    private var showLicences by mutableStateOf(false)
     private var message by mutableStateOf<String?>(null)
 
     private val restrictionsReceiver = object : BroadcastReceiver() {
@@ -31,12 +34,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    HomeScreen(
-                        version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-                        device = device,
-                        message = message,
-                        onOpen = { message = Browser.message(Browser.open(this, config.startUrl)) },
-                    )
+                    if (showLicences) {
+                        BackHandler { showLicences = false }
+                        LicencesScreen(text = remember { readLicences(this@MainActivity) }, onBack = { showLicences = false })
+                    } else {
+                        HomeScreen(
+                            version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                            device = device,
+                            message = message,
+                            onOpen = { message = Browser.message(Browser.open(this@MainActivity, config.startUrl)) },
+                            onLicences = { showLicences = true },
+                        )
+                    }
                 }
             }
         }
