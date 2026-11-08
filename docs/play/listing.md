@@ -18,7 +18,7 @@ Not used, on purpose: the insurance and "Licence to Operate" pages (linked from 
 
 ## What the app does (verified in the code)
 
-- One screen, titled RiskMandate, with a button "Open riskmandate.ai" (`app/src/main/java/ai/riskmandate/app/HomeScreen.kt`) that opens the site in a Custom Tab, or a browser if none supports Custom Tabs (`Browser.kt`). It only opens HTTPS pages on riskmandate.ai or its subdomains (`Links.kt`).
+- One screen, titled RiskMandate, with a button "Open riskmandate.ai" (`app/src/main/java/ai/riskmandate/app/HomeScreen.kt`) that opens the site in a Custom Tab, or a browser if none supports Custom Tabs (`Browser.kt`). It only opens HTTPS pages on riskmandate.ai or www.riskmandate.ai (`Links.kt`).
 - A "Device" section says whether the device is managed by an organisation (fully managed, work profile, or not detected) and shows an optional device label (`DeviceStatus.kt`).
 - An organisation's device management can set the page the app opens (`start_url`) and a device label (`device_label`) as managed configuration (`ManagedConfig.kt`, `app/src/main/res/xml/app_restrictions.xml`).
 - Shows the build version. Needs INTERNET only. No accounts, no data collected.
