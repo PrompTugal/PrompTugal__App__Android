@@ -16,7 +16,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        // PROVISIONAL: the application ID is Dinis's decision and cannot change once on Google Play.
+        // Decided by Dinis (8 Nov 2026). Fixed for ever once on Google Play.
         applicationId = "ai.riskmandate.app"
         minSdk = 26
         targetSdk = 35

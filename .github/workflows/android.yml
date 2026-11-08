@@ -43,6 +43,12 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
 
+      - name: Cache Robolectric's Android runtime (about 150 MB, fetched by the tests)
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('app/build.gradle.kts', 'app/src/test/resources/robolectric.properties') }}
+
       - name: Unit tests and lint
         run: ./gradlew --no-daemon testDebugUnitTest lintDebug
 
