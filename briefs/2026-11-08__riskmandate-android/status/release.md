@@ -34,3 +34,6 @@ Nothing.
 
 ## Update: R-rel-1 (security.android, low)
 `scripts/ci-licences.sh` now requires every licence of a multi-licence artifact to be Apache-2.0, MIT or BSD; otherwise the artifact must be in `scripts/licences-allow.txt` with a reason. Checked on a doctored table (Apache+GPL and Apache+EPL fail; MIT+Apache passes; allow-list entries clear them); real run: 84 artifacts pass. Merged origin/dev first; gate, actionlint and secret-scan pass.
+
+## Update: instrumented SmokeTest in the emulator job
+The `smoke` job now runs `scripts/emulator-checks.sh` on the one emulator: the release-APK launch check, then `./gradlew connectedDebugAndroidTest` (app.android's `SmokeTest`), uninstalling the release APK in between (signature mismatch otherwise). Debug and test APKs are built before the emulator boots; Android test reports are in `smoke-<run>`. Budget: job timeout 40 min, estimated 10 to 15 min per attempt (not measured). Verified here: `assembleDebugAndroidTest` builds, actionlint, gate pass. Not run: the emulator part (no KVM).

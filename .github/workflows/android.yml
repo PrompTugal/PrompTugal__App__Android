@@ -259,7 +259,7 @@ jobs:
     name: smoke (emulator)
     needs: release
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -267,6 +267,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      # Build the debug and instrumented APKs before the emulator starts, so emulator minutes are not
+      # spent compiling. connectedDebugAndroidTest then only installs and runs them.
+      - name: Build the instrumented test APKs
+        run: ./gradlew --no-daemon --console=plain assembleDebug assembleDebugAndroidTest
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -313,7 +320,7 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 400
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          script: bash scripts/smoke-test.sh "$SMOKE_APK" smoke-out/1
+          script: bash scripts/emulator-checks.sh "$SMOKE_APK" smoke-out/1
 
       - name: Smoke test (attempt 2, only if the first failed)
         id: smoke2
@@ -328,14 +335,17 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 400
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          script: bash scripts/smoke-test.sh "$SMOKE_APK" smoke-out/2
+          script: bash scripts/emulator-checks.sh "$SMOKE_APK" smoke-out/2
 
       - name: Upload screenshot, UI dump and logcat
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: smoke-${{ github.run_number }}
-          path: smoke-out/
+          path: |
+            smoke-out/
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
           if-no-files-found: ignore
           retention-days: 14
 
@@ -352,6 +362,7 @@ jobs:
           {
             echo "## smoke (run ${{ github.run_number }})"
             echo "- installed: ${HOW:-unknown}"
-            echo "- home screen on an API 34 x86_64 emulator: $result"
+            echo "- release APK launch and instrumented SmokeTest on an API 34 x86_64 emulator: $result"
+            cat smoke-out/*/result.txt 2>/dev/null | sed 's/^/  - /'
             echo "- screenshot, UI dump and logcat: artifact smoke-${{ github.run_number }}"
           } >> "$GITHUB_STEP_SUMMARY"
