@@ -17,3 +17,6 @@ keystore.properties
 google-services.json
 .credentials/
 .sg-send/
+
+# M2 device outputs (enrolment tokens, web tokens): never committed
+devices/out/
