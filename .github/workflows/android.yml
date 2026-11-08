@@ -27,7 +27,8 @@ env:
 
 # Third-party actions are pinned by full commit SHA, the tag is in the comment.
 # actions/checkout v4.2.2, actions/setup-java v4.7.1, gradle/actions v4.4.4,
-# actions/upload-artifact v4.6.2, actions/cache v4.2.3, r0adkll/upload-google-play v1.1.3.
+# actions/upload-artifact v4.6.2, actions/download-artifact v4.3.0, actions/cache v4.2.3,
+# r0adkll/upload-google-play v1.1.3, reactivecircus/android-emulator-runner v2.37.0.
 jobs:
   check:
     name: check (tests and lint)
@@ -52,6 +53,10 @@ jobs:
       - name: Unit tests and lint
         run: ./gradlew --no-daemon testDebugUnitTest lintDebug
 
+      # Fails if a runtime dependency is not Apache-2.0, MIT or BSD (exceptions: scripts/licences-allow.txt).
+      - name: Dependency licence gate
+        run: bash scripts/ci-licences.sh
+
       - name: Upload test and lint reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -62,6 +67,25 @@ jobs:
             app/build/reports/lint-results-debug.*
             app/build/test-results/
           if-no-files-found: warn
+          retention-days: 14
+
+      # Robolectric screenshots, when the tests write them (app/build/screenshots/).
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: app/build/screenshots/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload the licence list
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: licences-${{ github.run_number }}
+          path: docs/security/licences.md
+          if-no-files-found: ignore
           retention-days: 14
 
       - name: Summary
@@ -91,6 +115,8 @@ jobs:
       PLAY_TRACK: ${{ github.event_name == 'workflow_dispatch' && inputs.play_track || 'internal' }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0   # full history and tags: the release notes list commits since the last release tag
 
       - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
@@ -98,6 +124,11 @@ jobs:
           java-version: '17'
 
       - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      - name: Release notes (commit subjects since the last release tag)
+        run: |
+          bash scripts/release-notes.sh "$VERSION_NAME" > "$RUNNER_TEMP/release-notes.md"
+          cat "$RUNNER_TEMP/release-notes.md"
 
       - name: Decode the upload key
         if: env.HAS_UPLOAD_KEY == 'true'
@@ -150,7 +181,7 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/fad.json"
           .github/firebase/node_modules/.bin/firebase appdistribution:distribute "out/riskmandate-$VERSION_NAME.apk" \
             --app "$FIREBASE_APP_ID" --groups team \
-            --release-notes "RiskMandate $VERSION_NAME from ${GITHUB_SHA::7}: $(git log -1 --pretty=%s)"
+            --release-notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Write the Play service account
         if: env.HAS_PLAY == 'true' && env.HAS_UPLOAD_KEY == 'true'
@@ -184,7 +215,7 @@ jobs:
           gh release create "v$VERSION_NAME" "out/riskmandate-$VERSION_NAME.apk" \
             --target "$GITHUB_SHA" --prerelease \
             --title "RiskMandate $VERSION_NAME" \
-            --notes "Built from ${GITHUB_SHA::7} on dev. Signed with the upload key."
+            --notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Remove the keys
         if: always()
@@ -218,4 +249,109 @@ jobs:
             echo "- Google Play (${PLAY_TRACK}, draft): $(reason "$PLAY_OUTCOME" "$HAS_PLAY" 'PLAY_SERVICE_ACCOUNT_JSON secret' any)"
             echo "- GitHub release: $(reason "$GH_OUTCOME" true '' push)"
             echo "- artifact: riskmandate-${VERSION_NAME}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Emulator smoke test. A separate job, after `release`, so an emulator that fails to boot never blocks
+  # the release job (nothing needs this job). It installs the release APK the release job built (signed
+  # when the upload key exists; otherwise signed here with a throwaway key so the minified build is the
+  # one tested) and asserts the home screen appears. Flakiness: see docs/ci.md.
+  smoke:
+    name: smoke (emulator)
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: riskmandate-${{ env.VERSION_NAME }}
+          path: apk
+
+      - name: Make the APK installable
+        id: apk
+        run: |
+          apk=$(ls apk/*.apk | head -1)
+          case "$apk" in
+            *-unsigned.apk)
+              # No upload key yet: align and sign with a throwaway key made here (never reused, not a secret).
+              bt=$(ls -d "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/* | sort -V | tail -1)
+              keytool -genkeypair -keystore "$RUNNER_TEMP/smoke.jks" -alias smoke -keyalg RSA -keysize 2048 \
+                -validity 2 -storepass smoketest -keypass smoketest -dname "CN=ci smoke test" >/dev/null
+              "$bt/zipalign" -p -f 4 "$apk" "$RUNNER_TEMP/aligned.apk"
+              "$bt/apksigner" sign --ks "$RUNNER_TEMP/smoke.jks" --ks-pass pass:smoketest \
+                --out "$RUNNER_TEMP/smoke.apk" "$RUNNER_TEMP/aligned.apk"
+              apk="$RUNNER_TEMP/smoke.apk"
+              echo "how=unsigned release APK, signed with a throwaway key" >> "$GITHUB_OUTPUT" ;;
+            *) echo "how=release APK as built (signed with the upload key)" >> "$GITHUB_OUTPUT" ;;
+          esac
+          echo "path=$apk" >> "$GITHUB_OUTPUT"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Two attempts, each a fresh emulator boot: an emulator that does not boot or a first-launch ANR
+      # is the usual flake, an app that really fails fails both times.
+      - name: Smoke test (attempt 1)
+        id: smoke1
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
+        env:
+          SMOKE_APK: ${{ steps.apk.outputs.path }}
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          disable-animations: true
+          emulator-boot-timeout: 400
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/smoke-test.sh "$SMOKE_APK" smoke-out/1
+
+      - name: Smoke test (attempt 2, only if the first failed)
+        id: smoke2
+        if: steps.smoke1.outcome == 'failure'
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
+        env:
+          SMOKE_APK: ${{ steps.apk.outputs.path }}
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          disable-animations: true
+          emulator-boot-timeout: 400
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/smoke-test.sh "$SMOKE_APK" smoke-out/2
+
+      - name: Upload screenshot, UI dump and logcat
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: smoke-${{ github.run_number }}
+          path: smoke-out/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Summary
+        if: always()
+        env:
+          HOW: ${{ steps.apk.outputs.how }}
+          S1: ${{ steps.smoke1.outcome }}
+          S2: ${{ steps.smoke2.outcome }}
+        run: |
+          result=PASSED
+          if [ "$S1" != success ] && [ "$S2" != success ]; then result="FAILED (both attempts)"
+          elif [ "$S1" != success ]; then result="passed on the second attempt (the first was a flake or a real intermittent failure: look at artifact smoke-${{ github.run_number }})"; fi
+          {
+            echo "## smoke (run ${{ github.run_number }})"
+            echo "- installed: ${HOW:-unknown}"
+            echo "- home screen on an API 34 x86_64 emulator: $result"
+            echo "- screenshot, UI dump and logcat: artifact smoke-${{ github.run_number }}"
           } >> "$GITHUB_STEP_SUMMARY"

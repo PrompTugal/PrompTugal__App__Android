@@ -1,0 +1,3 @@
+# Exceptions to the CI licence gate (scripts/ci-licences.sh): one "group:artifact" per line.
+# Every entry needs a reason and who agreed (security.android reviews this file).
+# Empty on purpose: the gate allows Apache-2.0, MIT and BSD only.
