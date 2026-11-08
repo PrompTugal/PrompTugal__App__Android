@@ -22,7 +22,7 @@ RiskMandate is the app we learn on (Dinis, 8 November 2026); the PrompTugal app 
 ## Open source and for sale
 At Dinis's word (8 November 2026): these apps are open source and will be put for sale eventually. What follows from that:
 - The code is Apache 2.0 (`LICENSE`). Anyone may build it; what is sold is the signed, supported build on the store. Nothing secret may ever be in the repository or its history: keys, service accounts and tester lists stay in GitHub secrets and Google's consoles.
-- Publish private builds through **Play Console** (internal testing, or a private app targeted to our managed Google Play organisation), never through the managed Play iframe alone: Google's docs say an app published only through the iframe can never be made public, which would close the route to selling it.
+- **Correction (8 November, from Google's Managed Google Play Help, answer 6145139):** an app restricted to organisations in Play Console stays private for ever; a public listing then needs a new package name. The iframe-only route cannot be made public either. So the organisation build must not use `ai.riskmandate.app`: recommended, a separate package ID for the private build (an `applicationIdSuffix` flavour) and `ai.riskmandate.app` kept for the public, paid app. Dinis decides (docs/play/README.md, step 8).
 - Selling on Google Play needs a payments (merchant) profile on the Play Console account, owned by the selling company.
 - The names and icons (RiskMandate, PrompTugal) are best kept as trademarks, outside the code licence, so a fork cannot sell itself as the original. A `NOTICE`/`TRADEMARKS` file says so once Dinis confirms.
 - Every dependency must have a licence compatible with Apache 2.0 and with sale; CI should list them (a follow-up).
