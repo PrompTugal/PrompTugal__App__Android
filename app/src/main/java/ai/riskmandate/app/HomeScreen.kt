@@ -13,6 +13,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ object HomeTags {
     const val DEVICE_MANAGEMENT = "device_management"
     const val DEVICE_LABEL = "device_label"
     const val MESSAGE = "message"
+    const val LICENCES = "licences"
 }
 
 @Composable
@@ -35,6 +37,7 @@ fun HomeScreen(
     device: DeviceStatus,
     onOpen: () -> Unit,
     message: String? = null,
+    onLicences: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -84,7 +87,10 @@ fun HomeScreen(
                 "RiskMandate: this app opens riskmandate.ai.",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Spacer(Modifier.height(16.dp))
+            TextButton(onClick = onLicences, modifier = Modifier.testTag(HomeTags.LICENCES)) {
+                Text("Open source licences")
+            }
+            Spacer(Modifier.height(8.dp))
             Text(
                 "Build $version",
                 style = MaterialTheme.typography.bodySmall,
