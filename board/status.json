@@ -1,7 +1,7 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-08T23:35Z",
-  "state": "Five sessions running on their work/<role> branches; conductor merges PASS-reviewed, green branches onto dev hourly. M1 waits on the Firebase project and secrets; M2 on the route and the private build's package ID.",
+  "updated": "2026-11-08T23:45Z",
+  "state": "Dinis is setting up Firebase and the secrets now (23:45 UTC); the first signed build to the tablet follows.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
@@ -35,6 +35,7 @@
     "Application ID: ai.riskmandate.app (Dinis, 8 Nov 2026 ~21:35 UTC). Final: fixed once on Google Play.",
     "Order (Dinis, 8 Nov 2026 ~21:40 UTC): RiskMandate is the first app and the one we learn Android development and publishing on; the PrompTugal app comes after it. Lessons go in docs/lessons.md so the PrompTugal app starts from them.",
     "Open source and for sale (Dinis, 8 Nov 2026 ~21:45 UTC): all these apps are open source (Apache 2.0, the repo's LICENSE) and will be put for sale eventually.",
-    "Five sessions started at Dinis's word (8 Nov 2026 ~23:07 UTC): app, release, devices, play, security, on Sonnet; board/sessions.json."
+    "Five sessions started at Dinis's word (8 Nov 2026 ~23:07 UTC): app, release, devices, play, security, on Sonnet; board/sessions.json.",
+    "Google Cloud and Firebase project 'riskmandate-android' (ID riskmandate-android), created by Dinis as agent@riskmandate.ai under the thecyberboardroom.com Google Cloud organisation, which holds the riskmandate.ai Workspace (Dinis, 8 Nov 2026 ~23:45 UTC). Test tablet: Dinis's, signed in as agent@riskmandate.ai (M1 device via Firebase; already set up, so not fully managed without a factory reset)."
   ]
 }
