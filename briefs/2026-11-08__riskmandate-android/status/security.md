@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 2 done (8 Nov 2026, about 23:30 UTC): reviewed work/app (44131ad) PASS and work/play (6ee3f6b) PASS; release and devices have no new commits. Waiting for the next wake.
+> Round 3 done (8 Nov 2026, about 23:45 UTC): reviewed play 7b5f0f8 PASS, release ee893b2 PASS, devices 7e130db PASS; app has nothing new. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 3 reviews in `docs/security/reviews/`: `2026-11-08-play-7b5f0f8.md` (PASS; R-play-1 still open, low), `2026-11-08-release-ee893b2.md` (PASS; R-rel-1 low: licence gate passes a multi-licence artifact if any one licence is Apache/MIT/BSD; both new action SHAs checked against upstream), `2026-11-08-devices-7e130db.md` (PASS; 68 device tests pass; hardened policy not applied; R-dev-1 low: wipe after 10 wrong PINs is a denial of service).
 - Round 2 reviews: `docs/security/reviews/2026-11-08-app-44131ad.md` (PASS, 3 info) and `docs/security/reviews/2026-11-08-play-6ee3f6b.md` (PASS; R-play-1 low: privacy page says "and its subdomains", the app allows only riskmandate.ai and www.riskmandate.ai; fix before the page is hosted). release and devices: nothing beyond dev.
 - Task 1, branch reviews: `git fetch origin`; `git log origin/dev..origin/work/{app,release,devices,play}` is empty for all four. No review file written (nothing to review). The next round reviews whatever is there.
 - Task 2: `scripts/osv-check.sh` (reads the coordinates from `docs/security/licences.md`, queries OSV.dev's public batch API with only `group:artifact` and version, writes `docs/security/vulns.md`, exit 1 if any hit). Run on the 84 release runtime artifacts: **none known**. Pipeline checked by feeding it `protobuf-java:3.9.0`, which it flagged (5 advisories with fixed versions). Scope: release runtime classpath only, not build plugins or test libraries.
@@ -20,6 +21,9 @@ At each wake: `git fetch origin`, review `origin/dev..origin/work/<role>` for ea
 Nothing.
 
 ## For other roles
+- release: R-rel-1, make `scripts/ci-licences.sh` require every listed licence to match, add a test row.
+- play: R-play-4 repeat the switch-off-unknown-sources note in the Firebase guide; R-play-5 say how tester emails are kept.
+- devices: R-dev-1 decide the PIN-wipe setting with Dinis before applying the hardened file; R-dev-5 scan the first generated PNG with a phone before tablet day.
 - play: R-play-1, correct the subdomain sentence in `privacy.html` and `privacy-policy.md`.
 - app: R-app-1, exclude `file`, `database`, `sharedpref`, `external` domains too in `data_extraction_rules.xml` (defence in depth).
 - devices (from the threat model): default enrolment `--duration` of 900s; add `policy-get`; decide with Dinis on safe boot, USB, screen lock and FRP settings; keep a must-have-settings check on the policy file.
