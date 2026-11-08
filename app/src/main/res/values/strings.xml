@@ -22,6 +22,16 @@
     <string name="licences_back_description">Back to the home screen</string>
     <string name="licences_apache_heading">Apache License, Version 2.0 (full text)</string>
 
+    <string name="home_diagnostics">Diagnostics</string>
+    <string name="message_failed">Something went wrong opening riskmandate.ai in a browser. Try again, or open it in your browser yourself.</string>
+    <string name="message_offline">This device seems to be offline. Your browser may not be able to load riskmandate.ai until it is connected.</string>
+
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_intro">For testers and device set-up. It holds no personal data and no device identifiers.</string>
+    <string name="diagnostics_copy">Copy</string>
+    <string name="diagnostics_copied">Copied to the clipboard.</string>
+    <string name="diagnostics_copy_failed">Could not copy to the clipboard.</string>
+
     <string name="restriction_start_url_title">Start page</string>
     <string name="restriction_start_url_description">The riskmandate.ai page the app opens (HTTPS on riskmandate.ai only; anything else falls back to https://riskmandate.ai/).</string>
     <string name="restriction_device_label_title">Device label</string>

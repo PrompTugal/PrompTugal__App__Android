@@ -1,6 +1,6 @@
 # app.android status
 
-> First task list done (tablets, theming, accessibility, pt-PT, screenshots, lint, full Apache text). Gate green. Stopped.
+> Second task list done (diagnostics screen, androidTest smoke test, offline behaviour, size and startup). Gate green. Stopped.
 
 ## Doing
 Nothing.
@@ -16,6 +16,12 @@ Nothing.
 - Licences screen shows the full Apache 2.0 text (`res/raw/apache_license_2_0.txt`, copy of `/LICENSE`, a test checks they are identical) plus the notice and library list.
 - Gate `./gradlew testDebugUnitTest lintDebug assembleRelease bundleRelease`: green.
 
+- Diagnostics screen (home > Diagnostics): version name and code, application ID, build type, Android release and API, make and model, managed state, managed configuration (effective `start_url`, whether it was refused, `device_label`), installer package (`getInstallSourceInfo` on API 30+, `getInstallerPackageName` before; Google Play, Firebase App Distribution, package installer, or unknown for adb). Copy button puts the same text on the clipboard as plain text. No IMEI, serial, Android ID or account (a test checks the collected text). The report text is English by design (pasted into tickets); the screen chrome is in English and pt-PT. "start_url as received" is shown as the effective value plus the refused flag; the raw refused string is not shown.
+- Screen state is now saved, so rotating a tablet on Licences or Diagnostics no longer drops back to Home.
+- No network: opening can no longer crash (all launch failures are caught; new `FAILED` result with its own message). If the system reports no validated internet, the home screen says so plainly under the button while the browser still opens and shows its own error. This adds the normal permission `ACCESS_NETWORK_STATE` (no network data read); say if you would rather not have it.
+- androidTest smoke test `app/src/androidTest/.../SmokeTest.kt` (home, licences, diagnostics). Compiles in the gate via `assembleDebugAndroidTest`; not run here (no emulator).
+- Size and start: release APK 929 KB (unsigned, minified and resource-shrunk), AAB 2.1 MB. R8 full mode is already the default in AGP 8.7 (no `fullMode=false` anywhere), so nothing to switch on and the gate is green. JVM start: `StartupTest` creates MainActivity in about 60 ms warm under Robolectric (printed as `STARTUP_JVM_MS`, asserted under 3 s). That is not a device cold start; measure that on a tablet.
+
 ## Next
 Nothing that does not wait on others.
 
@@ -24,6 +30,7 @@ Nothing that does not wait on others.
 
 ## For other roles
 - play: screenshots as above; the Open button text is the only action, pt-PT listing text can reuse `values-pt-rPT/strings.xml`.
+- release: the emulator job runs `./gradlew connectedDebugAndroidTest` (module `app`, class `ai.riskmandate.app.SmokeTest`); needs an API 30+ emulator image. Compile check: `./gradlew assembleDebugAndroidTest`.
 - release: the dependency bump above touches `build.gradle.kts` (root) plugin versions; CI may want to publish `app/build/screenshots/` as an artifact.
 
 ## For Dinis
