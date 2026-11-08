@@ -27,7 +27,7 @@ env:
 
 # Third-party actions are pinned by full commit SHA, the tag is in the comment.
 # actions/checkout v4.2.2, actions/setup-java v4.7.1, gradle/actions v4.4.4,
-# actions/upload-artifact v4.6.2, r0adkll/upload-google-play v1.1.3.
+# actions/upload-artifact v4.6.2, actions/cache v4.2.3, r0adkll/upload-google-play v1.1.3.
 jobs:
   check:
     name: check (tests and lint)
@@ -80,6 +80,8 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # The GitHub Environment `release` holds the release secrets and can require a reviewer (docs/ci.md).
+    environment: release
     permissions:
       contents: write   # to create the GitHub release
     env:
@@ -102,6 +104,7 @@ jobs:
         env:
           UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
         run: |
+          umask 077
           echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
           echo "UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
 
@@ -140,9 +143,12 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
         run: |
+          umask 077
+          # firebase-tools comes from .github/firebase/package-lock.json (integrity hashes), no install scripts.
+          npm ci --ignore-scripts --no-audit --no-fund --prefix .github/firebase
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/fad.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/fad.json"
-          npx --yes firebase-tools@13.29.1 appdistribution:distribute "out/riskmandate-$VERSION_NAME.apk" \
+          .github/firebase/node_modules/.bin/firebase appdistribution:distribute "out/riskmandate-$VERSION_NAME.apk" \
             --app "$FIREBASE_APP_ID" --groups team \
             --release-notes "RiskMandate $VERSION_NAME from ${GITHUB_SHA::7}: $(git log -1 --pretty=%s)"
 
@@ -151,6 +157,7 @@ jobs:
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
+          umask 077
           printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/play.json"
           chmod 600 "$RUNNER_TEMP/play.json"
 

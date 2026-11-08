@@ -37,3 +37,4 @@ devices/out/
 upload.jks*
 fad.json
 play.json
+.github/firebase/node_modules/

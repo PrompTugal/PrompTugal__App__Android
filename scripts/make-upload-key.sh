@@ -4,13 +4,17 @@
 # Prints nothing secret: it writes upload.jks and upload.jks.b64 next to this script's working dir,
 # then tells you which repository secrets to add. Keep a backup of upload.jks off this machine.
 set -euo pipefail
+umask 077   # upload.jks and upload.jks.b64 are readable by you only
 command -v keytool >/dev/null || { echo "keytool not found (install a JDK 17)"; exit 1; }
 [ -e upload.jks ] && { echo "upload.jks already exists here; not overwriting"; exit 1; }
 read -r -s -p "Keystore password (min 6 chars): " P1; echo
 read -r -s -p "Again: " P2; echo
 [ "$P1" = "$P2" ] || { echo "passwords differ"; exit 1; }
+# The password goes by environment variable, not on the command line (visible in ps).
+export KS_PASS="$P1"
 keytool -genkeypair -keystore upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 10000 \
-  -storepass "$P1" -keypass "$P1" -dname "CN=PrompTugal Android upload key" >/dev/null
+  -storepass:env KS_PASS -keypass:env KS_PASS -dname "CN=PrompTugal Android upload key" >/dev/null
+unset KS_PASS
 base64 < upload.jks | tr -d '\n' > upload.jks.b64
 unset P1 P2
 cat <<MSG
