@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.browser.customtabs.CustomTabsClient
 import androidx.browser.customtabs.CustomTabsIntent
 
@@ -41,9 +42,10 @@ object Browser {
         }
     }
 
-    fun message(result: OpenResult): String? = when (result) {
+    @StringRes
+    fun message(result: OpenResult): Int? = when (result) {
         OpenResult.CUSTOM_TAB, OpenResult.BROWSER -> null
-        OpenResult.NO_BROWSER -> "No web browser is installed on this device, so riskmandate.ai cannot be opened."
-        OpenResult.REFUSED -> "That address is not on riskmandate.ai, so the app will not open it."
+        OpenResult.NO_BROWSER -> R.string.message_no_browser
+        OpenResult.REFUSED -> R.string.message_refused
     }
 }
