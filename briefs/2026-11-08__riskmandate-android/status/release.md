@@ -1,6 +1,6 @@
 # release.android status
 
-> First task list done on `work/release`; the gate passes. Nothing could be run on GitHub, so the workflow changes are untested live (see Untested). Stopped; waiting for the conductor.
+> First task list and R-rel-1 done on `work/release`; the gate passes. Workflow changes remain untested live. Stopped; waiting for the conductor.
 
 ## Doing
 Nothing.
@@ -31,3 +31,6 @@ Nothing.
 
 ## For Dinis
 - None that block this work. Optional: say if you want the smoke test on pull requests too (costs a second build), and whether Dependabot PRs may target `dev` as proposed.
+
+## Update: R-rel-1 (security.android, low)
+`scripts/ci-licences.sh` now requires every licence of a multi-licence artifact to be Apache-2.0, MIT or BSD; otherwise the artifact must be in `scripts/licences-allow.txt` with a reason. Checked on a doctored table (Apache+GPL and Apache+EPL fail; MIT+Apache passes; allow-list entries clear them); real run: 84 artifacts pass. Merged origin/dev first; gate, actionlint and secret-scan pass.

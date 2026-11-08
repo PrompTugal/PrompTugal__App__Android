@@ -23,7 +23,13 @@ for line in open(table, encoding='utf-8'):
     coord, name, url = cols[0], cols[1], cols[2]
     ga = ':'.join(coord.split(':')[:2])
     if ga in allow: continue
-    if name == 'UNKNOWN' or not (OK.search(name) or OK.search(url)):
+    # licences.sh joins several licences with '; ': EVERY one must be allowed (not just one).
+    names = [x.strip() for x in name.split(';') if x.strip()]
+    urls = [x.strip() for x in url.split(';') if x.strip()]
+    def allowed(i, nm):
+        if OK.search(nm): return True
+        return len(names) == len(urls) and bool(OK.search(urls[i]))
+    if name == 'UNKNOWN' or not names or not all(allowed(i, n) for i, n in enumerate(names)):
         bad.append(f'{coord}: {name}')
 if n == 0:
     sys.exit('licence gate: no dependencies found in the table (did licences.sh fail to resolve?)')
