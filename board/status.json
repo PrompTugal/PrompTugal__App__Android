@@ -1,12 +1,13 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-08T22:25Z",
+  "updated": "2026-11-08T22:55Z",
   "state": "M1 code complete on dev and CI green (run 7); distribution waits on the Firebase project and the secrets. M2 tooling ready; route waits on Dinis (AMAPI terms). Workers now: Play Console groundwork, security and licence review.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
     "devices/: AMAPI CLI (27 tests), fully managed policy, M2 runbook",
-    "docs/ci.md, docs/lessons.md; application ID decided (ai.riskmandate.app)"
+    "docs/ci.md, docs/lessons.md; application ID decided (ai.riskmandate.app)",
+    "Security review (no secrets; 84 libraries all Apache-2.0); High A-1 URL allow-list bypass fixed (exact riskmandate.ai and www, 26 tests); findings A-2 to A-12 fixed; licences screen; Play Console groundwork in docs/play/. 52 app tests, 35 devices tests."
   ],
   "next": [
     "merge the Play Console groundwork (docs/play/) and the security review and licence list when they pass",
@@ -21,7 +22,11 @@
     "Dinis: make dev the default branch of the repository, if you agree, so CI and readers land on it.",
     "Dinis: AMAPI permissible usage: Google lists in-house-only solutions as not permitted; confirm the route (test on a Gmail-bound enterprise, or Workspace/Cloud Identity device management). See devices/README.md.",
     "Dinis: which account owns the managed Google Play enterprise (Gmail, or a Workspace/Cloud Identity domain); factory reset protection, screen lock and kiosk mode for the policy.",
-    "Dinis: for sale on Google Play, the Play Console account needs a payments (merchant) profile, owned by the selling company; and whether the name and icon are kept as trademarks outside the Apache 2.0 licence."
+    "Dinis: for sale on Google Play, the Play Console account needs a payments (merchant) profile, owned by the selling company; and whether the name and icon are kept as trademarks outside the Apache 2.0 licence.",
+    "Dinis: the package plan for the private M2 build: recommended B, a separate ID (e.g. ai.riskmandate.app.managed) for the organisation-private build, keeping ai.riskmandate.app for the public paid app (an org-private Play app can never go public). docs/play/README.md step 8.",
+    "Dinis: create the GitHub Environment 'release' (optionally with you as required reviewer) and put the secrets in it, not at repo level (docs/ci.md).",
+    "Dinis: the copyright holder for the Apache 2.0 notice, and whether to adopt docs/security/NOTICE.draft.",
+    "Dinis: for the Play listing: owner of the account (also the publisher in the privacy policy), free or paid at creation, a role contact email, the privacy policy's public URL, approval of the listing claims (docs/play/)."
   ],
   "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
   "decisions": [
