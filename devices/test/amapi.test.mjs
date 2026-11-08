@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   buildJwt, buildRequest, substitutePolicy, stripNotes, loadPolicy, main, redact, redactUrl, parseArgs,
-  API, TOKEN_URL, SCOPE, UsageError,
+  API, TOKEN_URL, SCOPE, UsageError, validateStartUrl, cleanDeviceLabel, safeSnippet,
 } from '../amapi.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -118,7 +118,7 @@ test('enrol request: defaults and options', () => {
   const r = buildRequest('enrol', { enterprise: ENT, policy: 'riskmandate' });
   assert.equal(r.method, 'POST');
   assert.equal(r.url, `${API}/${ENT}/enrollmentTokens`);
-  assert.deepEqual(r.body, { policyName: `${ENT}/policies/riskmandate`, duration: '3600s', allowPersonalUsage: 'PERSONAL_USAGE_DISALLOWED_USERLESS' });
+  assert.deepEqual(r.body, { policyName: `${ENT}/policies/riskmandate`, duration: '3600s', allowPersonalUsage: 'PERSONAL_USAGE_DISALLOWED_USERLESS', oneTimeOnly: true });
   const r2 = buildRequest('enrol', { enterprise: ENT, policy: 'riskmandate', duration: '600s', 'one-time': true, 'personal-usage': 'PERSONAL_USAGE_DISALLOWED' });
   assert.deepEqual(r2.body, { policyName: `${ENT}/policies/riskmandate`, duration: '600s', allowPersonalUsage: 'PERSONAL_USAGE_DISALLOWED', oneTimeOnly: true });
   assert.throws(() => buildRequest('enrol', { enterprise: ENT, policy: 'p', duration: '1h' }), /duration/);
@@ -278,4 +278,122 @@ test('an API error is reported with the URL redacted', async () => {
 test('redact helpers', () => {
   assert.deepEqual(redact({ value: 'x', qrCode: 'y', name: 'n', nested: [{ access_token: 'z' }] }), { value: '<redacted>', qrCode: '<redacted>', name: 'n', nested: [{ access_token: '<redacted>' }] });
   assert.ok(redactUrl(`${API}/enterprises?enterpriseToken=abc&projectId=p`).includes('enterpriseToken=<redacted>'));
+});
+
+// ---------- security review fixes (A-3, A-7, A-9, A-10) ----------
+
+test('A-3: enrolment tokens are one-time by default; --reusable opts out, with a warning', () => {
+  const d = buildRequest('enrol', { enterprise: ENT, policy: 'p' });
+  assert.equal(d.body.oneTimeOnly, true);
+  assert.deepEqual(d.warnings, []);
+  const r = buildRequest('enrol', { enterprise: ENT, policy: 'p', reusable: true });
+  assert.equal(r.body.oneTimeOnly, undefined);
+  assert.match(r.warnings[0], /any number of devices/);
+  assert.equal(buildRequest('enrol', { enterprise: ENT, policy: 'p', 'one-time': true }).body.oneTimeOnly, true);
+  assert.throws(() => buildRequest('enrol', { enterprise: ENT, policy: 'p', reusable: true, 'one-time': true }), /contradict/);
+  assert.equal(parseArgs(['enrol', '--reusable']).opts.reusable, true);
+});
+
+test('A-7: tokens come from the environment first; flags still work with a warning', () => {
+  const base = { project: 'p', name: 'n' };
+  const fromEnv = buildRequest('enterprise-create', base, { AMAPI_ENTERPRISE_TOKEN: 'ET-ENV', AMAPI_SIGNUP_TOKEN: 'signupUrls/CENV' });
+  const u = new URL(fromEnv.url);
+  assert.equal(u.searchParams.get('enterpriseToken'), 'ET-ENV');
+  assert.equal(u.searchParams.get('signupUrlName'), 'signupUrls/CENV');
+  assert.deepEqual(fromEnv.warnings, []);
+  const both = buildRequest('enterprise-create', { ...base, 'enterprise-token': 'ET-FLAG', 'signup-url-name': 'signupUrls/CFLAG' }, { AMAPI_ENTERPRISE_TOKEN: 'ET-ENV', AMAPI_SIGNUP_TOKEN: 'signupUrls/CENV' });
+  assert.equal(new URL(both.url).searchParams.get('enterpriseToken'), 'ET-ENV', 'env wins');
+  const flags = buildRequest('enterprise-create', { ...base, 'enterprise-token': 'ET-FLAG', 'signup-token': 'signupUrls/CFLAG' }, {});
+  assert.equal(new URL(flags.url).searchParams.get('enterpriseToken'), 'ET-FLAG');
+  assert.equal(flags.warnings.length, 2);
+  assert.throws(() => buildRequest('enterprise-create', base, {}), /signup URL name/);
+  assert.throws(() => buildRequest('enterprise-create', { ...base, 'signup-url-name': 's' }, {}), /enterprise token/);
+});
+
+test('A-7: a flag token draws a warning on stderr, never the token itself', async () => {
+  const r = await run(['enterprise-create', '--project', 'p', '--signup-url-name', 's', '--enterprise-token', 'SECRET-ENTERPRISE-TOKEN', '--name', 'n', '--dry-run'], { env: {} });
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stderr, /warning: --enterprise-token/);
+  assert.ok(!r.stderr.includes('SECRET-ENTERPRISE-TOKEN'));
+  const e = await run(['enterprise-create', '--project', 'p', '--name', 'n', '--dry-run'], { env: { AMAPI_ENTERPRISE_TOKEN: 'SECRET-ENTERPRISE-TOKEN', AMAPI_SIGNUP_TOKEN: 'signupUrls/C1' } });
+  assert.equal(e.code, 0, e.stderr);
+  assert.equal(e.stderr, '');
+  assert.ok(!e.stdout.includes('SECRET-ENTERPRISE-TOKEN'));
+});
+
+test('A-9: --start-url follows the app rule', () => {
+  for (const ok of ['https://riskmandate.ai/', 'https://www.riskmandate.ai/x?y=1#z', 'https://RiskMandate.ai:443/', 'https://riskmandate.ai']) {
+    assert.equal(validateStartUrl(ok), ok);
+  }
+  for (const bad of [
+    'http://riskmandate.ai/', 'https://evil.com/', 'https://riskmandate.ai.evil.com/', 'https://sub.riskmandate.ai/',
+    'https://riskmandate.ai@evil.com/', 'https://evil.com@riskmandate.ai/', 'https://riskmandate.ai\\@evil.com/', 'https://riskmandate.ai:8443/',
+    'https://riskmandate.ai/ x', 'https://riskmandate.ai/\n', 'https://evil.com/?https://riskmandate.ai/', 'javascript:alert(1)', 'not a url', '',
+  ]) {
+    assert.throws(() => validateStartUrl(bad), UsageError, bad);
+  }
+  assert.throws(() => buildRequest('policy-apply', { enterprise: ENT, policy: 'p', file: POLICY, package: PKG, 'start-url': 'https://evil.com/' }), /riskmandate\.ai/);
+  const ok = buildRequest('policy-apply', { enterprise: ENT, policy: 'p', file: POLICY, package: PKG, 'start-url': 'https://www.riskmandate.ai/' });
+  assert.ok(JSON.stringify(ok.body).includes('https://www.riskmandate.ai/'));
+});
+
+test('A-9: --device-label is trimmed, capped at 64 and free of control characters', () => {
+  assert.equal(cleanDeviceLabel('  lobby tablet  '), 'lobby tablet');
+  assert.equal(cleanDeviceLabel('x'.repeat(100)).length, 64);
+  assert.throws(() => cleanDeviceLabel('a\u0000b'), /control/);
+  assert.throws(() => cleanDeviceLabel('a\nb'), /control/);
+  assert.throws(() => cleanDeviceLabel('a\u202ab'), /control/);
+  assert.throws(() => cleanDeviceLabel('   '), /empty/);
+  const r = buildRequest('policy-apply', { enterprise: ENT, policy: 'p', file: POLICY, package: PKG, 'device-label': ` ${'y'.repeat(80)} ` });
+  assert.ok(JSON.stringify(r.body).includes('y'.repeat(64)) && !JSON.stringify(r.body).includes('y'.repeat(65)));
+});
+
+test('A-10: a non-JSON error body is shown as status plus a short redacted snippet', async () => {
+  const dir = tmpDir();
+  const body = `<html>denied token=SECRET-RAW-TOKEN Bearer SECRET-BEARER ${'A1b2'.repeat(10)} ${'x'.repeat(400)}</html>`;
+  const fetch = async (url) => (url === TOKEN_URL
+    ? { ok: true, status: 200, json: async () => ({ access_token: 'ya29.SECRET-ACCESS-TOKEN' }) }
+    : { ok: false, status: 502, text: async () => body });
+  const r = await run(['devices-list', '--enterprise', ENT], { env: { GOOGLE_APPLICATION_CREDENTIALS: writeSa(dir) }, fetch });
+  assert.equal(r.code, 1);
+  assert.match(r.stderr, /HTTP 502/);
+  assert.match(r.stderr, /non-JSON/);
+  for (const s of ['SECRET-RAW-TOKEN', 'SECRET-BEARER', 'A1b2'.repeat(10), 'x'.repeat(200)]) assert.ok(!r.stderr.includes(s), s.slice(0, 12));
+  assert.ok(r.stderr.length < 500);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('A-10: a 200 with a non-JSON body is an error, not silent success', async () => {
+  const dir = tmpDir();
+  const fetch = async (url) => (url === TOKEN_URL
+    ? { ok: true, status: 200, json: async () => ({ access_token: 'ya29.SECRET-ACCESS-TOKEN' }) }
+    : { ok: true, status: 200, text: async () => '<html>captive portal</html>' });
+  const r = await run(['devices-list', '--enterprise', ENT], { env: { GOOGLE_APPLICATION_CREDENTIALS: writeSa(dir) }, fetch });
+  assert.equal(r.code, 1);
+  assert.match(r.stderr, /non-JSON/);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('A-10: the out dir is tightened to 700 when it exists, and existing files are never overwritten', async () => {
+  const dir = tmpDir();
+  const out = path.join(dir, 'out');
+  fs.mkdirSync(out, { mode: 0o755 });
+  fs.chmodSync(out, 0o755);
+  const argv = ['enrol', '--enterprise', ENT, '--policy', 'riskmandate'];
+  const env = { GOOGLE_APPLICATION_CREDENTIALS: writeSa(dir), AMAPI_OUT_DIR: out };
+  const r = await run(argv, { env, fetch: fakeFetch([]) });
+  assert.equal(r.code, 0, r.stderr);
+  assert.equal(fs.statSync(out).mode & 0o077, 0, 'out dir is 700');
+  const before = fs.readdirSync(out).map((f) => [f, fs.readFileSync(path.join(out, f), 'utf8')]);
+  const again = await run(argv, { env, fetch: fakeFetch([]) });
+  assert.equal(again.code, 1);
+  assert.match(again.stderr, /already exists; not overwriting/);
+  assert.deepEqual(fs.readdirSync(out).map((f) => [f, fs.readFileSync(path.join(out, f), 'utf8')]), before);
+  // a pre-existing, world-readable file at the target name is refused, not reused
+  const victim = path.join(out, 'web-token-2026-11-08T21-00-00-000Z.json');
+  fs.writeFileSync(victim, 'old', { mode: 0o644 });
+  const w = await run(['web-token', '--enterprise', ENT, '--parent-frame-url', 'https://example.com/play'], { env, fetch: fakeFetch([]) });
+  assert.equal(w.code, 1);
+  assert.equal(fs.readFileSync(victim, 'utf8'), 'old');
+  fs.rmSync(dir, { recursive: true, force: true });
 });

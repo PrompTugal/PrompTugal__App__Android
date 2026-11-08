@@ -23,17 +23,20 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const USAGE = `amapi.mjs: Android Management API helper (M2). Every command accepts --dry-run.
 
   signup-url        --project <id> --callback <https url>
-  enterprise-create --project <id> --signup-url-name <signupUrls/...> --enterprise-token <t> --name <display>
-                    (--signup-token is accepted as an alias of --signup-url-name)
+  enterprise-create --project <id> --name <display> [--signup-url-name <signupUrls/...>]
+                    The enterprise token is read from AMAPI_ENTERPRISE_TOKEN and the signup URL name from
+                    AMAPI_SIGNUP_TOKEN (preferred: nothing in shell history or ps). The flags
+                    --enterprise-token and --signup-url-name / --signup-token still work, with a warning.
   policy-apply      --enterprise <enterprises/x> --policy <name> --file <policy.json> --package <appId>
                     [--start-url <url>] [--device-label <label>]
-  enrol             --enterprise <enterprises/x> --policy <name> [--duration 3600s] [--one-time]
+  enrol             --enterprise <enterprises/x> --policy <name> [--duration 3600s] [--reusable]
+                    (the token is one-time by default; --reusable enrols any number of devices until it expires)
                     [--personal-usage PERSONAL_USAGE_DISALLOWED_USERLESS|PERSONAL_USAGE_DISALLOWED]
   devices-list      --enterprise <enterprises/x> [--package <appId>]
   web-token         --enterprise <enterprises/x> --parent-frame-url <https url>
 
 Credentials: GOOGLE_APPLICATION_CREDENTIALS=<path to service-account json> (never in this repo).
-Outputs: devices/out/ (gitignored), or AMAPI_OUT_DIR.`;
+Outputs: devices/out/ (gitignored, mode 700), or AMAPI_OUT_DIR. Files are never overwritten.`;
 
 // ---------- small helpers ----------
 
@@ -45,7 +48,7 @@ export function b64url(input) {
 export function parseArgs(argv) {
   const [cmd, ...rest] = argv;
   const opts = {};
-  const BOOL = new Set(['dry-run', 'one-time', 'help']);
+  const BOOL = new Set(['dry-run', 'one-time', 'reusable', 'help']);
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
     if (!a.startsWith('--')) throw new UsageError(`unexpected argument: ${a}`);
@@ -88,6 +91,30 @@ function checkHttps(u, flag) {
   if (parsed.protocol !== 'https:') throw new UsageError(`${flag} must be https`);
 }
 
+// The same rule as the app (Links.isAllowed, as hardened): https, host exactly riskmandate.ai or
+// www.riskmandate.ai, no user info, no backslash, no whitespace, port only 443.
+const START_HOSTS = new Set(['riskmandate.ai', 'www.riskmandate.ai']);
+export function validateStartUrl(u) {
+  if (typeof u !== 'string' || !u) throw new UsageError('--start-url is empty');
+  if (/[\s\\@]/.test(u)) throw new UsageError('--start-url must not contain whitespace, a backslash or @');
+  let parsed;
+  try { parsed = new URL(u); } catch { throw new UsageError('--start-url is not a URL'); }
+  if (parsed.protocol !== 'https:') throw new UsageError('--start-url must be https');
+  if (parsed.username || parsed.password) throw new UsageError('--start-url must not carry a user name or password');
+  if (!START_HOSTS.has(parsed.hostname)) throw new UsageError('--start-url host must be exactly riskmandate.ai or www.riskmandate.ai');
+  if (parsed.port !== '' && parsed.port !== '443') throw new UsageError('--start-url may only use port 443');
+  return u;
+}
+
+// Trimmed, at most 64 characters, no control characters (mirrors the app's ManagedConfig).
+export function cleanDeviceLabel(l) {
+  if (typeof l !== 'string') throw new UsageError('--device-label must be text');
+  const t = l.trim().slice(0, 64).trim();
+  if (!t) throw new UsageError('--device-label is empty');
+  if (/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/.test(t)) throw new UsageError('--device-label must not contain control characters');
+  return t;
+}
+
 // ---------- policy ----------
 
 // Removes every key starting with "_" (notes in the policy file), at any depth.
@@ -104,6 +131,8 @@ export function stripNotes(v) {
 // Fills __PACKAGE__, __START_URL__ and __DEVICE_LABEL__ in string values; refuses leftovers.
 export function substitutePolicy(policy, { packageName, startUrl = DEFAULT_START_URL, deviceLabel = DEFAULT_DEVICE_LABEL }) {
   if (!packageName || !PACKAGE_RE.test(packageName)) throw new UsageError(`--package must be an Android application ID (got ${packageName})`);
+  startUrl = validateStartUrl(startUrl);
+  deviceLabel = cleanDeviceLabel(deviceLabel);
   const map = { __PACKAGE__: packageName, __START_URL__: startUrl, __DEVICE_LABEL__: deviceLabel };
   const walk = (v) => {
     if (Array.isArray(v)) return v.map(walk);
@@ -139,7 +168,7 @@ export function qrPayloadShape(tokenPlaceholder = '<enrollment-token>') {
 
 // ---------- request building (pure: no credentials, no network) ----------
 
-export function buildRequest(cmd, opts) {
+export function buildRequest(cmd, opts, env = {}) {
   switch (cmd) {
     case 'signup-url': {
       need(opts, 'project', 'callback');
@@ -147,12 +176,20 @@ export function buildRequest(cmd, opts) {
       return { method: 'POST', url: `${API}/signupUrls${q({ projectId: opts.project, callbackUrl: opts.callback })}` };
     }
     case 'enterprise-create': {
-      if (!opts['signup-url-name'] && opts['signup-token']) opts['signup-url-name'] = opts['signup-token'];
-      need(opts, 'project', 'signup-url-name', 'enterprise-token', 'name');
+      const warnings = [];
+      // Environment variables win over flags: a flag shows in shell history and in ps.
+      const enterpriseToken = env.AMAPI_ENTERPRISE_TOKEN || opts['enterprise-token'];
+      if (!env.AMAPI_ENTERPRISE_TOKEN && opts['enterprise-token']) warnings.push('--enterprise-token puts the token in shell history and ps; set AMAPI_ENTERPRISE_TOKEN instead');
+      const signupName = env.AMAPI_SIGNUP_TOKEN || opts['signup-url-name'] || opts['signup-token'];
+      if (!env.AMAPI_SIGNUP_TOKEN && (opts['signup-url-name'] || opts['signup-token'])) warnings.push('--signup-url-name / --signup-token on the command line: prefer AMAPI_SIGNUP_TOKEN');
+      need(opts, 'project', 'name');
+      if (!signupName) throw new UsageError('missing the signup URL name (AMAPI_SIGNUP_TOKEN or --signup-url-name)');
+      if (!enterpriseToken) throw new UsageError('missing the enterprise token (AMAPI_ENTERPRISE_TOKEN or --enterprise-token)');
       return {
         method: 'POST',
-        url: `${API}/enterprises${q({ projectId: opts.project, signupUrlName: opts['signup-url-name'], enterpriseToken: opts['enterprise-token'] })}`,
+        url: `${API}/enterprises${q({ projectId: opts.project, signupUrlName: signupName, enterpriseToken })}`,
         body: { enterpriseDisplayName: opts.name },
+        warnings,
       };
     }
     case 'policy-apply': {
@@ -170,9 +207,12 @@ export function buildRequest(cmd, opts) {
       if (!['PERSONAL_USAGE_DISALLOWED_USERLESS', 'PERSONAL_USAGE_DISALLOWED'].includes(usage)) {
         throw new UsageError('--personal-usage must be PERSONAL_USAGE_DISALLOWED_USERLESS or PERSONAL_USAGE_DISALLOWED (fully managed)');
       }
+      if (opts.reusable && opts['one-time']) throw new UsageError('--reusable and --one-time contradict each other');
+      // One-time by default: a leaked or photographed QR code enrols one device at most.
       const body = { policyName: `${opts.enterprise}/policies/${opts.policy}`, duration, allowPersonalUsage: usage };
-      if (opts['one-time']) body.oneTimeOnly = true;
-      return { method: 'POST', url: `${API}/${opts.enterprise}/enrollmentTokens`, body };
+      if (!opts.reusable) body.oneTimeOnly = true;
+      const warnings = opts.reusable ? [`--reusable: this token can enrol any number of devices until it expires (${duration}); keep the QR code private`] : [];
+      return { method: 'POST', url: `${API}/${opts.enterprise}/enrollmentTokens`, body, warnings };
     }
     case 'devices-list': {
       need(opts, 'enterprise');
@@ -205,6 +245,17 @@ export function redact(v) {
     return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, SECRET_KEYS.has(k) ? '<redacted>' : redact(x)]));
   }
   return v;
+}
+
+// A short, token-scrubbed snippet of a non-JSON error body: status context without leaking a secret.
+export function safeSnippet(text, max = 120) {
+  const t = String(text)
+    .replace(/(bearer\s+)[^\s"']+/gi, '$1<redacted>')
+    .replace(/([?&;"'\s](?:enterpriseToken|token|access_token|key|api_key|assertion)["']?\s*[=:]\s*["']?)[^\s&"',}]+/gi, '$1<redacted>')
+    .replace(/[A-Za-z0-9_\-.~+/=]{24,}/g, '<redacted>')
+    .replace(/[\u0000-\u001f\u007f-\u009f]+/g, ' ')
+    .trim();
+  return t.length > max ? `${t.slice(0, max)}...` : t;
 }
 
 export function redactUrl(u) {
@@ -255,11 +306,15 @@ async function send(req, token, fetchImpl) {
   const res = await fetchImpl(req.url, init);
   const text = await res.text();
   let data = {};
-  try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text.slice(0, 500) }; }
+  let json = true;
+  try { data = text ? JSON.parse(text) : {}; } catch { json = false; }
   if (!res.ok) {
-    const msg = data.error ? `${data.error.status || ''} ${data.error.message || ''}`.trim() : JSON.stringify(redact(data));
+    const msg = !json
+      ? `non-JSON response: ${safeSnippet(text)}`
+      : data.error ? `${data.error.status || ''} ${data.error.message || ''}`.trim() : JSON.stringify(redact(data));
     throw new Error(`${req.method} ${redactUrl(req.url)} failed (HTTP ${res.status}): ${msg}`);
   }
+  if (!json) throw new Error(`${req.method} ${redactUrl(req.url)} returned a non-JSON body (HTTP ${res.status}): ${safeSnippet(text)}`);
   return data;
 }
 
@@ -268,6 +323,7 @@ async function send(req, token, fetchImpl) {
 function outDir(env) {
   const d = env.AMAPI_OUT_DIR || path.join(HERE, 'out');
   fs.mkdirSync(d, { recursive: true, mode: 0o700 });
+  fs.chmodSync(d, 0o700); // mkdir's mode does not tighten a directory that already exists
   return d;
 }
 
@@ -276,7 +332,13 @@ function stamp(now) {
 }
 
 function writeSecretFile(file, content) {
-  fs.writeFileSync(file, content, { mode: 0o600 });
+  // 'wx': never overwrite or reuse a file (its old permissions would stay).
+  try {
+    fs.writeFileSync(file, content, { mode: 0o600, flag: 'wx' });
+  } catch (e) {
+    if (e.code === 'EEXIST') throw new Error(`${file} already exists; not overwriting (move it away and run again)`);
+    throw e;
+  }
   return file;
 }
 
@@ -293,7 +355,8 @@ export async function main(argv, io = {}) {
   try {
     ({ cmd, opts } = parseArgs(argv));
     if (!cmd || cmd === '--help' || cmd === 'help' || opts.help) { out(USAGE); return cmd ? 0 : 2; }
-    const req = buildRequest(cmd, opts);
+    const req = buildRequest(cmd, opts, env);
+    for (const w of req.warnings || []) err(`warning: ${w}`);
 
     if (opts['dry-run']) {
       const shown = { dryRun: true, command: cmd, method: req.method, url: redactUrl(req.url), headers: { authorization: 'Bearer <access-token>' } };

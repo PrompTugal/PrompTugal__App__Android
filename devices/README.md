@@ -11,7 +11,7 @@ What is here, built before the Google Cloud project, the Play Console account an
 | `test/amapi.test.mjs` | Tests (`node --test devices/test/*.test.mjs`). No network, no real credentials. |
 | `out/` | Created by the CLI; holds enrolment and web-token files. Gitignored. Never commit, share or paste it. |
 
-The application ID is provisional (`ai.riskmandate.app` today), so it is a parameter everywhere (`--package`), never hard-coded in the policy.
+The application ID is provisional (`ai.riskmandate.app` today) and the private organisation build should get its own package ID (see step 4), so it is a parameter everywhere (`--package <private-build-application-id>`), never hard-coded in the policy.
 
 Docs read for this, on 8 November 2026: the AMAPI discovery document (`androidmanagement.googleapis.com/$discovery/rest?version=v1`) for every field and enum, and developers.google.com/android/management pages `create-enterprise`, `service-account`, `provision-device`, `apps`, `permissible-usage`, `quickstart`, `policies/fully-managed-devices` and `manage-custom-apps`.
 
@@ -55,18 +55,19 @@ It prints a `name` (`signupUrls/C...`) and a `url`. Open the url in a browser an
 At the end Google redirects to the callback URL with `?enterpriseToken=...` appended. The callback page does not need to do anything; copy the token from the address bar. Then:
 
 ```
-node devices/amapi.mjs enterprise-create --project <project-id> \
-  --signup-url-name signupUrls/C... --enterprise-token <token> --name "PrompTugal Devices"
+read -r -s -p "enterprise token: " AMAPI_ENTERPRISE_TOKEN; export AMAPI_ENTERPRISE_TOKEN; echo
+export AMAPI_SIGNUP_TOKEN=signupUrls/C...
+node devices/amapi.mjs enterprise-create --project <project-id> --name "PrompTugal Devices"
 ```
 
-It prints `enterprises/LC0...`: the enterprise name used from now on. (The API calls the first value `signupUrlName`; `--signup-token` is accepted as an alias.)
+The two values go in environment variables, not on the command line, so they stay out of shell history and `ps`. `--enterprise-token`, `--signup-url-name` and `--signup-token` (an alias) still work but print a warning; the environment variable wins when both are set. It prints `enterprises/LC0...`: the enterprise name used from now on. (The API calls the first value `signupUrlName`.)
 
 ### 4. Publish RiskMandate as a private app (**Dinis**)
 
 The app must be on managed Google Play before a policy can install it. Two routes:
 
-**a. Play Console (recommended if a public listing may ever be wanted under a different ID, and needed anyway for Play App Signing):**
-1. In Play Console, create the app with the application ID chosen for it.
+**a. Play Console (needed anyway for Play App Signing):**
+1. In Play Console, create the app with the application ID chosen for the private organisation build. Per Google's Managed Google Play Help (answer 6145139), an app restricted to organisations stays private for ever; a public listing later needs a new package name. So this build should use its own package ID, separate from any future public app (for example an `applicationIdSuffix` flavour). Dinis decides; see `docs/play/README.md`, step 8.
 2. Enrol it in **Play App Signing** and upload the AAB that CI builds, signed with the upload key (`scripts/make-upload-key.sh`). Private apps are distributed through Play, so the AAB must be signed this way.
 3. Advanced settings, Managed Google Play: turn it on and add the enterprise's **Organization ID** (managed Google Play, Admin settings, Organization information). Publish to production; Google's docs put this route at about 2 hours, against about 10 minutes for the iframe.
 
@@ -76,14 +77,19 @@ node devices/amapi.mjs web-token --enterprise enterprises/LC0... --parent-frame-
 ```
 The web token and the iframe URL go to `devices/out/web-token-*.json`. The iframe only loads inside a page served at exactly `parentFrameUrl` over HTTPS, using Google's snippet (`apis.google.com/js/api.js`, then `gapi.iframes.getContext().openChild({url: 'https://play.google.com/work/embedded/search?token=<web token>&mode=SELECT', ...})`). In its **Private apps** tab, upload the AAB and a title. Per Google: this silently creates a Play Console account for the enterprise, waives the 25 USD fee, and **apps published this way can never be made public**.
 
-Either way, the package name is taken on Play for good. **Dinis decision:** the final application ID before the first upload (it is still `ai.riskmandate.app`, provisional), and whether the private build uses the same ID a future public app would.
+Either way, the package name is taken on Play for good, and a private (organisation-only) app can never become public under that name. **Dinis decision:** the final application ID of the private build before the first upload (`ai.riskmandate.app` is provisional); the recommendation is a separate package ID for it, so the plain ID stays free for a possible public app.
 
 ### 5. Apply the policy
 
 ```
 node devices/amapi.mjs policy-apply --enterprise enterprises/LC0... --policy riskmandate \
-  --file devices/policies/riskmandate-fully-managed.json --package <application-id> \
+  --file devices/policies/riskmandate-fully-managed.json --package <private-build-application-id> \
   [--start-url https://riskmandate.ai/] [--device-label <label>]
+```
+
+The CLI checks `--start-url` with the app's own rule before sending: `https`, host exactly `riskmandate.ai` or `www.riskmandate.ai`, no `@`, backslash or whitespace, port 443 only. `--device-label` is trimmed, cut to 64 characters and refused if it holds control characters.
+
+```
 ```
 
 This PATCHes the whole policy (no `updateMask`), so the file is the single source of truth. Re-run it after any change.
@@ -91,14 +97,14 @@ This PATCHes the whole policy (no `updateMask`), so the file is the single sourc
 ### 6. Create an enrolment token
 
 ```
-node devices/amapi.mjs enrol --enterprise enterprises/LC0... --policy riskmandate --duration 3600s [--one-time]
+node devices/amapi.mjs enrol --enterprise enterprises/LC0... --policy riskmandate --duration 3600s [--reusable]
 ```
 
-It writes two files under `devices/out/` (mode 600) and prints only their paths:
+It writes two files under `devices/out/` (the folder is set to mode 700 each time, the files are mode 600 and never overwrite an existing file) and prints only their paths:
 - `enrol-<time>.json`: the token's name, expiry and the QR payload as JSON.
 - `enrol-<time>.qr.txt`: AMAPI's own `qrCode` string, exactly as returned. Turn it into a QR image with any generator, e.g. `qrencode -o qr.png < enrol-<time>.qr.txt`, or paste it into ZXing's generator. The CLI does not draw the image itself (that would need a QR encoder; the repo has no dependencies).
 
-These files are a credential to join the enterprise until they expire: do not commit, share or paste them. Use `--one-time` for a single tablet and a short `--duration`.
+These files are a credential to join the enterprise until they expire: do not commit, share or paste them. The token is **one-time by default** (`oneTimeOnly`): one device can enrol with it, so a photographed QR code is of little use afterwards. Add `--reusable` only for a deliberate batch of tablets (the CLI warns); keep `--duration` short either way (`--one-time` is still accepted and changes nothing).
 
 The default `--personal-usage PERSONAL_USAGE_DISALLOWED_USERLESS` makes a fully managed device with no user account (right for tablets kept by the agent; per the API it is mandatory for dedicated devices). `PERSONAL_USAGE_DISALLOWED` instead requires someone to sign in with a work account.
 
@@ -112,7 +118,7 @@ The default `--personal-usage PERSONAL_USAGE_DISALLOWED_USERLESS` makes a fully 
 ### 8. Check
 
 ```
-node devices/amapi.mjs devices-list --enterprise enterprises/LC0... --package <application-id>
+node devices/amapi.mjs devices-list --enterprise enterprises/LC0... --package <private-build-application-id>
 ```
 
 It shows each device's state, management mode (`DEVICE_OWNER` is fully managed), applied policy, model, Android version, last report and the app's installed version. A new CI build published to Play should reach the tablet without anyone touching it (`AUTO_UPDATE_HIGH_PRIORITY`); Google notes that can take up to 24 hours for widely deployed apps.
@@ -152,6 +158,6 @@ Left out on purpose, as **Dinis decisions**:
 
 - No call has been made to Google: there is no project, no key and no enterprise yet. Requests match the AMAPI discovery document; responses in the tests are fakes.
 - The initial device quota of a new project before the quota request is granted.
-- Whether the Play Console private-app route can later be made public (the iframe route cannot, per Google; for Play Console, I believe the same holds but did not confirm it today).
+- Nothing further on private apps: per Google (Managed Google Play Help, answer 6145139) an app restricted to organisations stays private for ever, on both routes, and going public needs a new package name. Not re-read here; taken from the coordinator's citation.
 - Workspace and Cloud Identity licence tiers for fully managed Android (the comparison above is from memory, not from a page read today).
 - How a given tablet model's welcome screen behaves with six taps (varies by OEM and Android version; the `afw#setup` fallback covers most).
