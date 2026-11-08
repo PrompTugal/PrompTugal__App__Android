@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 5 done (8 Nov 2026, about 00:05 UTC): reviewed release 1106398 PASS (R-rel-1 closed) and play 8290a50 PASS (R-play-6 closed); app and devices have nothing beyond dev. Waiting for the next wake.
+> Round 6 done (8 Nov 2026, about 00:15 UTC): reviewed release 2d77de1 PASS (instrumented SmokeTest in the smoke job); play, app and devices have nothing beyond dev. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 6 review: `2026-11-08-release-2d77de1.md` (PASS): the smoke job still holds no secret; new Gradle build there reads but does not write the cache (keep `cache-read-only` at its default); R-rel-7 info.
 - Round 5 reviews: `2026-11-08-release-1106398.md` (PASS; gate tested on a doctored table: GPL+MIT and Apache+EPL now fail; R-rel-6 info: a URL containing apache, mit or bsd still passes a single-licence row) and `2026-11-08-play-8290a50.md` (PASS; permission and Diagnostics statements match the code; R-play-6 closed).
 - Round 4 reviews: `2026-11-08-app-d36382f.md` (PASS; new permission ACCESS_NETWORK_STATE, R-app-4 low: the privacy and Data safety docs say INTERNET only) and `2026-11-08-play-1e08cbb.md` (PASS; R-play-1 closed; R-play-6 low: update the permission statement when d36382f merges). The 7b5f0f8 review is superseded by 1e08cbb.
 - Round 3 reviews in `docs/security/reviews/`: `2026-11-08-play-7b5f0f8.md` (PASS; R-play-1 still open, low), `2026-11-08-release-ee893b2.md` (PASS; R-rel-1 low: licence gate passes a multi-licence artifact if any one licence is Apache/MIT/BSD; both new action SHAs checked against upstream), `2026-11-08-devices-7e130db.md` (PASS; 68 device tests pass; hardened policy not applied; R-dev-1 low: wipe after 10 wrong PINs is a denial of service).
