@@ -1,0 +1,11 @@
+{
+  "note": "The RiskMandate Android sessions, started at Dinis's word on 8 Nov 2026 at about 23:07 UTC. One role, one session. Plan: briefs/2026-11-08__riskmandate-android/README.md.",
+  "sessions": [
+    {"role": "conductor", "name": "conductor.android@promptugal.ai", "model": "Opus", "branch": "dev", "session": "session_018yvwtQQhNMeaU9tg3HgWnP"},
+    {"role": "app", "name": "app.android@promptugal.ai", "model": "Sonnet", "branch": "work/app", "session": "session_018yvwtLgnt1xeXPhQbaJ9uk"},
+    {"role": "release", "name": "release.android@promptugal.ai", "model": "Sonnet", "branch": "work/release", "session": "session_018yvwtQrryCdmM6VAmqnQvW"},
+    {"role": "devices", "name": "devices.android@promptugal.ai", "model": "Sonnet", "branch": "work/devices", "session": "session_018yvwtM4VMbzGS28k1PsAeB"},
+    {"role": "play", "name": "play.android@promptugal.ai", "model": "Sonnet", "branch": "work/play", "session": "session_018yvwtMCc2BNFpAGvjDRenv"},
+    {"role": "security", "name": "security.android@promptugal.ai", "model": "Sonnet", "branch": "work/security", "session": "session_018yvwtMEkVuWRqKhGm6yo4J"}
+  ]
+}

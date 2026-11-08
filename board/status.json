@@ -1,7 +1,7 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-08T22:55Z",
-  "state": "M1 code complete on dev and CI green (run 7); distribution waits on the Firebase project and the secrets. M2 tooling ready; route waits on Dinis (AMAPI terms). Workers now: Play Console groundwork, security and licence review.",
+  "updated": "2026-11-08T23:10Z",
+  "state": "Five sessions running on their work/<role> branches; conductor merges PASS-reviewed, green branches onto dev hourly. M1 waits on the Firebase project and secrets; M2 on the route and the private build's package ID.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
@@ -15,7 +15,6 @@
     "once secrets exist: first signed build to the 'team' testers on Firebase, installed on the Tab One"
   ],
   "asks": [
-    "Dinis: start the five Android sessions (app, release, devices, play, security), on the iOS team's model? Until then they run as sub-agents of this session.",
     "Dinis: a Google Cloud project with Firebase on the agent's Workspace account, an Android app registered with the chosen ID, a tester group 'team', and a service account with Firebase App Distribution Admin.",
     "Dinis: run scripts/make-upload-key.sh on your machine and add the secrets UPLOAD_KEYSTORE_BASE64, UPLOAD_KEYSTORE_PASSWORD, UPLOAD_KEY_ALIAS, UPLOAD_KEY_PASSWORD, FIREBASE_SERVICE_ACCOUNT_JSON, FIREBASE_APP_ID.",
     "Dinis: the Play Console account (organisation, which company) and its D-U-N-S check: on the critical path for M2.",
@@ -32,6 +31,7 @@
   "decisions": [
     "Application ID: ai.riskmandate.app (Dinis, 8 Nov 2026 ~21:35 UTC). Final: fixed once on Google Play.",
     "Order (Dinis, 8 Nov 2026 ~21:40 UTC): RiskMandate is the first app and the one we learn Android development and publishing on; the PrompTugal app comes after it. Lessons go in docs/lessons.md so the PrompTugal app starts from them.",
-    "Open source and for sale (Dinis, 8 Nov 2026 ~21:45 UTC): all these apps are open source (Apache 2.0, the repo's LICENSE) and will be put for sale eventually."
+    "Open source and for sale (Dinis, 8 Nov 2026 ~21:45 UTC): all these apps are open source (Apache 2.0, the repo's LICENSE) and will be put for sale eventually.",
+    "Five sessions started at Dinis's word (8 Nov 2026 ~23:07 UTC): app, release, devices, play, security, on Sonnet; board/sessions.json."
   ]
 }
