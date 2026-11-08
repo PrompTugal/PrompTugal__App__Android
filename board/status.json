@@ -1,23 +1,28 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-08T21:10Z",
+  "updated": "2026-11-08T21:35Z",
   "state": "M1 scaffold on dev; waiting on Dinis for the application ID, the Firebase project and the secrets",
   "done": [
     "dev branch created from main",
     "RiskMandate app scaffold (Kotlin, Compose, Custom Tab to riskmandate.ai), 7 unit tests, lint clean, release APK and AAB build locally",
     "CI workflow: tests, lint, release builds; signing, Firebase App Distribution and GitHub release gated on secrets",
-    "scripts/make-upload-key.sh for the upload key"
+    "scripts/make-upload-key.sh for the upload key",
+    "M2 AMAPI tooling, policy and runbook merged (devices/); CI split with Play upload merged"
   ],
   "next": [
     "first green CI run on dev",
     "once secrets exist: first signed build to the 'team' testers on Firebase, installed on the Tab One"
   ],
   "asks": [
-    "Dinis: the application ID (provisional ai.riskmandate.app; alternative ai.promptugal.riskmandate since this repo is PrompTugal's). It cannot change once on Google Play.",
     "Dinis: a Google Cloud project with Firebase on the agent's Workspace account, an Android app registered with the chosen ID, a tester group 'team', and a service account with Firebase App Distribution Admin.",
     "Dinis: run scripts/make-upload-key.sh on your machine and add the secrets UPLOAD_KEYSTORE_BASE64, UPLOAD_KEYSTORE_PASSWORD, UPLOAD_KEY_ALIAS, UPLOAD_KEY_PASSWORD, FIREBASE_SERVICE_ACCOUNT_JSON, FIREBASE_APP_ID.",
     "Dinis: the Play Console account (organisation, which company) and its D-U-N-S check: on the critical path for M2.",
-    "Dinis: make dev the default branch of the repository, if you agree, so CI and readers land on it."
+    "Dinis: make dev the default branch of the repository, if you agree, so CI and readers land on it.",
+    "Dinis: AMAPI permissible usage: Google lists in-house-only solutions as not permitted; confirm the route (test on a Gmail-bound enterprise, or Workspace/Cloud Identity device management). See devices/README.md.",
+    "Dinis: which account owns the managed Google Play enterprise (Gmail, or a Workspace/Cloud Identity domain); factory reset protection, screen lock and kiosk mode for the policy."
   ],
-  "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md"
+  "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
+  "decisions": [
+    "Application ID: ai.riskmandate.app (Dinis, 8 Nov 2026 ~21:35 UTC). Final: fixed once on Google Play."
+  ]
 }
