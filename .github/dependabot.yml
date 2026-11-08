@@ -1,0 +1,60 @@
+# Weekly, grouped update PRs. Dependabot reads this file from the default branch (main), so it takes
+# effect once a release PR carrying it is merged by Dinis. Pull requests target `dev` (the branch CI
+# builds and releases from), never main and never a work/* branch. The conductor merges them like any
+# other change; the gate (check job, licence gate) runs on each. Rationale: docs/ci.md.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+    groups:
+      androidx-compose:
+        patterns: ["androidx.*"]
+      kotlin:
+        patterns: ["org.jetbrains.kotlin*", "org.jetbrains.kotlin.*"]
+      android-gradle-plugin:
+        patterns: ["com.android.*"]
+      testing:
+        patterns: ["junit*", "org.robolectric*"]
+    labels: [dependencies]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: [dependencies]
+
+  # firebase-tools, pinned by .github/firebase/package-lock.json (runs with the Firebase service account).
+  - package-ecosystem: npm
+    directory: /.github/firebase
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "deps"
+    groups:
+      firebase-tools:
+        patterns: ["*"]
+    labels: [dependencies]
