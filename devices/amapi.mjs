@@ -1,0 +1,380 @@
+#!/usr/bin/env node
+// amapi.mjs: a zero-dependency CLI for the Android Management API (AMAPI), for milestone M2.
+// Node 18+. No npm packages. See devices/README.md for the runbook.
+//
+// Credentials: a service-account JSON whose path is in GOOGLE_APPLICATION_CREDENTIALS.
+// The CLI never prints the key, the access token, an enrolment token or a web token.
+// Secrets it must hand over (the QR payload, the web token) go only to files under devices/out/.
+//
+// Every command takes --dry-run: it prints the request it would send and reads no credentials.
+
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+export const API = 'https://androidmanagement.googleapis.com/v1';
+export const TOKEN_URL = 'https://oauth2.googleapis.com/token';
+export const SCOPE = 'https://www.googleapis.com/auth/androidmanagement';
+export const DEFAULT_START_URL = 'https://riskmandate.ai/';
+export const DEFAULT_DEVICE_LABEL = 'riskmandate-tablet';
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+
+const USAGE = `amapi.mjs: Android Management API helper (M2). Every command accepts --dry-run.
+
+  signup-url        --project <id> --callback <https url>
+  enterprise-create --project <id> --signup-url-name <signupUrls/...> --enterprise-token <t> --name <display>
+                    (--signup-token is accepted as an alias of --signup-url-name)
+  policy-apply      --enterprise <enterprises/x> --policy <name> --file <policy.json> --package <appId>
+                    [--start-url <url>] [--device-label <label>]
+  enrol             --enterprise <enterprises/x> --policy <name> [--duration 3600s] [--one-time]
+                    [--personal-usage PERSONAL_USAGE_DISALLOWED_USERLESS|PERSONAL_USAGE_DISALLOWED]
+  devices-list      --enterprise <enterprises/x> [--package <appId>]
+  web-token         --enterprise <enterprises/x> --parent-frame-url <https url>
+
+Credentials: GOOGLE_APPLICATION_CREDENTIALS=<path to service-account json> (never in this repo).
+Outputs: devices/out/ (gitignored), or AMAPI_OUT_DIR.`;
+
+// ---------- small helpers ----------
+
+export function b64url(input) {
+  const buf = Buffer.isBuffer(input) ? input : Buffer.from(input);
+  return buf.toString('base64').replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+export function parseArgs(argv) {
+  const [cmd, ...rest] = argv;
+  const opts = {};
+  const BOOL = new Set(['dry-run', 'one-time', 'help']);
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    if (!a.startsWith('--')) throw new UsageError(`unexpected argument: ${a}`);
+    const eq = a.indexOf('=');
+    const key = eq > 0 ? a.slice(2, eq) : a.slice(2);
+    if (BOOL.has(key)) { opts[key] = true; continue; }
+    const val = eq > 0 ? a.slice(eq + 1) : rest[++i];
+    if (val === undefined) throw new UsageError(`--${key} needs a value`);
+    opts[key] = val;
+  }
+  return { cmd, opts };
+}
+
+export class UsageError extends Error {}
+
+function need(opts, ...keys) {
+  for (const k of keys) if (!opts[k]) throw new UsageError(`missing --${k}`);
+}
+
+function q(params) {
+  const u = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== '') u.append(k, v);
+  const s = u.toString();
+  return s ? `?${s}` : '';
+}
+
+const ENTERPRISE_RE = /^enterprises\/[A-Za-z0-9_-]+$/;
+const POLICY_RE = /^[A-Za-z0-9_.-]+$/;
+const PACKAGE_RE = /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/;
+
+function checkEnterprise(e) {
+  if (!ENTERPRISE_RE.test(e)) throw new UsageError(`--enterprise must look like enterprises/LC0abc123 (got ${e})`);
+}
+function checkPolicy(p) {
+  if (!POLICY_RE.test(p)) throw new UsageError(`--policy must be a short policy id such as riskmandate (got ${p})`);
+}
+function checkHttps(u, flag) {
+  let parsed;
+  try { parsed = new URL(u); } catch { throw new UsageError(`${flag} is not a URL`); }
+  if (parsed.protocol !== 'https:') throw new UsageError(`${flag} must be https`);
+}
+
+// ---------- policy ----------
+
+// Removes every key starting with "_" (notes in the policy file), at any depth.
+export function stripNotes(v) {
+  if (Array.isArray(v)) return v.map(stripNotes);
+  if (v && typeof v === 'object') {
+    const out = {};
+    for (const [k, x] of Object.entries(v)) if (!k.startsWith('_')) out[k] = stripNotes(x);
+    return out;
+  }
+  return v;
+}
+
+// Fills __PACKAGE__, __START_URL__ and __DEVICE_LABEL__ in string values; refuses leftovers.
+export function substitutePolicy(policy, { packageName, startUrl = DEFAULT_START_URL, deviceLabel = DEFAULT_DEVICE_LABEL }) {
+  if (!packageName || !PACKAGE_RE.test(packageName)) throw new UsageError(`--package must be an Android application ID (got ${packageName})`);
+  const map = { __PACKAGE__: packageName, __START_URL__: startUrl, __DEVICE_LABEL__: deviceLabel };
+  const walk = (v) => {
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+    if (typeof v === 'string') return v.replace(/__[A-Z_]+__/g, (m) => (m in map ? map[m] : m));
+    return v;
+  };
+  const out = walk(stripNotes(policy));
+  const left = JSON.stringify(out).match(/__[A-Z_]+__/g);
+  if (left) throw new UsageError(`policy still has placeholders: ${[...new Set(left)].join(', ')}`);
+  return out;
+}
+
+export function loadPolicy(file, subs) {
+  const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+  return substitutePolicy(raw, subs);
+}
+
+// ---------- QR payload ----------
+
+// The shape AMAPI documents for a fully managed QR code. AMAPI returns its own qrCode string,
+// which is what we write out; this is only used to show the shape in --dry-run.
+export function qrPayloadShape(tokenPlaceholder = '<enrollment-token>') {
+  return {
+    'android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME': 'com.google.android.apps.work.clouddpc/.receivers.CloudDeviceAdminReceiver',
+    'android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM': 'I5YvS0O5hXY46mb01BlRjq4oJJGs2kuUcHvVkAPEXlg',
+    'android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION': 'https://play.google.com/managed/downloadManagingApp?identifier=setup',
+    'android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE': {
+      'com.google.android.apps.work.clouddpc.EXTRA_ENROLLMENT_TOKEN': tokenPlaceholder,
+    },
+  };
+}
+
+// ---------- request building (pure: no credentials, no network) ----------
+
+export function buildRequest(cmd, opts) {
+  switch (cmd) {
+    case 'signup-url': {
+      need(opts, 'project', 'callback');
+      checkHttps(opts.callback, '--callback');
+      return { method: 'POST', url: `${API}/signupUrls${q({ projectId: opts.project, callbackUrl: opts.callback })}` };
+    }
+    case 'enterprise-create': {
+      if (!opts['signup-url-name'] && opts['signup-token']) opts['signup-url-name'] = opts['signup-token'];
+      need(opts, 'project', 'signup-url-name', 'enterprise-token', 'name');
+      return {
+        method: 'POST',
+        url: `${API}/enterprises${q({ projectId: opts.project, signupUrlName: opts['signup-url-name'], enterpriseToken: opts['enterprise-token'] })}`,
+        body: { enterpriseDisplayName: opts.name },
+      };
+    }
+    case 'policy-apply': {
+      need(opts, 'enterprise', 'policy', 'file', 'package');
+      checkEnterprise(opts.enterprise); checkPolicy(opts.policy);
+      const body = loadPolicy(opts.file, { packageName: opts.package, startUrl: opts['start-url'], deviceLabel: opts['device-label'] });
+      return { method: 'PATCH', url: `${API}/${opts.enterprise}/policies/${opts.policy}`, body };
+    }
+    case 'enrol': {
+      need(opts, 'enterprise', 'policy');
+      checkEnterprise(opts.enterprise); checkPolicy(opts.policy);
+      const duration = opts.duration || '3600s';
+      if (!/^\d+s$/.test(duration)) throw new UsageError('--duration must be seconds with an s, e.g. 3600s');
+      const usage = opts['personal-usage'] || 'PERSONAL_USAGE_DISALLOWED_USERLESS';
+      if (!['PERSONAL_USAGE_DISALLOWED_USERLESS', 'PERSONAL_USAGE_DISALLOWED'].includes(usage)) {
+        throw new UsageError('--personal-usage must be PERSONAL_USAGE_DISALLOWED_USERLESS or PERSONAL_USAGE_DISALLOWED (fully managed)');
+      }
+      const body = { policyName: `${opts.enterprise}/policies/${opts.policy}`, duration, allowPersonalUsage: usage };
+      if (opts['one-time']) body.oneTimeOnly = true;
+      return { method: 'POST', url: `${API}/${opts.enterprise}/enrollmentTokens`, body };
+    }
+    case 'devices-list': {
+      need(opts, 'enterprise');
+      checkEnterprise(opts.enterprise);
+      return { method: 'GET', url: `${API}/${opts.enterprise}/devices${q({ pageSize: '100', pageToken: opts['page-token'] })}` };
+    }
+    case 'web-token': {
+      need(opts, 'enterprise', 'parent-frame-url');
+      checkEnterprise(opts.enterprise);
+      checkHttps(opts['parent-frame-url'], '--parent-frame-url');
+      return {
+        method: 'POST',
+        url: `${API}/${opts.enterprise}/webTokens`,
+        body: { parentFrameUrl: opts['parent-frame-url'], enabledFeatures: ['PLAY_SEARCH', 'PRIVATE_APPS', 'MANAGED_CONFIGURATIONS'] },
+      };
+    }
+    default:
+      throw new UsageError(cmd ? `unknown command: ${cmd}` : 'no command');
+  }
+}
+
+// ---------- redaction ----------
+
+const SECRET_KEYS = new Set(['value', 'qrCode', 'access_token', 'id_token', 'refresh_token', 'private_key', 'assertion', 'enterpriseToken', 'token']);
+const SECRET_QUERY = new Set(['enterpriseToken', 'token', 'access_token']);
+
+export function redact(v) {
+  if (Array.isArray(v)) return v.map(redact);
+  if (v && typeof v === 'object') {
+    return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, SECRET_KEYS.has(k) ? '<redacted>' : redact(x)]));
+  }
+  return v;
+}
+
+export function redactUrl(u) {
+  const url = new URL(u);
+  for (const k of [...url.searchParams.keys()]) if (SECRET_QUERY.has(k)) url.searchParams.set(k, '<redacted>');
+  return decodeURI(url.toString());
+}
+
+// ---------- auth ----------
+
+export function buildJwt(sa, nowSec = Math.floor(Date.now() / 1000)) {
+  if (!sa || !sa.client_email || !sa.private_key) throw new Error('service-account JSON lacks client_email or private_key');
+  const header = { alg: 'RS256', typ: 'JWT' };
+  if (sa.private_key_id) header.kid = sa.private_key_id;
+  const claims = { iss: sa.client_email, scope: SCOPE, aud: TOKEN_URL, iat: nowSec, exp: nowSec + 3600 };
+  const input = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(claims))}`;
+  const sig = crypto.createSign('RSA-SHA256').update(input).end().sign(sa.private_key);
+  return `${input}.${b64url(sig)}`;
+}
+
+function readServiceAccount(env) {
+  const p = env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (!p) throw new UsageError('GOOGLE_APPLICATION_CREDENTIALS is not set (path to the service-account JSON, kept off the repo)');
+  let sa;
+  try { sa = JSON.parse(fs.readFileSync(p, 'utf8')); } catch { throw new UsageError('could not read or parse the file in GOOGLE_APPLICATION_CREDENTIALS'); }
+  if (sa.type && sa.type !== 'service_account') throw new UsageError('GOOGLE_APPLICATION_CREDENTIALS is not a service-account key');
+  return sa;
+}
+
+export async function getAccessToken(env, fetchImpl, nowSec) {
+  const sa = readServiceAccount(env);
+  const assertion = buildJwt(sa, nowSec);
+  const res = await fetchImpl(TOKEN_URL, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion }).toString(),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.access_token) {
+    throw new Error(`token exchange failed (HTTP ${res.status}): ${data.error || ''} ${data.error_description || ''}`.trim());
+  }
+  return data.access_token;
+}
+
+async function send(req, token, fetchImpl) {
+  const init = { method: req.method, headers: { authorization: `Bearer ${token}` } };
+  if (req.body !== undefined) { init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(req.body); }
+  const res = await fetchImpl(req.url, init);
+  const text = await res.text();
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text.slice(0, 500) }; }
+  if (!res.ok) {
+    const msg = data.error ? `${data.error.status || ''} ${data.error.message || ''}`.trim() : JSON.stringify(redact(data));
+    throw new Error(`${req.method} ${redactUrl(req.url)} failed (HTTP ${res.status}): ${msg}`);
+  }
+  return data;
+}
+
+// ---------- outputs ----------
+
+function outDir(env) {
+  const d = env.AMAPI_OUT_DIR || path.join(HERE, 'out');
+  fs.mkdirSync(d, { recursive: true, mode: 0o700 });
+  return d;
+}
+
+function stamp(now) {
+  return new Date(now).toISOString().replace(/[:.]/g, '-');
+}
+
+function writeSecretFile(file, content) {
+  fs.writeFileSync(file, content, { mode: 0o600 });
+  return file;
+}
+
+// ---------- main ----------
+
+export async function main(argv, io = {}) {
+  const env = io.env || process.env;
+  const out = io.stdout || ((s) => process.stdout.write(`${s}\n`));
+  const err = io.stderr || ((s) => process.stderr.write(`${s}\n`));
+  const fetchImpl = io.fetch || globalThis.fetch;
+  const now = io.now || Date.now();
+
+  let cmd, opts;
+  try {
+    ({ cmd, opts } = parseArgs(argv));
+    if (!cmd || cmd === '--help' || cmd === 'help' || opts.help) { out(USAGE); return cmd ? 0 : 2; }
+    const req = buildRequest(cmd, opts);
+
+    if (opts['dry-run']) {
+      const shown = { dryRun: true, command: cmd, method: req.method, url: redactUrl(req.url), headers: { authorization: 'Bearer <access-token>' } };
+      if (req.body !== undefined) shown.body = req.body;
+      if (cmd === 'enrol') shown.qrPayloadShape = qrPayloadShape();
+      if (cmd === 'web-token') shown.iframeUrl = 'https://play.google.com/work/embedded/search?token=<web-token>&mode=SELECT';
+      out(JSON.stringify(shown, null, 2));
+      return 0;
+    }
+
+    const token = await getAccessToken(env, fetchImpl, Math.floor(now / 1000));
+
+    switch (cmd) {
+      case 'signup-url': {
+        const r = await send(req, token, fetchImpl);
+        out(JSON.stringify({ name: r.name, url: r.url }, null, 2));
+        out('Open the url, sign up, and keep `name` for enterprise-create. The enterpriseToken arrives on your callback URL.');
+        return 0;
+      }
+      case 'enterprise-create': {
+        const r = await send(req, token, fetchImpl);
+        out(JSON.stringify({ name: r.name, enterpriseDisplayName: r.enterpriseDisplayName }, null, 2));
+        out(`Enterprise bound. Use --enterprise ${r.name} from now on.`);
+        return 0;
+      }
+      case 'policy-apply': {
+        const r = await send(req, token, fetchImpl);
+        out(JSON.stringify({ name: r.name, version: r.version, applications: (r.applications || []).map((a) => ({ packageName: a.packageName, installType: a.installType })) }, null, 2));
+        return 0;
+      }
+      case 'enrol': {
+        const r = await send(req, token, fetchImpl);
+        const dir = outDir(env);
+        const base = path.join(dir, `enrol-${stamp(now)}`);
+        const jsonFile = writeSecretFile(`${base}.json`, `${JSON.stringify({ name: r.name, policyName: r.policyName, expirationTimestamp: r.expirationTimestamp, oneTimeOnly: !!r.oneTimeOnly, allowPersonalUsage: r.allowPersonalUsage, qrCode: r.qrCode ? JSON.parse(r.qrCode) : null }, null, 2)}\n`);
+        const qrFile = r.qrCode ? writeSecretFile(`${base}.qr.txt`, r.qrCode) : null;
+        out(JSON.stringify({ name: r.name, policyName: r.policyName, expirationTimestamp: r.expirationTimestamp, oneTimeOnly: !!r.oneTimeOnly }, null, 2));
+        out(`QR payload written to ${jsonFile}`);
+        if (qrFile) out(`Raw qrCode string (paste into a QR generator, e.g. \`qrencode -o qr.png < ${path.basename(qrFile)}\`) written to ${qrFile}`);
+        out('These files hold an enrolment token: do not commit, share or paste them. They expire at expirationTimestamp.');
+        return 0;
+      }
+      case 'devices-list': {
+        const rows = [];
+        let pageToken;
+        do {
+          const page = await send(buildRequest('devices-list', { ...opts, 'page-token': pageToken }), token, fetchImpl);
+          for (const d of page.devices || []) {
+            const app = opts.package ? (d.applicationReports || []).find((a) => a.packageName === opts.package) : undefined;
+            rows.push({
+              name: d.name, state: d.state, managementMode: d.managementMode, ownership: d.ownership,
+              policy: d.appliedPolicyName, policyCompliant: d.policyCompliant,
+              model: d.hardwareInfo ? `${d.hardwareInfo.brand || ''} ${d.hardwareInfo.model || ''}`.trim() : undefined,
+              androidVersion: d.softwareInfo && d.softwareInfo.androidVersion,
+              lastStatusReportTime: d.lastStatusReportTime,
+              ...(opts.package ? { app: app ? { versionName: app.versionName, versionCode: app.versionCode, state: app.state } : 'not reported' } : {}),
+            });
+          }
+          pageToken = page.nextPageToken;
+        } while (pageToken);
+        out(JSON.stringify({ count: rows.length, devices: rows }, null, 2));
+        return 0;
+      }
+      case 'web-token': {
+        const r = await send(req, token, fetchImpl);
+        const dir = outDir(env);
+        const file = writeSecretFile(path.join(dir, `web-token-${stamp(now)}.json`), `${JSON.stringify({ name: r.name, parentFrameUrl: r.parentFrameUrl, value: r.value, iframeUrl: `https://play.google.com/work/embedded/search?token=${r.value}&mode=SELECT` }, null, 2)}\n`);
+        out(JSON.stringify({ name: r.name, parentFrameUrl: r.parentFrameUrl }, null, 2));
+        out(`Web token and iframe URL written to ${file}. The iframe only loads inside a page served at parentFrameUrl.`);
+        return 0;
+      }
+    }
+    return 0;
+  } catch (e) {
+    if (e instanceof UsageError) { err(`error: ${e.message}`); err(''); err(USAGE); return 2; }
+    err(`error: ${e.message}`);
+    return 1;
+  }
+}
+
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  main(process.argv.slice(2)).then((code) => { process.exitCode = code; });
+}
