@@ -13,7 +13,7 @@ Google's definition (verified): "Collect" means transmitting data from your app 
 | No SDKs | `app/build.gradle.kts` dependencies: AndroidX (core, activity, lifecycle, browser), Compose and Material 3, plus test libraries. No Firebase, analytics, ads, crash reporting or Google Play services library. (Firebase App Distribution is a CI delivery step, not in the app.) |
 | No storage | Search of `app/src/main` found no SharedPreferences, DataStore, database, file writing or logging. The app reads managed configuration and device state at runtime and holds them in memory (`MainActivity.kt`). |
 | No backup | `android:allowBackup="false"` and `res/xml/data_extraction_rules.xml` exclude the app's data from cloud backup and device transfer. |
-| Encryption in transit | `network_security_config.xml` and `usesCleartextTraffic="false"`: cleartext is off; `Links.kt` accepts only `https://` on riskmandate.ai and its subdomains. The app transmits nothing itself. |
+| Encryption in transit | `network_security_config.xml` and `usesCleartextTraffic="false"`: cleartext is off; `Links.kt` accepts only `https://` on riskmandate.ai and www.riskmandate.ai. The app transmits nothing itself. |
 | Accounts | None: no sign-in code exists. |
 | Managed values | `ManagedConfig.kt` reads `start_url` and `device_label` from `RestrictionsManager`, trims and validates them, keeps them in memory; they are never sent anywhere. Device status (`DeviceStatus.kt`) uses `DevicePolicyManager` and `UserManager` locally, shown on screen only. |
 
