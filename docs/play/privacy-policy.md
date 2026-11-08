@@ -32,7 +32,7 @@ If your device is managed by an organisation (for example by your employer), tha
 
 ## The website the app opens
 
-When you tap the button, your browser opens riskmandate.ai. From that moment the website, not the app, handles what happens. riskmandate.ai has its own privacy page at https://riskmandate.ai/privacy, which says that the site has no analytics, no cookies and no advertising pixel, and describes what its forms and its hosting do. The app only allows https addresses on riskmandate.ai and its subdomains.
+When you tap the button, your browser opens riskmandate.ai. From that moment the website, not the app, handles what happens. riskmandate.ai has its own privacy page at https://riskmandate.ai/privacy, which says that the site has no analytics, no cookies and no advertising pixel, and describes what its forms and its hosting do. The app only allows https addresses on riskmandate.ai and www.riskmandate.ai.
 
 ## Advertising, analytics and children
 

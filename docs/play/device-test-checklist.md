@@ -18,7 +18,7 @@ All four are above the app's minimum (Android 8.0, API 26) and all but possibly 
 ## What the app should do (from `work/app`, commit 44131ad, 8 November 2026)
 
 Home screen: title RiskMandate, button **Open riskmandate.ai**, a Device section (managed or not, optional label), About with "Open source licences", and "Build 0.1.<number>". Layout: one column in portrait, two panes in landscape at 640 dp wide or more. Light and dark follow the system. English and pt-PT (per-app language on Android 13+; otherwise the system language). Licences screen shows the full Apache 2.0 text.
-**Diagnostics screen:** app.android is adding it (conductor's note); it is **not on any branch I could see** (no match in `app/src/main` on `origin/work/app` or `dev`). The "Diagnostics" rows below are written from the name only: fill in what it shows and tell play.android what to expect, then this file gets updated.
+**Diagnostics screen:** app.android's current task, not pushed when I wrote this. Per the conductor it will show app version and versionCode, Android version and model, managed state, the managed configuration as received (`start_url`, `device_label`, refused or not) and the installer package, with a Copy button. Row 16 is written from that description; check it against the real screen once it lands.
 
 ## Before each device
 
@@ -48,7 +48,7 @@ Device: ______________  Android: ______  Build number: ______  Date: ______  Tes
 | 13 | Language back to English: all text English | [ ] | [ ] | |
 | 14 | **Open source licences:** opens, full Apache 2.0 text scrolls, Back returns; the line "Copyright (c) TODO: copyright holder" is still there (app.android's open ask to Dinis) | [ ] | [ ] | |
 | 15 | **Device section:** says not managed on a personal device (or fully managed / work profile if it is) | [ ] | [ ] | |
-| 16 | **Diagnostics screen** (when it exists): opens; values match the device (Android version, build number); nothing looks like personal data (no serial, IMEI, account email) | [ ] | [ ] | |
+| 16 | **Diagnostics screen** (per the conductor's note, 8 November 2026; not yet pushed): opens from the home screen. Check each value against Settings, About: app version and versionCode (= build number in App Tester); Android version and model; managed state (matches row 15); managed configuration as received (`start_url`, `device_label`, and whether each was refused: on a personal device expect none set); installer package (expect the App Tester / Firebase installer, not `com.android.vending`, for a Firebase build). **Copy** button: copies a report; paste it into a note and read it: no serial, IMEI, account email or other personal data. Record the installer package you saw: ______ | [ ] | [ ] | |
 | 17 | Screenshot of home (portrait, light) and, if you like, landscape and dark: keep for `store-assets.md` (real-device captures). No account pages or notifications in the shot | [ ] | [ ] | |
 | 18 | Install the **next** build over this one: updates without uninstalling, same Firebase signature | [ ] | [ ] | |
 | 19 | Uninstall: removes cleanly; nothing left (the app stores nothing) | [ ] | [ ] | |

@@ -42,6 +42,7 @@ object HomeTags {
     const val DEVICE_LABEL = "device_label"
     const val MESSAGE = "message"
     const val LICENCES = "licences"
+    const val DIAGNOSTICS = "diagnostics"
 }
 
 /** Material's minimum touch target. */
@@ -60,6 +61,7 @@ fun HomeScreen(
     onOpen: () -> Unit,
     @StringRes message: Int? = null,
     onLicences: () -> Unit = {},
+    onDiagnostics: () -> Unit = {},
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
         val twoPane = maxWidth >= TwoPaneMinWidth && maxWidth > maxHeight
@@ -82,7 +84,7 @@ fun HomeScreen(
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         PrimaryPane(onOpen, message)
                     }
-                    Column(Modifier.weight(1f)) { InfoPane(version, device, onLicences) }
+                    Column(Modifier.weight(1f)) { InfoPane(version, device, onLicences, onDiagnostics) }
                 }
             } else {
                 Column(Modifier.widthIn(max = ContentMaxWidth), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -90,7 +92,7 @@ fun HomeScreen(
                     Spacer(Modifier.height(32.dp))
                     HorizontalDivider()
                     Spacer(Modifier.height(16.dp))
-                    Column(Modifier.fillMaxWidth()) { InfoPane(version, device, onLicences) }
+                    Column(Modifier.fillMaxWidth()) { InfoPane(version, device, onLicences, onDiagnostics) }
                 }
             }
         }
@@ -131,7 +133,7 @@ private fun ColumnScope.PrimaryPane(onOpen: () -> Unit, @StringRes message: Int?
 }
 
 @Composable
-private fun ColumnScope.InfoPane(version: String, device: DeviceStatus, onLicences: () -> Unit) {
+private fun ColumnScope.InfoPane(version: String, device: DeviceStatus, onLicences: () -> Unit, onDiagnostics: () -> Unit) {
     Text(
         stringResource(R.string.home_device_heading),
         style = MaterialTheme.typography.titleSmall,
@@ -171,6 +173,12 @@ private fun ColumnScope.InfoPane(version: String, device: DeviceStatus, onLicenc
         modifier = Modifier.heightIn(min = MinTouch).testTag(HomeTags.LICENCES),
     ) {
         Text(stringResource(R.string.home_licences))
+    }
+    TextButton(
+        onClick = onDiagnostics,
+        modifier = Modifier.heightIn(min = MinTouch).testTag(HomeTags.DIAGNOSTICS),
+    ) {
+        Text(stringResource(R.string.home_diagnostics))
     }
     Spacer(Modifier.height(8.dp))
     Text(

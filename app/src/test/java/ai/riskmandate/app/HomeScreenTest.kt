@@ -55,4 +55,13 @@ class HomeScreenTest {
         show(DeviceStatus.from(false, false, null), message = Browser.message(OpenResult.NO_BROWSER))
         compose.onNodeWithTag(HomeTags.MESSAGE).assertExists()
     }
+
+    @Test fun diagnosticsButtonIsThere() {
+        var opened = 0
+        compose.setContent {
+            MaterialTheme { HomeScreen("0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {}, onDiagnostics = { opened++ }) }
+        }
+        compose.onNodeWithTag(HomeTags.DIAGNOSTICS).performClick()
+        assertEquals(1, opened)
+    }
 }

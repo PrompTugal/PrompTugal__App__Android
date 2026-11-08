@@ -33,4 +33,20 @@ class BrowserTest {
         assertEquals(Intent.ACTION_VIEW, started.action)
         assertEquals(Links.HOME, started.dataString)
     }
+
+    @Test fun everyResultHasTheRightMessage() {
+        assertNull(Browser.message(OpenResult.CUSTOM_TAB))
+        assertNotNull(Browser.message(OpenResult.FAILED))
+        assertNotNull(Browser.message(OpenResult.REFUSED))
+    }
+
+    @Test fun offlineDecision() {
+        org.junit.Assert.assertTrue(Browser.offline(hasActiveNetwork = false, hasInternet = false))
+        org.junit.Assert.assertTrue(Browser.offline(hasActiveNetwork = true, hasInternet = false))
+        org.junit.Assert.assertFalse(Browser.offline(hasActiveNetwork = true, hasInternet = true))
+    }
+
+    @Test fun askingTheSystemNeverThrows() {
+        Browser.isOffline(app) // either answer is fine; it must not crash
+    }
 }

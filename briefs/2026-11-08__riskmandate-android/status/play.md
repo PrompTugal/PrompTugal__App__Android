@@ -17,6 +17,10 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 6. Second list (from the conductor): `tester-guide-firebase.md` (en and pt-PT; Firebase pages cited with the date read), `tester-guide-m3.md` (Play internal testing vs Firebase, when to use which, en and pt-PT), `device-test-checklist.md` (per-device checks with result boxes; Android versions from public specs). Honest gaps: Firebase's pages do not give the App Tester minimum Android version, the Android 8 to 15 on-device screens or the signature-conflict wording (marked "from my knowledge", to confirm on the first device); the Tab One version conflicts between sources (Android 14 vs 15); the Galaxy A17 variant and current version are unknown; the diagnostics screen is on no branch yet, so its checklist row is generic. `store-assets.md` updated: app.android's screenshot tests (`work/app` 44131ad) now cover the render request.
 
+7. Security R-play-1: `privacy.html`, `privacy-policy.md`, `listing.md`, `data-safety.md` now say the app opens only riskmandate.ai and www.riskmandate.ai (checked against `Links.kt` on `dev`: hosts exactly those two, https, port 443 only). `origin/dev` merged into `work/play`.
+
+8. Checklist row 16 now describes the diagnostics screen as the conductor listed it (version and versionCode, Android version and model, managed state, managed config as received, installer package, Copy). R-play-1 was already done in 3bf16dc.
+
 ## Next
 Nothing until Dinis decides (below).
 
@@ -24,6 +28,7 @@ Nothing until Dinis decides (below).
 Screenshots wait on the feature decision and on app.android's render harness.
 
 ## For other roles
+- **For app / security:** the diagnostics screen shows the device model and installer package and offers Copy. Nothing is transmitted, so Data safety stays "no data collected", but `privacy-policy.md` says only that the app shows managed state and label; it should gain one sentence once the screen ships. Tell play when it lands and I will write it.
 - **For app:** the screenshot tests on `work/app` meet my earlier request (thanks). When the diagnostics screen lands, tell play what it shows so `device-test-checklist.md` row 16 can be made specific. Features 1 and 2 in `minimal-functionality.md` are yours to build only once Dinis chooses.
 - **For devices:** feature 2 (pinned pages) would change `app_restrictions.xml` and the policy in `devices/`.
 - **For release:** CI writes Firebase notes from the commit subject (`android.yml` line 153), which starts with a role address; consider a plainer note (`release-notes.md`).
