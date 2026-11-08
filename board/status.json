@@ -23,6 +23,7 @@
   ],
   "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
   "decisions": [
-    "Application ID: ai.riskmandate.app (Dinis, 8 Nov 2026 ~21:35 UTC). Final: fixed once on Google Play."
+    "Application ID: ai.riskmandate.app (Dinis, 8 Nov 2026 ~21:35 UTC). Final: fixed once on Google Play.",
+    "Order (Dinis, 8 Nov 2026 ~21:40 UTC): RiskMandate is the first app and the one we learn Android development and publishing on; the PrompTugal app comes after it. Lessons go in docs/lessons.md so the PrompTugal app starts from them."
   ]
 }
