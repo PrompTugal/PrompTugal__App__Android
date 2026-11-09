@@ -5,6 +5,7 @@
     <string name="models_summary">Descarregue um modelo de linguagem uma vez, verifique-o e use-o neste tablet sem rede.</string>
     <string name="models_setup_intro">Escolha um modelo e descarregue-o uma vez. Depois disso corre neste tablet, sem rede.</string>
     <string name="models_privacy_host">huggingface.co (e dos seus servidores de transferência, hf.co)</string>
+    <string name="models_privacy_cloud">Descarrega um ficheiro de modelo uma vez de %1$s. O modelo na nuvem está ligado: o que lhe envia vai para openrouter.ai. As respostas do modelo no dispositivo ficam no dispositivo.</string>
     <string name="models_privacy">Descarrega um ficheiro de modelo uma vez de %1$s. Nada do que escreve sai do dispositivo.</string>
     <string name="models_wifi">Este dispositivo não está em Wi-Fi nem noutra rede sem limite de dados. Os ficheiros são grandes (2,6 a 3,7 GB): recomenda-se Wi-Fi.</string>
     <string name="models_size_licence">%1$s, licença %2$s</string>

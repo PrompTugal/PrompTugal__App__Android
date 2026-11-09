@@ -141,7 +141,7 @@ object RunReport {
         val s = r.settings
         val st = r.stats
         appendLine("RiskMandate Workbench run")
-        appendLine("Where: ${if ((st?.location ?: LlmLocation.LOCAL) == LlmLocation.LOCAL) "on this device" else "cloud"}" + (st?.costUsd?.let { String.format(Locale.ROOT, "  cost: %.5f USD", it) } ?: ""))
+        appendLine("Where: ${if ((st?.location ?: LlmLocation.LOCAL) == LlmLocation.LOCAL) "on this device" else "Cloud \u00b7 ${st?.modelId ?: "-"} via openrouter.ai"}" + (st?.costUsd?.let { String.format(Locale.ROOT, "  cost: %.5f USD", it) } ?: ""))
         appendLine("Model: ${st?.modelId ?: "-"}  backend: ${st?.backend ?: "-"} (asked ${s.backend.name.lowercase(Locale.ROOT)})" + (if (st?.fellBackToCpu == true) "  GPU failed, fell back to CPU" else "") + if (s.coldStart) "  cold start asked" else "")
         appendLine("Sampling: temperature ${num(s.sampling.temperature)}, top-k ${s.sampling.topK}, top-p ${num(s.sampling.topP)}, seed ${s.sampling.seed ?: "-"}, max tokens ${s.maxTokens}")
         appendLine("Tools offered: ${if (s.tools.isEmpty()) "none" else s.tools.joinToString { it.name }}")
