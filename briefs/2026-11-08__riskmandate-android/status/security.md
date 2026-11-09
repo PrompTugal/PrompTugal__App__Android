@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 11 (9 Nov 2026, about 02:10 UTC): dev.stand 0aa99c8 HOLD (PIN fast hash and in-memory lockout, privacy statements, backup rules); qa a2a49c6 PASS; release ab61ce0 PASS (Pages workflow); app 5afbb97 PASS. Waiting for the dev.stand fix and the next wake.
+> Round 12 (9 Nov 2026, about 02:40 UTC): architect e3eb80c PASS, dev.mandate 78ae8d6 PASS, dev.abpdemo 38dfbf8 PASS, dev.stand 94da82a PASS (PIN removed; supersedes the HOLD), qa 11ce741 PASS. dev.site has no commits. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 12 reviews: `2026-11-09-architect-e3eb80c.md` (PASS: FeatureContext no longer carries the Activity), `2026-11-09-dev.mandate-78ae8d6.md` (PASS: own-package PackageManager reads only; R-mandate-1: stand's stored file will show as a gap), `2026-11-09-dev.abpdemo-38dfbf8.md` (PASS: native, no network, labelled demo; SHarness wording matches both sites), `2026-11-09-dev.stand-94da82a.md` (PASS: PIN removed, so R-stand-1 closed; R-stand-2 privacy documents must say the app stores two settings before the page is hosted), `2026-11-09-qa-11ce741.md` (PASS).
 - Round 11 reviews in `docs/security/reviews/`: `2026-11-09-dev.stand-0aa99c8.md` **HOLD** (R-stand-1 PIN is SHA-256 over 4 to 8 digits and the lockout resets on rotation or restart: use PBKDF2 and a persistent lockout, or drop the PIN; R-stand-2 the app now stores preferences, so privacy and Data safety statements must change in the same merge; R-stand-3 backup rules do not name the sharedpref domain). `2026-11-09-qa-a2a49c6.md` PASS (tests guard the allow-list, exported components and WebView settings). `2026-11-09-release-ab61ce0.md` PASS (website.yml: pins verified, pages/id-token on the deploy job only; R-site-1 restrict workflow_run to pushes from this repository, R-site-2 reviewer on github-pages, R-site-3 verify the domain). `2026-11-09-app-5afbb97.md` PASS (test only).
 - Urgent review `2026-11-09-release-f0ee176.md`: **PASS**. Licence gate still blocks the release (`needs: [check, licences]`) and no longer depends on a cold Gradle cache; the new job holds no secret; paths filter and concurrency checked. R-rel-8 (low): no CI runs for `devices/` or its policy tests; R-rel-9 (info): Gradle wrapper checksum.
 - Reviews `2026-11-09-app-2bbc37b.md` (PASS: host routing, FeatureFrame; stale saved routes now resolve to Home; no manifest or permission change) and `2026-11-09-architect-8ab334d.md` (PASS: docs; its WebView rules agree with my checklist; R-arch-1 restrict the asset loader to /feature_site/, R-arch-2 add SSL-cancel, no DownloadListener, safe browsing, cookie clearing).
