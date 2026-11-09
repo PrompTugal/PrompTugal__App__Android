@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 70 (9 Nov 2026): checklist M written for the OpenRouter cloud model (key per tablet in the Keystore, one pinned host, no redirects, off in stand mode, spend caps, consent and badge, claims made conditional). Waiting for the Workbench screens and for dev.chat's cloud build. Still open: the design-pass article, the Lab export share path (R-lab-11), R-app-2 for Dinis; new asks for Dinis: a credit limit per key, the spend numbers, the Data safety answer.
+> Round 71 (9 Nov 2026): Workbench steps 2 and 3: dev.llm 3babbd4 PASS (R-wb-3 closed; R-wb-5 mandate entry and policy lines must land with the merge; R-wb-6 and R-wb-7 low and info), design 55026cb PASS. Waiting for dev.lab (experiments/, Tool tests) and dev.chat's cloud build (checklist M). Still open: the design-pass article, the Lab export share path (R-lab-11), R-app-2, and Dinis asks for the cloud key (credit limit per key, spend numbers, Data safety answer).
 
 ## Doing
 Nothing. Stopped until woken.
