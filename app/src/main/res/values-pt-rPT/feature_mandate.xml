@@ -62,5 +62,7 @@
 
     <string name="mandate_chip_none">Sem lacuna</string>
     <string name="mandate_chip_some">Lacuna: %1$d</string>
+    <string name="mandate_card_kicker">Ao vivo neste dispositivo</string>
+    <string name="mandate_card_summary">O alcance, o mandato e a lacuna desta app, lidos do dispositivo quando a abre.</string>
     <string name="mandate_gap_heading">Lacuna: alcance menos mandato</string>
 </resources>
