@@ -1,7 +1,7 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-09T01:00Z",
-  "state": "Summit phase: 11 sessions building features A to D on the feature skeleton; conductor merges on security PASS, architect and QA reviews, green gate.",
+  "updated": "2026-11-09T01:25Z",
+  "state": "Summit phase, 13 sessions. CI fixed (licence gate in its own job); 0.1.35/0.1.36 distributed to the tablets through Firebase (run 36). On dev: FeatureContext v2, qa tests, Pages deploy workflow. In review/fix: features A site, B ABP demo, C mandate, D stand, F What's new; design ui/; the site and M1 article.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
@@ -29,7 +29,11 @@
     "Dinis: devices/README.md ends with ten questions only you can answer; the three that unblock M2: the route (AMAPI test enterprise, Cloud Identity Premium, or a commercial EMM), the private build's package ID, and whether AMAPI's permissible-usage terms allow us. Note: Google's pages disagree on whether Workspace device management supports a userless fully managed tablet, and that route signs private apps with a Google-held key.",
     "Dinis: optional: run the emulator smoke test on pull requests too; Dependabot PRs targeting dev (they start only once there is a main release).",
     "Dinis: harden the WIF provider (repository_id, repository_owner_id, ref refs/heads/dev): the command is in the conversation of 9 Nov ~00:15 UTC and docs/ci.md.",
-    "Dinis: for android.app.promptugal.ai: GitHub repo Settings > Pages > Source: GitHub Actions, custom domain android.app.promptugal.ai; and a DNS CNAME android.app -> promptugal.github.io at the promptugal.ai DNS host."
+    "Dinis: for android.app.promptugal.ai: GitHub repo Settings > Pages > Source: GitHub Actions, custom domain android.app.promptugal.ai; and a DNS CNAME android.app -> promptugal.github.io at the promptugal.ai DNS host.",
+    "Dinis: the ABP demo's wording not found on riskmandate.ai or sharness.ai (browser and device-policy layers, the strength words, the scenario): keep as a labelled demonstration, or restrict to the sites' wording? pt-PT needs a native check.",
+    "Dinis: brand for the app: move to riskmandate.ai's own palette and type (paper, ink, green; Geist), or keep the current neutral tokens (design.android's status page)?",
+    "Dinis: read the M1 article (website/pages/articles/m1-ci-to-a-tablet-in-one-night.md on work/editor) before the site goes public; publisher details for the site.",
+    "Dinis: a Contact tab in the in-app site (its form posts to another host, so it would open in the browser)? A staff PIN for stand mode after the summit?"
   ],
   "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
   "decisions": [
