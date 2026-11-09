@@ -29,6 +29,13 @@
         <meta-data
             android:name="android.content.APP_RESTRICTIONS"
             android:resource="@xml/app_restrictions" />
+        <!-- Dropped on purpose: the merged manifest would add this exported receiver (androidx.profileinstaller,
+             from Compose) so adb can trigger baseline-profile installation. Removing it keeps the app's
+             reach equal to its mandate (docs: features/mandate); baseline-profile installation is dropped. -->
+        <receiver
+            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+            tools:node="remove"
+            tools:ignore="MissingClass" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
