@@ -45,7 +45,12 @@ data class ToolCase(
     /** A run that must pass every check, and one that must fail at least one: CI checks the checks with them. */
     val reference: List<RefStep>?,
     val wrong: List<RefStep>?,
+    /** Optional: what to ask a model judge about the output and the verdict expected (reserved for the judge layers). */
+    val judges: JudgeSpec? = null,
 )
+
+/** What a model judge is asked about a case's output, and the verdict a correct judge gives for the reference run. */
+data class JudgeSpec(val ask: String, val expect: String)
 
 data class ToolKind(val id: String, val title: String)
 
@@ -70,7 +75,11 @@ data class CallRecord(
 
 data class StepRecord(val text: String, val calls: List<CallRecord>)
 
-data class CheckResult(val label: String, val passed: Boolean, val detail: String)
+/**
+ * [kind] is the check's kind; [failure] is the lowercase name of what went wrong (see [ToolChecks.failureKey]) when
+ * it failed, null when it passed. [detail] is plain English for a person reading the raw result.
+ */
+data class CheckResult(val label: String, val passed: Boolean, val detail: String, val kind: String = "", val failure: String? = null)
 
 /**
  * One run of one case in one mode. [error] set means it did not finish (the service failed): it counts in
@@ -90,6 +99,10 @@ data class CaseRun(
     val decodeTokensPerSecond: Double?,
     val error: String?,
     val checks: List<CheckResult>,
+    /** Characters of text sent in the first request in this mode (see [PromptSize]). */
+    val promptChars: Int = 0,
+    /** Prompt tokens the runtime reported for the first request, or null when it did not report them. */
+    val promptTokens: Int? = null,
 ) {
     val finished: Boolean get() = error == null
     val passed: Boolean get() = finished && checks.isNotEmpty() && checks.all { it.passed }
