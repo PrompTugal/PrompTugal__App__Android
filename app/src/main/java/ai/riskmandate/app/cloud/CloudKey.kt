@@ -1,4 +1,4 @@
-package ai.riskmandate.app.llm.cloud
+package ai.riskmandate.app.cloud
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -64,13 +64,13 @@ class KeystoreCipher(private val alias: String = ALIAS) : KeyCipher {
     }
 }
 
-enum class KeyCheck { OK, EMPTY, TOO_SHORT, TOO_LONG, BAD_CHARACTERS }
+enum class KeyCheck { OK, EMPTY, TOO_SHORT, TOO_LONG, BAD_CHARACTERS, BAD_PREFIX }
 
 /**
  * The OpenRouter key, stored encrypted in `noBackupFilesDir/cloud/` (never in a backup). The key is:
- * never logged, never in an exception message or `toString`, never shown (only [last4]), and only handed to the
+ * never logged, never in an exception message or `toString`, never shown (the screen says only "key set" or "no key"), and only handed to the
  * code that builds the `Authorization` header of a request to openrouter.ai, through [withBearer], which does not
- * return it. Staff paste it once in Diagnostics (host UI, app owns it); [clear] removes the file and the encryption key.
+ * return it. Staff paste it once in Diagnostics (host UI, app owns it); [clear] removes the file and the encryption key. The folder is `noBackupFilesDir/feature_cloud/`.
  */
 class CloudKey(private val dir: File, private val cipher: KeyCipher) {
     private val file get() = File(dir, FILE)
@@ -78,11 +78,7 @@ class CloudKey(private val dir: File, private val cipher: KeyCipher) {
     @Synchronized
     fun isSet(): Boolean = read() != null
 
-    /** The last four characters, for the screen ("key ending in ab12"), or null. Nothing else of the key is ever shown. */
-    @Synchronized
-    fun last4(): String? = read()?.takeLast(4)
-
-    /** Checks a pasted key's shape only (no network call): printable ASCII, no spaces, a plausible length. */
+    /** Checks a pasted key's shape only (no network call): `sk-or-` prefix, printable ASCII, no spaces, a plausible length. */
     fun check(pasted: String): KeyCheck {
         val key = pasted.trim()
         return when {
@@ -90,6 +86,7 @@ class CloudKey(private val dir: File, private val cipher: KeyCipher) {
             key.length < MIN_CHARS -> KeyCheck.TOO_SHORT
             key.length > MAX_CHARS -> KeyCheck.TOO_LONG
             key.any { it.code !in 0x21..0x7E } -> KeyCheck.BAD_CHARACTERS
+            !key.startsWith(PREFIX) -> KeyCheck.BAD_PREFIX
             else -> KeyCheck.OK
         }
     }
@@ -125,11 +122,11 @@ class CloudKey(private val dir: File, private val cipher: KeyCipher) {
         return block("Bearer $key")
     }
 
-    /** Removes the stored key and any `Bearer ...` text from [text]: a defence for text that came from outside. */
+    /** Removes the stored key, any `Bearer ...` text and any key-shaped string from [text]: a defence for text that came from outside. */
     internal fun scrub(text: String): String {
         var out = text
         synchronized(this) { read() }?.let { out = out.replace(it, "[key]") }
-        return BEARER.replace(out, "Bearer [key]")
+        return KEY_SHAPE.replace(BEARER.replace(out, "Bearer [key]"), "[key]")
     }
 
     override fun toString() = "CloudKey"
@@ -142,8 +139,10 @@ class CloudKey(private val dir: File, private val cipher: KeyCipher) {
 
     companion object {
         const val FILE = "openrouter.key"
+        const val PREFIX = "sk-or-"
         const val MIN_CHARS = 16
         const val MAX_CHARS = 256
         private val BEARER = Regex("""Bearer\s+\S+""", RegexOption.IGNORE_CASE)
+        private val KEY_SHAPE = Regex("""sk-or-[A-Za-z0-9_-]+""")
     }
 }

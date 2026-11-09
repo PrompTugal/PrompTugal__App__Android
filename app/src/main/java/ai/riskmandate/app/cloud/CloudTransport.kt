@@ -1,4 +1,4 @@
-package ai.riskmandate.app.llm.cloud
+package ai.riskmandate.app.cloud
 
 import java.io.Closeable
 import java.io.IOException
@@ -35,6 +35,8 @@ class HttpUrlTransport(private val connectTimeoutMs: Int = 15_000, private val r
             connection.connectTimeout = connectTimeoutMs
             connection.readTimeout = readTimeoutMs
             connection.doOutput = true
+            connection.useCaches = false
+            if (headers.keys.none { it.equals("User-Agent", ignoreCase = true) }) connection.setRequestProperty("User-Agent", CloudEndpoint.USER_AGENT)
             for ((k, v) in headers) connection.setRequestProperty(k, v)
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
             val status = connection.responseCode
@@ -48,7 +50,7 @@ class HttpUrlTransport(private val connectTimeoutMs: Int = 15_000, private val r
                         val line = reader.readLine()
                         if (line != null) {
                             total += line.length
-                            if (line.length > MAX_LINE_CHARS || total > MAX_BODY_CHARS) throw IOException("response too large")
+                            if (line.length > CloudLimits.MAX_LINE_CHARS || total > CloudLimits.MAX_RESPONSE_CHARS) throw IOException("response too large")
                         }
                         line
                     }
@@ -59,10 +61,5 @@ class HttpUrlTransport(private val connectTimeoutMs: Int = 15_000, private val r
             connection.disconnect()
             throw e
         }
-    }
-
-    companion object {
-        const val MAX_LINE_CHARS = 1_000_000
-        const val MAX_BODY_CHARS = 8_000_000
     }
 }

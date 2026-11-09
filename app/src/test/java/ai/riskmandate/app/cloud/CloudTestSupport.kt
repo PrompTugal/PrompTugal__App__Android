@@ -1,12 +1,12 @@
-package ai.riskmandate.app.llm.cloud
+package ai.riskmandate.app.cloud
 
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-/** Not a real key and not the shape of one: it must never trip a secret scanner. */
-const val TEST_KEY = "TESTKEY-not-a-real-key-0000-aaaa"
+/** Passes the app's own shape check (sk-or- prefix) but is not a real key and fits no scanner class (fewer than 32 characters after "sk-"). */
+const val TEST_KEY = "sk-or-FAKE-key-for-tests"
 
 /** AES-GCM in software, the same format as the Keystore one, so JVM tests exercise the real file handling. */
 class SoftwareCipher(secret: ByteArray = ByteArray(32) { it.toByte() }) : KeyCipher {

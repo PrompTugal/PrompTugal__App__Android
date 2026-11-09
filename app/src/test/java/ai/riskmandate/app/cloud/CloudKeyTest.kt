@@ -1,4 +1,4 @@
-package ai.riskmandate.app.llm.cloud
+package ai.riskmandate.app.cloud
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -20,7 +20,6 @@ class CloudKeyTest {
         assertFalse(k.isSet())
         assertEquals(KeyCheck.OK, k.save("  $TEST_KEY \n"))
         assertTrue(k.isSet())
-        assertEquals(TEST_KEY.takeLast(4), k.last4())
         assertEquals("Bearer $TEST_KEY", k.withBearer { it })
         assertTrue(CloudKey(dir, cipher).isSet()) // a new instance, same tablet
     }
@@ -40,7 +39,6 @@ class CloudKeyTest {
         assertFalse(File(dir, CloudKey.FILE).exists())
         assertEquals(1, cipher.destroyed)
         assertNull(k.withBearer { it })
-        assertNull(k.last4())
     }
 
     @Test fun aKeyMadeWithAnotherEncryptionKeyOrDamagedReadsAsNotSet() {
@@ -67,5 +65,6 @@ class CloudKeyTest {
         k.save(TEST_KEY)
         assertFalse(k.toString().contains(TEST_KEY))
         assertEquals("he said [key] and Bearer [key]", k.scrub("he said $TEST_KEY and Bearer abcdef"))
+        assertEquals("other [key] here", k.scrub("other sk-or-someone-elses_KEY-99 here")) // any key-shaped text, not only ours
     }
 }

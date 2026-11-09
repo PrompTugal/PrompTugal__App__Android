@@ -1,4 +1,4 @@
-package ai.riskmandate.app.llm.cloud
+package ai.riskmandate.app.cloud
 
 /**
  * The one network destination of the cloud client: https://openrouter.ai. A list of its own, separate from
@@ -7,6 +7,10 @@ package ai.riskmandate.app.llm.cloud
 object CloudEndpoint {
     const val HOST = "openrouter.ai"
     const val CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+    /** Fixed, so the default one (which names the device model and Android version) is never sent. */
+    const val USER_AGENT = "RiskMandate-Android"
+    const val X_TITLE = "RiskMandate Android"
     private const val PREFIX = "https://"
     private const val PATH_PREFIX = "/api/v1/"
 

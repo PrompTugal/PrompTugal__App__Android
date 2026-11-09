@@ -1,4 +1,4 @@
-package ai.riskmandate.app.llm.cloud
+package ai.riskmandate.app.cloud
 
 import ai.riskmandate.app.llm.LlmError
 import ai.riskmandate.app.llm.LlmEvent
@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,11 +33,13 @@ data class CloudRunInfo(
     val modelId: String,
     val promptTokens: Int?,
     val outputTokens: Int?,
-    /** What OpenRouter reported, or an estimate when it did not. */
+    /** What OpenRouter reported, or an estimate (at least the reserve) when it did not. */
     val costMicros: Long,
     val costIsEstimate: Boolean,
-    val spentMicros: Long,
-    val capMicros: Long,
+    val sessionSpentMicros: Long,
+    val sessionCapMicros: Long,
+    val totalSpentMicros: Long,
+    val totalCapMicros: Long,
 )
 
 /**
@@ -53,9 +56,11 @@ class CloudLlmService(
     val model: CloudModel,
     private val key: CloudKey,
     private val spend: CloudSpend,
+    private val switch: CloudSwitch,
     private val transport: CloudTransport = HttpUrlTransport(),
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val clock: () -> Long = System::currentTimeMillis,
+    private val gapMs: Long = CloudLimits.MIN_GAP_MS,
 ) : LlmService {
     init {
         require(CloudModels.byId(model.id) == model) { "model is not in the pinned list" }
@@ -68,6 +73,14 @@ class CloudLlmService(
     val lastRun: StateFlow<CloudRunInfo?> = _lastRun.asStateFlow()
 
     private val lock = Mutex()
+    @Volatile private var lastEndedAt = 0L
+
+    /** The most [request] could cost, for the cap check and for a sweep to show before it starts. Very large when it cannot be sent at all. */
+    fun worstCaseMicros(request: LlmRequest): Long =
+        try { worstCase(buildBody(request), request.maxTokens) } catch (e: TooLarge) { Long.MAX_VALUE / 4 }
+
+    private fun worstCase(body: String, maxTokens: Int): Long =
+        Math.ceil((body.length / 3 + 1) * model.inputUsdPerMtok + maxTokens * model.outputUsdPerMtok).toLong()
 
     /** Re-reads whether a key is stored. The host calls it after the key is saved or removed. */
     fun refresh() {
@@ -80,6 +93,7 @@ class CloudLlmService(
 
     private suspend fun runOne(request: LlmRequest, emit: suspend (LlmEvent) -> Unit) {
         refresh()
+        if (!switch.isOn) return emit(LlmEvent.Error(LlmError.NO_MODEL, "The cloud model is switched off."))
         if (_state.value == LlmState.NoModel) return emit(LlmEvent.Error(LlmError.NO_MODEL, "No OpenRouter key is stored on this tablet."))
         if (request.tools.isNotEmpty() && !model.supportsTools) {
             return emit(LlmEvent.Error(LlmError.INFERENCE_FAILED, "This cloud model does not take tools."))
@@ -89,17 +103,34 @@ class CloudLlmService(
         } catch (e: TooLarge) {
             return emit(LlmEvent.Error(LlmError.TOO_LONG, "The conversation is too long to send."))
         }
-        val promptTokensEstimate = body.length / 3 + 1
-        val worstCase = promptTokensEstimate * model.inputUsdPerMtok + request.maxTokens * model.outputUsdPerMtok
-        if (spend.wouldExceed(Math.ceil(worstCase).toLong())) {
-            val s = spend.snapshot()
-            return emit(LlmEvent.Error(LlmError.INFERENCE_FAILED, "Cloud spending cap reached: US$${CloudSpend.usd(s.spentMicros)} of US$${CloudSpend.usd(s.capMicros)} spent."))
+        if (body.toByteArray(Charsets.UTF_8).size > CloudLimits.MAX_REQUEST_BYTES) {
+            return emit(LlmEvent.Error(LlmError.TOO_LONG, "The request is larger than ${CloudLimits.MAX_REQUEST_BYTES / 1024} KB."))
         }
+        val promptTokensEstimate = body.length / 3 + 1
+        if (spend.wouldExceed(worstCase(body, request.maxTokens))) {
+            val s = spend.snapshot()
+            return emit(
+                if (!s.ledgerOk) {
+                    LlmEvent.Error(LlmError.INFERENCE_FAILED, "The cloud spending ledger is missing or damaged, so nothing is sent. Staff can reset it in Diagnostics.")
+                } else {
+                    LlmEvent.Error(
+                        LlmError.INFERENCE_FAILED,
+                        "Cloud spending cap reached: this session US$${CloudSpend.usd(s.sessionSpentMicros)} of US$${CloudSpend.usd(s.sessionCapMicros)}, " +
+                            "this tablet US$${CloudSpend.usd(s.totalSpentMicros)} of US$${CloudSpend.usd(s.totalCapMicros)}.",
+                    )
+                },
+            )
+        }
+        val wait = gapMs - (clock() - lastEndedAt)
+        if (lastEndedAt > 0 && wait > 0) delay(wait) // a minimum gap between calls
 
         val started = clock()
         val response = try {
             key.withBearer { bearer ->
-                transport.post(CloudEndpoint.CHAT_URL, mapOf("Authorization" to bearer, "Content-Type" to "application/json", "Accept" to "text/event-stream"), body)
+                transport.post(CloudEndpoint.CHAT_URL, mapOf(
+                    "Authorization" to bearer, "Content-Type" to "application/json", "Accept" to "text/event-stream",
+                    "Accept-Encoding" to "identity", "User-Agent" to CloudEndpoint.USER_AGENT, "X-Title" to CloudEndpoint.X_TITLE,
+                ), body)
             }
         } catch (e: IOException) {
             return emit(LlmEvent.Error(LlmError.INFERENCE_FAILED, "Could not reach openrouter.ai."))
@@ -139,6 +170,7 @@ class CloudLlmService(
                         if (text.isNotEmpty()) {
                             if (firstAt == 0L) firstAt = clock()
                             chars += text.length
+                            if (chars > CloudLimits.MAX_RESPONSE_CHARS) { failure = LlmEvent.Error(LlmError.INFERENCE_FAILED, "The reply from openrouter.ai is too long."); break }
                             emit(LlmEvent.Token(text))
                         }
                     }
@@ -167,6 +199,7 @@ class CloudLlmService(
         } finally {
             abort?.dispose()
             runCatching { response.close() }
+            lastEndedAt = clock()
             settle(request, promptTokensEstimate, promptTokens, outputTokens, reportedCost, chars, response.status in 200..299)
         }
         failure?.let { return emit(it) }
@@ -187,10 +220,10 @@ class CloudLlmService(
     private fun settle(request: LlmRequest, promptEstimate: Int, promptTokens: Int?, outputTokens: Int?, reported: Long?, chars: Int, billable: Boolean) {
         if (!billable) { _lastRun.value = null; return }
         val estimate = ((promptTokens ?: promptEstimate) * model.inputUsdPerMtok + (outputTokens ?: (chars / 3 + 1).coerceAtMost(request.maxTokens)) * model.outputUsdPerMtok)
-        val cost = reported ?: Math.ceil(estimate).toLong()
+        val cost = reported ?: maxOf(Math.ceil(estimate).toLong(), CloudLimits.RESERVE_MICROS) // never less than the reserve when no cost is reported
         try { spend.record(cost) } catch (e: Exception) { /* the next request's cap check reads the file and fails closed if it is damaged */ }
         val s = spend.snapshot()
-        _lastRun.value = CloudRunInfo(model.id, promptTokens, outputTokens, cost, reported == null, s.spentMicros, s.capMicros)
+        _lastRun.value = CloudRunInfo(model.id, promptTokens, outputTokens, cost, reported == null, s.sessionSpentMicros, s.sessionCapMicros, s.totalSpentMicros, s.totalCapMicros)
     }
 
     private fun errorFor(status: Int): LlmEvent.Error = when (status) {
@@ -255,7 +288,7 @@ class CloudLlmService(
 
     companion object {
         const val BACKEND = "openrouter.ai (cloud)"
-        const val MAX_PROMPT_CHARS = 200_000
+        const val MAX_PROMPT_CHARS = 200_000 // the body is also held to CloudLimits.MAX_REQUEST_BYTES
         const val MAX_TOOL_CALLS = 8
     }
 }

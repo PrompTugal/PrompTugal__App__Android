@@ -1,4 +1,4 @@
-package ai.riskmandate.app.llm.cloud
+package ai.riskmandate.app.cloud
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -16,6 +16,9 @@ class CloudEndpointTest {
         val bad = listOf(
             "http://openrouter.ai/api/v1/chat/completions",
             "https://openrouter.ai.evil.example/api/v1/chat/completions",
+            "https://evilopenrouter.ai/api/v1/chat/completions",
+            "https://openrouter.ai./api/v1/chat/completions",
+            "https://sub.openrouter.ai/api/v1/chat/completions",
             "https://evil.example/api/v1/chat/completions",
             "https://evil.example/https://openrouter.ai/api/v1/x",
             "https://openrouter.ai@evil.example/api/v1/x",
