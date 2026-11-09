@@ -4,7 +4,7 @@ Owner: dev.lab.android@promptugal.ai. Platform-neutral on purpose: plain UTF-8 J
 
 ## What a tool test is
 
-A small, deterministic functional check of tool calling on a model: the model is given a conversation and 2 to 5 tools, and **code** (never a model) decides whether it called the right tool the right way. It measures two ways of asking for a call, per case:
+A small, deterministic functional check of tool calling on a model: the model is given a conversation and 0 to 5 tools, and **code** (never a model) decides whether it called the right tool the right way. It measures two ways of asking for a call, per case:
 
 | Mode | How the model is asked | Where its call is read from |
 |---|---|---|
@@ -24,7 +24,7 @@ The text protocol sentence the runner appends in `text` mode: the tools, one per
 - `format` names the format and its version. `version` is the file's content version, bumped when its cases change. `kind` is a short lowercase name; the screen groups cases by it.
 - `id`: lowercase letters, digits and hyphens, unique across the catalogue. `tests`: **one line** (at most 200 characters) saying what the case tests. Claims are never stronger than what the checks can see.
 - `messages`: the starting conversation, first message the user's. Roles `user`, `assistant` (with optional `tool_calls`: `{name, arguments}`) and `tool` (with `name`, the tool whose result it is). A conversation that already holds a tool result tests what the model does after it.
-- `tools`: 2 to 5 tools, each `{name, description, parameters}` with `parameters` a flat JSON schema: `{"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}`. Argument types are `string`, `integer`, `number`, `boolean`; at most 6 arguments per tool; names `[a-z][a-z0-9_]{0,39}`. Nothing nested.
+- `tools`: 0 to 5 tools, each `{name, description, parameters}` with `parameters` a flat JSON schema: `{"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}`. Argument types are `string`, `integer`, `number`, `boolean`; at most 6 arguments per tool; names `[a-z][a-z0-9_]{0,39}`. Nothing nested.
 - `fake_tools`: exactly one entry per offered tool, `{"returns": <any JSON>}` or `{"by": "<arg>", "table": {...}, "default": ...}`. A fake returns canned data. Its result goes back to the model as text (a string as it is, anything else as compact JSON), cut at 2,000 characters.
 - `max_steps` (default 3, at most 6): model turns allowed. A run ends when the model answers without calling a tool, or at the limit.
 - `reference` / `wrong`: scripted runs, `{"steps": [{"text": "...", "calls": [{"name", "arguments"}]}, ...]}`. The reference **must pass every check** and the wrong one **must fail at least one**. They are fixtures for testing an implementation of the checker: run both through yours.
@@ -47,6 +47,18 @@ A check is `{"kind": ..., ...}` plus an optional `label`. Each kind, its paramet
 | `answers_after_result` | `contains[]?` | the last step made no call, the final text is not empty, and (when given) contains at least one of the words, case-insensitive | `no_answer_after_result` |
 | `max_calls` | `max` (0 to 10) | at most this many calls | `too_many_calls` |
 | `answer_contains` | `any[]` | the final text contains at least one of the words, case-insensitive | `answer_missing_words` |
+| `answer_absent` | `any[]` | the final text contains none of the words, case-insensitive | `forbidden_words` |
+| `answer_max_chars` | `max` (1 to 4000) | the final text, trimmed, is at most `max` characters | `too_long` |
+| `answer_lines` | `min?`, `max?` (0 to 50) | the number of non-blank lines is within the bounds | `wrong_line_count` |
+| `answer_json_only` | `keys[]?` | the whole final text, trimmed, is one strict JSON object (nothing before or after, no code fence) with each of the keys | `not_json_only` |
+| `answer_number_between` | `min`, `max` | some number in the final text (digits, with `.` or `,` inside) is within the bounds, inclusive | `number_out_of_range` |
+| `answer_grounded` | `allow[]?` | every number, and every capitalised word that is not the first word of a sentence, in the final text also occurs, case-insensitively, in the grounding (the case's `system` plus its user messages); words in `allow` are exempt | `ungrounded_claim` |
+
+The last six read only the final text, and all of them fail on an empty answer. `answer_grounded` is a heuristic: it finds invented names and figures, not invented sentences made of ordinary words, so a judge may be asked as well (`judges.ask`). A sentence ends at `.`, `!`, `?` or a line break; a word is a run of letters, with `'` and `-` inside.
+
+## The experiment pack: cases with no tools
+
+A case may offer no tools (`tools: []`, `fake_tools: {}`): grounding, hallucination and instruction-following cases are answers only. With no tools there is no protocol to compare, so such a case is planned once per repeat, in the native mode, and the text instructions are not added. The experiment pack is four more kinds in the same files and format: `grounding` (the answer uses only the quoted riskmandate.ai text given as the case's `system`; questions the text does not answer must be met with "I do not know"), `hallucination` (facts with a known answer, and questions that cannot be known), `instruction_following` (three lines, JSON only, a length limit, a forbidden word, a bare number) and `refusal_abp` (a request outside the offered tools' mandate: declined in text, no call, no made-up tool). Each kind has five synthetic cases with a reference run that must pass and a wrong run that must fail.
 
 A case passes when **every** check passes and the run finished. A run that did not finish (the runtime failed) is in no pass rate: it is counted apart.
 

@@ -101,6 +101,7 @@ object ToolTestTags {
     const val PROGRESS = "tt_progress"
     const val OVERALL_NATIVE = "tt_overall_native"
     const val OVERALL_TEXT = "tt_overall_text"
+    const val OVERALL_ANSWERS = "tt_overall_answers"
     const val UNFINISHED = "tt_unfinished"
     const val STOP_REASON = "tt_stop_reason"
     const val NO_MODEL = "tt_no_model"
@@ -323,13 +324,25 @@ private fun Left(
     selCase: ToolCase?, selKind: String?, kindTitle: String?, start: (String) -> Unit,
 ) {
     val runsPerCase = stringResource(R.string.workbench_tt_runs_per_case, repeats)
-    // Overall, one tile per way of asking: the headline is which one works on this model.
+    // Overall, one tile per way of asking: the headline is which one works on this model. Cases with no tools have no
+    // way of asking to compare, so they are counted apart, in their own "Answers" tile.
+    val answerIds = remember(cat) { cat.cases.filter { it.tools.isEmpty() }.map { it.id }.toSet() }
+    val toolReport = remember(st.runs) { ToolTestReport(st.runs.filter { it.caseId !in answerIds }) }
+    val answerReport = remember(st.runs) { ToolTestReport(st.runs.filter { it.caseId in answerIds }) }
     Row(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }, horizontalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
         for (m in ToolMode.entries) {
-            val s = report.overall(m)
+            val s = toolReport.overall(m)
             StatTile(
-                if (s.finished == 0) "-" else ofText(s), stringResource(if (m == ToolMode.NATIVE) R.string.workbench_tt_native_calls else R.string.workbench_tt_text_protocol),
+                if (s.finished == 0) stringResource(R.string.workbench_tt_dash) else ofText(s), stringResource(if (m == ToolMode.NATIVE) R.string.workbench_tt_native_calls else R.string.workbench_tt_text_protocol),
                 Modifier.weight(1f).testTag(if (m == ToolMode.NATIVE) ToolTestTags.OVERALL_NATIVE else ToolTestTags.OVERALL_TEXT),
+                detail = if (s.finished == 0) null else "${pct(s)}, $runsPerCase", tone = toneOf(s),
+            )
+        }
+        if (answerIds.isNotEmpty()) {
+            val s = answerReport.overall()
+            StatTile(
+                if (s.finished == 0) stringResource(R.string.workbench_tt_dash) else ofText(s), stringResource(R.string.workbench_tt_answers),
+                Modifier.weight(1f).testTag(ToolTestTags.OVERALL_ANSWERS),
                 detail = if (s.finished == 0) null else "${pct(s)}, $runsPerCase", tone = toneOf(s),
             )
         }
@@ -548,6 +561,12 @@ private fun failureName(key: String?): String = stringResource(
         "no_answer_after_result" -> R.string.workbench_tt_fail_no_answer_after_result
         "too_many_calls" -> R.string.workbench_tt_fail_too_many_calls
         "answer_missing_words" -> R.string.workbench_tt_fail_answer_missing_words
+        "forbidden_words" -> R.string.workbench_tt_fail_forbidden_words
+        "too_long" -> R.string.workbench_tt_fail_too_long
+        "wrong_line_count" -> R.string.workbench_tt_fail_wrong_line_count
+        "not_json_only" -> R.string.workbench_tt_fail_not_json_only
+        "number_out_of_range" -> R.string.workbench_tt_fail_number_out_of_range
+        "ungrounded_claim" -> R.string.workbench_tt_fail_ungrounded_claim
         else -> R.string.workbench_tt_fail_check_failed
     },
 )

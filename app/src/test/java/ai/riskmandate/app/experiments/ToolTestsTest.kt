@@ -32,9 +32,15 @@ class ToolTestsTest {
 
     // ---- the catalogue ----------------------------------------------------------------------------------
 
-    @Test fun theCatalogueHasTwentyCasesAcrossTheNineKindsInTheBrief() {
-        assertEquals(20, cat.cases.size)
-        assertEquals(listOf("right_tool", "valid_arguments", "expected_values", "no_tool", "made_up_tool", "similar_tools", "two_step", "secret", "answer_after_result"), cat.kinds.map { it.id })
+    private val BASE_KINDS = listOf("right_tool", "valid_arguments", "expected_values", "no_tool", "made_up_tool", "similar_tools", "two_step", "secret", "answer_after_result")
+    private val PACK_KINDS = listOf("grounding", "hallucination", "instruction_following", "refusal_abp")
+    private val base = cat.cases.filter { it.kind in BASE_KINDS }
+
+    @Test fun theCatalogueHasTwentyToolCasesAndTwentyExperimentCases() {
+        assertEquals(40, cat.cases.size)
+        assertEquals(20, base.size)
+        assertEquals(BASE_KINDS + PACK_KINDS, cat.kinds.map { it.id })
+        for (k in PACK_KINDS) assertEquals("$k has five cases", 5, cat.casesOf(k).size)
         assertEquals(cat.cases.size, cat.cases.map { it.id }.toSet().size)
         assertTrue(cat.kinds.all { k -> cat.casesOf(k.id).isNotEmpty() })
         assertEquals(16, cat.hash.length)
@@ -43,7 +49,7 @@ class ToolTestsTest {
     @Test fun everyCaseIsWellFormed() {
         for (c in cat.cases) {
             assertTrue("${c.id}: tests line", c.tests.isNotBlank() && c.tests.length <= 200 && '\n' !in c.tests)
-            assertTrue("${c.id}: 2 to 5 tools", c.tools.size in 2..5)
+            assertTrue("${c.id}: tools", c.tools.size in (if (c.kind in BASE_KINDS) 2..5 else 0..5))
             assertTrue("${c.id}: flat arguments", c.tools.all { t -> t.params.size <= ToolProtocol.MAX_ARGS && t.params.all { it.type in setOf("string", "integer", "number", "boolean") } })
             assertTrue("${c.id}: every tool has a fake", c.tools.all { it.name in c.fakes })
             assertNotNull("${c.id}: reference", c.reference)
@@ -74,12 +80,12 @@ class ToolTestsTest {
     @Test fun aPerfectModelPassesEverythingAndABadOneNothingAndTheReportSaysSo() = runBlocking {
         val perfect = cat.cases.flatMap { c -> ToolMode.entries.map { m -> run(c, m, c.reference!!) } }
         val good = ToolTestReport(perfect)
-        assertEquals(PassStat(20, 20, 0, good.overall(ToolMode.NATIVE).meanMs), good.overall(ToolMode.NATIVE))
+        assertEquals(PassStat(cat.cases.size, cat.cases.size, 0, good.overall(ToolMode.NATIVE).meanMs), good.overall(ToolMode.NATIVE))
         assertEquals(1.0, good.overall().rate!!, 1e-9)
         assertTrue(good.failures().isEmpty())
         val bad = ToolTestReport(cat.cases.flatMap { c -> ToolMode.entries.map { m -> run(c, m, c.wrong!!) } })
         assertEquals(0.0, bad.overall().rate!!, 1e-9)
-        assertEquals(40, bad.failures().size)
+        assertEquals(cat.cases.size * 2, bad.failures().size)
         assertEquals(listOf(ToolMode.NATIVE, ToolMode.TEXT), bad.modes())
         for (k in cat.kinds) assertEquals(0, bad.byKind(k.id).passed)
     }
@@ -207,10 +213,10 @@ class ToolTestsTest {
     }
 
     @Test fun theSuiteRunsEverythingBothModesNTimesAndReportsPerCaseKindAndOverall() = runBlocking {
-        val h = Harness(cat.cases, ToolMode.entries, 2) { it.reference!! }
+        val h = Harness(base, ToolMode.entries, 2) { it.reference!! }
         val llm = h.llm
         val seen = ArrayList<Pair<Int, Int>>()
-        val out = ToolTestSuite.run(llm, cat.cases, ToolMode.entries, repeats = 2, baseSeed = 5, onRun = { r, done, planned -> h.onRun(r, done, planned); seen += done to planned })
+        val out = ToolTestSuite.run(llm, base, ToolMode.entries, repeats = 2, baseSeed = 5, onRun = { r, done, planned -> h.onRun(r, done, planned); seen += done to planned })
         assertEquals(80, out.runs.size)
         assertEquals(StopReason.DONE, out.stop)
         assertEquals(80 to 80, seen.last())
@@ -480,7 +486,100 @@ class ToolTestsTest {
     @Test fun theToolSuiteIsCappedLikeEveryOtherRunOfMany() {
         assertEquals(RunCaps.MAX_RUNS, ToolTestSuite.MAX_RUNS)
         assertEquals(100, ToolTestSuite.plan(cat.cases, ToolMode.entries, 10).size)
-        assertEquals(40, ToolTestSuite.plan(cat.cases, ToolMode.entries, 1).size)
+        // A case with no tools has no protocol to compare: it is planned once, in the native mode.
+        val toolless = cat.cases.filter { it.tools.isEmpty() }
+        assertEquals(15, toolless.size)
+        assertEquals(25 * 2 + 15, ToolTestSuite.plan(cat.cases, ToolMode.entries, 1).size)
+        assertTrue(ToolTestSuite.plan(toolless, ToolMode.entries, 3).all { it.second == ToolMode.NATIVE })
+        assertEquals(45, ToolTestSuite.plan(toolless, ToolMode.entries, 3).size)
+    }
+
+    // ---- the checks on the text of an answer (experiment pack) ------------------------------------------
+
+    private fun text(type: String, params: Map<String, Any?>, answer: String, base: ToolCase = cat.case("right-tool-weather")!!) =
+        ToolChecks.evaluate(base.copy(checks = listOf(check(type, params))), listOf(StepRecord(answer, emptyList())), answer).single()
+
+    @Test fun answerChecksFailOnAnEmptyAnswerAndReadOnlyTheFinalText() {
+        for ((type, p) in listOf("answer_absent" to mapOf("any" to listOf("x")), "answer_max_chars" to mapOf("max" to 5L), "answer_lines" to mapOf("max" to 3L),
+            "answer_json_only" to emptyMap(), "answer_number_between" to mapOf("min" to 0, "max" to 9), "answer_grounded" to emptyMap())) {
+            assertFalse("$type on an empty answer", text(type, p, "").passed)
+            assertFalse("$type on a blank answer", text(type, p, "  \n ").passed)
+        }
+    }
+
+    @Test fun absentMaxCharsAndLines() {
+        assertTrue(text("answer_absent", mapOf("any" to listOf("city")), "A hilly capital.").passed)
+        assertFalse(text("answer_absent", mapOf("any" to listOf("city")), "A hilly CITY.").passed)
+        assertTrue(text("answer_max_chars", mapOf("max" to 5L), "  12345 ").passed)
+        assertFalse(text("answer_max_chars", mapOf("max" to 5L), "123456").passed)
+        val three = mapOf("min" to 3L, "max" to 3L)
+        assertTrue(text("answer_lines", three, "a\nb\n\nc\n").passed)
+        assertFalse(text("answer_lines", three, "a\nb").passed)
+        assertFalse(text("answer_lines", three, "a\nb\nc\nd").passed)
+        assertTrue(text("answer_lines", mapOf("max" to 1L), "one line").passed)
+    }
+
+    @Test fun jsonOnlyMeansTheWholeAnswerIsOneObject() {
+        val keys = mapOf("keys" to listOf("city", "country"))
+        assertTrue(text("answer_json_only", keys, " {\"city\": \"Porto\", \"country\": \"Portugal\", \"extra\": 1}\n").passed)
+        assertFalse("a missing key", text("answer_json_only", keys, "{\"city\": \"Porto\"}").passed)
+        assertFalse("text before", text("answer_json_only", keys, "Here: {\"city\": 1, \"country\": 2}").passed)
+        assertFalse("a code fence", text("answer_json_only", keys, "```json\n{\"city\": 1, \"country\": 2}\n```").passed)
+        assertFalse("text after", text("answer_json_only", keys, "{\"city\": 1, \"country\": 2} done").passed)
+        assertFalse("an array is not an object", text("answer_json_only", emptyMap(), "[1, 2]").passed)
+        assertFalse("not strict JSON", text("answer_json_only", emptyMap(), "{'a': 1}").passed)
+        assertTrue(text("answer_json_only", emptyMap(), "{}").passed)
+    }
+
+    @Test fun numberBetweenIsInclusiveAndFindsAnyNumber() {
+        val r = mapOf("min" to 170, "max" to 320)
+        assertTrue(text("answer_number_between", r, "About 275 km, 310 by road.").passed)
+        assertTrue(text("answer_number_between", r, "Exactly 170.").passed)
+        assertTrue(text("answer_number_between", r, "Exactly 320.").passed)
+        assertTrue("thousands separator", text("answer_number_between", mapOf("min" to 1000, "max" to 2000), "It is 1,250 km.").passed)
+        assertFalse(text("answer_number_between", r, "About 400 miles.").passed)
+        assertFalse("no number", text("answer_number_between", r, "Quite far.").passed)
+        assertFalse(text("answer_number_between", r, "169.9 or 320.1").passed)
+    }
+
+    @Test fun groundedFindsInventedFiguresAndNamesButNotOrdinaryWords() {
+        val g = cat.case("ground-gives")!!
+        fun grounded(answer: String, allow: List<String> = emptyList()) = text("answer_grounded", if (allow.isEmpty()) emptyMap() else mapOf("allow" to allow), answer, g)
+        assertTrue(grounded("It gives agents access, not free rein.").passed)
+        assertTrue("a name from the source is fine, even mid-sentence", grounded("For RiskMandate that means Gmail and CRM only.").passed)
+        assertTrue("a name in the question is fine", grounded("It gives agents access.").passed)
+        val figure = grounded("It gives agents access in 40 apps.")
+        assertFalse(figure.passed); assertTrue(figure.detail, figure.detail.contains("40"))
+        val name = grounded("Reported by Gartner last year.")
+        assertFalse(name.passed); assertTrue(name.detail, name.detail.contains("Gartner"))
+        assertTrue("the first word of a sentence is exempt", grounded("Zebras are not mentioned. Access is.").passed)
+        assertFalse("but not the first word of the next one after a comma", grounded("It gives access, Zebras too.").passed)
+        assertTrue("allow exempts a word", grounded("It gives access, Zebras too.", listOf("zebras")).passed)
+        assertFalse("each line starts a sentence, later words still count", grounded("Access\nand Gartner").passed)
+    }
+
+    @Test fun theNewChecksValidateTheirParameters() {
+        val t = cat.case("right-tool-weather")!!.tools
+        fun bad(kind: String, p: Map<String, Any?>) = assertNotNull("$kind $p", ToolChecks.validateParams(kind, p, t))
+        bad("answer_absent", emptyMap()); bad("answer_absent", mapOf("any" to emptyList<String>()))
+        bad("answer_max_chars", emptyMap()); bad("answer_max_chars", mapOf("max" to 0L)); bad("answer_max_chars", mapOf("max" to 5000L))
+        bad("answer_lines", emptyMap()); bad("answer_lines", mapOf("min" to 3L, "max" to 2L)); bad("answer_lines", mapOf("max" to 0L)); bad("answer_lines", mapOf("max" to 99L))
+        bad("answer_json_only", mapOf("keys" to emptyList<String>()))
+        bad("answer_number_between", mapOf("min" to 5, "max" to 1)); bad("answer_number_between", mapOf("min" to 1))
+        bad("answer_grounded", mapOf("allow" to listOf(1)))
+        assertEquals(setOf("forbidden_words", "too_long", "wrong_line_count", "not_json_only", "number_out_of_range", "ungrounded_claim"),
+            listOf("answer_absent", "answer_max_chars", "answer_lines", "answer_json_only", "answer_number_between", "answer_grounded").map { ToolChecks.failureKey(it) }.toSet())
+    }
+
+    @Test fun aCaseWithNoToolsSendsNoToolInstructionsInEitherMode() {
+        val c = cat.case("format-three-lines")!!
+        assertTrue(c.tools.isEmpty())
+        for (m in ToolMode.entries) {
+            val sent = ToolTestRunner.initialMessages(c, m).joinToString("\n") { it.text }
+            assertFalse("no text protocol for a case with no tools ($m)", sent.contains("You can call these tools"))
+        }
+        val g = cat.case("ground-gives")!!
+        assertTrue("the grounding is the case's system prompt", ToolTestRunner.initialMessages(g, ToolMode.NATIVE).first().text.contains("Give agents access. Not free rein."))
     }
 
     @Suppress("UNCHECKED_CAST")
