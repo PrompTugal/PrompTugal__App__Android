@@ -27,7 +27,7 @@
     <string name="mandate_cleartext_off">Cleartext (http) traffic: off</string>
     <string name="mandate_cleartext_on">Cleartext (http) traffic: allowed</string>
     <string name="mandate_reach_storage">Storage</string>
-    <string name="mandate_storage_none">Storage used: none. No files, databases or preferences, and no cloud backup.</string>
+    <string name="mandate_storage_none">Storage used: none. No files, databases, preferences or models, and no cloud backup.</string>
     <string name="mandate_backup_on">Cloud backup of the app\'s data: allowed</string>
     <string name="mandate_reach_device">Device management</string>
     <string name="mandate_reach_none">none</string>
@@ -64,5 +64,10 @@
     <string name="mandate_chip_some">Gap: %1$d</string>
     <string name="mandate_card_kicker">Live on this device</string>
     <string name="mandate_card_summary">This app\'s own reach, mandate and gap, read from the device as you open it.</string>
+    <string name="mandate_reason_shell_ui">the app frame\'s one display preference (sidebar collapsed or not), on this device only</string>
+    <string name="mandate_reason_releases_seen">the number of the last update note you were shown, on this device only</string>
+    <string name="mandate_reason_chat_history">your conversations in the Chat feature, on this device only, never backed up</string>
+    <string name="mandate_reason_models">language model files kept inside the app, on this device only, never backed up</string>
+    <string name="mandate_reason_models_adb">language model files put in the app\'s own folder on shared storage (for example with adb), never backed up</string>
     <string name="mandate_gap_heading">Gap: reach minus mandate</string>
 </resources>

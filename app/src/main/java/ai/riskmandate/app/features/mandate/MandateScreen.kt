@@ -196,6 +196,11 @@ private fun reasonRes(reason: Reason): Int = when (reason) {
     Reason.SITE_STORAGE -> R.string.mandate_reason_site_storage
     Reason.SITE_CACHE -> R.string.mandate_reason_site_cache
     Reason.SITE_VIEW -> R.string.mandate_reason_site_view
+    Reason.SHELL_UI -> R.string.mandate_reason_shell_ui
+    Reason.RELEASES_SEEN -> R.string.mandate_reason_releases_seen
+    Reason.CHAT_HISTORY -> R.string.mandate_reason_chat_history
+    Reason.MODELS -> R.string.mandate_reason_models
+    Reason.MODELS_ADB -> R.string.mandate_reason_models_adb
 }
 
 @Composable

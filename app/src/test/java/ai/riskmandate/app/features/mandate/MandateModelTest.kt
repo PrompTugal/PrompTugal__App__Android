@@ -58,6 +58,11 @@ class MandateModelTest {
             ReachItem(ReachKind.STORAGE, "shared_prefs/stand_mode.xml", count = 1),
             ReachItem(ReachKind.STORAGE, "app_webview", count = 12),
             ReachItem(ReachKind.STORAGE, "cache", count = 40),
+            ReachItem(ReachKind.STORAGE, "shared_prefs/shell.xml", count = 1),
+            ReachItem(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", count = 1),
+            ReachItem(ReachKind.STORAGE, "no_backup/feature_chat", count = 1),
+            ReachItem(ReachKind.STORAGE, "no_backup/models", count = 2),
+            ReachItem(ReachKind.STORAGE, "external/models", count = 2),
         )
         assertTrue(MandateReport(cleanReach + mandated, mandate).gapIsEmpty)
         val stray = ReachItem(ReachKind.STORAGE, "shared_prefs/other.xml", count = 1)
@@ -91,7 +96,7 @@ class MandateModelTest {
 
     @Test fun mandateEntriesNothingUsesAreReportedAsUnused() {
         val report = MandateReport(cleanReach.take(2), mandate)
-        assertEquals(7, report.unused.size)
+        assertEquals(12, report.unused.size)
         assertTrue(report.unused.any { it.id.endsWith("MainActivity") })
     }
 
