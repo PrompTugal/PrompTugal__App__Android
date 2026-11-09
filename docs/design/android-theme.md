@@ -38,7 +38,11 @@ Compose: `Theme.kt` holds both schemes (`lightColorScheme`, `darkColorScheme`, M
 | Web, redacted | `RiskMandateStatus.palette.redacted`, `KindBadge(Web)` | |
 | Text, second line, hairline | `ink`, `muted`, `rule` | a hex value |
 
-`Pt.colors.red` is the iOS red and in variant A it means only "blocked" and "error": outside `Theme.kt` it should appear only through the status palette and the Material `error` role. If it is used for the brand colour the screen turns red when the app is green (a bug seen in the first shell render, fixed by switching to `accent`). Variant B (fallback) makes `accent` the same colour as `red`, so code that uses `accent` for the brand is correct in both.
+`Pt.colors.red` is the iOS red and in variant A it means only "blocked" and "error": outside `Theme.kt` it should appear only through the status palette and the Material `error` role. If it is used for the brand colour the screen turns red when the app is green (a bug seen in the first shell render, fixed by switching to `accent`). `ColourRulesTest` (`app/src/test/.../ui/`) fails the gate if `.red` or `Color.Red` appears outside `Theme.kt` and `ui/StatTile.kt` (`Tone.Bad`), or if any screen writes a `Color(0x...)` literal. Variant B (fallback) makes `accent` the same colour as `red`, so code that uses `accent` for the brand is correct in both.
+
+## Icons (ruling, 9 Nov 2026)
+
+One style: 24 dp **line** icons, 2 dp stroke, drawn by the host (`app.android`, vector drawables, Apache 2.0, noted on the Licences screen). **Features do not set `Feature.icon`**: leave it `null`, and the host's id-based line icon applies. Filled Material icons (`material-icons-core`) next to the host's line icons mix two styles and are not allowed. A feature that needs an icon of its own asks app.android through its status page ("For app"), naming its id and what the icon shows; design supplies the drawing if asked. Until the host has one for an id, the shell's default icon is used. (`Feature.icon` stays in the contract for the architect to remove or keep; nothing should use it.)
 
 ## Type
 
