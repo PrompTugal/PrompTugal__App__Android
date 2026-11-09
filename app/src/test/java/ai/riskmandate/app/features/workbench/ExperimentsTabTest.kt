@@ -39,7 +39,7 @@ class ExperimentsTabTest {
     @get:Rule val compose = createComposeRule()
     private val base = RunSettings(userPrompt = "Say hi")
 
-    private fun show(fake: FakeLlmService, base: RunSettings? = this.base, cleared: () -> Unit = {}, logged: MutableList<String> = mutableListOf()) =
+    private fun show(fake: FakeLlmService, base: RunSettings? = this.base, cleared: () -> Unit = {}, logged: MutableList<String> = mutableListOf(), worstCaseUsd: ((RunSettings) -> Double?)? = null) =
         compose.setContent {
             RiskMandateTheme {
                 FeatureContent(scrollable = false) {
@@ -47,7 +47,7 @@ class ExperimentsTabTest {
                     ExperimentsTab(
                         runner = LlmRunner(fake), base = base, probe = { null }, guard = ai.riskmandate.app.experiments.NoGuard, log = log,
                         onRecord = { l, r: RunRecord -> logged += l; log = listOf(LogEntry.of(l, r)) + log },
-                        onClearLog = { log = emptyList(); cleared() },
+                        onClearLog = { log = emptyList(); cleared() }, worstCaseUsd = worstCaseUsd,
                     )
                 }
             }
@@ -63,6 +63,17 @@ class ExperimentsTabTest {
             Thread.sleep(20)
         }
         fail("no node tagged $tag" + (text?.let { " with $it" } ?: ""))
+    }
+
+    @Test fun aCloudSweepShowsItsWorstCaseCostBeforeItStarts() {
+        show(FakeLlmService(), worstCaseUsd = { 0.0025 })
+        // The default plan is 3 values x 3 repeats: 9 runs at most US$0.0025 each.
+        compose.onNodeWithTag(ExperimentTags.CLOUD_COST).performScrollTo().assertTextContains("these 9 runs cost at most US$0.0225", substring = true)
+    }
+
+    @Test fun anOnDeviceSweepShowsNoCost() {
+        show(FakeLlmService())
+        assertTrue(compose.onAllNodes(hasTestTag(ExperimentTags.CLOUD_COST)).fetchSemanticsNodes().isEmpty())
     }
 
     @Test fun withoutValidRunSettingsItSaysSo() {

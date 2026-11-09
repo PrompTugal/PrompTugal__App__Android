@@ -117,6 +117,15 @@ class ExperimentsTest {
         assertEquals(3, ExperimentSummary.of(listOf("0.2"), p.results)[0].failed)
     }
 
+    @Test fun theCloudSpendingCapEndsTheSweepAtOnceWithItsOwnReason() = runBlocking {
+        val plan = ExperimentPlan(SweepVariable.TEMPERATURE, listOf("0.2"), 10).expand(base).getOrThrow()
+        var n = 0
+        val fake = FakeLlmService { if (++n < 2) FakeReply("ok") else FakeReply(error = ai.riskmandate.app.llm.LlmEvent.Error(ai.riskmandate.app.llm.LlmError.CAP_REACHED, "cap")) }
+        val p = runExperiment(plan, LlmRunner(fake), Guard()) {}
+        assertEquals("R-wb-8: not three failures", ExperimentStop.CLOUD_CAP, p.stop)
+        assertEquals(2, p.done)
+    }
+
     @Test fun stoppingEndsAsStoppedAndLogsTheCutRun() = runBlocking {
         val logged = mutableListOf<LlmStopReason>()
         var last: ExperimentProgress? = null

@@ -6,6 +6,7 @@ import ai.riskmandate.app.experiments.NoGuard
 import ai.riskmandate.app.experiments.RunCaps
 import ai.riskmandate.app.experiments.StopReason
 import ai.riskmandate.app.llm.LlmRunner
+import ai.riskmandate.app.llm.LlmError
 import ai.riskmandate.app.llm.LlmStopReason
 import ai.riskmandate.app.llm.RunRecord
 import ai.riskmandate.app.llm.RunSettings
@@ -57,7 +58,7 @@ data class ExperimentPlan(val variable: SweepVariable, val values: List<String>,
 }
 
 /** Why an experiment ended early. */
-enum class ExperimentStop { RUN_CAP, TIME_CAP, BATTERY, HOT, FAILURES, STOPPED; companion object }
+enum class ExperimentStop { RUN_CAP, TIME_CAP, BATTERY, HOT, FAILURES, STOPPED, CLOUD_CAP; companion object }
 
 /**
  * The caps live in experiments/RunCaps (dev.lab), shared with the Lab's loop and the tool tests: 100 runs,
@@ -164,6 +165,8 @@ suspend fun runExperiment(
             results += label to r
             onRecord(label, r)
             failuresInARow = if (r.stopReason == LlmStopReason.ERROR) failuresInARow + 1 else 0
+            // The cloud spending cap ends the sweep at once with its own reason, not as three failures (R-wb-8).
+            if (r.error?.reason == LlmError.CAP_REACHED) { if (results.size < plan.size) stop = ExperimentStop.CLOUD_CAP; break }
         }
         if (stop == null && failuresInARow >= RunCaps.MAX_CONSECUTIVE_ERRORS && results.size < plan.size) stop = ExperimentStop.FAILURES
     } catch (e: CancellationException) {

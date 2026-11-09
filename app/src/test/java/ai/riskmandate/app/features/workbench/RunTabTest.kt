@@ -223,12 +223,34 @@ class RunTabTest {
         assertTrue("nothing went to the cloud", cloudInner.requests.isEmpty())
     }
 
+    @Test fun theCloudChoiceResetsWhenTheCloudServiceGoesAndComesBack() {
+        var cloud by androidx.compose.runtime.mutableStateOf<ai.riskmandate.app.llm.LlmService?>(cloudFake())
+        val local = FakeLlmService { FakeReply("local") }
+        compose.setContent {
+            RiskMandateTheme {
+                WorkbenchContent(
+                    FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), llm = local, cloudLlm = cloud),
+                    io = kotlinx.coroutines.Dispatchers.Unconfined, probe = { null }, guard = ai.riskmandate.app.experiments.NoGuard,
+                )
+            }
+        }
+        compose.onNodeWithTag(RunTags.CLOUD).performScrollTo().performClick()
+        compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("Cloud", substring = true)
+        cloud = null
+        compose.waitForIdle()
+        cloud = cloudFake()
+        compose.waitForIdle()
+        // R-wb-10: back on the device until someone chooses the cloud again.
+        compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("On this device")
+    }
+
     @Test fun withoutACloudServiceThereIsNoCloudChoice() {
         showWorkbench(cloud = null, local = FakeLlmService())
         assertTrue(compose.onAllNodes(hasTestTag(RunTags.CLOUD)).fetchSemanticsNodes().isEmpty())
         compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("On this device")
-        // A saved "cloud" choice is not honoured without a cloud service.
-        assertEquals(true, RunForm.restore(RunForm.save(RunForm(useCloud = true))).useCloud)
+        // The cloud choice is never saved or restored (R-wb-10): it needs a fresh choice after a rotation or restart.
+        assertEquals(false, RunForm.restore(RunForm.save(RunForm(useCloud = true))).useCloud)
+        assertEquals(false, RunForm.restore(listOf("true") + RunForm.save(RunForm()).drop(1)).useCloud)
     }
 
     @Test fun theFeatureIsOffAndShowsTheRunTab() {
