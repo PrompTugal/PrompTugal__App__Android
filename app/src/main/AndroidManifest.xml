@@ -36,6 +36,8 @@
             android:name="androidx.profileinstaller.ProfileInstallReceiver"
             tools:node="remove"
             tools:ignore="MissingClass" />
+        <!-- LiteRT-LM's GPU backend (llm/) loads the vendor OpenCL library; optional, CPU is the fallback. -->
+        <uses-native-library android:name="libOpenCL.so" android:required="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
