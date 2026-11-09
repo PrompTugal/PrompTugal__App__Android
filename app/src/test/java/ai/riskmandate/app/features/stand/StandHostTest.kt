@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertIsDisplayed
@@ -24,6 +26,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -49,6 +52,8 @@ private class FakeLock(var refuse: Boolean = false, var throwing: Boolean = fals
 class StandHostTest {
     @get:Rule val compose = createComposeRule()
 
+    @After fun release() { held = false }
+
     private val app: Application = ApplicationProvider.getApplicationContext()
     private lateinit var settings: StandSettings
     private var now = 0L
@@ -68,8 +73,10 @@ class StandHostTest {
         lifecycle.currentState = Lifecycle.State.RESUMED
     }
 
+    private var held by androidx.compose.runtime.mutableStateOf(false)
+
     private fun show(lock: ScreenLock, atHome: Boolean = true) = compose.setContent {
-        StandHostContent(settings, lock, lifecycle, { now }, atHome, { homeCalls++ }) {
+        StandHostContent(settings, lock, lifecycle, { now }, atHome, { homeCalls++ }, held) {
             val v = androidx.compose.ui.platform.LocalView.current
             hostView = v
             Text("app")
@@ -97,7 +104,7 @@ class StandHostTest {
     }
 
     private fun showWithButtonInCorner(atHome: Boolean, onTap: () -> Unit) = compose.setContent {
-        StandHostContent(settings, FakeLock(), lifecycle, { now }, atHome, { homeCalls++ }) {
+        StandHostContent(settings, FakeLock(), lifecycle, { now }, atHome, { homeCalls++ }, false) {
             androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
                 androidx.compose.foundation.layout.Box(
                     androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
@@ -219,6 +226,23 @@ class StandHostTest {
         now += 10 * 60_000
         compose.mainClock.advanceTimeBy(2_000)
         assertEquals(0, homeCalls)
+    }
+
+    @Test fun heldLongerThanTheTimeoutNeverResets_releasedThenTimeoutResetsOnce() {
+        settings.enabled = true
+        held = true
+        show(FakeLock(), atHome = false)
+        compose.waitForIdle()
+        now += 10 * 60_000
+        compose.mainClock.advanceTimeBy(2_000)
+        assertEquals(0, homeCalls)
+        held = false
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(2_000)
+        assertEquals("released: countdown restarts, no instant reset", 0, homeCalls)
+        now += 3 * 60_000 + 1_000
+        compose.mainClock.advanceTimeBy(2_000)
+        assertEquals(1, homeCalls)
     }
 
     @Test fun noResetWhileStandModeIsOff() {

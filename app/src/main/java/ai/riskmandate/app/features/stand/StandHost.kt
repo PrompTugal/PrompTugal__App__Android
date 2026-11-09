@@ -64,12 +64,20 @@ object StandTags {
  *
  * @param atHome true while the home screen shows.
  * @param goHome takes the app back to the home screen (for the idle reset).
+ * @param idleHeld true while a feature needs the screen left alone (e.g. an auto-play loop): no idle reset.
+ *   When it turns false the countdown restarts from that moment.
  */
 @Composable
-fun StandHost(activity: ComponentActivity, atHome: Boolean, goHome: () -> Unit, content: @Composable () -> Unit) {
+fun StandHost(
+    activity: ComponentActivity,
+    atHome: Boolean,
+    goHome: () -> Unit,
+    idleHeld: Boolean = false,
+    content: @Composable () -> Unit,
+) {
     val settings = remember(activity) { StandSettings.of(activity) }
     val lock = remember(activity) { ActivityScreenLock(activity) }
-    StandHostContent(settings, lock, activity.lifecycle, SystemClock::elapsedRealtime, atHome, goHome, content)
+    StandHostContent(settings, lock, activity.lifecycle, SystemClock::elapsedRealtime, atHome, goHome, idleHeld, content)
 }
 
 private const val CORNER_DP = 48
@@ -84,6 +92,7 @@ internal fun StandHostContent(
     clock: () -> Long,
     atHome: Boolean,
     goHome: () -> Unit,
+    idleHeld: Boolean,
     content: @Composable () -> Unit,
 ) {
     var enabled by remember { mutableStateOf(settings.enabled) }
@@ -98,6 +107,9 @@ internal fun StandHostContent(
     val timer = remember { IdleTimer(clock, minutes * 60_000L) }
     val currentAtHome by rememberUpdatedState(atHome)
     val currentGoHome by rememberUpdatedState(goHome)
+    val currentHeld by rememberUpdatedState(idleHeld)
+    // Released: count from now, so the reset does not fire at once for time spent held.
+    LaunchedEffect(idleHeld) { if (!idleHeld) timer.touch() }
 
     // Keep the screen on with the view flag: no WAKE_LOCK permission needed.
     val view = LocalView.current
@@ -130,7 +142,8 @@ internal fun StandHostContent(
         // Only counts while the app is in front; coming back after a long time away resets at once.
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             while (true) {
-                if (timer.poll() && !currentAtHome) currentGoHome()
+                if (currentHeld) timer.touch()
+                else if (timer.poll() && !currentAtHome) currentGoHome()
                 delay(1_000)
             }
         }
