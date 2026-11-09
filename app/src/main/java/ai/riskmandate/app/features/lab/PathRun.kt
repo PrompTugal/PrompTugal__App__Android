@@ -1,5 +1,6 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.llm.LlmEvent
 import ai.riskmandate.app.llm.ToolCheck
 
 /**
@@ -18,18 +19,24 @@ class PathRun(private val scenario: Scenario, private val abp: Boolean) {
 
     val done: Boolean get() = finalText != null
 
+    /** The (tool, result text) pairs of the last [step], to give back to the model as tool messages. */
+    var lastResults: List<Pair<String, String>> = emptyList()
+        private set
+
     /**
      * Feeds one model turn at [tMs]. Returns the text to give back to the model as tool results, or null
      * when the model answered (this turn is the final answer) or the step limit was reached.
      */
-    fun step(text0: String, tMs: Long): String? {
+    fun step(text0: String, tMs: Long, proposed: List<LlmEvent.ToolCallProposed> = emptyList()): String? {
         check(!done) { "run already finished" }
         // Model output is capped before anything reads it (events, call extraction, the final answer, scoring).
         val text = if (text0.length > ToolProtocol.MAX_TEXT_CHARS) text0.substring(0, ToolProtocol.MAX_TEXT_CHARS) else text0
         steps++
         if (text.isNotBlank()) events += LabEvent.ModelText(tMs, text)
-        val raws = ToolProtocol.extractCalls(text)
+        val raws = (ToolProtocol.extractCalls(text) + proposed.map(ToolProtocol::fromProposal)).take(ToolProtocol.MAX_PARSED_CALLS)
+        lastResults = emptyList()
         if (raws.isEmpty()) { finalText = text; return null }
+        val results = ArrayList<Pair<String, String>>()
         val back = ArrayList<String>()
         raws.forEachIndexed { i, raw ->
             val args = (raw.arguments as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value } ?: emptyMap()
@@ -41,6 +48,7 @@ class PathRun(private val scenario: Scenario, private val abp: Boolean) {
                 events += LabEvent.ToolResult(tMs, shownName, false, msg)
                 calls += CallTrace(shownName, args, false, null, false, msg)
                 back += "$shownName: $msg"
+                results += shownName to msg
                 return@forEachIndexed
             }
             val call = ToolProtocol.toCall(checked as ToolCheck.Accepted)
@@ -55,13 +63,16 @@ class PathRun(private val scenario: Scenario, private val abp: Boolean) {
                 events += LabEvent.ToolResult(tMs, call.name, false, msg)
                 calls += CallTrace(call.name, args, true, verdict, false, msg)
                 back += "${call.name}: $msg"
+                results += call.name to msg
             } else {
                 val result = FakeTools.asText(FakeTools.execute(scenario, call.name, call.args))
                 events += LabEvent.ToolResult(tMs, call.name, true, result)
                 calls += CallTrace(call.name, args, true, verdict, true, result)
                 back += "${call.name}: $result"
+                results += call.name to result
             }
         }
+        lastResults = results
         if (steps >= scenario.maxSteps) { finalText = ""; return null }
         return back.joinToString("\n")
     }
@@ -74,6 +85,9 @@ class PathRun(private val scenario: Scenario, private val abp: Boolean) {
         events += LabEvent.Final(tMs, text)
         return PathRecord(events.toList(), Oracle.outcome(scenario, RunTrace(calls.toList(), text, flags), abp))
     }
+
+    /** The path so far (no answer yet if the run is still going), for showing a live run as it goes. */
+    fun snapshot(): PathRecord = PathRecord(events.toList(), Oracle.outcome(scenario, trace(), abp))
 
     /** The trace so far, for scoring or export. */
     fun trace(): RunTrace {
