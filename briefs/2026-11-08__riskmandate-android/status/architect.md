@@ -1,11 +1,12 @@
 # architect.android status
 
-> 9 Nov 2026, about 02:40 UTC: P7 pushed (c9233a0: Feature icon, kicker, summary). app shell step 1 (894a93b) PASS; step 2 must merge FeatureFrame into the shell (A-app-11: two headers on phones). FeatureContext.llm waits for dev.llm step 3.
+> 9 Nov 2026, about 02:45 UTC: design fb824aa PASS (A-des-4: the host draws ScreenHeader from P7, features don't). dev.llm 9c3fbd5 PASS, but it conflicts with app's shell on the host files: app re-does the host lines (A-llm-3). Trial merge of dev + architect + design + app: green, 350 tests.
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Reviews: design fb824aa PASS (A-des-4 ScreenHeader belongs to the host frame; A-des-5 breakpoints written down); dev.llm 9c3fbd5 PASS (A-llm-4/5 closed; A-llm-3: conflicts with app's shell, app re-does the host lines). README: one title per screen.
 - P7: `icon`, `kicker`, `summary` on `Feature` (null defaults) plus `FeaturePresentationTest`. Gate green.
 - Review: app 894a93b shell step 1 PASS (A-app-11 double header on phones and Back next to the sidebar; A-app-12 use P7; A-app-13 unused import).
 - Reviews: dev.llm c02632a PASS (A-llm-1 licences, A-llm-2 metadata flag only for the summit, A-llm-3/4/5: bench route through app, out of features/, debug or model-present only); dev.chat 4c6d11e PASS (A-chat-1: use context.llm, not a chat-owned CompositionLocal); eval 2aebd3d PASS (A-eval-1 budget ledger path); dev.lab b67a7c5 PASS fix-forward (A-lab-1 argument validation, A-lab-2 golden vectors shared with eval, A-lab-3 parse eval's formats). README: contract adds `installed` and `modelId`; noBackupFilesDir; LiteRT-LM approved.
