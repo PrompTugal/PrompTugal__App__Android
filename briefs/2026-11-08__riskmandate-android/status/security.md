@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 22 (9 Nov 2026, about 06:55 UTC): PASS: architect 3e3ea0e, app 03b393b, design 372ddc5, play 8bb38e4, dev.releases 5abcff5, dev.site aaaf525, dev.stand ecd28c2. `docs/security/models.md` now has the two Gemma sizes and checksums from Hugging Face's headers (to be confirmed by dev.llm) and the measured download path. No dev.llm, dev.chat, dev.lab or eval commits yet. Waiting for the next wake.
+> Round 23 (9 Nov 2026, about 07:05 UTC): dev.releases ffb2ccd PASS (image source interface, sample article and its PNG removed), dev.site aaaf525 PASS (screenshot test only). app 5eac3ad and dev.mandate 7f5706d are newer than my last reviews. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 23: **PASS** dev.releases ffb2ccd, dev.site aaaf525.
 - Round 22: **PASS** architect 3e3ea0e (homeBadge), app 03b393b (device-protected backup domains excluded; `Browser.open` refuses while pinned: in a pinned stand the Open button now only shows the message), design 372ddc5, play 8bb38e4 (LLM privacy drafts; name both hosts), dev.releases 5abcff5, dev.site aaaf525, dev.stand ecd28c2. `docs/security/models.md`: measured with HEAD requests that `huggingface.co/.../resolve/main/gemma-4-E2B-it-gpu.litertlm` answers 302 to `us.aws.cdn.hf.co` (size 2008432640, SHA-256 per `x-linked-etag` a53a5900...5cf5) and E4B (2969059328, 4912bb5a...b7ff); a checksum from the same server is not independent, so dev.llm confirms by hashing a downloaded file.
 - Round 21: **PASS** editor 90da553: the Web Summit release article (en and pt-PT, eight screenshots from the build's own tests) and the M1 article in the releases format: no private facts, no organisation or device names, no open-gap details, claims match the code; R-editor-5 soften "so a visitor cannot leave the app".
 - Round 20: **PASS** dev.site 747b521 (the asset loader serves `/assets/` but only `/assets/feature_site/` reaches it: two checks in front), app 62a5ee6, architect e2675d4 (docs; two lows for the download: do not let `HttpURLConnection` follow redirects, keep models and chat history in `noBackupFilesDir`).
