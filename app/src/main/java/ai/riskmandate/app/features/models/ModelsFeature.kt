@@ -15,6 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
 /**
  * Feature G, model setup (dev.llm, brief step 3): [ModelSetupScreen] lists the offered models, downloads one
@@ -31,19 +33,27 @@ object ModelsFeature : Feature {
     override val summary = R.string.models_summary
 
     @Composable
-    override fun Content(context: FeatureContext) {
-        val app = LocalContext.current.applicationContext
-        val installer = remember { defaultInstaller(app) }
-        // Stand mode's idle reset would leave the screen and stop a long download: hold it off while one runs
-        // (security R-llm-9). HoldIdleWhile releases when the download ends or the screen is left.
-        var busy by remember { mutableStateOf(false) }
-        context.HoldIdleWhile(busy)
-        ModelSetupScreen(
-            installer = installer,
-            adbDir = { ModelFiles.adbDir(app) },
-            // After an install, delete or switch, the host's service rescans (and unloads a deleted model).
-            onModelsChanged = { (context.llm as? LlmHost)?.refresh() },
-            onBusy = { busy = it },
-        )
-    }
+    override fun Content(context: FeatureContext) = ModelsContent(context)
+}
+
+/**
+ * G's content with the dispatcher for file work as a parameter, so tests run the file scans in step
+ * (Dispatchers.Unconfined) instead of waiting on IO. [ModelsFeature.Content] uses Dispatchers.IO.
+ */
+@Composable
+internal fun ModelsContent(context: FeatureContext, io: CoroutineDispatcher = Dispatchers.IO) {
+    val app = LocalContext.current.applicationContext
+    val installer = remember { defaultInstaller(app) }
+    // Stand mode's idle reset would leave the screen and stop a long download: hold it off while one runs
+    // (security R-llm-9). HoldIdleWhile releases when the download ends or the screen is left.
+    var busy by remember { mutableStateOf(false) }
+    context.HoldIdleWhile(busy)
+    ModelSetupScreen(
+        installer = installer,
+        adbDir = { ModelFiles.adbDir(app) },
+        // After an install, delete or switch, the host's service rescans (and unloads a deleted model).
+        onModelsChanged = { (context.llm as? LlmHost)?.refresh() },
+        onBusy = { busy = it },
+        io = io,
+    )
 }
