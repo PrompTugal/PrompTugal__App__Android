@@ -36,6 +36,8 @@ class JudgesTest {
 
     /** A model that answers every judging request with [reply]. */
     private fun judgeModel(reply: String) = FakeLlmService(reply = { FakeReply(reply) })
+    /** The same service, reporting that it runs in the cloud (the cloud service's `location`). */
+    private fun cloudOf(inner: LlmService): LlmService = object : LlmService by inner { override val location = ai.riskmandate.app.llm.LlmLocation.CLOUD }
     private fun verdictJson(v: String, why: String = "because") = "{\"verdict\": \"$v\", \"reason\": \"$why\"}"
 
     // ---- the versioned prompt ---------------------------------------------------------------------------
@@ -137,7 +139,7 @@ class JudgesTest {
         val secret = cat.case("secret-note")!!
         assertTrue(secret.system.contains("PLANTED-SECRET"))
         val llm = judgeModel(verdictJson("pass"))
-        val v = CloudJudge(llm, prompt).judge(secret, runOf(secret, secret.reference!!))
+        val v = CloudJudge(cloudOf(llm), prompt).judge(secret, runOf(secret, secret.reference!!))
         assertEquals(JudgeLayer.CLOUD, v.layer)
         val sent = llm.requests.single().messages.joinToString("\n") { it.text }
         assertFalse("the case's system prompt (with the planted value) is not sent to a judge", sent.contains("PLANTED-SECRET"))
@@ -150,16 +152,34 @@ class JudgesTest {
         val e = LocalModelJudge(err, prompt).judge(weather, good())
         assertEquals(JudgeOutcome.UNSURE, e.outcome); assertTrue(e.reason.contains("did not run"))
         val throwing = object : LlmService by judgeModel("") { override suspend fun generate(request: ai.riskmandate.app.llm.LlmRequest): ai.riskmandate.app.llm.LlmResult = throw IllegalStateException("boom") }
-        assertEquals(JudgeOutcome.UNSURE, CloudJudge(throwing, prompt).judge(weather, good()).outcome)
+        assertEquals(JudgeOutcome.UNSURE, CloudJudge(cloudOf(throwing), prompt).judge(weather, good()).outcome)
         val llm = judgeModel(verdictJson("pass"))
         assertEquals(JudgeOutcome.UNSURE, LocalModelJudge(llm, prompt).judge(weather, good().copy(error = "x")).outcome)
         assertEquals("no request is made for an unfinished run", 0, llm.requests.size)
     }
 
+    @Test fun aJudgeRefusesAServiceThatIsNotWhereItsLayerSaysAndSendsNothing() = runBlocking {
+        // R-lab-16: a LOCAL judge refuses a CLOUD service and a CLOUD judge refuses a LOCAL one, before any request.
+        val onDevice = judgeModel(verdictJson("pass"))
+        val remote = judgeModel(verdictJson("pass"))
+        val cloudJudgeOnDevice = CloudJudge(onDevice, prompt).judge(weather, good())
+        val localJudgeOnCloud = LocalModelJudge(cloudOf(remote), prompt).judge(weather, good())
+        for (v in listOf(cloudJudgeOnDevice, localJudgeOnCloud)) {
+            assertEquals(JudgeOutcome.UNSURE, v.outcome)
+            assertTrue(v.reason, v.reason.contains("did not run"))
+        }
+        assertEquals(JudgeLayer.CLOUD, cloudJudgeOnDevice.layer); assertEquals(JudgeLayer.LOCAL, localJudgeOnCloud.layer)
+        assertEquals("nothing was sent to the on-device model", 0, onDevice.requests.size)
+        assertEquals("nothing was sent to the cloud service", 0, remote.requests.size)
+        // The right pairings do run.
+        assertEquals(JudgeOutcome.PASS, LocalModelJudge(onDevice, prompt).judge(weather, good()).outcome)
+        assertEquals(JudgeOutcome.PASS, CloudJudge(cloudOf(remote), prompt).judge(weather, good()).outcome)
+    }
+
     // ---- the panel -----------------------------------------------------------------------------------------
 
     private fun panel(local: String? = null, cloud: String? = null) = JudgePanel(listOfNotNull(
-        cloud?.let { CloudJudge(judgeModel(it), prompt) }, CodeJudge(), local?.let { LocalModelJudge(judgeModel(it), prompt) },
+        cloud?.let { CloudJudge(cloudOf(judgeModel(it)), prompt) }, CodeJudge(), local?.let { LocalModelJudge(judgeModel(it), prompt) },
     ))
 
     @Test fun layersRunInOrderCodeThenLocalThenCloudWhateverOrderTheyAreGiven() = runBlocking {

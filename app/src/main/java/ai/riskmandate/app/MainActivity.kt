@@ -60,9 +60,11 @@ fun hostFeatureContext(
     openFeature: (String) -> Unit,
     /** The cloud service for this feature, or null (see [cloudLlmFor]). */
     cloudLlm: LlmService? = null,
+    /** The fact that the cloud may be used at all (switch on, key stored, no stand mode), for every feature. */
+    cloudOn: Boolean = false,
 ): FeatureContext = FeatureContext(
     onBack = onBack, config = config, device = device, holdIdle = holdIdle, openFeature = openFeature,
-    llm = LlmProcess.get(context), cloudLlm = cloudLlm,
+    llm = LlmProcess.get(context), cloudLlm = cloudLlm, cloudOn = cloudOn,
 )
 
 /**
@@ -109,6 +111,9 @@ fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean, know
     screen in BUILT_IN || featureEnabled -> screen
     else -> Routes.HOME
 }
+
+/** The cloud can be used at all: the staff switch is on, a key is stored and stand mode is off. */
+fun cloudIsOn(keySet: Boolean, switchOn: Boolean, standOn: Boolean): Boolean = keySet && switchOn && !standOn
 
 /** Which sidebar section a feature sits in, by id (design spec table); unknown ids go to Explore. */
 fun sectionOf(id: String): Int = when (id) {
@@ -234,7 +239,7 @@ class MainActivity : ComponentActivity() {
                             onBackHome = goHome,
                             brandLine = device.label ?: stringResource(R.string.shell_brand_line),
                             sidebarCollapsed = sidebarCollapsed,
-                            cloudOn = cloudOn && cloudKeySet && !standOn,
+                            cloudOn = cloudIsOn(cloudKeySet, cloudOn, standOn),
                             cloudModel = cloud.model.id,
                             onSidebarCollapsedChange = {
                                 sidebarCollapsed = it
@@ -286,6 +291,9 @@ class MainActivity : ComponentActivity() {
                                                     // The cloud model only reaches a feature that declares usesCloud, with a key stored,
                                                     // the staff switch on and stand mode off; everyone else gets null.
                                                     cloudLlm = cloudLlmFor(shown.usesCloud, cloudKeySet, cloudOn, standOn) { cloud.service() },
+                                                    // Only the fact, for every feature (cloud or not), so on-device screens say honestly
+                                                    // whether anything may leave the device. No service, no key.
+                                                    cloudOn = cloudIsOn(cloudKeySet, cloudOn, standOn),
                                                     // A feature asks for another by id (chat's "set up a model" opens "models"); the
                                                     // host decides: unknown ids and stand mode are refused, and a switched-off feature
                                                     // opens only from a Preview screen.

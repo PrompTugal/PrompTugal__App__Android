@@ -1,8 +1,9 @@
 {
  "agent": "conductor.android@promptugal.ai.dinis",
- "updated": "2026-11-09T10:40Z",
+ "updated": "2026-11-09T13:25Z",
  "state": "Summit phase. Ready for Dinis's tablet run: build 0.1.76 or later from App Tester, guide docs/qa/device-run-idea-tab-plus.md (Diagnostics > Preview > Model setup, bench, Chat, ABP Lab). All review queues are empty; every branch with work is on dev. Models, Chat and Lab stay disabled until the run. Lab egress check closed (R-lab-8/9/12/13, 54 shared golden vectors, fuzzed by security).",
  "done": [
+  "13:25 UTC: the Workbench is complete on dev (Run, Experiments, Tool tests, judge layer) and on build 0.1.90; the OpenRouter client, key screen, switch, spend caps, cloudOn and judge-location rule are on dev, dormant until dev.llm's R-llm-14 lands and the Workbench switches cloud on.",
   "09:30 UTC: Dinis ran build 0.1.78 on the Idea Tab Plus. Model setup downloaded Gemma 4 E2B on the tablet (resume and checksum path), and Chat answered on device at about 5.4 to 5.5 tokens per second (68 tokens in 13.6 s; 140 in 26.5 s). Fixes routed to dev.chat: a short verbatim riskmandate.ai system line on every request, the badge wording, markdown markers, sampling check.",
   "07:15 UTC: merged chat's verbatim grounding texts (Q-chat-4/5), the lab's R-lab-13 fix with eval's 54 vectors, the loop rotation fix (Q-loop-1), and the final device guide (security PASS each, gate green). Guide sent to Dinis.",
   "06:30 UTC (hourly run 9): merged LlmProcess wiring, chat on context.llm and its rotation fix, the lab's live and loop modes, golden vectors (48, shared with eval), the egress fixes R-lab-8/9, Diagnostics > Preview, the bench for G-installed models, and dev.llm's flake fix. All security PASS, gate green.",
@@ -28,7 +29,6 @@
   "Dinis picks the summit features (A RiskMandate inside the app, B ABP-in-every-layer demo screen, C this app's own mandate live, D stand mode, E demo videos); the sessions build them and each merge reaches the tablets through the M1 pipeline"
  ],
  "asks": [
-  "Dinis: the OpenRouter key on the tablets. Proposed route: staff paste it once per tablet in Diagnostics, stored encrypted with the Android Keystore, never logged, backed up or shown again, removable; plus a credit limit on the key itself in OpenRouter. Say if you want another route (managed configuration later with M2).",
   "Dinis: when you can, the rest of the guide: Diagnostics > Preview > Model bench (load time, tokens/s on GPU and CPU, memory; Copy results), then the ABP Lab (replays, one live run, one loop of 20 on the charger). Paste the numbers here.",
   "Dinis: Diagnostics > Preview (for your tablet run) opens Models, Chat and the Lab in every build while stand mode is off, so enabled=false no longer hides them from a release build. Fine for our tablets and Firebase testers; before any Play or managed (M3) build, limit Preview to debug builds or accept it (security R-app-2).",
   "Dinis: the third (smallest) model: every small Google LiteRT model (Gemma 3 270M, Gemma 3 1B) is gated on Hugging Face (Gemma licence, login). Options: (a) you accept the licence and push the file to the tablet with adb (the bench accepts it, hashes pinned); (b) only E2B and E4B for now; (c) FunctionGemma 270M (ungated, but a function-calling fine-tune, not a chat model).",
@@ -56,6 +56,7 @@
  ],
  "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
  "decisions": [
+  "9 Nov 2026, about 13:25 UTC, Dinis (relayed by conductor@web-summit.dinis): OpenRouter cap US$5 per tablet ('go to town'); accountant@PrompTugal.dinis maps budgets; keys later distributed by a per-device secrets manager, sealed to the device key over the team messaging lanes (WS-203) or by QR. Until then staff paste the key in Diagnostics > Cloud model.",
   "9 Nov 2026, about 11:00 UTC, Dinis: the Android team is renamed <role>.android@promptugal.ai.dinis; the merge rule stays (sessions on their own branches, the conductor merges after security's PASS and the gate).",
   "9 Nov 2026, about 10:35 UTC, Dinis: the Android apps (RiskMandate, later the PrompTugal team app) use OpenRouter from the app as well as the on-device model: the Workbench judges in three layers (code, the local model, a cloud model via OpenRouter). Scenarios and prompts move to the shared repo PrompTugal/PrompTugal__App__Mobile once Dinis creates it; until then they are kept platform-neutral here.",
   "9 Nov 2026, about 03:05 UTC, Dinis: theme variant A (RiskMandate green accent, red only for blocked and errors, navy-leaning dark mode) and design's vector redraw of the RM logo as the app icon are approved.",
