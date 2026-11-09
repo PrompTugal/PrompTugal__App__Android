@@ -228,7 +228,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      actions: write
+      actions: write   # to dispatch promote.yml
+      contents: read   # and nothing else; no environment, no secrets
     steps:
       - name: Dispatch promote.yml on main
         env:

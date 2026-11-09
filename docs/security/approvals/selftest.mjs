@@ -62,6 +62,10 @@ expect('a head that changes a workflow is refused for automatic promotion', run(
 expect('... and goes through when a person promotes it (allowTrustPathChange)', run(tip, { allowTrustPathChange: true }), true);
 h = fresh('t16'); put('scripts/promote-select.sh', '#!/bin/sh\n'); const ps = commit('selector'); tip = append([line(ps)]);
 expect('a head that changes the promotion selector is refused for automatic promotion', run(tip), false, 'trust paths');
+h = fresh('t17'); const x17 = append([line(h)]); put('board/status.json', '{"state":"later"}'); put('briefs/b/status/app.md', 'status\n'); tip = commit('status text after the approval');
+expect('status text after the approval does not stop promotion', run(tip), true);
+h = fresh('t18'); put('scripts/changed-since-release.sh', '#!/bin/sh\n'); const csr = commit('release decision'); tip = append([line(csr)]);
+expect('a head that changes the script that decides whether a release is built is refused for automatic promotion', run(tip), false, 'trust paths');
 // An approvals file on the candidate that is not an append to the one on main (a line removed or rewritten).
 g('checkout', '-q', '-B', 'main2', main); const lm = line(main); put(APPROVALS, JSON.stringify(lm) + '\n'); const main2 = commit('main with one line');
 g('checkout', '-q', '-B', 't15', main2); put('app.txt', 'c'); const c15 = commit('code'); put(APPROVALS, ''); const tip15 = commit('rewrite the approvals file');

@@ -9,7 +9,7 @@ export const VERDICTS = ['PASS', 'HOLD', 'REVOKE'];
 const SHA = /^[0-9a-f]{40}$/;
 const HEX64 = /^[0-9a-f]{64}$/;
 // A promotion that touches one of these needs a person: the automated promotion refuses (docs/security/approvals.md section 5).
-export const TRUST_PATHS = [/^board\/keys\.json$/, /^\.github\//, /^scripts\/verify-approval/, /^scripts\/promote-select\.sh$/, /^scripts\/find-release-tag\.sh$/, /^scripts\/changed-build-paths\.sh$/, /^docs\/security\/approvals\//, /^CLAUDE\.md$/, /^board\/security\/approvals\.jsonl$/];
+export const TRUST_PATHS = [/^board\/keys\.json$/, /^\.github\//, /^scripts\/verify-approval/, /^scripts\/promote-select\.sh$/, /^scripts\/find-release-tag\.sh$/, /^scripts\/changed-build-paths\.sh$/, /^scripts\/changed-since-release\.sh$/, /^docs\/security\/approvals\//, /^CLAUDE\.md$/, /^board\/security\/approvals\.jsonl$/];
 
 export const git = (repo, ...args) => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', maxBuffer: 64 << 20 });
 export const gitOrNull = (repo, ...args) => { try { return git(repo, ...args); } catch { return null; } };
@@ -58,7 +58,12 @@ export function parseLines(text) {
 }
 
 // Paths a commit after the approved head may touch: the approval record itself and the reviews (a hash cannot contain its own approval).
-export const TAIL_PATHS = [/^board\/security\/approvals\.jsonl$/, /^docs\/security\/reviews\/[A-Za-z0-9._-]+\.md$/, /^briefs\/[^/]+\/status\/security\.md$/];
+export const TAIL_PATHS = [
+  /^board\/security\/approvals\.jsonl$/, /^docs\/security\/reviews\/[A-Za-z0-9._-]+\.md$/, /^briefs\/[^/]+\/status\/security\.md$/,
+  // Plain status text that no build, test or workflow reads (the board's status and sessions files, the status pages and debriefs): the
+  // conductor commits these after nearly every merge, and they would otherwise stop every promotion. Never code, keys or workflows.
+  /^board\/(status|sessions)\.json$/, /^board\/team\/[^/]+\/debriefs\/[A-Za-z0-9._-]+\.md$/, /^briefs\/[^/]+\/status\/[A-Za-z0-9._-]+\.md$/,
+];
 const isAncestor = (repo, a, b) => gitOrNull(repo, 'merge-base', '--is-ancestor', a, b) !== null;
 
 /**
