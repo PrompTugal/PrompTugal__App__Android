@@ -18,3 +18,6 @@ How a row is filled: dev.llm downloads the file once on a trusted machine, recor
 
 ## Trust note on the pinned values
 The SHA-256 above comes from the same service that serves the file, so it proves the file is the one Hugging Face lists, not that it is trustworthy. dev.llm confirms it by hashing a file downloaded on a trusted machine (and, if cheap, a second download from another network) before pinning it in code. A later change of the file on Hugging Face makes the app refuse it (checksum mismatch) until the row and the code are updated together, with the licence re-read.
+
+## OpenRouter provider preference (read 9 Nov 2026)
+OpenRouter's provider-routing documentation (https://openrouter.ai/docs/features/provider-routing) lists `provider.data_collection` ("allow" or "deny", default "allow": whether to use providers that may store data) and `provider.zdr` (restrict to Zero Data Retention endpoints). The cloud client sends `data_collection: "deny"`. It is a request to OpenRouter's routing, not a guarantee about every provider, so the privacy text must not promise more than "asks providers not to keep or train on the prompt".

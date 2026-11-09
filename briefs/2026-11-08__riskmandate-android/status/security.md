@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 72 (9 Nov 2026): dev.lab b2743f4 (Workbench tool tests) PASS (R-lab-14, R-lab-15 info; export builder exists but is not wired). Waiting for the Workbench merge entries (R-wb-5) and dev.chat's cloud build (checklist M). Still open: the design-pass article, the Lab export share path (R-lab-11), R-app-2, and Dinis asks for the cloud key.
+> Round 73 (9 Nov 2026): cloud client dev.chat e84e63d PASS to merge unwired (R-cloud-1 User-Agent and R-cloud-4 cap controls must close before wiring; six lower notes), architect 4412132 PASS (usesCloud and cloudLlm), dev.mandate 55a26c3 PASS (Workbench log entry). Waiting for: the move to cloud/ and feature_cloud, the key screen and the host wiring (checklist M), play lines for the Workbench log (R-wb-5), a real-device check of KeystoreCipher. Still open: the design-pass article, R-lab-11, R-app-2, Dinis asks for the cloud key.
 
 ## Doing
 Nothing. Stopped until woken.
