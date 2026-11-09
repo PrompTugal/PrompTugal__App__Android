@@ -19,6 +19,8 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -46,7 +48,7 @@ class RunTabTest {
     private fun show(fake: FakeLlmService?, records: MutableList<RunRecord> = mutableListOf(), opened: MutableList<Unit> = mutableListOf()) =
         compose.setContent {
             RiskMandateTheme {
-                ai.riskmandate.app.ui.FeatureContent {
+                ai.riskmandate.app.ui.FeatureContent(scrollable = false) {
                 var form by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(RunForm()) }
                 var last by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<RunRecord?>(null) }
                 RunTab(
@@ -70,7 +72,7 @@ class RunTabTest {
             if (compose.onAllNodes(hasTestTag(tag)).fetchSemanticsNodes().isNotEmpty()) return
             Thread.sleep(20)
         }
-        fail("no node tagged $tag")
+        fail("no node tagged $tag\n" + compose.onRoot(useUnmergedTree = false).printToString(maxDepth = 6).take(3000))
     }
 
     @Test fun withoutAServiceItSaysSoAndCannotRun() {
@@ -104,6 +106,7 @@ class RunTabTest {
         compose.onNodeWithTag(RunTags.PROMPT).performScrollTo().performTextInput("Say two words")
         compose.onNodeWithTag(RunTags.TOP_K).performScrollTo().performTextClearance()
         compose.onNodeWithTag(RunTags.TOP_K).performTextInput("1")
+        compose.onNodeWithTag(RunTags.PROMPT).assertTextContains("Say two words")
         compose.onNodeWithTag(RunTags.RUN).performScrollTo().performClick()
         waitFor(RunTags.COPY)
         val req = fake.requests.single()
@@ -113,7 +116,10 @@ class RunTabTest {
         assertEquals(1, req.settings.topK)
         assertEquals("You are a helpful assistant. Answer briefly and plainly.", req.messages.first().text)
         compose.onNodeWithTag(RunTags.ANSWER).assertTextContains("Two short words.")
-        compose.onNodeWithTag(RunTags.REPORT).assertTextContains("Stop: done", substring = true)
+        compose.onNodeWithTag(RunTags.STAT_STOP).performScrollTo().assertTextContains("Done")
+        compose.onNodeWithTag(RunTags.STAT_OUTPUT).assertTextContains("3")
+        compose.onNodeWithTag(RunTags.STAT_OUTPUT).assertTextContains("app")
+        compose.onNodeWithTag(RunTags.STAT_DECODE).assertTextContains("not available")
         assertEquals(LlmStopReason.DONE, records.single().stopReason)
 
         compose.onNodeWithTag(RunTags.COPY).performScrollTo().performClick()
@@ -135,9 +141,24 @@ class RunTabTest {
         compose.onNodeWithTag(RunTags.RUN).performScrollTo().performClick()
         waitFor(RunTags.STOP)
         compose.onNodeWithTag(RunTags.STOP).performScrollTo().performClick()
-        waitFor(RunTags.REPORT)
+        waitFor(RunTags.RERUN)
         assertEquals(LlmStopReason.CANCELLED, records.single().stopReason)
-        compose.onNodeWithTag(RunTags.REPORT).assertTextContains("Stop: cancelled", substring = true)
+        compose.onNodeWithTag(RunTags.STAT_STOP).performScrollTo().assertTextContains("Stopped")
+    }
+
+    @Test fun theStatsLabelEveryFigureAndShowAFallBack() {
+        val scripted = ai.riskmandate.app.llm.LlmStats("gemma4e2b", "CPU", 120, 40, 300.0, 5.5, 900, 8000, loadedModel = true, loadMs = 6000,
+            countsFrom = ai.riskmandate.app.llm.StatSource.RUNTIME, speedsFrom = ai.riskmandate.app.llm.StatSource.RUNTIME, requestedBackend = "AUTO", fellBackToCpu = true)
+        show(FakeLlmService { FakeReply("ok", stats = scripted) })
+        compose.onNodeWithTag(RunTags.PROMPT).performTextInput("x")
+        compose.onNodeWithTag(RunTags.RUN).performScrollTo().performClick()
+        waitFor(RunTags.RERUN)
+        compose.onNodeWithTag(RunTags.STAT_LOAD).performScrollTo().assertTextContains("Model load (cold)")
+        compose.onNodeWithTag(RunTags.STAT_LOAD).assertTextContains("6000 ms")
+        compose.onNodeWithTag(RunTags.STAT_DECODE).assertTextContains("5.5")
+        compose.onNodeWithTag(RunTags.STAT_DECODE).assertTextContains("runtime")
+        compose.onNodeWithTag(RunTags.STAT_TTFT).assertTextContains("app")
+        compose.onNodeWithTag(RunTags.STAT_BACKEND).assertTextContains("CPU, fell back")
     }
 
     @Test fun promptsAreCappedAt2000Characters() {
@@ -157,7 +178,7 @@ class RunTabTest {
                 WorkbenchContent(FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), llm = FakeLlmService()), io = kotlinx.coroutines.Dispatchers.Unconfined)
             }
         }
-        compose.onNodeWithTag(WorkbenchTags.tab(0)).assertIsEnabled()
+        compose.onNodeWithTag(WorkbenchTags.TABS).assertExists()
         compose.onNodeWithTag(RunTags.PROMPT).performScrollTo()
         // The RiskMandate base block comes from llm/prompts once it has loaded.
         waitFor(RunTags.systemPreset(3))
