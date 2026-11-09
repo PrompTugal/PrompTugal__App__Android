@@ -3,7 +3,6 @@ package ai.riskmandate.app.features.stand
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
-import android.view.WindowManager
 
 /** What stand mode needs from the screen. An interface so tests can fake it. Nothing here may throw. */
 interface ScreenLock {
@@ -14,8 +13,6 @@ interface ScreenLock {
     fun lock(): Boolean
 
     fun unlock()
-
-    fun keepScreenOn(on: Boolean)
 }
 
 /** Screen pinning on an unmanaged device: Android shows its own prompt once; we handle every failure. */
@@ -40,11 +37,5 @@ class ActivityScreenLock(private val activity: Activity) : ScreenLock {
         } catch (e: RuntimeException) {
             // Not pinned, or the system refused: nothing to undo.
         }
-    }
-
-    override fun keepScreenOn(on: Boolean) {
-        val window = activity.window
-        if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 }

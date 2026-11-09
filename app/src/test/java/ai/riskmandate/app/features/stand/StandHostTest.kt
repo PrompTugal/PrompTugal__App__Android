@@ -30,7 +30,6 @@ private class FakeLock(var refuse: Boolean = false, var throwing: Boolean = fals
     var locked = false
     var lockCalls = 0
     var unlockCalls = 0
-    var awake = false
     override fun isLocked() = locked
     override fun lock(): Boolean {
         lockCalls++
@@ -39,7 +38,6 @@ private class FakeLock(var refuse: Boolean = false, var throwing: Boolean = fals
         return true
     }
     override fun unlock() { unlockCalls++; locked = false }
-    override fun keepScreenOn(on: Boolean) { awake = on }
 }
 
 @RunWith(AndroidJUnit4::class)
@@ -51,6 +49,8 @@ class StandHostTest {
     private var now = 0L
     private var homeCalls = 0
     private lateinit var lifecycle: LifecycleRegistry
+    private lateinit var hostView: android.view.View
+    private val awake get() = hostView.keepScreenOn
 
     @Before fun setUp() {
         settings = StandSettings.of(app)
@@ -64,7 +64,11 @@ class StandHostTest {
     }
 
     private fun show(lock: ScreenLock, atHome: Boolean = false) = compose.setContent {
-        StandHostContent(settings, lock, lifecycle, { now }, atHome, { homeCalls++ }) { Text("app") }
+        StandHostContent(settings, lock, lifecycle, { now }, atHome, { homeCalls++ }) {
+            val v = androidx.compose.ui.platform.LocalView.current
+            hostView = v
+            Text("app")
+        }
     }
 
     private fun openSettings() {
@@ -78,7 +82,7 @@ class StandHostTest {
         compose.waitForIdle()
         assertEquals(0, lock.lockCalls)
         assertEquals(0, lock.unlockCalls)
-        assertFalse(lock.awake)
+        assertFalse(awake)
     }
 
     @Test fun aPlainTapOnTheCornerDoesNotOpenStaffControls() {
@@ -95,12 +99,12 @@ class StandHostTest {
         compose.waitForIdle()
         assertTrue(settings.enabled)
         assertEquals(1, lock.lockCalls)
-        assertTrue(lock.awake)
+        assertTrue(awake)
         compose.onNodeWithTag(StandTags.SWITCH).performClick()
         compose.waitForIdle()
         assertFalse(settings.enabled)
         assertEquals(1, lock.unlockCalls)
-        assertFalse(lock.awake)
+        assertFalse(awake)
     }
 
     @Test fun comesBackPinnedAfterProcessDeath() {
@@ -109,7 +113,7 @@ class StandHostTest {
         show(lock)
         compose.waitForIdle()
         assertEquals(1, lock.lockCalls)
-        assertTrue(lock.awake)
+        assertTrue(awake)
     }
 
     @Test fun anAlreadyPinnedTaskIsNotAskedAgain() {
@@ -125,7 +129,7 @@ class StandHostTest {
         val lock = FakeLock(refuse = true)
         show(lock)
         compose.waitForIdle()
-        assertTrue(lock.awake)
+        assertTrue(awake)
         openSettings()
         compose.mainClock.advanceTimeBy(2_000)
         compose.onNodeWithTag(StandTags.STATUS).assertIsDisplayed()

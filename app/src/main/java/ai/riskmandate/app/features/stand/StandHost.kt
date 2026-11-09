@@ -22,6 +22,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -53,7 +55,7 @@ object StandTags {
 }
 
 /**
- * Stand mode (feature D) wraps the whole app: screen pinning, keep-screen-on, return home when idle.
+ * Stand mode (feature D) wraps the whole app: screen pinning, keep-screen-on (view flag), return home when idle.
  *
  * Staff reach the controls with a long-press on the bottom-end corner (nothing is drawn there while
  * stand mode is off; a faint dot shows while it is on).
@@ -94,8 +96,13 @@ internal fun StandHostContent(
     val currentAtHome by rememberUpdatedState(atHome)
     val currentGoHome by rememberUpdatedState(goHome)
 
+    // Keep the screen on with the view flag: no WAKE_LOCK permission needed.
+    val view = LocalView.current
+    DisposableEffect(view, enabled) {
+        view.keepScreenOn = enabled
+        onDispose { view.keepScreenOn = false }
+    }
     LaunchedEffect(enabled) {
-        lock.keepScreenOn(enabled)
         if (enabled) {
             timer.touch()
             if (!asked && !lock.isLocked()) {
