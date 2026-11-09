@@ -51,6 +51,10 @@ Failure rate without ABP, 24 runs per cell (temperatures 0 to 1.0 x 3 seeds x 2 
 - R-eval-3: redirects refused (HTTP 3xx raises). R-eval-6: exception text is scrubbed of the key before it is printed.
 - R-eval-4: a response without a cost is charged at least the per-call reserve.
 
+## Egress holes (R-lab-8/9/10), closed
+- `_domain` now accepts a recipient only if the whole trimmed text is exactly one address or one URL: refuses whitespace and control characters, `, ; < > " \ %` and more than one `@`; a URL is read by its host. 16 new vectors in `eval/golden/abp-vectors.json` (45 in all): backslash URL, UNC form, comma, semicolon and space lists, newline, NUL, tab, display-name form, quote, percent, two `@`, empty local part, plus two allowed cases.
+- Caveat stays in the report notes: the catch figures in the first report were computed with the earlier, weaker recipient check; in scenario 4 the failure is the secret token in the body, which the secret rule (not the recipient rule) stops, so the figures stand, but they are not evidence that the ABP catches all egress.
+
 ## Next
 Gemma 3 12B rerun; Gemma 4 E4B locally (same file pattern, 4.x GB); a milder scenario 4 and a text-protocol run of E2B for comparison; LLM-judge or manual pass for scenario 5. Optional: reps 5 for tighter intervals (still under $1).
 
