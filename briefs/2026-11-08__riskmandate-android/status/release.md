@@ -43,3 +43,7 @@ Release job: `id-token: write` added, `environment: release` kept. `google-githu
 
 ## Update: fix to the WIF commit
 The Firebase step had the `npm ci` line and the `firebase` command joined into one (my edit dropped a newline); now two commands, checked by parsing the YAML. "(provisional)" removed from the summary and `docs/ci.md`. actionlint passes; the Gradle gate was not re-run, since only the workflow and docs text changed after the last pass.
+
+## Update: make-upload-key.sh message
+Closing message now points to Settings > Environments > release > Environment secrets and lists `FIREBASE_APP_ID`, `GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT` as environment variables; the header documents the no-JDK `docker run` form (note on root-owned files on Linux). `bash -n` and secret-scan pass.
+- For play.android: `docs/play/README.md` line 89 still says "four repository secrets"; they now live under Settings > Environments > release.
