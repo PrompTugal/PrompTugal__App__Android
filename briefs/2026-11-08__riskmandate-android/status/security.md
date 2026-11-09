@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 40 (9 Nov 2026): dev.mandate c2effc0 PASS (R-llm-11 closed), editor 3f111ce draft PASS as a draft only (R-art-1 and R-art-2 must close before it moves into assets), eval 71537fd PASS with R-eval-1 and R-eval-2 as conditions for the next paid run. Waiting for the next wake (qa 680c53d).
+> Round 41 (9 Nov 2026): qa af0d367 PASS (test-only; new LlmSandboxTest). Everything queued is reviewed. Waiting for the next wake (open conditions: R-art-1 and R-art-2 before the design-pass article is published, R-eval-1 and R-eval-2 before the next paid eval run, R-shell-3, R-llm-12, R-eval-3 to R-eval-5).
 
 ## Doing
 Nothing. Stopped until woken.
