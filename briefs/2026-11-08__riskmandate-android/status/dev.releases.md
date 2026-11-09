@@ -6,7 +6,7 @@
 Gate run and push.
 
 ## Done
-- P7: `icon` (Icons.Filled.Info, material-icons-core), `kicker` and `summary` overridden; strings in en and pt-PT.
+- P7: `kicker` and `summary` overridden (en, pt-PT). `icon` left null on design.android's ruling (host's id-based line icons; docs/design/android-theme.md "Icons").
 - `homeBadge()` implemented ("New" / "Novo" while this versionCode's notes are unseen and an article exists; read synchronously on the first composition (QA: no pop-in, no card resize); test `ReleasesBadgeTest` checks it is there on the first frame). Merged `origin/work/architect` into this branch at the conductor's word to get the interface.
 - A-rel-3: sample article and its image removed from the app's assets; tests use `Fixture` (test code and `src/test/resources/releases-fixture/`) through a new `ArticleImages` source; a test checks every bundled article parses. (Fixed on the way: an image-decode regression this refactor briefly introduced, now covered by a test.)
 - A-rel-2: links open with the composition's own context (the Activity), not the application context.

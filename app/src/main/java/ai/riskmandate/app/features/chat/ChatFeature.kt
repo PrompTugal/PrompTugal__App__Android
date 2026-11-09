@@ -36,9 +36,6 @@ object ChatTags {
     fun link(index: Int) = "chat_link_$index"
 }
 
-/** The model service chat talks to. Until dev.llm's `LlmService` is wired in, this is [NoLlm] (the empty state). */
-val LocalChatLlm = compositionLocalOf<ChatLlm> { NoLlm }
-
 /** Where history is kept. Null (the default) means the app-private file; tests provide a memory store. */
 val LocalChatStore = compositionLocalOf<ChatHistoryStore?> { null }
 
@@ -51,25 +48,33 @@ object ChatFeature : Feature {
     override val id = "chat"
     override val title = R.string.feature_chat_title
     override val enabled = false
-    private const val MODELS_ID = "models"
     override val kicker = R.string.chat_kicker
     override val summary = R.string.chat_summary
 
     @Composable
     override fun Content(context: FeatureContext) {
-        val android = LocalContext.current
-        val llm = LocalChatLlm.current
-        val provided = LocalChatStore.current
-        val scope = rememberCoroutineScope()
-        val controller = remember(llm, provided) {
-            val store = provided ?: FileChatHistoryStore(File(android.applicationContext.noBackupFilesDir, "feature_chat"))
-            ChatController(llm, store, scope)
-        }
-        LaunchedEffect(controller) { controller.start() }
-        if (ChatPolicy.WIPE_ON_LEAVE) DisposableEffect(controller) { onDispose { controller.wipeNow() } }
-        // Generation can take a while: do not let stand mode's idle reset wipe the chat mid-answer.
-        context.HoldIdleWhile(controller.state.generating)
-        // Features name each other by id only; the host decides (and refuses it in stand mode).
-        ChatScreen(controller, onOpenModels = { context.openFeature(MODELS_ID) })
+        // The host's service (null when no model is installed or the host has none): the no-model state then shows.
+        val llm = remember(context.llm) { context.llm?.let { LlmServiceChat(it) } ?: NoLlm }
+        ChatContent(context, llm)
     }
+}
+
+private const val MODELS_ID = "models"
+
+/** The chat for a given [ChatLlm]. Internal so tests can use [FakeChatLlm] directly. */
+@Composable
+internal fun ChatContent(context: FeatureContext, llm: ChatLlm) {
+    val android = LocalContext.current
+    val provided = LocalChatStore.current
+    val scope = rememberCoroutineScope()
+    val controller = remember(llm, provided) {
+        val store = provided ?: FileChatHistoryStore(File(android.applicationContext.noBackupFilesDir, "feature_chat"))
+        ChatController(llm, store, scope)
+    }
+    LaunchedEffect(controller) { controller.start() }
+    if (ChatPolicy.WIPE_ON_LEAVE) DisposableEffect(controller) { onDispose { controller.wipeNow() } }
+    // Generation can take a while: do not let stand mode's idle reset wipe the chat mid-answer.
+    context.HoldIdleWhile(controller.state.generating)
+    // Features name each other by id only; the host decides (and refuses it in stand mode).
+    ChatScreen(controller, onOpenModels = { context.openFeature(MODELS_ID) })
 }

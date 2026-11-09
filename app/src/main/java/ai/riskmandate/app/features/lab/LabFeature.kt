@@ -4,10 +4,7 @@ import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import androidx.annotation.StringRes
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * ABP Lab (feature I): the same model input down two paths, raw and through the ABP. Replay on samples for
@@ -17,7 +14,7 @@ object LabFeature : Feature {
     override val id = "lab"
     override val title = R.string.feature_lab_title
     override val enabled = false
-    override val icon: ImageVector get() = Icons.Filled.Build
+    // icon stays null: the host's own line icons apply (design ruling, docs/design/android-theme.md, Icons).
     @get:StringRes override val kicker: Int get() = R.string.lab_home_kicker
     @get:StringRes override val summary: Int get() = R.string.lab_home_summary
 
