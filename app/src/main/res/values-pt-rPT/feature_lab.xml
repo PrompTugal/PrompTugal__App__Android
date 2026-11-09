@@ -104,8 +104,8 @@
     <string name="lab_tt_loading">A carregar os testes de ferramentas</string>
     <string name="lab_tt_none">Esta versão não inclui testes de ferramentas.</string>
     <string name="lab_tt_intro">Pequenas verificações de como o modelo chama ferramentas. Cada caso oferece ferramentas simuladas e verifica, em código, se o modelo chamou a certa da maneira certa. Nada é executado a sério.</string>
-    <string name="lab_tt_scope_all">Todos os casos</string>
-    <string name="lab_tt_whole_kind">O tipo todo</string>
+    <string name="lab_tt_scope_all">Tudo</string>
+    <string name="lab_tt_whole_kind">O tipo inteiro</string>
     <string name="lab_tt_mode_help">Nativo usa a chamada de ferramentas do próprio runtime. Texto pede ao modelo que escreva uma chamada JSON na resposta. Ambos são medidos, para se ver qual funciona neste modelo.</string>
     <string name="lab_tt_native">Nativo</string>
     <string name="lab_tt_text">Texto</string>
