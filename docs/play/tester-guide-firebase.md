@@ -29,7 +29,7 @@ For testers and for Dinis. Written 8 November 2026 by play.android@promptugal.ai
 5. Open RiskMandate. The home screen shows "Build 0.1.<number>" at the bottom: that number is what to quote when you report a problem.
 
 ### Every later build
-- You get an email, and App Tester shows the new build. Open it and tap Install again; the new build replaces the old one and keeps nothing (the app stores nothing).
+- You get an email, and App Tester shows the new build. Open it and tap Install again; the new build replaces the old one and keeps the app's few small settings (side menu, stand mode, What's new, chat history if you used the chat).
 - Builds stay available for 150 days.
 
 ### What you should see, by Android version (from my knowledge, to be confirmed on devices)
@@ -41,7 +41,7 @@ For testers and for Dinis. Written 8 November 2026 by play.android@promptugal.ai
 A Firebase build is signed with the **upload key**. A build from Google Play is signed by **Google's** app-signing key (`docs/lessons.md`). Android refuses to install one over the other ("App not installed" or "Package conflicts with an existing package"; the wording varies). So:
 1. Uninstall RiskMandate first (long-press the icon, Uninstall; or Settings, Apps, RiskMandate, Uninstall).
 2. Then install the other one.
-The app keeps no data, so nothing is lost. The same applies the other way round, and when leaving a Play test (Play's help: to go back to the public build "you uninstall and reinstall the public version", https://support.google.com/googleplay/answer/15654751).
+The app keeps only a few small settings and, if you used it, the chat history, and an uninstall deletes them; nothing else is lost. The same applies the other way round, and when leaving a Play test (Play's help: to go back to the public build "you uninstall and reinstall the public version", https://support.google.com/googleplay/answer/15654751).
 
 ### If something goes wrong
 | Problem | Try |
@@ -69,7 +69,7 @@ When you report: build number (bottom of the home screen), device model, Android
 5. Abra o RiskMandate. O ecrã inicial mostra "Build 0.1.<número>" em baixo: indique este número ao comunicar um problema.
 
 ### Cada versão seguinte
-- Recebe um email e o App Tester mostra a nova versão. Abra-a e toque em Instalar; a nova versão substitui a anterior e não guarda nada (a aplicação não guarda dados).
+- Recebe um email e o App Tester mostra a nova versão. Abra-a e toque em Instalar; a nova versão substitui a anterior e mantém as poucas definições da aplicação (menu lateral, modo de suporte, Novidades, histórico do chat se o usou).
 - As versões ficam disponíveis durante 150 dias.
 
 ### O que deve ver, por versão do Android (do meu conhecimento, a confirmar nos dispositivos)
@@ -81,7 +81,7 @@ When you report: build number (bottom of the home screen), device model, Android
 Uma versão do Firebase é assinada com a **chave de carregamento**. Uma versão da Google Play é assinada pela **chave de assinatura da Google**. O Android recusa instalar uma por cima da outra ("Aplicação não instalada" ou "Conflito com um pacote existente"; o texto varia). Por isso:
 1. Desinstale primeiro o RiskMandate (prima o ícone, Desinstalar; ou Definições, Aplicações, RiskMandate, Desinstalar).
 2. Depois instale a outra.
-A aplicação não guarda dados, por isso não se perde nada. O mesmo vale no sentido inverso e ao sair de um teste da Play.
+A aplicação guarda apenas algumas definições pequenas e, se o usou, o histórico do chat, e a desinstalação apaga-os; não se perde mais nada. O mesmo vale no sentido inverso e ao sair de um teste da Play.
 
 ### Se algo correr mal
 | Problema | Experimente |

@@ -57,7 +57,8 @@
   <p>The app keeps a few small items in its own private storage on your device. The app never sends them to us or to anyone else, other apps cannot read them, and Android removes them when you clear the app's data or uninstall the app. They are:</p>
   <ul>
     <li><strong>Stand mode's settings:</strong> whether stand mode is on and how many idle minutes you chose (a number).</li>
-    <li><strong>What's new:</strong> the version of the app for which the What's new screen was last shown, so that it is shown once per version.</li>
+    <li><strong>Layout preference:</strong> whether the side menu is collapsed (a yes or no).</li>
+    <li><strong>What's new:</strong> the number of the app version for which the What's new screen was last shown, so that it is shown once per version.</li>
     <li><strong>The in-app view:</strong> whatever the web view inside the app stores while you read riskmandate.ai, that is, cookies and its web cache. The app deletes them, with the web storage and history of the view, when you close the in-app view. riskmandate.ai says that it sets no cookie (<a href="https://riskmandate.ai/privacy">https://riskmandate.ai/privacy</a>). The app switches off the web view's local (DOM) storage and third-party cookies.</li>
   </ul>
   <p>None of this is personal data that we receive, and the app does not look at it for any other purpose.</p>
@@ -71,7 +72,7 @@
   <div class="draft" role="note">
   <h2>Downloaded language model and chat <span class="todo">[DRAFT: include only in the build where the model setup and chat are enabled]</span></h2>
   <p>On first use, the app can download a language model file once. The file comes from Hugging Face (huggingface.co, where Google AI Edge's litert-community publishes the Gemma models) <span class="todo">[TODO dev.llm and security: name every host the download touches, including any content-delivery host Hugging Face redirects to]</span>. The app checks the file against a fixed SHA-256 checksum before it uses it, and deletes it if it does not match. Downloading the file is an ordinary web request: Hugging Face sees your IP address and what it needs to serve the file, and its own privacy policy applies to that request. You start the download yourself, after the app tells you which host it will contact. The app sends no account, no message and nothing you typed with it.</p>
-  <p>After the download the model runs on your device and works offline. <strong>Nothing you type into the chat leaves the device.</strong> The chat history is kept on your device only, in the app's private storage, excluded from Android's cloud backup and device-to-device transfer. The app never exports or publishes it. A Clear history button deletes it; so does clearing the app's data or uninstalling the app. A Delete model button removes the model file.</p>
+  <p>After the download the model runs on your device and works offline. <strong>Nothing you type into the chat leaves the device.</strong> The chat history is kept on your device only, in the app's private storage, excluded from Android's cloud backup and device-to-device transfer. The app never exports or publishes it. A Clear history button deletes it; so does clearing the app's data or uninstalling the app. The model file is kept in the app's private storage that Android never backs up; a Delete model button removes it. If a model file is installed by hand with a computer (adb), a copy may also sit in the app's own folder on shared storage, which on Android 11 and later only this app and adb can read.</p>
   </div>
 
   <h2>The in-app view of riskmandate.ai</h2>
