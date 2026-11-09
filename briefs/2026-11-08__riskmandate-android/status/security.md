@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 56 (9 Nov 2026): dev.lab c65b516 PASS to merge (R-lab-8 and R-lab-9 mostly fixed; fuzz against eval found R-lab-13: a later "://" in an address or authority still reads as vendor.example, fix and four vectors given), eval f41312c PASS (R-eval-7 low). R-lab-13 must close before the Lab is enabled. Still to read: R-lab-13 fix, the design-pass article, the Lab export share path. Waiting for the next wake.
+> Round 57 (9 Nov 2026): dev.lab 0097158 PASS (loop counters survive rotation as a validated string). Still open: R-lab-13 (Kotlin fix and four vectors), R-eval-7, the design-pass article, the Lab export share path. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
