@@ -2,7 +2,6 @@ package ai.riskmandate.app.features.workbench
 
 import ai.riskmandate.app.R
 import ai.riskmandate.app.llm.RunSettings
-import ai.riskmandate.app.cloud.CloudLlmService
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
@@ -196,7 +195,10 @@ internal fun WorkbenchContent(
                     onClearLog = { log = emptyList(); last = null; scope.launch { withContext(io) { store.clear() } } },
                     onRunning = { running = it }, clock = clock,
                     // R-wb-8: a cloud sweep shows its worst-case cost before it starts.
-                    worstCaseUsd = (service as? CloudLlmService)?.let { c -> { s: RunSettings -> runCatching { c.worstCaseMicros(s.request()) / 1_000_000.0 }.getOrNull() } },
+                    // Through LlmService only (security note): no class check, no cloud/ import.
+                    worstCaseUsd = service?.takeIf { it.location == LlmLocation.CLOUD }?.let { svc ->
+                        { s: RunSettings -> runCatching { svc.maxCostMicros(s.request()) }.getOrNull()?.let { it / 1_000_000.0 } }
+                    },
                 )
                 else -> {
                     // dev.lab's tab (features/workbench/tooltests): a plain column; the Workbench owns scrolling.
