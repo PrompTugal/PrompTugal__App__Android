@@ -30,3 +30,8 @@ At Dinis's word (8 November 2026): these apps are open source and will be put fo
 ## Google Cloud organisation policy (9 November)
 - New Google Cloud organisations enforce `iam.disableServiceAccountKeyCreation` ("secure by default"). Do not override it: CI signs in to Google keylessly with Workload Identity Federation (GitHub's OIDC token, `google-github-actions/auth`), trusted only for this repository and its `release` environment. No JSON key exists anywhere. Google Play's upload will need the same route (or a narrow exception) at M2/M3.
 - The first emulator smoke test on GitHub's `ubuntu-latest` (KVM, API 34) passed on its first attempt in about 1.5 minutes.
+
+## First install on a tablet (9 November)
+- Chrome on Android tablets asks for desktop sites by default, so Firebase's invite page says "open the invitation on your mobile device". Turn off Chrome's Desktop site (Settings > Site settings > Desktop site) or untick it for that tab.
+- The first APK from any app (Chrome, Files, App Tester) hits "install unknown apps": allow it once per source (Settings > Apps > Special app access > Install unknown apps). Allow App Tester, so updates become one tap.
+- Builds signed with the same upload key install over each other as updates; a different key (or a Play-signed build) needs an uninstall first.

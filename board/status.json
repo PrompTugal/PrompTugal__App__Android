@@ -1,7 +1,7 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-09T00:20Z",
-  "state": "Waiting for Dinis to add the release environment's variables (GCP_WIF_PROVIDER, GCP_SERVICE_ACCOUNT, FIREBASE_APP_ID) and the four UPLOAD_* secrets; then the first signed build goes to the 'team' testers and the tablet (M1).",
+  "updated": "2026-11-09T00:45Z",
+  "state": "M1 nearly done: the first CI-signed builds (v0.1.26, v0.1.27) are out; 0.1.26 installed on Dinis's tablet from the GitHub release, no cable (00:41 UTC). Last check: 0.1.27 as a one-tap update through Firebase App Tester.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
@@ -9,7 +9,8 @@
     "docs/ci.md, docs/lessons.md; application ID decided (ai.riskmandate.app)",
     "Security review (no secrets; 84 libraries all Apache-2.0); High A-1 URL allow-list bypass fixed (exact riskmandate.ai and www, 26 tests); findings A-2 to A-12 fixed; licences screen; Play Console groundwork in docs/play/. 52 app tests, 35 devices tests.",
     "Merged after security PASS (23:20 to 23:35): app (tablets, themes, pt-PT, screenshots, full Apache text; 61 tests), play (privacy page, minimal-functionality review, store assets plan, release notes, tester guides, device checklist), release (emulator smoke job, screenshot artifact, licence gate, Dependabot, release notes), devices (zero-dependency QR encoder verified on 204 symbols, offline policy schema validation, Workspace vs AMAPI side by side, REHEARSAL.md, hardened policy options; 68 tests), security (OSV 0 known vulns, M2 threat model, GitHub settings checklist).",
-    "CI live on GitHub: check, release and smoke (emulator) jobs all green (run 24, 279e3e4); the emulator smoke test passed on its first attempt in about 1.5 minutes. Firebase auth moved to Workload Identity Federation (keyless) because the thecyberboardroom.com org blocks service-account keys; Dinis created the pool and provider (repo PrompTugal/PrompTugal__App__Android, environment release)."
+    "CI live on GitHub: check, release and smoke (emulator) jobs all green (run 24, 279e3e4); the emulator smoke test passed on its first attempt in about 1.5 minutes. Firebase auth moved to Workload Identity Federation (keyless) because the thecyberboardroom.com org blocks service-account keys; Dinis created the pool and provider (repo PrompTugal/PrompTugal__App__Android, environment release).",
+    "M1: first signed builds from CI (v0.1.26 GitHub release; v0.1.27 GitHub release and Firebase App Distribution to 'team' via keyless Google auth). 0.1.26 installed and running on Dinis's Lenovo tablet (agent@riskmandate.ai): tablet layout correct, Device 'Not managed' detected correctly on real hardware."
   ],
   "next": [
     "merge work/app (44131ad: tablets, themes, pt-PT, screenshots, full Apache text) and work/play (6ee3f6b: privacy page, minimal-functionality review) once security.android says PASS",
@@ -17,7 +18,6 @@
     "once secrets exist: first signed build to the 'team' testers on Firebase, installed on the Tab One"
   ],
   "asks": [
-    "Dinis: in GitHub Settings > Environments > release: variables GCP_WIF_PROVIDER, GCP_SERVICE_ACCOUNT, FIREBASE_APP_ID; secrets UPLOAD_KEYSTORE_BASE64, UPLOAD_KEYSTORE_PASSWORD, UPLOAD_KEY_ALIAS, UPLOAD_KEY_PASSWORD; deployment branches: dev. Then tell the conductor.",
     "Dinis: the Play Console account (organisation, which company) and its D-U-N-S check: on the critical path for M2.",
     "Dinis: make dev the default branch of the repository, if you agree, so CI and readers land on it.",
     "Dinis: AMAPI permissible usage: Google lists in-house-only solutions as not permitted; confirm the route (test on a Gmail-bound enterprise, or Workspace/Cloud Identity device management). See devices/README.md.",
@@ -37,6 +37,7 @@
     "Order (Dinis, 8 Nov 2026 ~21:40 UTC): RiskMandate is the first app and the one we learn Android development and publishing on; the PrompTugal app comes after it. Lessons go in docs/lessons.md so the PrompTugal app starts from them.",
     "Open source and for sale (Dinis, 8 Nov 2026 ~21:45 UTC): all these apps are open source (Apache 2.0, the repo's LICENSE) and will be put for sale eventually.",
     "Five sessions started at Dinis's word (8 Nov 2026 ~23:07 UTC): app, release, devices, play, security, on Sonnet; board/sessions.json.",
-    "Google Cloud and Firebase project 'riskmandate-android' (ID riskmandate-android), created by Dinis as agent@riskmandate.ai under the thecyberboardroom.com Google Cloud organisation, which holds the riskmandate.ai Workspace (Dinis, 8 Nov 2026 ~23:45 UTC). Test tablet: Dinis's, signed in as agent@riskmandate.ai (M1 device via Firebase; already set up, so not fully managed without a factory reset)."
+    "Google Cloud and Firebase project 'riskmandate-android' (ID riskmandate-android), created by Dinis as agent@riskmandate.ai under the thecyberboardroom.com Google Cloud organisation, which holds the riskmandate.ai Workspace (Dinis, 8 Nov 2026 ~23:45 UTC). Test tablet: Dinis's, signed in as agent@riskmandate.ai (M1 device via Firebase; already set up, so not fully managed without a factory reset).",
+    "Upload key disposable during the experiment phase (Dinis, 9 Nov 2026 ~00:40 UTC): the local copy is deleted; if the repository moves, the setup is done again. Make a fresh upload key, and keep it, before the first Google Play upload."
   ]
 }
