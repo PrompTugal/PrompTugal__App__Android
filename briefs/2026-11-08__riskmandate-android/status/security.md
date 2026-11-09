@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 44 (9 Nov 2026): the whole editor head 68584d2 PASS (R-art-4 and R-art-5, validate guard, icon_svg; one low note R-art-7). Still to read when it moves: the design-pass article. Waiting for the next wake.
+> Round 45 (9 Nov 2026): app 02e8eb1 PASS (openFeature wired, refused in stand mode and for unknown or disabled ids; R-arch-1 closed). Next: dev.llm merge of dev (conflict resolution only) when it lands, and the design-pass article when it moves. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
