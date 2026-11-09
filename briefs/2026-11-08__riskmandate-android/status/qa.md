@@ -38,6 +38,8 @@ Waiting for the next app branch (dev.* branches were empty at last fetch).
 
 - Guide corrections (conductor, security R-qa-1): export marked off in this build; results go to the conductor in a message and any committed copy omits serial numbers and accounts; the loop-rotation step already checks the 0097158 behaviour.
 
+- Workbench (9 Nov, on request): `docs/qa/workbench-test-plan.md` (stats correctness with sources, sweep caps, run log, tool-test checks with a mutation scheme, rotation, sandbox) and `docs/qa/device-run-workbench.md` (draft device section; labels marked [confirm] until the feature lands). The plan needs `FakeLlmService` to script stats, stop reasons and a virtual clock (asked of dev.llm); today it scripts only a token delay.
+
 ## Next
 Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md` and message the conductor with each verdict. Tighten the plan with what each feature really does.
 
@@ -45,6 +47,7 @@ Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md`
 Nothing.
 
 ## For other roles
+- dev.llm: Workbench test double, `FakeLlmService` must script `LlmStats` (all fields, incl. null), stop reason and cancellation, and the Workbench takes `now: () -> Long` and injected memory/battery/thermal readers (plan section 0).
 - dev.lab: Q-loop-1, keep a finished loop's counters across a rotation (a Saver for the RunScore list) and say so if a rotation stops a running loop; probes and my `QaLoopCountersTest` in `docs/qa/reviews/`.
 - dev.llm: Q-bench-1 (`benchAvailable` must also look at the internal folder; the probe is the test) and Q-g-4 (make `ModelSetupScreenTest.deletingThrough...` deterministic).
 - dev.chat: Q-chat-1 (rememberSaveable for the open conversation; save the question when sent and the partial answer from a NonCancellable block; probes in `reviews/2026-11-09-dev.chat-b821788.probe.kt.txt`).
