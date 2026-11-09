@@ -4,6 +4,10 @@ import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
+import ai.riskmandate.app.experiments.AndroidDeviceGuard
+import ai.riskmandate.app.experiments.DeviceGuard
+import ai.riskmandate.app.experiments.RunSettings as ToolRunSettings
+import ai.riskmandate.app.features.workbench.tooltests.ToolTestsTab
 import ai.riskmandate.app.llm.DeviceProbe
 import ai.riskmandate.app.llm.DeviceSample
 import ai.riskmandate.app.llm.RunRecord
@@ -20,6 +24,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
@@ -84,6 +90,7 @@ internal fun WorkbenchContent(
     io: CoroutineDispatcher = Dispatchers.IO,
     /** Device readings and the clock, injectable for tests (QA); the app reads the real ones. */
     probe: (() -> DeviceSample?)? = null,
+    guard: DeviceGuard? = null,
     clock: () -> Long = { System.nanoTime() / 1_000_000 },
     wallClock: () -> Long = { System.currentTimeMillis() },
 ) {
@@ -91,6 +98,8 @@ internal fun WorkbenchContent(
     val scope = rememberCoroutineScope()
     val service = context.llm
     val read: () -> DeviceSample? = remember(probe) { probe ?: { DeviceProbe.sample(app) } }
+    // The caps decide on experiments/'s guard (shared with the Lab and the tool tests); the probe records readings.
+    val capsGuard: DeviceGuard = remember(guard) { guard ?: AndroidDeviceGuard(app) }
     val runner = remember(service) { service?.let { LlmRunner(it, probe = read, clock = clock, wallClock = wallClock) } }
     val state by (service?.state ?: remember { MutableStateFlow<LlmState>(LlmState.NoModel) }).collectAsState()
     val activeModel = when (val s = state) {
@@ -155,12 +164,21 @@ internal fun WorkbenchContent(
                     onRunning = { running = it }, onRecord = { record("run", it) },
                 )
                 1 -> ExperimentsTab(
-                    runner = runner, base = form.settings(emptyList()), probe = read, log = log,
+                    runner = runner, base = form.settings(emptyList()), probe = read, guard = capsGuard, log = log,
                     onRecord = ::record,
                     onClearLog = { log = emptyList(); last = null; scope.launch { withContext(io) { store.clear() } } },
                     onRunning = { running = it }, clock = clock,
                 )
-                else -> Text(stringResource(R.string.workbench_tools_soon))
+                else -> {
+                    // dev.lab's tab (features/workbench/tooltests): a plain column; the Workbench owns scrolling.
+                    val s = form.settings(emptyList())
+                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        ToolTestsTab(
+                            llm = service, openFeature = context.openFeature, onBusy = { running = it },
+                            settings = if (s == null) ToolRunSettings() else ToolRunSettings(sampling = s.sampling, maxTokens = s.maxTokens),
+                        )
+                    }
+                }
             }
         }
     }

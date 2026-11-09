@@ -5,7 +5,6 @@
     <string name="workbench_tab_run">Run</string>
     <string name="workbench_tab_experiments">Experiments</string>
     <string name="workbench_tab_tools">Tool tests</string>
-    <string name="workbench_tools_soon">Tool tests come from dev.lab.</string>
     <string name="workbench_experiment">Experiment</string>
     <string name="workbench_no_base">Set up a valid run in the Run tab first: the experiment starts from those settings.</string>
     <string name="workbench_mode_sweep">Sweep</string>

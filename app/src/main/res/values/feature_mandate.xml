@@ -72,5 +72,9 @@
     <string name="mandate_reason_model_choice">which language model you chose, on this device only</string>
     <string name="mandate_reason_model_download">only when you tap Download in Model setup, to fetch a model from here</string>
     <string name="mandate_reason_workbench_log">the Workbench run log: settings, figures, the first 200 characters of each prompt and 300 of each answer; on this device only, never backed up; at most 500 runs, and a file over 4 MB is ignored</string>
+    <string name="mandate_reason_cloud_call">only when a staff member switches on the cloud model and sends a request; never in stand mode</string>
+    <string name="mandate_reason_cloud_key">the OpenRouter key, encrypted with the Android Keystore; never shown, sent only to openrouter.ai</string>
+    <string name="mandate_reason_cloud_key_tmp">the OpenRouter key file while it is being replaced; encrypted, removed when done</string>
+    <string name="mandate_reason_cloud_spend">the running total spent through OpenRouter, a number and not a secret, on this device only</string>
     <string name="mandate_gap_heading">Gap: reach minus mandate</string>
 </resources>

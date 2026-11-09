@@ -1,6 +1,9 @@
 package ai.riskmandate.app.features.mandate
 
 import ai.riskmandate.app.llm.DownloadPolicy
+import ai.riskmandate.app.cloud.CloudEndpoint
+import ai.riskmandate.app.cloud.CloudKey
+import ai.riskmandate.app.cloud.CloudSpend
 import ai.riskmandate.app.features.workbench.RunLogStore
 import ai.riskmandate.app.llm.ModelCatalog
 
@@ -38,7 +41,7 @@ data class ReachItem(
 }
 
 /** Why the mandate allows an item. Mapped to a string resource in the UI, so the reasons are translated. */
-enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE, SITE_VIEW, SHELL_UI, RELEASES_SEEN, CHAT_HISTORY, MODELS, MODELS_ADB, MODEL_CHOICE, MODEL_DOWNLOAD, WORKBENCH_LOG }
+enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE, SITE_VIEW, SHELL_UI, RELEASES_SEEN, CHAT_HISTORY, MODELS, MODELS_ADB, MODEL_CHOICE, MODEL_DOWNLOAD, WORKBENCH_LOG, CLOUD_CALL, CLOUD_KEY, CLOUD_KEY_TMP, CLOUD_SPEND }
 
 data class MandateEntry(val kind: ReachKind, val id: String, val reason: Reason) {
     val key: String get() = "${kind.name.lowercase()}:$id"
@@ -98,6 +101,9 @@ data class Mandate(
                 MandateEntry(ReachKind.NETWORK, "connects:huggingface.co", Reason.MODEL_DOWNLOAD),
                 MandateEntry(ReachKind.NETWORK, "connects:hf.co", Reason.MODEL_DOWNLOAD),
                 MandateEntry(ReachKind.NETWORK, "connects:*.hf.co", Reason.MODEL_DOWNLOAD),
+                // The cloud model (OpenRouter): a request goes out only when a staff member switches the cloud on and
+                // sends one; the switch falls back to off in stand mode (cloud/CloudSwitch).
+                MandateEntry(ReachKind.NETWORK, "connects:${CloudEndpoint.HOST}", Reason.CLOUD_CALL),
                 // Storage the summit features may keep, on this device only. None exists until the feature is used.
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/stand_mode.xml", Reason.STAND_SETTINGS),
                 MandateEntry(ReachKind.STORAGE, "app_webview", Reason.SITE_STORAGE),
@@ -107,6 +113,10 @@ data class Mandate(
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/feature_models.xml", Reason.MODEL_CHOICE),
                 MandateEntry(ReachKind.STORAGE, "no_backup/feature_chat", Reason.CHAT_HISTORY),
                 MandateEntry(ReachKind.STORAGE, "no_backup/${RunLogStore.DIR}/${RunLogStore.FILE}", Reason.WORKBENCH_LOG),
+                MandateEntry(ReachKind.STORAGE, "no_backup/$CLOUD_DIR/${CloudKey.FILE}", Reason.CLOUD_KEY),
+                MandateEntry(ReachKind.STORAGE, "no_backup/$CLOUD_DIR/${CloudKey.FILE}.tmp", Reason.CLOUD_KEY_TMP),
+                MandateEntry(ReachKind.STORAGE, "no_backup/$CLOUD_DIR/${CloudSpend.FILE}", Reason.CLOUD_SPEND),
+                MandateEntry(ReachKind.STORAGE, "no_backup/$CLOUD_DIR/${CloudSpend.FILE}.tmp", Reason.CLOUD_SPEND),
             ) + modelFileEntries(),
             hosts = HOSTS,
             port = 443,
@@ -116,6 +126,9 @@ data class Mandate(
     }
 }
 
+/** Folder of the cloud client's files in noBackupFilesDir (named in cloud/CloudKey.kt and CloudSpend.kt's comments). */
+const val CLOUD_DIR = "feature_cloud"
+
 /**
  * Network the app makes itself: when the in-app site view is on, the app (not the browser) connects to the
  * allowed riskmandate.ai hosts; the model download code may connect to Hugging Face, only when Download is tapped in Models. Computed from which features are enabled; pages opened in the user's browser
@@ -123,7 +136,28 @@ data class Mandate(
  */
 fun networkReach(enabledFeatureIds: Set<String>): List<ReachItem> =
     (if ("site" in enabledFeatureIds) Mandate.HOSTS.map { ReachItem(ReachKind.NETWORK, "connects:$it") } else emptyList()) +
-        modelDownloadReach()
+        modelDownloadReach() + cloudReach()
+
+/**
+ * The host the cloud client may call, asked of its own rule (cloud/CloudEndpoint.isAllowed) with look-alike hosts as
+ * well, so a widened rule shows up as gap. Counted whenever the code is in the build. A request goes out only when a
+ * staff member switches the cloud on and sends one, never in stand mode (the reason text says so).
+ */
+fun cloudReach(): List<ReachItem> = CLOUD_HOST_CANDIDATES
+    .filter { host -> CloudEndpoint.isAllowed(cloudUrl(host)) }
+    .map { host -> ReachItem(ReachKind.NETWORK, "connects:$host") }
+
+/** An address on [host] under the path the client uses, built from parts (no URL literal in feature sources). */
+internal fun cloudUrl(host: String): String = "https" + "://" + host + "/api/v1/chat/completions"
+
+private val CLOUD_HOST_CANDIDATES = listOf(
+    CloudEndpoint.HOST,
+    "api.${CloudEndpoint.HOST}",
+    "${CloudEndpoint.HOST}.example.com",
+    "evil${CloudEndpoint.HOST}",
+    "huggingface.co",
+    "riskmandate.ai",
+)
 
 /**
  * The hosts the model download code in this build may connect to, asked of its own rule (llm/DownloadPolicy)

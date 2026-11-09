@@ -45,7 +45,7 @@ class ExperimentsTabTest {
                 FeatureContent(scrollable = false) {
                     var log by remember { mutableStateOf(listOf<LogEntry>()) }
                     ExperimentsTab(
-                        runner = LlmRunner(fake), base = base, probe = { null }, log = log,
+                        runner = LlmRunner(fake), base = base, probe = { null }, guard = ai.riskmandate.app.experiments.NoGuard, log = log,
                         onRecord = { l, r: RunRecord -> logged += l; log = listOf(LogEntry.of(l, r)) + log },
                         onClearLog = { log = emptyList(); cleared() },
                     )
@@ -111,7 +111,7 @@ class ExperimentsTabTest {
         restorer.setContent {
             RiskMandateTheme {
                 FeatureContent(scrollable = false) {
-                    ExperimentsTab(runner = LlmRunner(fake), base = base, probe = { null }, log = emptyList(), onRecord = { _, _ -> }, onClearLog = {})
+                    ExperimentsTab(runner = LlmRunner(fake), base = base, probe = { null }, guard = ai.riskmandate.app.experiments.NoGuard, log = emptyList(), onRecord = { _, _ -> }, onClearLog = {})
                 }
             }
         }
@@ -130,7 +130,12 @@ class ExperimentsTabTest {
                 FeatureContent(scrollable = false) {
                     ExperimentsTab(
                         runner = LlmRunner(FakeLlmService { FakeReply("x") }), base = base, log = emptyList(), onRecord = { _, _ -> }, onClearLog = {},
-                        probe = { n++; ai.riskmandate.app.llm.DeviceSample(ai.riskmandate.app.llm.MemorySample(1, 1, 1, 1), if (n > 3) 10 else 80, false, ai.riskmandate.app.llm.Thermal.NONE) },
+                        probe = { null },
+                        guard = object : ai.riskmandate.app.experiments.DeviceGuard {
+                            override fun batteryPct() = if (++n > 3) 10 else 80
+                            override fun charging() = false
+                            override fun hot() = false
+                        },
                     )
                 }
             }
