@@ -5,6 +5,8 @@ import ai.riskmandate.app.ManagedConfig
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateListOf
 
 /**
  * A summit feature. Each one lives in its own package under `features/` and is owned by one session,
@@ -39,6 +41,13 @@ class FeatureContext(
     val config: ManagedConfig,
     /** This device's management state as the host last detected it. Read-only. */
     val device: DeviceStatus,
+    /**
+     * Holds off stand mode's idle reset while a feature runs unattended on purpose (abpdemo's auto-play).
+     * Returns the release; calling it twice is harmless. Features do not call this directly: use
+     * [HoldIdleWhile], which releases when the condition ends or the feature leaves the screen.
+     * The default does nothing, for previews and tests.
+     */
+    val holdIdle: () -> () -> Unit = { {} },
 ) {
     /**
      * Transitional, for the host only, so MainActivity keeps compiling until app.android passes
@@ -50,4 +59,36 @@ class FeatureContext(
 
     private constructor(onBack: () -> Unit, config: ManagedConfig, activity: ComponentActivity) :
         this(onBack, config, DeviceStatus.detect(activity, config.deviceLabel))
+}
+
+/**
+ * Keeps stand mode's idle reset off while [active] is true, and releases it when [active] turns false
+ * or the feature leaves the screen. The only way a feature should hold the reset off.
+ */
+@Composable
+fun FeatureContext.HoldIdleWhile(active: Boolean) {
+    DisposableEffect(this, active) {
+        val release = if (active) holdIdle() else null
+        onDispose { release?.invoke() }
+    }
+}
+
+/**
+ * The host's record of idle holds (one per [hold] not yet released). Host-owned: MainActivity keeps one
+ * in `remember`, passes [hold] as [FeatureContext.holdIdle] and [held] to StandHost. Main thread only.
+ */
+class IdleHolds {
+    private val tokens = mutableStateListOf<Any>()
+
+    /** True while any feature holds the idle reset off. Compose state: readers recompose on change. */
+    val held: Boolean get() = tokens.isNotEmpty()
+
+    fun hold(): () -> Unit {
+        val token = Any()
+        tokens.add(token)
+        return { tokens.remove(token) }
+    }
+
+    /** Drops every hold (the host calls this when the route changes, as a safety net). */
+    fun clear() = tokens.clear()
 }
