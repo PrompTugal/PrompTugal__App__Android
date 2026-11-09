@@ -1,6 +1,7 @@
 package ai.riskmandate.app.features.chat
 
 import ai.riskmandate.app.llm.LlmEvent
+import ai.riskmandate.app.llm.LlmLocation
 import ai.riskmandate.app.llm.LlmMessage
 import ai.riskmandate.app.llm.LlmRequest
 import ai.riskmandate.app.llm.LlmService
@@ -29,6 +30,8 @@ class LlmServiceChat(
     private val maxTokens: Int = DEFAULT_MAX_TOKENS,
     private val sampling: Sampling = Sampling(ChatSampling.TEMPERATURE, ChatSampling.TOP_K, ChatSampling.TOP_P),
 ) : ChatLlm {
+    override val isLocal: Boolean get() = service.location == LlmLocation.LOCAL
+
     override suspend fun installedModels(): List<ChatModelInfo> = when (val s = service.state.value) {
         LlmState.NoModel -> emptyList()
         is LlmState.Idle -> listOf(info(s.modelId))

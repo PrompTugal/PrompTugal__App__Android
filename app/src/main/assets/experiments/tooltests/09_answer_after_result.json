@@ -135,6 +135,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model answer in text using the weather result, without calling a tool again?",
+    "expect": "pass"
    }
   },
   {
@@ -270,6 +274,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model confirm in text that the timer started, without setting another?",
+    "expect": "pass"
    }
   }
  ]

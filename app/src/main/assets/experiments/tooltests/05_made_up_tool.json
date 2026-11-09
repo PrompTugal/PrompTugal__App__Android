@@ -111,6 +111,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model avoid calling a tool that was not offered?",
+    "expect": "pass"
    }
   },
   {
@@ -204,6 +208,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model answer with bom dia in text, without calling any tool?",
+    "expect": "pass"
    }
   }
  ]

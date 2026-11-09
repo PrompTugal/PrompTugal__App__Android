@@ -24,6 +24,8 @@ data class ChatState(
     val models: List<ChatModelInfo> = emptyList(),
     val modelId: String? = null,
     val modelsLoaded: Boolean = false,
+    /** False when the answers come from the cloud: the badge says so. */
+    val local: Boolean = true,
     val generating: Boolean = false,
     val error: ChatError? = null,
 ) {
@@ -40,6 +42,8 @@ class ChatController(
     private val llm: ChatLlm,
     private val store: ChatHistoryStore,
     private val scope: CoroutineScope,
+    /** The RiskMandate base block (the shared `Prompts.RISKMANDATE_BASE`), or null if it cannot be read. Called off the main thread. */
+    private val baseSystem: suspend () -> String?,
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val clock: () -> Long = System::currentTimeMillis,
     private val newId: () -> String = { UUID.randomUUID().toString() },
@@ -63,7 +67,7 @@ class ChatController(
         state = state.copy(
             conversations = conversations, currentId = reopen?.takeIf { id -> conversations.any { it.id == id } } ?: fresh.id, models = models,
             modelId = state.modelId?.takeIf { id -> models.any { it.id == id } } ?: models.firstOrNull()?.id,
-            modelsLoaded = true,
+            modelsLoaded = true, local = llm.isLocal,
         )
     }
 
@@ -114,7 +118,7 @@ class ChatController(
         state = state.copy(generating = true, error = null)
         scope.launch { persistNow() } // the visitor's message is on disk before the answer starts
         val turns = ChatPrompt.turns(history + ChatMessage(ChatRole.USER, input))
-        val system = groundingText?.let(ChatPresets::system) ?: ChatPresets.BASE_SYSTEM
+        val grounded = groundingText?.let(ChatPresets::system)
         val started = clock()
         job = scope.launch {
             var tokens = 0
@@ -125,6 +129,7 @@ class ChatController(
             var failure: String? = null
             var reported: ChatAnswerStats? = null
             try {
+                val system = grounded ?: runCatching { baseSystem() }.getOrNull()
                 llm.stream(model, system, turns) { reported = it }.collect { piece ->
                     if (tokens == 0) firstAt = clock()
                     tokens++

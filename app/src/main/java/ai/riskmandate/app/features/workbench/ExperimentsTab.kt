@@ -2,6 +2,8 @@ package ai.riskmandate.app.features.workbench
 
 import ai.riskmandate.app.R
 import ai.riskmandate.app.copyToClipboard
+import ai.riskmandate.app.experiments.DeviceGuard
+import ai.riskmandate.app.experiments.RunCaps
 import ai.riskmandate.app.llm.DeviceSample
 import ai.riskmandate.app.llm.LlmRunner
 import ai.riskmandate.app.llm.RunRecord
@@ -96,7 +98,10 @@ fun ExperimentsTab(
     runner: LlmRunner?,
     /** The Run tab's current settings, or null when they are not valid. */
     base: RunSettings?,
+    /** Readings shown in the progress card (memory, battery, thermal level). */
     probe: () -> DeviceSample?,
+    /** Battery and heat the caps decide on (experiments/RunCaps). */
+    guard: DeviceGuard,
     log: List<LogEntry>,
     onRecord: (String, RunRecord) -> Unit,
     onClearLog: () -> Unit,
@@ -136,7 +141,7 @@ fun ExperimentsTab(
         progress = ExperimentProgress(0, list.size, null, emptyList(), null, false)
         onRunning(true)
         val j = scope.launch {
-            runExperiment(list, r, probe, clock = clock, onRecord = onRecord) { p ->
+            runExperiment(list, r, guard, clock = clock, onRecord = onRecord) { p ->
                 progress = p
                 if (p.finished) savedSummary = SummaryCodec.encode(plan, ExperimentSummary.of(plan.values, p.results), p.stop)
             }
@@ -195,7 +200,7 @@ fun ExperimentsTab(
                 modifier = Modifier.testTag(ExperimentTags.PROGRESS).semantics { liveRegion = LiveRegionMode.Polite })
             StatRow(stringResource(R.string.workbench_progress_battery), now?.batteryPct?.let { "$it%" } ?: stringResource(R.string.workbench_not_available), source = stringResource(R.string.workbench_src_app),
                 tone = when {
-                    (now?.batteryPct ?: 100) <= ExperimentCaps.MIN_BATTERY_PCT -> Tone.Bad
+                    (now?.batteryPct ?: 100) <= RunCaps.LOW_BATTERY_PCT -> Tone.Bad
                     (now?.batteryPct ?: 100) < 30 -> Tone.Warn
                     else -> Tone.Neutral
                 })

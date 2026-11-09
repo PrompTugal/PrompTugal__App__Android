@@ -126,6 +126,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model ask for the weather in Lisbon?",
+    "expect": "pass"
    }
   },
   {
@@ -250,6 +254,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model set a timer of about two minutes, which is about 120 seconds?",
+    "expect": "pass"
    }
   },
   {
@@ -373,6 +381,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the saved note mention spare cables?",
+    "expect": "pass"
    }
   }
  ]

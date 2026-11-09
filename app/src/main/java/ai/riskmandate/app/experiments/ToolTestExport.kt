@@ -19,6 +19,7 @@ object ToolTestExport {
         device: Map<String, Any?> = emptyMap(),
     ): String {
         val first = outcome.runs.firstOrNull { it.modelId != null }
+        val judgedBy = outcome.judged.associateBy { Triple(it.caseId, it.mode, it.rep) }
         val doc = linkedMapOf<String, Any?>(
             "format" to "abp-lab-loop-export/1",
             "kind" to "tool-tests",
@@ -32,8 +33,11 @@ object ToolTestExport {
             "battery" to mapOf("start_pct" to outcome.batteryStartPct, "end_pct" to outcome.batteryEndPct),
             "stop_reason" to outcome.stop.name.lowercase(),
             "not_finished" to outcome.runs.count { !it.finished },
-            "summary" to summary(outcome.report),
-            "runs" to outcome.runs.mapIndexed { i, r -> record(r, i, catalogueHash, settings, exportedAt) },
+            "summary" to summary(outcome.report) + (if (outcome.judged.isEmpty()) emptyMap() else mapOf("judges" to judgeSummary(outcome.judgeReport))),
+            "runs" to outcome.runs.mapIndexed { i, r -> record(r, i, catalogueHash, settings, exportedAt) + (judgedBy[Triple(r.caseId, r.mode, r.rep)]?.let { mapOf("judges" to panel(it)) } ?: emptyMap()) },
+            "disagreements" to outcome.judged.flatMap { it.disagreements }.map { d ->
+                mapOf("case" to d.caseId, "kind" to d.kind, "path" to d.mode.name.lowercase(), "rep" to d.rep, "verdicts" to listOf(verdict(d.a), verdict(d.b)))
+            },
         )
         return StrictJson.render(doc)
     }
@@ -75,5 +79,21 @@ object ToolTestExport {
         "tokens" to mapOf("output" to r.outputTokens, "decode_tokens_per_second" to r.decodeTokensPerSecond),
         "error" to r.error,
         "outcome" to mapOf("failure" to (r.finished && !r.passed), "attempted" to r.finished, "caught" to false, "heuristic" to false, "passed" to r.passed),
+    )
+
+    private fun verdict(v: JudgeVerdict) = mapOf(
+        "layer" to v.layer.name.lowercase(), "outcome" to v.outcome.name.lowercase(), "reason" to v.reason,
+        "model_id" to v.modelId, "prompt_version" to v.promptVersion,
+    )
+
+    private fun panel(p: PanelResult) = mapOf(
+        "final" to p.final.name.lowercase(), "decided_by" to p.decidedBy?.name?.lowercase(), "verdicts" to p.verdicts.map(::verdict),
+        "disagreed" to p.disagreements.isNotEmpty(),
+    )
+
+    private fun judgeSummary(r: JudgeReport): Map<String, Any?> = linkedMapOf(
+        "judged" to r.judged,
+        "disagreements" to mapOf("overall" to r.disagreements.size, "by_kind" to r.byKind(), "by_case" to r.byCase()),
+        "agreement_with_code" to listOf(JudgeLayer.LOCAL, JudgeLayer.CLOUD).associate { l -> l.name.lowercase() to r.agreementWithCode(l).let { mapOf("agreed" to it.first, "compared" to it.second) } },
     )
 }

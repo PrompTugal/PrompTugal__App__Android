@@ -25,6 +25,9 @@ data class ChatAnswerStats(val outputTokens: Int?, val tokensPerSecond: Double?,
  * the collector: the implementation must stop generating when its flow is cancelled.
  */
 interface ChatLlm {
+    /** False when a third party computes the answers (the cloud): the badge then says so instead of "Runs on this device". */
+    val isLocal: Boolean get() = true
+
     /** Models installed on this device right now. Empty when none (the chat then explains how to set one up). */
     suspend fun installedModels(): List<ChatModelInfo>
 
@@ -44,7 +47,10 @@ class FakeChatLlm(
     var pieces: List<String> = listOf("Hello", " from", " the", " device"),
     var delayMs: Long = 0,
     var failAfter: Int = -1,
+    var local: Boolean = true,
 ) : ChatLlm {
+    override val isLocal: Boolean get() = local
+
     data class Call(val modelId: String, val system: String?, val turns: List<ChatTurn>)
 
     val calls = mutableListOf<Call>()

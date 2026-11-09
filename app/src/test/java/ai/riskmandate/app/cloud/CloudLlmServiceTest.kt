@@ -2,6 +2,7 @@ package ai.riskmandate.app.cloud
 
 import ai.riskmandate.app.llm.LlmError
 import ai.riskmandate.app.llm.LlmEvent
+import ai.riskmandate.app.llm.LlmLocation
 import ai.riskmandate.app.llm.LlmMessage
 import ai.riskmandate.app.llm.LlmRequest
 import ai.riskmandate.app.llm.LlmState
@@ -68,6 +69,7 @@ class CloudLlmServiceTest {
         assertEquals(CloudModels.SONNET.id, done.stats.modelId)
         assertEquals(12, done.stats.promptTokens); assertEquals(5, done.stats.outputTokens)
         assertTrue(done.stats.backend.contains("openrouter.ai"))
+        assertEquals(LlmLocation.CLOUD, done.stats.location) // never "on this device"
         assertEquals(400L, spend.snapshot().totalSpentMicros) // usage.cost, to the micro-dollar
         assertEquals(400L, spend.snapshot().sessionSpentMicros)
     }
@@ -110,6 +112,10 @@ class CloudLlmServiceTest {
         assertTrue(t.calls.isEmpty())
         assertEquals(1, terminal(e))
         assertEquals(LlmState.NoModel, service(key = empty, transport = t).also { it.refresh() }.state.value)
+    }
+
+    @Test fun theServiceSaysItRunsInTheCloud() {
+        assertEquals(LlmLocation.CLOUD, service(transport = ok()).location)
     }
 
     @Test fun stateFollowsTheKey() {
