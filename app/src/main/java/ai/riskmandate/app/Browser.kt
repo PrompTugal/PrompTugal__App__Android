@@ -14,10 +14,12 @@ import androidx.browser.customtabs.CustomTabsIntent
 
 enum class OpenResult { CUSTOM_TAB, BROWSER, NO_BROWSER, REFUSED, FAILED, PINNED }
 
-/** Opens a riskmandate.ai page: in a Custom Tab when a browser supports them, else in any browser. */
+/** Opens a riskmandate.ai page: in a Custom Tab when a browser supports them, else in any browser. Not while pinned. */
 object Browser {
     fun open(context: Context, url: String): OpenResult {
         if (!Links.isAllowed(url)) return OpenResult.REFUSED
+        // A Custom Tab is a full browser: never inside a pinned stand (A-app-9).
+        if (isPinned(context)) return OpenResult.PINNED
         val uri = Uri.parse(url)
         val customTabsPackage = try {
             CustomTabsClient.getPackageName(context, emptyList())
