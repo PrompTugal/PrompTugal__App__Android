@@ -41,6 +41,7 @@ Nothing.
 - FeatureContext v3 (work/architect b2da9cd merged): MainActivity keeps `val idle = remember { IdleHolds() }`, passes `holdIdle = idle::hold` in the `FeatureContext`, and calls `idle.clear()` in a `LaunchedEffect(route)`. **Open: `StandHost(idleHeld = idle.held)`**: StandHost on this branch is still the placeholder without that parameter (dev.stand's version, on work/dev.stand, has `idleHeld: Boolean = false`). One line to add once dev.stand's StandHost is merged into dev; I will do it then.
 - `Links.ALLOWED_HOSTS` is now public (`Set<String>`, read-only) and still the only source for `Links.isAllowed` (dev.mandate A-man-5); test added.
 - Still open: `StandHost(idleHeld = idle.held)` after dev.stand's StandHost is on dev (conductor will say).
+- A-app-7: removed `LaunchedEffect(route) { idle.clear() }` from MainActivity (it wiped a hold after rotation); `HoldIdleWhile` releases on leave. A-app-8 (`idleHeld = idle.held`) waits for dev.stand on dev.
 - (Superseded) Waiting on architect's `Feature.kt` (work/architect) for the narrow host interface, `config`/`device` in `FeatureContext`, and a hoisted `StandController` (shape to agree with dev.stand); then merge origin/work/architect, change MainActivity/HomeScreen, gate, push, message @parent. As of now work/architect has not pushed it.
 
 ## Next
