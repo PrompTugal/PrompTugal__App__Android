@@ -169,6 +169,7 @@ A feature with `enabled = false` is never on Home, in the sidebar, or reachable 
 - **Stats and run options live in `llm/` (dev.llm), additive only, defaults keep every caller compiling:**
   - `LlmStats` gains `stopReason` (DONE, MAX_TOKENS, CANCELLED, ERROR), `backendUsed` and `fellBack`, and `coldLoad`, alongside the existing prompt/output tokens, TTFT, prefill and decode tokens/s, load ms and total ms. Each value says whether it is runtime-reported or measured in Kotlin.
   - `MemoryProbe` stays in `llm/`.
+  - **Shared prompts:** the RiskMandate base system block (and any prompt more than one feature uses) lives as a versioned asset `assets/prompts/<name>.v<N>.txt` with a small loader in `llm/prompts/` (dev.llm). The Workbench and chat both read it from there; nobody imports `features/chat`. Its claims come only from riskmandate.ai, and security checks the text like any claim.
   - `LlmRequest.backend: BackendPreference = AUTO` (AUTO, GPU, CPU). The host reloads when it must, still serialised.
   - `suspend fun unload()` on `LlmService` (default no-op in the interface) for an honest cold-load measurement. Not `LlmHost` casts.
   - **No model parameter:** the model is chosen in G (`openFeature("models")`). The Workbench shows the active model from `Ready(modelId, backend)` and logs it per run. A model sweep is not offered for now (compare by switching in G; the log keeps both).
@@ -177,9 +178,11 @@ A feature with `enabled = false` is never on Home, in the sidebar, or reachable 
 
 ## Cloud model via OpenRouter (Dinis, 9 Nov, about 10:35 UTC; architect ruling)
 ### The service
-- `llm/cloud/CloudLlmService : LlmService`, the same contract as the on-device service: a cold `stream`, exactly one Done or Error, coroutine cancellation, main-safe, tool calls only **proposed**, never executed. `llm/cloud/` is a sub-package owned by **dev.chat**; the rest of `llm/` stays dev.llm's.
-- Network: **one pinned host, `openrouter.ai`**, HTTPS only, in a list in `llm/cloud/` separate from `Links` and from the model-download list. `HttpURLConnection` with the server-sent-events stream parsed by hand. **No new dependency** (no OkHttp, no SDK). Request JSON built with `org.json`; tool arguments come back through `llm/StrictJson` and `checkToolCall` like local ones.
-- **Models:** an allow-list of OpenRouter model ids pinned in code. A spending cap enforced in code per install (default **US$1** until Dinis sets one), shown as a counter, and a credit limit on the key itself in OpenRouter (Dinis). On the cap, stop with `LlmError` and a clear message.
+- `cloud/CloudLlmService : LlmService` in its **own top-level package `ai.riskmandate.app.cloud`** (owned by **dev.chat**; revised from `llm/cloud/` at dev.chat's request), with the same contract as the on-device service: a cold `stream`, exactly one Done or Error, coroutine cancellation, main-safe, tool calls only **proposed**, never executed. `cloud/` may import `llm/` (the contract, `StrictJson`, `checkToolCall`); **`llm/` never imports `cloud/`**. `cloud/` is the one reviewed exception to the network ban outside `llm/`'s model download: qa's `LlmSandboxTest` gets an explicit allowance for `cloud/` only, with its own guard (only the pinned host, redirects off), and adds `experiments/` to the scanned roots.
+- Network: **one pinned host, `openrouter.ai`**, HTTPS only, in a list in `cloud/` separate from `Links.isAllowed` and from the model-download list, checked on every request URL. `HttpURLConnection` with `instanceFollowRedirects = false` (a redirect is an error), the server-sent-events stream parsed by hand. **No new dependency** (no OkHttp, no SDK). Request JSON built with `org.json`; tool arguments come back through `llm/StrictJson` and `checkToolCall` like local ones.
+- **Models:** an allow-list of OpenRouter model ids pinned in code. Cost per run from OpenRouter's `usage` field (`cost`), persisted. A spending cap enforced in code per install (default **US$1** until Dinis sets one), shown as a counter, and a credit limit on the key itself in OpenRouter (Dinis). On the cap, stop with `LlmError` and a clear message.
+- **Location is part of the contract:** `LlmService.location: LlmLocation` (LOCAL or CLOUD, default LOCAL in the interface; dev.llm adds it, `CloudLlmService` returns CLOUD), and `LlmStats.location` the same. Badges come from it, never from which field a feature used.
+- **History is sent only by explicit choice:** the service is stateless, so a cloud request contains exactly the messages the caller passes. A feature sends earlier turns to the cloud only on an explicit per-request choice made visible on screen ("include this conversation"); the default is the current prompt alone.
 - No user data unless a person typed it on that screen for a cloud run. Synthetic scenario and tool-test data only for judging. Nothing from other features, the device or the managed configuration goes into a prompt.
 
 ### How a feature gets it
@@ -193,7 +196,7 @@ A feature with `enabled = false` is never on Home, in the sidebar, or reachable 
 
 ### The key
 - Entered by staff in **Diagnostics** (host UI, app owns it): pasted once, never shown again (only the last 4 characters), with a delete button, and hidden in stand mode.
-- Stored by `llm/cloud/CloudKey` (dev.chat): AES-GCM with a key in the **Android Keystore** (`javax.crypto` and `AndroidKeyStore`, no `security-crypto` dependency), ciphertext in `noBackupFilesDir/cloud/`, so never backed up. It is never logged, never in a crash or diagnostics text, never in results or screenshots, and never sent anywhere but `openrouter.ai` as `Authorization: Bearer`.
+- Stored by `cloud/CloudKey` (dev.chat): AES-GCM with a key in the **Android Keystore** (`javax.crypto` and `AndroidKeyStore`, no `security-crypto` dependency), ciphertext in `noBackupFilesDir/cloud/`, so never backed up. It is never logged, never in a crash or diagnostics text, never in results or screenshots, and never sent anywhere but `openrouter.ai` as `Authorization: Bearer`.
 - Security reviews it before merge.
 
 ### Judges (experiments/, dev.lab)
