@@ -1,14 +1,15 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-08T23:45Z",
-  "state": "Dinis is setting up Firebase and the secrets now (23:45 UTC); the first signed build to the tablet follows.",
+  "updated": "2026-11-09T00:20Z",
+  "state": "Waiting for Dinis to add the release environment's variables (GCP_WIF_PROVIDER, GCP_SERVICE_ACCOUNT, FIREBASE_APP_ID) and the four UPLOAD_* secrets; then the first signed build goes to the 'team' testers and the tablet (M1).",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
     "devices/: AMAPI CLI (27 tests), fully managed policy, M2 runbook",
     "docs/ci.md, docs/lessons.md; application ID decided (ai.riskmandate.app)",
     "Security review (no secrets; 84 libraries all Apache-2.0); High A-1 URL allow-list bypass fixed (exact riskmandate.ai and www, 26 tests); findings A-2 to A-12 fixed; licences screen; Play Console groundwork in docs/play/. 52 app tests, 35 devices tests.",
-    "Merged after security PASS (23:20 to 23:35): app (tablets, themes, pt-PT, screenshots, full Apache text; 61 tests), play (privacy page, minimal-functionality review, store assets plan, release notes, tester guides, device checklist), release (emulator smoke job, screenshot artifact, licence gate, Dependabot, release notes), devices (zero-dependency QR encoder verified on 204 symbols, offline policy schema validation, Workspace vs AMAPI side by side, REHEARSAL.md, hardened policy options; 68 tests), security (OSV 0 known vulns, M2 threat model, GitHub settings checklist)."
+    "Merged after security PASS (23:20 to 23:35): app (tablets, themes, pt-PT, screenshots, full Apache text; 61 tests), play (privacy page, minimal-functionality review, store assets plan, release notes, tester guides, device checklist), release (emulator smoke job, screenshot artifact, licence gate, Dependabot, release notes), devices (zero-dependency QR encoder verified on 204 symbols, offline policy schema validation, Workspace vs AMAPI side by side, REHEARSAL.md, hardened policy options; 68 tests), security (OSV 0 known vulns, M2 threat model, GitHub settings checklist).",
+    "CI live on GitHub: check, release and smoke (emulator) jobs all green (run 24, 279e3e4); the emulator smoke test passed on its first attempt in about 1.5 minutes. Firebase auth moved to Workload Identity Federation (keyless) because the thecyberboardroom.com org blocks service-account keys; Dinis created the pool and provider (repo PrompTugal/PrompTugal__App__Android, environment release)."
   ],
   "next": [
     "merge work/app (44131ad: tablets, themes, pt-PT, screenshots, full Apache text) and work/play (6ee3f6b: privacy page, minimal-functionality review) once security.android says PASS",
@@ -16,8 +17,7 @@
     "once secrets exist: first signed build to the 'team' testers on Firebase, installed on the Tab One"
   ],
   "asks": [
-    "Dinis: a Google Cloud project with Firebase on the agent's Workspace account, an Android app registered with the chosen ID, a tester group 'team', and a service account with Firebase App Distribution Admin.",
-    "Dinis: run scripts/make-upload-key.sh on your machine and add the secrets UPLOAD_KEYSTORE_BASE64, UPLOAD_KEYSTORE_PASSWORD, UPLOAD_KEY_ALIAS, UPLOAD_KEY_PASSWORD, FIREBASE_SERVICE_ACCOUNT_JSON, FIREBASE_APP_ID.",
+    "Dinis: in GitHub Settings > Environments > release: variables GCP_WIF_PROVIDER, GCP_SERVICE_ACCOUNT, FIREBASE_APP_ID; secrets UPLOAD_KEYSTORE_BASE64, UPLOAD_KEYSTORE_PASSWORD, UPLOAD_KEY_ALIAS, UPLOAD_KEY_PASSWORD; deployment branches: dev. Then tell the conductor.",
     "Dinis: the Play Console account (organisation, which company) and its D-U-N-S check: on the critical path for M2.",
     "Dinis: make dev the default branch of the repository, if you agree, so CI and readers land on it.",
     "Dinis: AMAPI permissible usage: Google lists in-house-only solutions as not permitted; confirm the route (test on a Gmail-bound enterprise, or Workspace/Cloud Identity device management). See devices/README.md.",
@@ -28,7 +28,8 @@
     "Dinis: the copyright holder for the Apache 2.0 notice, and whether to adopt docs/security/NOTICE.draft.",
     "Dinis: for the Play listing: owner of the account (also the publisher in the privacy policy), free or paid at creation, a role contact email, the privacy policy's public URL, approval of the listing claims (docs/play/).",
     "Dinis: devices/README.md ends with ten questions only you can answer; the three that unblock M2: the route (AMAPI test enterprise, Cloud Identity Premium, or a commercial EMM), the private build's package ID, and whether AMAPI's permissible-usage terms allow us. Note: Google's pages disagree on whether Workspace device management supports a userless fully managed tablet, and that route signs private apps with a Google-held key.",
-    "Dinis: optional: run the emulator smoke test on pull requests too; Dependabot PRs targeting dev (they start only once there is a main release)."
+    "Dinis: optional: run the emulator smoke test on pull requests too; Dependabot PRs targeting dev (they start only once there is a main release).",
+    "Dinis: harden the WIF provider (repository_id, repository_owner_id, ref refs/heads/dev): the command is in the conversation of 9 Nov ~00:15 UTC and docs/ci.md."
   ],
   "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
   "decisions": [

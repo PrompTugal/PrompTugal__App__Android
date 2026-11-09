@@ -26,3 +26,7 @@ At Dinis's word (8 November 2026): these apps are open source and will be put fo
 - Selling on Google Play needs a payments (merchant) profile on the Play Console account, owned by the selling company.
 - The names and icons (RiskMandate, PrompTugal) are best kept as trademarks, outside the code licence, so a fork cannot sell itself as the original. A `NOTICE`/`TRADEMARKS` file says so once Dinis confirms.
 - Every dependency must have a licence compatible with Apache 2.0 and with sale; CI should list them (a follow-up).
+
+## Google Cloud organisation policy (9 November)
+- New Google Cloud organisations enforce `iam.disableServiceAccountKeyCreation` ("secure by default"). Do not override it: CI signs in to Google keylessly with Workload Identity Federation (GitHub's OIDC token, `google-github-actions/auth`), trusted only for this repository and its `release` environment. No JSON key exists anywhere. Google Play's upload will need the same route (or a narrow exception) at M2/M3.
+- The first emulator smoke test on GitHub's `ubuntu-latest` (KVM, API 34) passed on its first attempt in about 1.5 minutes.
