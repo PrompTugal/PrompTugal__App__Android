@@ -1,127 +1,207 @@
 package ai.riskmandate.app.llm
 
+import java.security.MessageDigest
+
 /**
- * A strict parser for the one shape tool arguments may have: a flat JSON object (RFC 8259) whose values are
- * strings, numbers, true, false or null. Android's org.json is lenient (single quotes, unquoted words, comments,
- * a repeated key silently overwrites), which is wrong for text a model wrote, so tool calls use this instead
- * (security checklist I.2: strict, bounded size and depth).
+ * The app's one strict, bounded JSON parser (RFC 8259; architect ruling A-lab-7): no comments, no trailing
+ * commas, no single quotes, no leading zeros, no duplicate keys, control characters refused inside strings,
+ * nesting capped at [MAX_DEPTH] and input at a caller-given size. Values: Map<String, Any?>, List<Any?>, String,
+ * Long, Double, Boolean, null. Used for model output (tool calls, [parseFlatObject] and [ToolSpec.check]) and for
+ * the Lab's scenario and recording files, so all are held to one rule. Android's org.json is not used for any
+ * of these: it is lenient (single quotes, unquoted words, comments, a repeated key silently overwrites).
  *
- * Integers (no fraction or exponent) become Long, other numbers Double. Nested objects or arrays, repeated keys,
- * trailing commas, control characters in strings and anything after the closing brace are errors.
+ * Written by dev.lab (features/lab/StrictJson.kt) and moved here unchanged in behaviour, with [parseFlatObject]
+ * added for tool arguments.
  */
 object StrictJson {
-    class Error(message: String) : Exception(message)
+    const val MAX_DEPTH = 12
+    const val MAX_CHARS = 2_000_000
 
+    class JsonException(message: String) : Exception(message)
+
+    fun parse(text: String, maxChars: Int = MAX_CHARS): Any? {
+        if (text.length > maxChars) throw JsonException("input longer than $maxChars characters")
+        val p = Parser(text)
+        p.skipWs()
+        val v = p.value(0)
+        p.skipWs()
+        if (p.i != text.length) throw JsonException("unexpected characters after the value at ${p.i}")
+        return v
+    }
+
+    /**
+     * A flat JSON object, the only shape tool arguments may have: values are strings, numbers, true, false or
+     * null; a nested object or array is refused. At most [maxChars] characters (default [ToolSpec.MAX_ARGS_CHARS]).
+     */
     fun parseFlatObject(text: String, maxChars: Int = ToolSpec.MAX_ARGS_CHARS): Map<String, Any?> {
-        if (text.length > maxChars) throw Error("longer than $maxChars characters")
-        return Parser(text).run {
-            ws()
-            val m = obj()
-            ws()
-            if (i != s.length) throw Error("text after the object")
-            m
+        val v = parse(text, maxChars) as? Map<*, *> ?: throw JsonException("not a JSON object")
+        if (v.values.any { it is Map<*, *> || it is List<*> }) throw JsonException("nested values are not allowed")
+        @Suppress("UNCHECKED_CAST")
+        return v as Map<String, Any?>
+    }
+
+    /** Parses one value starting exactly at [start]; returns it and the index just after it. */
+    fun parseAt(text: String, start: Int): Pair<Any?, Int> {
+        val p = Parser(text)
+        p.i = start
+        val v = p.value(0)
+        return v to p.i
+    }
+
+    /** Compact text for showing a value (not a parser input): strings quoted, keys in order. */
+    fun render(v: Any?): String = when (v) {
+        null -> "null"
+        is String -> quote(v)
+        is Map<*, *> -> v.entries.joinToString(", ", "{", "}") { quote(it.key.toString()) + ": " + render(it.value) }
+        is List<*> -> v.joinToString(", ", "[", "]") { render(it) }
+        else -> v.toString()
+    }
+
+    /** Canonical form (sorted keys, no spaces, non-ASCII kept) as the eval harness hashes it. */
+    fun canonical(v: Any?): String = when (v) {
+        is Map<*, *> -> v.entries.sortedBy { it.key.toString() }.joinToString(",", "{", "}") { quote(it.key.toString()) + ":" + canonical(it.value) }
+        is List<*> -> v.joinToString(",", "[", "]") { canonical(it) }
+        else -> render(v)
+    }
+
+    /** First 16 hex characters of the SHA-256 of [canonical], as the harness's scenario hash. */
+    fun hash16(v: Any?): String =
+        MessageDigest.getInstance("SHA-256").digest(canonical(v).toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }.take(16)
+
+    private fun quote(s: String): String {
+        val sb = StringBuilder("\"")
+        for (c in s) when {
+            c == '"' -> sb.append("\\\"")
+            c == '\\' -> sb.append("\\\\")
+            c == '\n' -> sb.append("\\n")
+            c == '\r' -> sb.append("\\r")
+            c == '\t' -> sb.append("\\t")
+            c == '\b' -> sb.append("\\b")
+            c == '\u000c' -> sb.append("\\f")
+            c < ' ' -> sb.append("\\u%04x".format(c.code))
+            else -> sb.append(c)
         }
+        return sb.append('"').toString()
     }
 
     private class Parser(val s: String) {
         var i = 0
 
-        fun ws() {
-            while (i < s.length && s[i] in " \t\r\n") i++
-        }
+        fun skipWs() { while (i < s.length && (s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r')) i++ }
 
-        fun expect(c: Char) {
-            if (i >= s.length || s[i] != c) throw Error("expected '$c' at $i")
-            i++
-        }
+        fun fail(msg: String): Nothing = throw JsonException("$msg at $i")
 
-        fun obj(): Map<String, Any?> {
-            expect('{')
-            val m = LinkedHashMap<String, Any?>()
-            ws()
-            if (i < s.length && s[i] == '}') {
-                i++
-                return m
-            }
-            while (true) {
-                ws()
-                val key = string()
-                if (key in m) throw Error("repeated key")
-                ws()
-                expect(':')
-                ws()
-                m[key] = value()
-                ws()
-                if (i >= s.length) throw Error("unterminated object")
-                when (s[i]) {
-                    ',' -> i++
-                    '}' -> { i++; return m }
-                    else -> throw Error("expected ',' or '}' at $i")
-                }
-            }
-        }
-
-        fun value(): Any? {
-            if (i >= s.length) throw Error("missing value")
+        fun value(depth: Int): Any? {
+            if (depth > MAX_DEPTH) fail("nesting deeper than $MAX_DEPTH")
+            if (i >= s.length) fail("unexpected end")
             return when (val c = s[i]) {
-                '"' -> string()
-                '{', '[' -> throw Error("nested values are not allowed")
-                't' -> word("true", true)
-                'f' -> word("false", false)
-                'n' -> word("null", null)
-                else -> if (c == '-' || c in '0'..'9') number() else throw Error("unexpected character at $i")
+                '{' -> obj(depth)
+                '[' -> arr(depth)
+                '"' -> str()
+                't' -> lit("true", true)
+                'f' -> lit("false", false)
+                'n' -> lit("null", null)
+                else -> if (c == '-' || c in '0'..'9') num() else fail("unexpected '$c'")
             }
         }
 
-        fun word(w: String, v: Any?): Any? {
-            if (!s.startsWith(w, i)) throw Error("unexpected word at $i")
-            i += w.length
+        private fun lit(word: String, v: Any?): Any? {
+            if (!s.startsWith(word, i)) fail("bad literal")
+            i += word.length
             return v
         }
 
-        fun number(): Any {
-            val m = NUMBER.matchAt(s, i) ?: throw Error("bad number at $i")
-            i += m.value.length
-            val t = m.value
-            return if (t.any { it == '.' || it == 'e' || it == 'E' }) {
-                t.toDouble().takeIf { it.isFinite() } ?: throw Error("number out of range")
-            } else {
-                t.toLongOrNull() ?: throw Error("integer out of range")
-            }
-        }
-
-        fun string(): String {
-            expect('"')
-            val b = StringBuilder()
+        private fun obj(depth: Int): Map<String, Any?> {
+            i++ // {
+            val out = LinkedHashMap<String, Any?>()
+            skipWs()
+            if (i < s.length && s[i] == '}') { i++; return out }
             while (true) {
-                if (i >= s.length) throw Error("unterminated string")
-                val c = s[i++]
-                when {
-                    c == '"' -> return b.toString()
-                    c < ' ' -> throw Error("control character in string")
-                    c == '\\' -> {
-                        if (i >= s.length) throw Error("unterminated escape")
-                        when (val e = s[i++]) {
-                            '"', '\\', '/' -> b.append(e)
-                            'b' -> b.append('\b')
-                            'f' -> b.append('\u000C')
-                            'n' -> b.append('\n')
-                            'r' -> b.append('\r')
-                            't' -> b.append('\t')
-                            'u' -> {
-                                if (i + 4 > s.length) throw Error("bad \\u escape")
-                                val hex = s.substring(i, i + 4)
-                                b.append(hex.toIntOrNull(16)?.toChar() ?: throw Error("bad \\u escape"))
-                                i += 4
-                            }
-                            else -> throw Error("bad escape")
-                        }
-                    }
-                    else -> b.append(c)
+                skipWs()
+                if (i >= s.length || s[i] != '"') fail("expected a key")
+                val k = str()
+                if (k in out) fail("duplicate key '$k'")
+                skipWs()
+                if (i >= s.length || s[i] != ':') fail("expected ':'")
+                i++
+                skipWs()
+                out[k] = value(depth + 1)
+                skipWs()
+                if (i >= s.length) fail("unexpected end")
+                when (s[i++]) {
+                    ',' -> continue
+                    '}' -> return out
+                    else -> { i--; fail("expected ',' or '}'") }
                 }
             }
         }
-    }
 
-    private val NUMBER = Regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?")
+        private fun arr(depth: Int): List<Any?> {
+            i++ // [
+            val out = ArrayList<Any?>()
+            skipWs()
+            if (i < s.length && s[i] == ']') { i++; return out }
+            while (true) {
+                skipWs()
+                out += value(depth + 1)
+                skipWs()
+                if (i >= s.length) fail("unexpected end")
+                when (s[i++]) {
+                    ',' -> continue
+                    ']' -> return out
+                    else -> { i--; fail("expected ',' or ']'") }
+                }
+            }
+        }
+
+        private fun str(): String {
+            i++ // opening quote
+            val sb = StringBuilder()
+            while (true) {
+                if (i >= s.length) fail("unterminated string")
+                val c = s[i++]
+                when {
+                    c == '"' -> return sb.toString()
+                    c < ' ' -> { i--; fail("control character in string") }
+                    c == '\\' -> {
+                        if (i >= s.length) fail("unterminated escape")
+                        when (val e = s[i++]) {
+                            '"', '\\', '/' -> sb.append(e)
+                            'b' -> sb.append('\b'); 'f' -> sb.append('\u000c'); 'n' -> sb.append('\n')
+                            'r' -> sb.append('\r'); 't' -> sb.append('\t')
+                            'u' -> {
+                                if (i + 4 > s.length) fail("short \\u escape")
+                                val hex = s.substring(i, i + 4)
+                                if (!hex.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) fail("bad \\u escape")
+                                sb.append(hex.toInt(16).toChar()); i += 4
+                            }
+                            else -> { i--; fail("bad escape '\\$e'") }
+                        }
+                    }
+                    else -> sb.append(c)
+                }
+            }
+        }
+
+        private fun num(): Any {
+            val start = i
+            if (s[i] == '-') i++
+            if (i >= s.length) fail("bad number")
+            if (s[i] == '0') i++ else if (s[i] in '1'..'9') { while (i < s.length && s[i] in '0'..'9') i++ } else fail("bad number")
+            var integer = true
+            if (i < s.length && s[i] == '.') {
+                integer = false; i++
+                val d = i; while (i < s.length && s[i] in '0'..'9') i++
+                if (i == d) fail("bad fraction")
+            }
+            if (i < s.length && (s[i] == 'e' || s[i] == 'E')) {
+                integer = false; i++
+                if (i < s.length && (s[i] == '+' || s[i] == '-')) i++
+                val d = i; while (i < s.length && s[i] in '0'..'9') i++
+                if (i == d) fail("bad exponent")
+            }
+            val t = s.substring(start, i)
+            return if (integer && t.length <= 18) t.toLong() else t.toDouble()
+        }
+    }
 }

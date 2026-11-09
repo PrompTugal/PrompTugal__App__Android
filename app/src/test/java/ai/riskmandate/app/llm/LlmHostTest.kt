@@ -159,6 +159,23 @@ class LlmHostTest {
         assertEquals(LlmError.TOO_LONG, h.generate(LlmRequest(listOf(LlmMessage.user("x".repeat(61))))).error?.reason)
     }
 
+    @Test fun runtimeContextOverflowIsTooLong() = runBlocking {
+        install(specA, bytesA)
+        val rt = object : LlmRuntime {
+            override fun load(file: File, backend: BenchBackend, maxTokens: Int) = object : LoadedModel {
+                override val backend = backend
+                override fun stream(request: LlmRequest, modelId: String): Flow<LlmEvent> = flow {
+                    throw IllegalStateException("Input token ids are too long. Exceeding the maximum number of tokens allowed: 9000 >= 8192")
+                }
+                override fun close() {}
+            }
+        }
+        val h = LlmHost({ tmp.root }, rt, listOf(specA))
+        assertEquals(LlmError.TOO_LONG, h.generate(ask).error?.reason)
+        assertFalse(h.isContextOverflow(IllegalStateException("GPU delegate failed")))
+        assertFalse(h.isContextOverflow(UnsatisfiedLinkError("dlopen failed: liblitertlm_jni.so")))
+    }
+
     @Test fun onlyTheInternalDownloadableCatalogueIsServedByDefault() {
         assertTrue(ModelCatalog.ALL.filter { it.downloadable }.all { it.licence == "apache-2.0" })
     }

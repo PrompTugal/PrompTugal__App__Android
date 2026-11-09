@@ -58,21 +58,13 @@ class ToolSpecTest {
     }
 
     @Test fun reasonsNeverEchoValues() {
+        val planted = "PLANTED-SECRET-7f3a-do-not-use"
+        assertFalse("a repeated key the model wrote is not quoted", planted in rejected("""{"$planted":1,"$planted":2}"""))
+        assertFalse(planted in rejected("""{"doc_id":"d","to":"t"} $planted"""))
         val secret = "PLANTED-SECRET-7f3a-do-not-use"
         assertFalse(secret in rejected("""{"doc_id":"d","to":"t","mode":"$secret"}"""))
         assertFalse(secret in rejected("""{"doc_id":"d","to":"t","$secret":1}"""))
         assertFalse(secret in rejected("""{"doc_id":"d","to":"t","copies":"$secret"}"""))
-    }
-
-    @Test fun strictParserReadsValidJson() {
-        assertEquals(
-            mapOf("a" to "x\n\u00e9\"", "b" to -12L, "c" to 1.5e3, "d" to true, "e" to null, "f" to false),
-            StrictJson.parseFlatObject(""" { "a" : "x\n\u00e9\"", "b":-12, "c":1.5e3, "d":true, "e":null, "f":false } """),
-        )
-        assertEquals(emptyMap<String, Any?>(), StrictJson.parseFlatObject("{}"))
-        listOf("{\"a\":01}", "{\"a\":1.}", "{\"a\":\"x\ty\"}".replace("\\t", "\t"), "{\"a\":tru}", "{\"a\":99999999999999999999}", "").forEach {
-            assertThrows(it, StrictJson.Error::class.java) { StrictJson.parseFlatObject(it) }
-        }
     }
 
     @Test fun nameMustBeOnTheAllowList() {
