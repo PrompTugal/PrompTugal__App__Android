@@ -85,11 +85,31 @@ object ChatSampling {
     const val TOP_P = 0.9
 }
 
-/** Plain text for display: the markers a small model adds for bold are dropped, nothing is rendered. */
+/**
+ * Plain text for display: the markers a small model adds for bold are dropped, nothing is rendered.
+ * One linear pass, no backtracking: a long run of "__" with no closing pair costs the same as ordinary text.
+ */
 object PlainText {
-    private val UNDERSCORES = Regex("""__(\S(?:.*?\S)?)__""")
-
-    fun clean(text: String): String = UNDERSCORES.replace(text.replace("**", ""), "$1")
+    fun clean(text: String): String {
+        val s = text.replace("**", "")
+        var i = s.indexOf("__")
+        if (i < 0) return s
+        val out = StringBuilder(s.length)
+        var pos = 0
+        while (i >= 0) {
+            val j = s.indexOf("__", i + 2)
+            if (j < 0) break // no closing pair anywhere after this: nothing more to strip
+            val inner = s.substring(i + 2, j)
+            if (inner.isNotEmpty() && !inner.first().isWhitespace() && !inner.last().isWhitespace() && '\n' !in inner) {
+                out.append(s, pos, i).append(inner)
+                pos = j + 2
+                i = s.indexOf("__", pos)
+            } else {
+                i = s.indexOf("__", i + 2) // the would-be closer is tried as the next opener
+            }
+        }
+        return out.append(s, pos, s.length).toString()
+    }
 }
 
 object ChatPresets {
