@@ -8,6 +8,7 @@ import android.content.res.AssetManager
  */
 object ToolTestAssets {
     const val ROOT = "experiments/tooltests"
+    const val JUDGES = "experiments/judges"
 
     private fun list(assets: AssetManager): List<String> = runCatching { assets.list(ROOT)?.toList() }.getOrNull().orEmpty()
 
@@ -32,5 +33,25 @@ object ToolTestAssets {
             }
         }
         return ToolCatalogue(kinds, cases, problems, ToolTestFormats.hash(texts))
+    }
+
+    /**
+     * The versioned judge prompts from `experiments/judges`, by id. A bad file is skipped and named. Off the main thread.
+     */
+    fun loadJudgePrompts(assets: AssetManager): Pair<Map<String, JudgePrompt>, List<String>> {
+        val prompts = LinkedHashMap<String, JudgePrompt>()
+        val problems = ArrayList<String>()
+        val names = runCatching { assets.list(JUDGES)?.toList() }.getOrNull().orEmpty().filter { it.endsWith(".json") }.sorted()
+        for (f in names) {
+            try {
+                val p = JudgePrompt.parse(assets.open("$JUDGES/$f").bufferedReader(Charsets.UTF_8).use { it.readText() })
+                val key = p.id
+                val existing = prompts[key]
+                if (existing == null || p.version > existing.version) prompts[key] = p
+            } catch (e: Exception) {
+                problems += "judges/$f: ${e.message}"
+            }
+        }
+        return prompts to problems
     }
 }

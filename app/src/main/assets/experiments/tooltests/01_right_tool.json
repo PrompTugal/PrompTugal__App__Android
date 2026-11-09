@@ -126,6 +126,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model call get_weather for Lisbon, with valid arguments?",
+    "expect": "pass"
    }
   },
   {
@@ -249,6 +253,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model start a timer with set_timer for five minutes?",
+    "expect": "pass"
    }
   },
   {
@@ -372,6 +380,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model save the wifi note using add_note?",
+    "expect": "pass"
    }
   }
  ]
