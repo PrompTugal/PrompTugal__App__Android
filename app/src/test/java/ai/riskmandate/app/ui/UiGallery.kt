@@ -138,7 +138,7 @@ internal fun NowSample(wide: Boolean = LocalWideLayout.current) {
 
 /** A permanent sidebar and a content pane, as the spec asks for tablets. Icons are stand-ins (real ones are app.android's). */
 @Composable
-internal fun ShellSample() {
+internal fun ShellSample(selected: String = "Now", content: @Composable () -> Unit = { NowSample() }) {
     val c = ai.riskmandate.app.Pt.colors
     Row(Modifier.fillMaxSize().background(c.paper)) {
         Column(
@@ -152,26 +152,27 @@ internal fun ShellSample() {
             for ((section, items) in listOf(
                 "Today" to listOf("Now" to 0, "RiskMandate" to 0, "ABP in every layer" to 0),
                 "Explore" to listOf("ABP Lab" to 0, "Chat" to 0, "What's new" to 3),
-                "This device" to listOf("This app's mandate" to 0, "Models" to 1),
+                "This device" to listOf("This app's mandate" to 0),
+                "Staff" to listOf("Workbench" to 0, "Models" to 1),
             )) {
                 Text(section, color = c.muted, style = androidx.compose.material3.MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
                 for ((i, item) in items.withIndex()) {
-                    val selected = section == "Today" && i == 0
+                    val isSel = item.first == selected
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                            .background(if (selected) c.accent.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                            .background(if (isSel) c.accent.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
                             .padding(horizontal = 8.dp),
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Box(Modifier.size(22.dp).border(2.dp, if (selected) c.accent else c.ink, androidx.compose.foundation.shape.RoundedCornerShape(6.dp)))
-                        Text(item.first, Modifier.weight(1f), color = if (selected) c.accent else c.ink, fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.SemiBold else null)
+                        Box(Modifier.size(22.dp).border(2.dp, if (isSel) c.accent else c.ink, androidx.compose.foundation.shape.RoundedCornerShape(6.dp)))
+                        Text(item.first, Modifier.weight(1f), color = if (isSel) c.accent else c.ink, fontWeight = if (isSel) androidx.compose.ui.text.font.FontWeight.SemiBold else null)
                         if (item.second > 0) CountPill(item.second, "new")
                     }
                 }
             }
         }
-        Box(Modifier.weight(1f)) { NowSample() }
+        Box(Modifier.weight(1f)) { content() }
     }
 }
 
