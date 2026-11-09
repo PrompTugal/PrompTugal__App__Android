@@ -1,0 +1,8 @@
+The Agent Behaviour Policy. An Agent Behaviour Policy is a written description, for one agent in one deployment, of everything it can do, what you authorised it to do, the gap between the two, and what actually stands in the way. It is derived from your deployment rather than copied from a template. It describes and it does not judge, so it carries no score.
+Four objects. The order they are produced in matters.
+The mandate: what the agent is authorised and expected to do. Elicited, in minutes, because you already know it.
+The grant: everything the agent can do. Measured, from the deployment shape, the account and the credentials.
+The delta: excess where it can and you did not ask; shortfall where you asked and it cannot. Derived, recomputed whenever the grant or the mandate moves, stored with the versions of both, never edited.
+The barrier: what stands between the agent and each capability, recorded per capability. There are four kinds: none (nothing in the way), expectation (a rule in prose, enforced by nobody), setting (a switch the agent's own account can flip) and boundary (enforced above the grant, out of the agent's reach). Only a boundary is a control.
+An inventory says "Your agent can do 340 things." A finding says "Your agent can do 340 things and you authorised 12." The mandate is the edge that gives the enumeration a shape.
+Source: riskmandate.ai/abp, read 9 November 2026.
