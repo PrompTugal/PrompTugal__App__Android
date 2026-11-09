@@ -329,7 +329,7 @@ fun logLine(e: LogEntry): String {
 
 /** The run's label, model, backend and the settings, on one line. */
 fun settingsLine(e: LogEntry): String =
-    "${e.label} | ${e.model} ${e.backend}${if (e.fellBack) "(fell back)" else ""} t=${e.temperature} p=${e.topP} max=${e.maxTokens}" +
+    "${e.label} | ${if (e.cloud) "Cloud \u00b7 ${e.model} via openrouter.ai" else "${e.model} ${e.backend}"}${if (e.fellBack) "(fell back)" else ""} t=${e.temperature} p=${e.topP} max=${e.maxTokens}" +
         "${if (e.systemChars > 0) " sys" else ""}${if (e.tools > 0) " tools=${e.tools}" else ""}"
 
 private fun spread(s: Spread?, d: Int): String = if (s == null) "-" else {
