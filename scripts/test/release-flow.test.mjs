@@ -109,3 +109,34 @@ test('find-release-tag: tests-only and CI-only changes keep the build; shipped c
     assert.equal(bash(r.dir, 'find-release-tag.sh', [head]).out.trim(), 'v0.1.20');
   } finally { r.done(); }
 });
+
+test('changed-since-release: compares with the latest release, so a cancelled run cannot drop a change', () => {
+  const r = repo(); try {
+    r.commit('app/src/main/A.kt', 'built and released'); r.g('tag', 'v0.1.30');
+    const cancelled = r.commit('app/src/main/B.kt', 'a real app change whose run was cancelled by the next push');
+    const docs = r.commit('docs/debrief.md', 'debrief text only');
+    // The push-to-push diff of the last push (docs only) says "no change"; against the release it is a change.
+    assert.equal(bash(r.dir, 'changed-build-paths.sh', [cancelled, docs]).code, 1, 'the old rule: this push alone changed nothing');
+    const since = bash(r.dir, 'changed-since-release.sh', [docs]);
+    assert.equal(since.code, 0); assert.match(since.out, /app\/src\/main\/B\.kt/); assert.match(since.out, /v0\.1\.30/);
+    // once that change has been released, a docs-only push changes nothing
+    r.g('tag', 'v0.1.31', docs);
+    assert.equal(bash(r.dir, 'changed-since-release.sh', [docs]).code, 1);
+    const docs2 = r.commit('board/status.json', 'board only');
+    assert.equal(bash(r.dir, 'changed-since-release.sh', [docs2]).code, 1, 'docs on top of a release: nothing to build');
+    // tests and CI scripts count here (CI must run them), unlike in the shipped rule
+    r.commit('app/src/androidTest/SmokeTest.kt', 'smoke fix');
+    assert.equal(bash(r.dir, 'changed-since-release.sh', ['HEAD']).code, 0);
+  } finally { r.done(); }
+});
+
+test('changed-since-release: no release tag yet, or a tag that is not an ancestor, counts as changed (fail towards building)', () => {
+  const r = repo(); try {
+    r.commit('README.md', 'base');
+    const none = bash(r.dir, 'changed-since-release.sh', ['HEAD']);
+    assert.equal(none.code, 0); assert.match(none.out, /no release tag/);
+    r.g('checkout', '-q', '-b', 'side'); r.commit('app/x.txt', 'side'); r.g('tag', 'v0.1.99'); r.g('checkout', '-q', 'dev');
+    const docs = r.commit('docs/y.md', 'docs on dev');
+    assert.equal(bash(r.dir, 'changed-since-release.sh', [docs]).code, 0, 'a tag on another branch is not a release of this history');
+  } finally { r.done(); }
+});
