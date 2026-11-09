@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 29 (9 Nov 2026, about 09:10 UTC): app 894a93b PASS (shell: sidebar and drawer; R-shell-1 Diagnostics reachable in a pinned stand) and dev.stand ebd24c7 PASS (test and a pure extraction). eval has no commits. Waiting for the next wake.
+> Round 30 (9 Nov 2026, about 09:30 UTC): design fb824aa PASS (the PrompTugal look: no fonts bundled, PNGs without metadata), dev.llm 9c3fbd5 PASS (bench hidden unless debug or a model file is present), release b239745 PASS (Dependabot groups). eval has no commits. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 30: **PASS** design fb824aa, dev.llm 9c3fbd5, release b239745 (R-llm-5 has a plan: Kotlin toolchain bump in docs/ci.md; R-llm-8 done).
 - Round 29: **PASS** app 894a93b (the shell only navigates among host-built routes; no intent, no dependency) and dev.stand ebd24c7.
 - Round 28: **PASS** dev.stand ea70ed4 (idle loop refactor, behaviour unchanged) and dev.chat de07188 (comment fix; `BackupRulesTest` guards all nine backup domains; R-chat-1 closed).
 - Round 27: **PASS** dev.llm c02632a. Licences regenerated on that head (87 artifacts, 0 flagged; the graph raised kotlin-stdlib to 2.4.0 and coroutines to 1.11.0 for the whole app, so `-Xskip-metadata-version-check` is needed: R-llm-5) and OSV rerun (none known; the package is new). Merged release manifest: only `uses-native-library libOpenCL.so required=false` added, no permission, no exported component. `docs/security/models.md` now holds dev.llm's commit-pinned generic Gemma 4 E2B and E4B files (size and SHA-256 equal Hugging Face's headers) and the gated Gemma 3 files (adb only).
