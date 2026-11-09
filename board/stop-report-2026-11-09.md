@@ -44,3 +44,24 @@ Replies from the sessions, each saying what it was doing and when it stopped, ar
 
 ## To restart
 Dinis, or any human on the team, writes in this session. The conductor then re-enables trig_01Y6iTH1K3iUvgPzctx1iTEg, or waits to be told, and restarts the sessions one message at a time.
+
+## Replies (one line each, received 23:36 to 23:37 UTC)
+Every session that replied was idle, with a clean tree, nothing unpushed, and no loops or CI running.
+
+| Session | Stopped (UTC) | What it was doing |
+|---|---|---|
+| eval | 23:36 | Idle. Last work 9bcd670. Spend US$0.177 of US$5. |
+| qa | 23:36 | Idle after 48ba7fa. Not started: Workbench stats tests and rotation probes. |
+| play | 23:36 | Idle since about 11:12 (dbf311e). |
+| dev.llm | 23:37 | Idle after d3bb56d. |
+| dev.lab | 23:37 | About to start experiment pack step 2, with nothing changed for it yet. Last push b4c3e1d. |
+| architect | 23:37 | Idle since about 14:30. |
+| dev.mandate | 23:37 | Idle after fc20f97. |
+| editor | 23:37 | Idle, waiting for the Workbench on the tablet. Last commit a34a546. |
+| design | 23:37 | Idle after 55026cb. |
+| dev.chat | 23:37 | Idle after 9466c5d. |
+| release | 23:37 | Idle, open list empty. Last push fdfebde. |
+| app | no reply yet | Message delivered 23:37. No commits since 16:31. |
+| security | no reply yet | Message delivered 23:37. Last commit 18:57. |
+
+From the order reaching this session (23:35:48) to 11 of 13 replies took under 2 minutes.
