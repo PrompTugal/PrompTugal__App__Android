@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 41 (9 Nov 2026): qa af0d367 PASS (test-only; new LlmSandboxTest). Everything queued is reviewed. Waiting for the next wake (open conditions: R-art-1 and R-art-2 before the design-pass article is published, R-eval-1 and R-eval-2 before the next paid eval run, R-shell-3, R-llm-12, R-eval-3 to R-eval-5).
+> Round 42 (9 Nov 2026): editor 719067c PASS (R-art-1 and R-art-2 fixed; R-art-4 and R-art-5, two false "keeps no data" sentences on the features and install pages, open), eval 359b2dd PASS (R-eval-1 to R-eval-4 closed). Everything queued is reviewed. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
