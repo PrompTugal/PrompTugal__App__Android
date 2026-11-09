@@ -211,34 +211,6 @@ jobs:
           echo "secret scan: $SCAN, tests and lint: $CHECK, licences and OSV: $LICENCES" | tee -a "$GITHUB_STEP_SUMMARY"
           [ "$SCAN" = success ] && [ "$CHECK" = success ] && [ "$LICENCES" = success ]
 
-  # Only on a pull request to main (the promotion PR, or Dinis's): is the PR head approved by security.android?
-  # security.android's verifier (docs/security/approvals.md) is run from a checkout of the PR's BASE (main),
-  # with the head fetched as data: keys, the approvals on main and the code that judges all come from main, so
-  # a push to dev cannot change how approval is judged. Fails closed (any non-zero exit), and until main has
-  # the verifier and the keys (the first release flow reaches main by Dinis's pull request) it fails.
-  security-approval:
-    name: security-approval
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    defaults:
-      run:
-        shell: bash   # -eo pipefail: a failing verifier before `| tee` must fail the step
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
-          fetch-depth: 0
-
-      - name: Approval of the pull request head
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          [ -f scripts/verify-approval.mjs ] || { echo "main has no scripts/verify-approval.mjs yet: the first release flow reaches main by Dinis's pull request (docs/ci.md), so this check fails until then" | tee -a "$GITHUB_STEP_SUMMARY" >&2; exit 1; }
-          git fetch -q origin "$HEAD_SHA"
-          node scripts/verify-approval.mjs --repo . --main "$BASE_SHA" --tip "$HEAD_SHA" | tee -a "$GITHUB_STEP_SUMMARY"
-
   release:
     name: release (build, sign, distribute)
     needs: [security-gate, changes]

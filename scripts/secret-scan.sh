@@ -26,9 +26,10 @@ classes=(
   'Anthropic or OpenAI key|sk-(ant-)?[A-Za-z0-9_-]{32,}'
   'OpenRouter key|sk-or-v[0-9]+-[A-Za-z0-9]{20,}'
   'Hugging Face token|hf_[A-Za-z0-9]{30,}'
-  'password in a URL|[a-z]+://[^/[:space:]:@]+:[^/[:space:]@]{4,}@[a-z0-9.-]+'
+  'password in a URL|[a-z]+://[^/[:space:]:@]+:[^/[:space:]@$<{][^/[:space:]@]{3,}@[a-z0-9.-]+'
   'keystore password assignment|(store|key)(Password|_password)[[:space:]]*[=:][[:space:]]*["'"'"'][^"'"'"'$ {]{4,}["'"'"']'
 )
+# A password that starts with $, { or < is a variable or template reference (${TOKEN}, {{ x }}, <token>), not a literal.
 excl=(-- . ':!scripts/secret-scan.sh')
 # Files that DEFINE a secret pattern as a regex string (the website validator and its test) would match the
 # "private key block" class on their own text. They are skipped for that one class only, and still scanned for
