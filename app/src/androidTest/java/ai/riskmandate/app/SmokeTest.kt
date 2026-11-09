@@ -32,7 +32,7 @@ class SmokeTest {
         compose.onNodeWithTag(HomeTags.LICENCES).performScrollTo().performClick()
         compose.onNodeWithTag(LicenceTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(LicenceTags.APACHE).assertExists()
-        compose.onNodeWithTag(ShellTags.HOME).performClick()
+        systemBack()
         compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
     }
 
@@ -40,9 +40,12 @@ class SmokeTest {
         compose.onNodeWithTag(HomeTags.DIAGNOSTICS).performScrollTo().performClick()
         compose.onNodeWithTag(DiagnosticsTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(DiagnosticsTags.COPY).assertIsDisplayed()
-        compose.onNodeWithTag(ShellTags.HOME).performClick()
+        systemBack()
         compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
     }
+
+    /** System Back: works on the old home and on the new shell (which has no Back button on these screens). */
+    private fun systemBack() = back()
 
     private fun back() {
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }

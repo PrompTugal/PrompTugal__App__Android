@@ -4,6 +4,7 @@ import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
+import ai.riskmandate.app.llm.LlmHost
 import ai.riskmandate.app.llm.ModelFiles
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -33,11 +34,16 @@ object ModelsFeature : Feature {
     override fun Content(context: FeatureContext) {
         val app = LocalContext.current.applicationContext
         val installer = remember { defaultInstaller(app) }
-        // TODO(architect): once FeatureContext.llm lands, pass { (context.llm as? LlmHost)?.refresh() }.
         // Stand mode's idle reset would leave the screen and stop a long download: hold it off while one runs
         // (security R-llm-9). HoldIdleWhile releases when the download ends or the screen is left.
         var busy by remember { mutableStateOf(false) }
         context.HoldIdleWhile(busy)
-        ModelSetupScreen(installer = installer, adbDir = { ModelFiles.adbDir(app) }, onBusy = { busy = it })
+        ModelSetupScreen(
+            installer = installer,
+            adbDir = { ModelFiles.adbDir(app) },
+            // After an install, delete or switch, the host's service rescans (and unloads a deleted model).
+            onModelsChanged = { (context.llm as? LlmHost)?.refresh() },
+            onBusy = { busy = it },
+        )
     }
 }

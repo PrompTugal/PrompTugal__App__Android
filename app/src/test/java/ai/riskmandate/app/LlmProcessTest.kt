@@ -37,3 +37,17 @@ class LlmProcessTest {
         assertNotNull(LlmProcess.peek())
     }
 }
+
+@RunWith(AndroidJUnit4::class)
+class HostFeatureContextTest {
+    @Before @After fun reset() = LlmProcess.resetForTest()
+
+    @Test fun aFeatureSeesTheProcessWideModelService() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val a = hostFeatureContext(context, {}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null), { {} }, {})
+        val b = hostFeatureContext(context, {}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null), { {} }, {})
+        assertNotNull("a feature must see a non-null llm", a.llm)
+        assertSame("one service per process", a.llm, b.llm)
+        assertSame(LlmProcess.peek(), a.llm)
+    }
+}
