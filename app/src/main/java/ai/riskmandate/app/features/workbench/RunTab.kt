@@ -133,12 +133,12 @@ data class RunForm(
     }
 
     companion object {
-        /** Saved as a list of strings in a rememberSaveable. */
-        fun save(f: RunForm): List<String> = listOf(f.useCloud.toString(), f.backend, f.coldStart.toString(), f.system, f.prompt, f.temperature, f.topK, f.topP, f.seed, f.maxTokens, f.toolSet.toString())
+        /** Saved as a list of strings in a rememberSaveable. The cloud choice is never saved (R-wb-10): slot 0 is always "false". */
+        fun save(f: RunForm): List<String> = listOf("false", f.backend, f.coldStart.toString(), f.system, f.prompt, f.temperature, f.topK, f.topP, f.seed, f.maxTokens, f.toolSet.toString())
 
         /** Checked on the way back: wrong shape gives the defaults, text is cut to the caps (security L). */
         fun restore(l: List<String>): RunForm = if (l.size != 11) RunForm() else RunForm(
-            useCloud = l[0] == "true",
+            useCloud = false, // never restored (R-wb-10)
             backend = l[1].takeIf { b -> BackendPreference.entries.any { it.name == b } } ?: "AUTO",
             coldStart = l[2] == "true",
             system = l[3].take(RunSettings.MAX_TYPED_CHARS), prompt = l[4].take(RunSettings.MAX_TYPED_CHARS),

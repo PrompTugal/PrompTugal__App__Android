@@ -65,6 +65,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 object ExperimentTags {
+    const val CLOUD_COST = "workbench_cloud_cost"
     const val MODE_SWEEP = "workbench_mode_sweep"
     const val MODE_AB = "workbench_mode_ab"
     const val VALUES = "workbench_values"
@@ -108,6 +109,8 @@ fun ExperimentsTab(
     onRunning: (Boolean) -> Unit = {},
     /** Monotonic milliseconds for the caps' 30-minute limit; injectable for tests (QA). */
     clock: () -> Long = { System.nanoTime() / 1_000_000 },
+    /** Set only when the runs go to the cloud model: the most one run can cost, in US dollars (R-wb-8). */
+    worstCaseUsd: ((RunSettings) -> Double?)? = null,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -184,6 +187,14 @@ fun ExperimentsTab(
                 val runs = expanded?.getOrNull()
                 Button(onClick = { runs?.let(::start) }, enabled = runner != null && runs != null, modifier = Modifier.heightIn(min = 48.dp).testTag(ExperimentTags.START)) {
                     Text(stringResource(R.string.workbench_start, runs?.size ?: 0))
+                }
+                if (worstCaseUsd != null && runs != null) {
+                    val most = runs.map { worstCaseUsd(it.second) }
+                    Text(
+                        if (most.any { it == null }) stringResource(R.string.workbench_cloud_cost_unknown)
+                        else stringResource(R.string.workbench_cloud_cost_most, runs.size, String.format(java.util.Locale.ROOT, "%.4f", most.sumOf { it ?: 0.0 })),
+                        style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag(ExperimentTags.CLOUD_COST),
+                    )
                 }
             }
         }
@@ -360,6 +371,7 @@ private fun stopLabel(s: ExperimentStop) = when (s) {
     ExperimentStop.HOT -> R.string.workbench_stop_hot
     ExperimentStop.FAILURES -> R.string.workbench_stop_failures
     ExperimentStop.STOPPED -> R.string.workbench_stop_stopped
+    ExperimentStop.CLOUD_CAP -> R.string.workbench_stop_cloud_cap
 }
 
 @Composable

@@ -127,4 +127,7 @@
     <string name="workbench_live">Running: %1$s, first token after %2$s, %3$d pieces</string>
     <string name="workbench_answer">Answer</string>
     <string name="workbench_stats">Figures</string>
+    <string name="workbench_stop_cloud_cap">Stopped: the cloud spending cap was reached.</string>
+    <string name="workbench_cloud_cost_most">Cloud: these %1$d runs cost at most US$%2$s, within the app\'s spending cap.</string>
+    <string name="workbench_cloud_cost_unknown">Cloud: the cost of these runs cannot be estimated; the spending cap still applies.</string>
 </resources>

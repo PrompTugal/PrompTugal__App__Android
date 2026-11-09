@@ -127,4 +127,7 @@
     <string name="workbench_live">A correr: %1$s, primeiro token após %2$s, %3$d partes</string>
     <string name="workbench_answer">Resposta</string>
     <string name="workbench_stats">Números</string>
+    <string name="workbench_stop_cloud_cap">Parou: foi atingido o limite de gastos na nuvem.</string>
+    <string name="workbench_cloud_cost_most">Nuvem: estas %1$d execuções custam no máximo US$%2$s, dentro do limite de gastos da app.</string>
+    <string name="workbench_cloud_cost_unknown">Nuvem: não é possível estimar o custo destas execuções; o limite de gastos continua a aplicar-se.</string>
 </resources>

@@ -1,6 +1,8 @@
 package ai.riskmandate.app.features.workbench
 
 import ai.riskmandate.app.R
+import ai.riskmandate.app.llm.RunSettings
+import ai.riskmandate.app.cloud.CloudLlmService
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
@@ -119,7 +121,10 @@ internal fun WorkbenchContent(
     val capsGuard: DeviceGuard = remember(guard) { guard ?: AndroidDeviceGuard(app) }
     // The Run tab's form says which service: on the device (default) or the cloud (only offered when cloudLlm exists).
     var savedForm by rememberSaveable { mutableStateOf(RunForm.save(RunForm())) }
-    val form = RunForm.restore(savedForm)
+    // The cloud choice is never saved or restored (security R-wb-10): it starts on the device after a rotation or a
+    // restart, and resets whenever the cloud service changes or goes away, so a cloud run always follows a fresh choice.
+    var cloudChoice by remember(cloud) { mutableStateOf(false) }
+    val form = RunForm.restore(savedForm).copy(useCloud = cloudChoice)
     val useCloud = form.useCloud && cloud != null
     val service = if (useCloud) cloud else local
     val runner = remember(service) { service?.let { LlmRunner(it, probe = read, clock = clock, wallClock = wallClock) } }
@@ -182,7 +187,7 @@ internal fun WorkbenchContent(
                     runner = runner, activeModel = activeModel, onOpenModels = { context.openFeature("models") },
                     cloudAvailable = cloud != null,
                     presets = presets, toolSets = emptyList(),
-                    form = form, onForm = { savedForm = RunForm.save(it) }, last = last, onLast = { last = it },
+                    form = form, onForm = { cloudChoice = it.useCloud; savedForm = RunForm.save(it) }, last = last, onLast = { last = it },
                     onRunning = { running = it }, onRecord = { record("run", it) },
                 )
                 1 -> ExperimentsTab(
@@ -190,6 +195,8 @@ internal fun WorkbenchContent(
                     onRecord = ::record,
                     onClearLog = { log = emptyList(); last = null; scope.launch { withContext(io) { store.clear() } } },
                     onRunning = { running = it }, clock = clock,
+                    // R-wb-8: a cloud sweep shows its worst-case cost before it starts.
+                    worstCaseUsd = (service as? CloudLlmService)?.let { c -> { s: RunSettings -> runCatching { c.worstCaseMicros(s.request()) / 1_000_000.0 }.getOrNull() } },
                 )
                 else -> {
                     // dev.lab's tab (features/workbench/tooltests): a plain column; the Workbench owns scrolling.
