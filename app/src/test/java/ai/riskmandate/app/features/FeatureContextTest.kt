@@ -122,3 +122,20 @@ class FeaturePresentationTest {
         }
     }
 }
+
+/** FeatureContext.openFeature: a host-owned request by id; a no-op by default. */
+@RunWith(AndroidJUnit4::class)
+class FeatureContextOpenFeatureTest {
+    private val device = DeviceStatus.from(hasDeviceOwner = false, inWorkProfile = false, label = null)
+
+    @Test fun defaultDoesNothingAndNeverThrows() {
+        FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = device).openFeature("models")
+    }
+
+    @Test fun theHostReceivesTheId() {
+        val asked = mutableListOf<String>()
+        val context = FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = device, openFeature = { asked += it })
+        context.openFeature("models")
+        org.junit.Assert.assertEquals(listOf("models"), asked)
+    }
+}
