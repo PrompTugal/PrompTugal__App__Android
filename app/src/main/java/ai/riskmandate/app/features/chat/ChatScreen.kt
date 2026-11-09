@@ -246,7 +246,7 @@ private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int) {
             // Plain Text: the model's output is never parsed as markup, links or code.
             Text(if (m.text.isEmpty() && running) stringResource(R.string.chat_thinking) else m.text, style = MaterialTheme.typography.bodyLarge)
             if (m.stopped) Text(stringResource(R.string.chat_stopped), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (m.failed) Text(stringResource(R.string.chat_failed), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
+            if (m.failed) Text(stringResource(failureText(m.failure)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
             if (!mine && !running) {
                 // The only thing taken from the output: riskmandate.ai links, checked by Links.isAllowed, opened only on a tap.
                 ChatLinks.allowed(m.text).forEachIndexed { i, url ->
@@ -257,4 +257,13 @@ private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int) {
             }
         }
     }
+}
+
+/** Copy for the service's error reasons; anything else gets the generic line. */
+@androidx.annotation.StringRes
+internal fun failureText(reason: String?): Int = when (reason) {
+    "NO_MODEL" -> R.string.chat_failed_no_model
+    "LOAD_FAILED" -> R.string.chat_failed_load
+    "TOO_LONG" -> R.string.chat_failed_too_long
+    else -> R.string.chat_failed
 }

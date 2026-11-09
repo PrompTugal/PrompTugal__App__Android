@@ -55,6 +55,18 @@ class LlmServiceChatTest {
         assertFalse(err!!.message!!.contains("secret"))
     }
 
+    @Test fun controllerKeepsTheFailureReasonAndStoreRoundTripsIt() {
+        val svc = FakeLlmService(reply = { FakeReply("", error = LlmEvent.Error(LlmError.TOO_LONG, "x")) })
+        val c = ChatController(LlmServiceChat(svc), MemoryChatHistoryStore(), CoroutineScope(Dispatchers.Unconfined), Dispatchers.Unconfined)
+        runBlocking { c.start() }
+        c.send("hello")
+        val m = c.state.current.messages.last()
+        assertTrue(m.failed)
+        assertEquals("TOO_LONG", m.failure)
+        assertEquals(ai.riskmandate.app.R.string.chat_failed_too_long, failureText(m.failure))
+        assertEquals(ai.riskmandate.app.R.string.chat_failed, failureText(null))
+    }
+
     @Test fun installedModelFollowsTheServiceState() = runBlocking {
         val svc = FakeLlmService(initial = LlmState.NoModel)
         val chat = LlmServiceChat(svc)

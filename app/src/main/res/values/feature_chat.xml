@@ -45,4 +45,7 @@
     <string name="chat_summary">Talk to a language model that runs on this tablet. Nothing you type leaves the device.</string>
     <string name="chat_model_active">Model: %1$s</string>
     <string name="chat_open_models">Open Models</string>
+    <string name="chat_failed_no_model">No model is installed. Set one up in Models.</string>
+    <string name="chat_failed_load">The model could not be loaded. Try again, or pick a smaller model in Models.</string>
+    <string name="chat_failed_too_long">This chat is too long for the model. Start a new chat.</string>
 </resources>

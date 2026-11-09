@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 /** The model stopped with an error. The message is the service's own: no prompt or answer text. */
-class ChatLlmException(message: String) : Exception(message)
+class ChatLlmException(val reason: String) : Exception(reason)
 
 /**
  * Chat's view of the shared [LlmService] (the host's, through `FeatureContext.llm`).

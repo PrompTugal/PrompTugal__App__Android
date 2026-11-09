@@ -44,4 +44,7 @@
     <string name="chat_summary">Converse com um modelo de linguagem que corre neste tablet. Nada do que escrever sai do dispositivo.</string>
     <string name="chat_model_active">Modelo: %1$s</string>
     <string name="chat_open_models">Abrir Modelos</string>
+    <string name="chat_failed_no_model">Não há nenhum modelo instalado. Configure um em Modelos.</string>
+    <string name="chat_failed_load">Não foi possível carregar o modelo. Tente de novo ou escolha um modelo mais pequeno em Modelos.</string>
+    <string name="chat_failed_too_long">Esta conversa é demasiado longa para o modelo. Comece uma nova conversa.</string>
 </resources>
