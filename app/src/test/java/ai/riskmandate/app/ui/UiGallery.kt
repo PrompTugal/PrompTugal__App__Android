@@ -4,10 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import ai.riskmandate.app.RiskMandateTheme
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
@@ -19,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /** Test-only layer names (the real ones are the abpdemo feature's strings). */
 internal val sampleLayers = listOf("Browser", "Model", "Hook", "Inline proxy", "Secure harness", "Device policy")
@@ -143,16 +147,7 @@ internal fun ShellSample() {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    "RM", color = c.paper, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                    modifier = Modifier.background(c.ink, androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 12.dp),
-                )
-                Column {
-                    Kicker("RiskMandate")
-                    Text("Web Summit", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = c.muted)
-                }
-            }
+            BrandBlock("Web Summit")
             Spacer(Modifier.height(16.dp))
             for ((section, items) in listOf(
                 "Today" to listOf("Now" to 0, "RiskMandate" to 0, "ABP in every layer" to 0),
@@ -164,18 +159,67 @@ internal fun ShellSample() {
                     val selected = section == "Today" && i == 0
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                            .background(if (selected) c.red.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                            .background(if (selected) c.accent.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
                             .padding(horizontal = 8.dp),
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Box(Modifier.size(22.dp).border(2.dp, if (selected) c.red else c.ink, androidx.compose.foundation.shape.RoundedCornerShape(6.dp)))
-                        Text(item.first, Modifier.weight(1f), color = if (selected) c.red else c.ink, fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.SemiBold else null)
+                        Box(Modifier.size(22.dp).border(2.dp, if (selected) c.accent else c.ink, androidx.compose.foundation.shape.RoundedCornerShape(6.dp)))
+                        Text(item.first, Modifier.weight(1f), color = if (selected) c.accent else c.ink, fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.SemiBold else null)
                         if (item.second > 0) CountPill(item.second, "new")
                     }
                 }
             }
         }
         Box(Modifier.weight(1f)) { NowSample() }
+    }
+}
+
+/** The logo proposal: adaptive icon masks, the monochrome layer, the mark and the wordmark. */
+@Composable
+internal fun BrandSample() {
+    val c = ai.riskmandate.app.Pt.colors
+    Column(Modifier.fillMaxSize().background(c.paper).padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Text("Adaptive icon through the launcher mask (central 72 of 108 dp): circle, squircle, rounded square; monochrome layer; light-background mark", color = c.ink)
+        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            for (shape in listOf<androidx.compose.ui.graphics.Shape>(
+                androidx.compose.foundation.shape.CircleShape,
+                androidx.compose.foundation.shape.RoundedCornerShape(40.dp),
+                androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+            )) {
+                // The launcher shows the central 72 of the 108 dp canvas through its mask: 180 dp canvas, 120 dp window.
+                Box(Modifier.size(180.dp), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Box(Modifier.size(120.dp).clip(shape).background(androidx.compose.ui.res.colorResource(ai.riskmandate.app.R.color.rm_navy)), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(ai.riskmandate.app.R.drawable.ic_rm_launcher_foreground), null, Modifier.requiredSize(180.dp))
+                    }
+                }
+            }
+            Box(Modifier.size(180.dp), contentAlignment = androidx.compose.ui.Alignment.Center) { Box(Modifier.size(120.dp).clip(androidx.compose.foundation.shape.CircleShape).background(c.accent.copy(alpha = 0.18f)), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                androidx.compose.foundation.Image(
+                    androidx.compose.ui.res.painterResource(ai.riskmandate.app.R.drawable.ic_rm_launcher_monochrome), null,
+                    Modifier.requiredSize(180.dp), colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(c.ink),
+                ) } 
+            }
+            Box(Modifier.size(180.dp).background(c.card, androidx.compose.foundation.shape.RoundedCornerShape(24.dp))) {
+                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(ai.riskmandate.app.R.drawable.ic_rm_monogram_dark), null, Modifier.fillMaxSize().padding(16.dp))
+            }
+        }
+        Text("Brand block (sidebar) and wordmark", color = c.ink)
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            BrandMark(size = 96.dp)
+            BrandWordmark(fontSize = 40.sp)
+        }
+        Row(Modifier.background(androidx.compose.ui.res.colorResource(ai.riskmandate.app.R.color.rm_navy)).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            BrandMark(size = 64.dp)
+            RiskMandateTheme(darkTheme = true) { BrandWordmark(fontSize = 32.sp) }
+        }
+    }
+}
+
+/** The Play Store icon: the adaptive icon full bleed on a square (Play applies its own mask). */
+@Composable
+internal fun PlayIconSample() {
+    Box(Modifier.fillMaxSize().background(androidx.compose.ui.res.colorResource(ai.riskmandate.app.R.color.rm_navy))) {
+        androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(ai.riskmandate.app.R.drawable.ic_rm_launcher_foreground), null, Modifier.fillMaxSize())
     }
 }
