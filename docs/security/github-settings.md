@@ -106,3 +106,15 @@ Every session also runs `bash scripts/secret-scan.sh` (all refs); it complements
 Not verifiable from here: every setting above (no admin API access). After you tick them, the conductor can ask
 me to re-read what the Actions API shows (workflow runs waiting for review on `release` prove section 3 works).
 Finding A-2 stays open until section 3 is done and the first release run waits for your approval.
+
+## 7. The release flow: Environments `promote` and `play` (written 9 Nov 2026, after security.repos's HIGH on the default branch)
+
+**What is true.** This repository's default branch is `dev`. GitHub runs a `workflow_run` workflow from the **default branch's** copy of the file, with that branch's ref. So `promote.yml` on `workflow_run` is `dev`'s copy, not `main`'s, and anyone who can push to `dev` can edit it. (`push` to `main` runs `main`'s copy; `pull_request_target` runs the copy on the pull request's base branch, `main`; `workflow_dispatch` runs the copy on the ref you choose.) Nothing is exposed today: there is no App, no promote secret and no `promote` Environment. The comment in `promote.yml` that said "GitHub runs it from the default branch, so a dev push cannot edit it" is wrong while `dev` is the default.
+
+**What protects the secrets, whatever the default branch is: the Environment's branch rule.** Do this before any secret exists:
+1. Settings, Environments, New environment `promote`: Deployment branches and tags, **Selected branches and tags**, add `main` only (not "Protected branches only"). Add the App's id and private key (`PROMOTE_APP_ID`, `PROMOTE_APP_PRIVATE_KEY`) as **Environment secrets of `promote`**, never as repository or organisation secrets.
+2. The same for `play`: deployment branches `main` only, `PLAY_SERVICE_ACCOUNT_JSON` as an Environment secret of `play`. Add yourself as **Required reviewer** on `play` too: `play.yml`'s manual dispatch (the variant that accepts a trust-path change) can be started by anyone with write access, and your tap is what makes it a person's decision.
+3. A run whose ref is `dev` cannot get an Environment limited to `main`, so a `dev` copy of a workflow can read nothing in those two Environments.
+4. `release` (the upload keystore) stays with deployment branches `dev` and a Required reviewer (section 3 above): a `dev` pusher who edits `android.yml` can otherwise use the upload key.
+
+**Making `main` the default branch** (Settings, General, Default branch) is defence in depth: `workflow_run` and the `workflow_dispatch` listing then come from `main`'s copy too. It is not needed once the Environment rules above are in place and `promote.yml` is dispatch-only on `main`; do it if you want the stronger default, and note that new pull requests then target `main` by default.

@@ -5,19 +5,22 @@ name: promote
 # GitHub App secrets it opens a pull request pinned to the commit instead, and the run summary says why.
 #
 # Safety design (docs/ci.md, "Release flow"):
-# - Runs only from `workflow_run` (and manual dispatch), which GitHub executes from the DEFAULT branch's copy
-#   of this file: someone who can push to dev cannot edit it to reach the App secrets. It does not run on
-#   push to dev. The job runs in the GitHub Environment `promote` (Dinis: deployment branches main only).
+# - The default branch of this repository is `dev`, so a `workflow_run` trigger would execute DEV's copy of this
+#   file, which anyone who can push to dev can edit (security.repos' HIGH). So there is no workflow_run trigger.
+#   This workflow runs only as a workflow_dispatch ON THE REF `main` (the dispatch uses main's copy of the
+#   file), started by a small job at the end of android.yml (`gh workflow run promote.yml --ref main`) or by a
+#   person. Dev can only ask for an evaluation, which promotes nothing without a signed approval.
+# - The App secrets are ENVIRONMENT secrets of the Environment `promote` whose deployment branches are `main`
+#   only (Dinis), never repository secrets. GitHub then refuses to hand them to a run on any other ref, whatever
+#   the file on that ref says: a copy edited on dev, or dispatched with --ref dev, gets no App key.
+#   The `if` on the job and the first step are only a clear message (an edited copy can delete them); the
+#   protection is the Environment rule, which lives in the repository settings, outside any file.
 # - The verifier (security.android's, docs/security/approvals.md) runs from main's checkout, and it reads the
 #   keys and the approvals file as they are on main; dev's commits are data. Any non-zero exit is "not approved".
 # - It only ever fast-forwards: a push that is not a fast-forward is refused by git. No force.
 # Third-party action pinned by SHA: actions/checkout v4.2.2, actions/create-github-app-token v3.1.1.
 
 on:
-  workflow_run:
-    workflows: [android]
-    types: [completed]
-    branches: [dev]
   workflow_dispatch:
 
 permissions:
@@ -30,9 +33,10 @@ concurrency:
 jobs:
   promote:
     name: promote (dev to main)
-    # Evaluate after every finished android run on dev (a new approval is a push to dev, so it triggers one);
-    # whether anything is promotable is decided below, from the signed approvals and the gate on the commit.
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'cancelled'
+    # Evaluated after each dev push by android.yml's `promote-dispatch` job (and by a person); whether anything
+    # is promotable is decided below, from the signed approvals and the gate on the commit. Like the first step,
+    # this `if` is cosmetic (a copy edited on dev can drop it): the control is the Environment rule below.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: promote
@@ -47,6 +51,10 @@ jobs:
     env:
       HAS_APP: ${{ secrets.PROMOTE_APP_ID != '' && secrets.PROMOTE_APP_PRIVATE_KEY != '' }}
     steps:
+      - name: Only from main
+        run: |
+          [ "$GITHUB_REF" = refs/heads/main ] || { echo "promote must run on the ref main (it ran on $GITHUB_REF): refusing" | tee -a "$GITHUB_STEP_SUMMARY" >&2; exit 1; }
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: main
@@ -142,6 +150,11 @@ jobs:
                 -f description="signed PASS verified by promote.yml with the verifier from main" >/dev/null \
                 && echo "- status security-approval: success on ${SHA:0:12} (set by promote.yml after its own verification)" | tee -a "$GITHUB_STEP_SUMMARY"
             fi
+          elif grep -q "not permitted to create or approve pull requests" "$RUNNER_TEMP/pr-err.txt"; then
+            # A setting only Dinis can change (Settings, Actions, General). It is waiting on him, not broken: a
+            # warning with the reason and the branch to merge, not a red run on every android run.
+            echo "::warning title=promote: no pull request::GitHub Actions may not create pull requests here (Settings, Actions, General, 'Allow GitHub Actions to create and approve pull requests'). Branch $branch is at ${SHA:0:12}: open the pull request by hand or change the setting."
+            echo "- could NOT open the pull request: Actions is not permitted to create pull requests (Dinis: Settings, Actions, General, allow it; or open a pull request from $branch to main by hand). Not treated as a failure: it waits on a setting." | tee -a "$GITHUB_STEP_SUMMARY"
           else
             echo "- could NOT open the pull request: $(tr '\n' ' ' < "$RUNNER_TEMP/pr-err.txt") (Dinis: Settings, Actions, General, allow GitHub Actions to create pull requests; or merge the branch $branch by hand)" | tee -a "$GITHUB_STEP_SUMMARY"
             exit 1

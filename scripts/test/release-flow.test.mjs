@@ -89,3 +89,54 @@ test('find-release-tag: the newest tag with no build change since; none when the
     assert.equal(bash(r.dir, 'find-release-tag.sh', [head]).out.trim(), 'v0.1.12');
   } finally { r.done(); }
 });
+
+test('find-release-tag: tests-only and CI-only changes keep the build; shipped changes (even app tests, which make the screenshots) do not', () => {
+  const r = repo(); try {
+    r.commit('app/src/main/A.kt', 'app'); r.g('tag', 'v0.1.20');
+    r.commit('app/src/androidTest/SmokeTest.kt', 'instrumented test'); r.commit('scripts/smoke-test.sh', 'ci script'); r.commit('.github/workflows/android.yml', 'workflow');
+    let head = r.g('rev-parse', 'HEAD');
+    assert.equal(bash(r.dir, 'find-release-tag.sh', [head]).out.trim(), 'v0.1.20', 'androidTest, scripts and workflows are not shipped');
+    // the wide rule (does CI build?) still sees them
+    assert.equal(bash(r.dir, 'changed-build-paths.sh', ['v0.1.20', head]).code, 0);
+    assert.equal(bash(r.dir, 'changed-build-paths.sh', ['--shipped', 'v0.1.20', head]).code, 1);
+    for (const f of ['app/src/main/B.kt', 'app/src/test/ScreenshotTest.kt', 'scripts/release-screenshots.sh', 'app/build.gradle.kts', 'gradle/libs.versions.toml', 'gradle.properties']) {
+      const before = r.g('rev-parse', 'HEAD'); r.commit(f, 'shipped: ' + f);
+      assert.equal(bash(r.dir, 'changed-build-paths.sh', ['--shipped', before, 'HEAD']).code, 0, f);
+      assert.equal(bash(r.dir, 'find-release-tag.sh', ['HEAD']).code, 1, f + ' needs its own release');
+      r.g('reset', '-q', '--hard', before);
+    }
+    head = r.g('rev-parse', 'HEAD');
+    assert.equal(bash(r.dir, 'find-release-tag.sh', [head]).out.trim(), 'v0.1.20');
+  } finally { r.done(); }
+});
+
+test('changed-since-release: compares with the latest release, so a cancelled run cannot drop a change', () => {
+  const r = repo(); try {
+    r.commit('app/src/main/A.kt', 'built and released'); r.g('tag', 'v0.1.30');
+    const cancelled = r.commit('app/src/main/B.kt', 'a real app change whose run was cancelled by the next push');
+    const docs = r.commit('docs/debrief.md', 'debrief text only');
+    // The push-to-push diff of the last push (docs only) says "no change"; against the release it is a change.
+    assert.equal(bash(r.dir, 'changed-build-paths.sh', [cancelled, docs]).code, 1, 'the old rule: this push alone changed nothing');
+    const since = bash(r.dir, 'changed-since-release.sh', [docs]);
+    assert.equal(since.code, 0); assert.match(since.out, /app\/src\/main\/B\.kt/); assert.match(since.out, /v0\.1\.30/);
+    // once that change has been released, a docs-only push changes nothing
+    r.g('tag', 'v0.1.31', docs);
+    assert.equal(bash(r.dir, 'changed-since-release.sh', [docs]).code, 1);
+    const docs2 = r.commit('board/status.json', 'board only');
+    assert.equal(bash(r.dir, 'changed-since-release.sh', [docs2]).code, 1, 'docs on top of a release: nothing to build');
+    // tests and CI scripts count here (CI must run them), unlike in the shipped rule
+    r.commit('app/src/androidTest/SmokeTest.kt', 'smoke fix');
+    assert.equal(bash(r.dir, 'changed-since-release.sh', ['HEAD']).code, 0);
+  } finally { r.done(); }
+});
+
+test('changed-since-release: no release tag yet, or a tag that is not an ancestor, counts as changed (fail towards building)', () => {
+  const r = repo(); try {
+    r.commit('README.md', 'base');
+    const none = bash(r.dir, 'changed-since-release.sh', ['HEAD']);
+    assert.equal(none.code, 0); assert.match(none.out, /no release tag/);
+    r.g('checkout', '-q', '-b', 'side'); r.commit('app/x.txt', 'side'); r.g('tag', 'v0.1.99'); r.g('checkout', '-q', 'dev');
+    const docs = r.commit('docs/y.md', 'docs on dev');
+    assert.equal(bash(r.dir, 'changed-since-release.sh', [docs]).code, 0, 'a tag on another branch is not a release of this history');
+  } finally { r.done(); }
+});

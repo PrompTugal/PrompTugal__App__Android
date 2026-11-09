@@ -42,17 +42,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Changed build paths
+      # Compared with the commit of the LATEST DEV RELEASE, not with this push's `before`: a run that was
+      # cancelled by a newer push (or failed before releasing) must not drop its changes, or a real app change
+      # could go unreleased and unsmoked (found live on run 113/114).
+      - name: Changed build paths since the latest dev release
         id: diff
-        env:
-          BEFORE: ${{ github.event.before }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" = push ] && ! bash scripts/changed-build-paths.sh "$BEFORE" "$GITHUB_SHA" > "$RUNNER_TEMP/changed.txt"; then
+          # Only the script's exit status 1 means "nothing changed". Any other status (0 changed, or a crash such
+          # as a git error) builds: this must fail towards building, never towards silently skipping a release.
+          rc=0
+          if [ "$GITHUB_EVENT_NAME" = push ]; then bash scripts/changed-since-release.sh "$GITHUB_SHA" > "$RUNNER_TEMP/changed.txt" || rc=$?; else rc=0; fi
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$rc" -eq 1 ]; then
             echo "build=false" >> "$GITHUB_OUTPUT"
-            echo "## changes: no build path touched, so no build and no Firebase notification for this push" >> "$GITHUB_STEP_SUMMARY"
+            { echo "## changes: nothing the app is built from changed since the latest dev release"; head -1 "$RUNNER_TEMP/changed.txt"; echo "so no build and no Firebase notification for this push"; } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "build=true" >> "$GITHUB_OUTPUT"
-            echo "## changes: build paths touched (or not a push): the release job will build" >> "$GITHUB_STEP_SUMMARY"
+            { echo "## changes: build paths changed since the latest dev release (or not a push): the release job will build"; head -8 "$RUNNER_TEMP/changed.txt" 2>/dev/null || true; } >> "$GITHUB_STEP_SUMMARY"
           fi
 
   # The secret scan over the full history and every ref (scripts/secret-scan.sh, security.android's).
@@ -210,6 +215,32 @@ jobs:
         run: |
           echo "secret scan: $SCAN, tests and lint: $CHECK, licences and OSV: $LICENCES" | tee -a "$GITHUB_STEP_SUMMARY"
           [ "$SCAN" = success ] && [ "$CHECK" = success ] && [ "$LICENCES" = success ]
+
+  # Ask for a promotion evaluation after the gate of every dev push. The run it starts is promote.yml AS IT IS ON
+  # `main` (`--ref main` makes GitHub use main's copy of the file and the ref main, which is what the Environment
+  # `promote` accepts): this dev-editable job can only request an evaluation, and an evaluation promotes nothing
+  # without a signed approval. It replaces a workflow_run trigger, which would have run DEV's copy (the default
+  # branch is dev). A workflow_dispatch started with the built-in token is allowed to start a run.
+  promote-dispatch:
+    name: promote-dispatch
+    needs: security-gate
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/dev' && needs.security-gate.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write   # to dispatch promote.yml
+      contents: read   # and nothing else; no environment, no secrets
+    steps:
+      - name: Dispatch promote.yml on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh workflow run promote.yml --repo "$GITHUB_REPOSITORY" --ref main; then
+            echo "## promote-dispatch: promote.yml dispatched on main (it evaluates the signed approvals and the gate)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=promote-dispatch::could not dispatch promote.yml on main (is it on main yet?)"
+            echo "## promote-dispatch: could NOT dispatch promote.yml on main (is it on main yet?)" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   release:
     name: release (build, sign, distribute)
