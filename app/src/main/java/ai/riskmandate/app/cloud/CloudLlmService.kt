@@ -82,6 +82,17 @@ class CloudLlmService(
     fun worstCaseMicros(request: LlmRequest): Long =
         try { worstCase(buildBody(request), request.maxTokens) } catch (e: TooLarge) { Long.MAX_VALUE / 4 }
 
+    /**
+     * The same worst case the cap check uses, for a caller that wants to show or total it before sending (a sweep).
+     * Null when the request cannot be priced because it cannot be sent: too large, or tools on a model that takes none.
+     */
+    override fun maxCostMicros(request: LlmRequest): Long? {
+        if (request.tools.isNotEmpty() && !model.supportsTools) return null
+        val body = try { buildBody(request) } catch (e: TooLarge) { return null }
+        if (body.toByteArray(Charsets.UTF_8).size > CloudLimits.MAX_REQUEST_BYTES) return null
+        return worstCase(body, request.maxTokens)
+    }
+
     private fun worstCase(body: String, maxTokens: Int): Long =
         Math.ceil((body.length / 3 + 1) * model.inputUsdPerMtok + maxTokens * model.outputUsdPerMtok).toLong()
 
