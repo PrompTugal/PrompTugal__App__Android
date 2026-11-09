@@ -34,6 +34,12 @@
 3. `PlainText.clean` drops `**` and paired `__` for display (history keeps the model's raw text). Nothing is rendered; `<b>` and markdown links still show as text.
 4. Sampling was `Sampling.DEFAULT`: temperature 1.0, top-k 64, top-p 0.95 (Gemma's recommended). Chat now asks for temperature 0.4, top-k 64, top-p 0.9 (`ChatSampling`), no seed. Easy to change in one place; the lab and eval keep their own settings.
 
+## R-chat-6 (security Low) fixed
+`PlainText.clean` is now one linear pass with no regex (a run of `__` with no closing pair costs the same as normal text), and the bubble computes it once per text with `remember(m.text)`. Test: five hostile 100k-character strings each clean in under 200 ms, plus pairs, unpaired markers and whitespace cases.
+
+## Flake in ChatScreenTest (conductor)
+Cause: `start()` reads history on a real IO thread that the compose clock cannot see, so `waitForIdle` could return while the screen still said "looking for models". Every screen test now waits for the loaded state itself (the no-model notice or the input row); all `waitUntil` waits are 15 s. Stress: 30 runs of `ChatScreenTest` (18 tests each) under 4 busy CPU loops on 4 cores: 0 failures. An earlier 9-run attempt of the same code under the same load had one failure that I could not attribute (the report was overwritten); the 5 s waits are the likely cause, hence 15 s. Not run: 30 repetitions inside the full suite (the full suite is run once per push).
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 

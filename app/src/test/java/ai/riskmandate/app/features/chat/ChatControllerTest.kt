@@ -279,6 +279,20 @@ class ChatControllerTest {
         assertEquals("a snake_case_name and __init", PlainText.clean("a snake_case_name and __init"))
         assertEquals("<b>x</b> [l](https://evil.example)", PlainText.clean("<b>x</b> [l](https://evil.example)")) // not rendered, not stripped
         assertEquals("half bold", PlainText.clean("half **bold"))
+        assertEquals("a b", PlainText.clean("a __b__")) // pairs
+        assertEquals("__ x __", PlainText.clean("__ x __")) // whitespace inside the markers: left alone
+        assertEquals("x y z", PlainText.clean("__x__ __y__ __z__"))
+    }
+
+    @Test fun plainTextIsLinearOnHostileInput() {
+        val hostile = listOf("__a".repeat(40_000), "__ ".repeat(40_000), "__".repeat(60_000), "a__".repeat(40_000) + " b", "_".repeat(100_000))
+        for (h in hostile) {
+            val t0 = System.nanoTime()
+            PlainText.clean(h)
+            val ms = (System.nanoTime() - t0) / 1_000_000
+            assertTrue("clean took $ms ms on ${h.take(6)}...", ms < 200)
+        }
+        assertEquals("ab".repeat(1000), PlainText.clean("__a__b".repeat(1000)))
     }
 
     @Test fun laterTurnsCarryTheEarlierOnes() {

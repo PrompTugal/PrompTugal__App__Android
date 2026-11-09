@@ -236,6 +236,8 @@ private fun Messages(conversation: Conversation, generating: Boolean, modifier: 
 private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int) {
     val mine = m.role == ChatRole.USER
     val android = LocalContext.current
+    // Cleaned once per text, not on every recomposition.
+    val shown = remember(m.text) { PlainText.clean(m.text) }
     OutlinedCard(
         modifier = Modifier.fillMaxWidth().testTag(ChatTags.message(index)),
         shape = RoundedCornerShape(UiTokens.CardRadius),
@@ -244,7 +246,7 @@ private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(if (mine) R.string.chat_you else R.string.chat_model), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             // Plain Text: the model's output is never parsed as markup, links or code.
-            Text(if (m.text.isEmpty() && running) stringResource(R.string.chat_thinking) else PlainText.clean(m.text), style = MaterialTheme.typography.bodyLarge)
+            Text(if (m.text.isEmpty() && running) stringResource(R.string.chat_thinking) else shown, style = MaterialTheme.typography.bodyLarge)
             if (m.stopped) Text(stringResource(R.string.chat_stopped), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (m.failed) Text(stringResource(failureText(m.failure)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
             if (!mine && !running) {
