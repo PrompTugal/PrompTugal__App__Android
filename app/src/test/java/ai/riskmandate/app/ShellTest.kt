@@ -1,8 +1,5 @@
 package ai.riskmandate.app
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,17 +21,20 @@ class ShellTest {
     @get:Rule val compose = createComposeRule()
 
     private val sections = listOf(
-        NavSection(R.string.nav_section_now, listOf(NavItem("home", R.string.nav_home, Icons.Filled.Home))),
-        NavSection(R.string.nav_section_features, listOf(NavItem("site", R.string.home_diagnostics, Icons.Filled.Star, badge = R.string.nav_home))),
+        NavSection(R.string.nav_section_today, listOf(NavItem("home", R.string.home_now_title, R.drawable.ic_nav_home))),
+        NavSection(R.string.nav_section_explore, listOf(NavItem("site", R.string.home_diagnostics, R.drawable.ic_nav_globe, badge = R.string.nav_menu))),
     )
 
     private var selected by mutableStateOf("home")
     private var homeCalls = 0
 
+    private var collapsed by mutableStateOf(false)
+
     private fun show() = compose.setContent {
         RiskMandateTheme {
             AppShell(
-                sections = sections, selected = selected, currentTitle = R.string.nav_home, atHome = selected == "home",
+                sidebarCollapsed = collapsed, onSidebarCollapsedChange = { collapsed = it },
+                sections = sections, selected = selected, currentTitle = R.string.home_now_title, atHome = selected == "home",
                 onSelect = { selected = it }, onBackHome = { homeCalls++; selected = "home" },
             ) { Text("content:$selected", modifier = androidx.compose.ui.Modifier.run { this }) }
         }
@@ -72,5 +72,19 @@ class ShellTest {
         val dp = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
         for (r in listOf("home", "site"))
             assert(compose.onNodeWithTag(ShellTags.item(r)).fetchSemanticsNode().boundsInRoot.height >= 48 * dp - 1)
+    }
+
+    @Test @Config(qualifiers = "w900dp-h600dp")
+    fun sidebarFoldsToARailAndBackAndKeepsEveryDestinationReachable() {
+        show()
+        compose.onNodeWithTag(ShellTags.pill("site"), useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag(ShellTags.COLLAPSE).performClick()
+        assertEquals(true, collapsed)
+        compose.waitForIdle()
+        compose.onNodeWithTag(ShellTags.pill("site"), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag(ShellTags.item("site")).assertIsDisplayed().performClick()
+        assertEquals("site", selected)
+        compose.onNodeWithTag(ShellTags.COLLAPSE).performClick()
+        assertEquals(false, collapsed)
     }
 }

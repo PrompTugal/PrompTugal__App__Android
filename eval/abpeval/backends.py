@@ -19,6 +19,13 @@ class BackendError(RuntimeError):
     pass
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Never follow a redirect: the Authorization header must only ever go to the URL we chose."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise urllib.error.HTTPError(req.full_url, code, "redirect refused", headers, fp)
+
+
 def api_key():
     k = os.environ.get("OPEN_ROUTER_KEY") or os.environ.get("OPENROUTER_API_KEY")
     if not k:
@@ -40,6 +47,8 @@ class OpenRouter:
         self.budget = budget
         self.timeout = timeout
         self.ctx = ssl.create_default_context()
+        self.url = URL
+        self.opener = urllib.request.build_opener(_NoRedirect, urllib.request.HTTPSHandler(context=self.ctx))
         self.price = price or {}
 
     def chat(self, model, messages, tools, settings):
@@ -51,7 +60,7 @@ class OpenRouter:
             body["top_p"] = settings["top_p"]
         if tools:
             body["tools"] = tools
-        req = urllib.request.Request(URL, data=json.dumps(body).encode(), method="POST", headers={
+        req = urllib.request.Request(self.url, data=json.dumps(body).encode(), method="POST", headers={
             "Authorization": "Bearer " + self.key, "Content-Type": "application/json",
             "X-Title": "RiskMandate eval harness (synthetic data only)"})
         last = None
@@ -59,7 +68,7 @@ class OpenRouter:
             self.budget.acquire()
             t0 = time.time()
             try:
-                with urllib.request.urlopen(req, timeout=self.timeout, context=self.ctx) as r:
+                with self.opener.open(req, timeout=self.timeout) as r:
                     d = json.load(r)
             except urllib.error.HTTPError as e:
                 self.budget.release_unused()
@@ -85,7 +94,7 @@ class OpenRouter:
             src = "openrouter"
             if cost is None:  # fall back to list price x tokens, labelled
                 p = self.price.get(model["id"], (0.0, 0.0))
-                cost = u.get("prompt_tokens", 0) * p[0] + u.get("completion_tokens", 0) * p[1]
+                cost = max(u.get("prompt_tokens", 0) * p[0] + u.get("completion_tokens", 0) * p[1], self.budget.reserve)  # never record less than the reserve
                 src = "list-price-estimate"
             self.budget.release_and_record(float(cost), model["id"])
             if "error" in d or not d.get("choices"):

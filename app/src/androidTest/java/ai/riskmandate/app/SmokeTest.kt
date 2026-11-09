@@ -1,7 +1,9 @@
 package ai.riskmandate.app
 
 import ai.riskmandate.app.features.FEATURES
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -30,7 +32,7 @@ class SmokeTest {
         compose.onNodeWithTag(HomeTags.LICENCES).performScrollTo().performClick()
         compose.onNodeWithTag(LicenceTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(LicenceTags.APACHE).assertExists()
-        compose.onNodeWithTag(LicenceTags.BACK).performClick()
+        compose.onNodeWithTag(ShellTags.HOME).performClick()
         compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
     }
 
@@ -38,7 +40,7 @@ class SmokeTest {
         compose.onNodeWithTag(HomeTags.DIAGNOSTICS).performScrollTo().performClick()
         compose.onNodeWithTag(DiagnosticsTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(DiagnosticsTags.COPY).assertIsDisplayed()
-        compose.onNodeWithTag(DiagnosticsTags.BACK).performClick()
+        compose.onNodeWithTag(ShellTags.HOME).performClick()
         compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
     }
 
@@ -50,7 +52,7 @@ class SmokeTest {
     /** Every enabled feature opens from home and Back returns (a disabled one has no button). */
     @Test fun everyEnabledFeatureOpensAndBackReturns() {
         for (f in FEATURES.filter { it.enabled }) {
-            compose.onNodeWithTag(HomeTags.feature(f.id)).performScrollTo().assertIsDisplayed().performClick()
+            compose.onNodeWithTag(HomeTags.feature(f.id)).performScrollTo().assertIsDisplayed().performSemanticsAction(SemanticsActions.OnClick)
             compose.waitForIdle()
             compose.onNodeWithTag(HomeTags.OPEN).assertDoesNotExist()
             back()
@@ -61,7 +63,7 @@ class SmokeTest {
     /** Recreating the activity (what a rotation does) keeps the user on the feature screen. */
     @Test fun rotationKeepsEveryEnabledFeatureScreen() {
         for (f in FEATURES.filter { it.enabled }) {
-            compose.onNodeWithTag(HomeTags.feature(f.id)).performScrollTo().performClick()
+            compose.onNodeWithTag(HomeTags.feature(f.id)).performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
             compose.waitForIdle()
             compose.activityRule.scenario.recreate()
             compose.waitForIdle()

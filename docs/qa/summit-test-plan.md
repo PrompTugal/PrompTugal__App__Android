@@ -1,6 +1,6 @@
 # Summit test plan: RiskMandate on Android (9 to 12 Nov 2026)
 
-Owner: qa.android@promptugal.ai. Written 9 Nov 2026 from `briefs/2026-11-08__riskmandate-android/README.md` ("Summit phase"), `REALITY.md` and the code on `dev` (13c47b4). **The features are not built yet**: criteria below come from the brief and are tightened as each feature lands (each review in `docs/qa/reviews/` records what was actually run). A criterion is a testable sentence; "Auto" says where a test enforces it, "Manual" means a person on a tablet.
+Owner: qa.android@promptugal.ai. Written 9 Nov 2026 from `briefs/2026-11-08__riskmandate-android/README.md` ("Summit phase"), `REALITY.md` and the code; **updated the same day against the real screens on `dev`** (A site, B ABP demo, C mandate, D stand, F What's new are built and enabled; the on-device LLM features G, H, I are placeholders, see `docs/qa/llm-test-plan.md`). Each review in `docs/qa/reviews/` records what was actually run. A criterion is a testable sentence; "Auto" says where a test enforces it, "Manual" means a person on a tablet.
 
 Context: the app runs on the team's own tablets at a stand, mostly in landscape, on venue Wi-Fi that will be bad, in front of strangers who tap anything. So the worst failures are: a blank or crashing screen, being stuck (no way back), a leak to a non-RiskMandate page, wrong claims, and text that is English where the visitor chose Portuguese.
 
@@ -62,7 +62,7 @@ Context: the app runs on the team's own tablets at a stand, mostly in landscape,
 ## D. Stand mode (`features/stand/StandHost.kt`)
 | # | Criterion | How |
 |---|---|---|
-| D-1 | On and off by staff (the brief says from the home screen; the build uses a long-press on the bottom-end corner of any screen, a faint dot shows while on; Dinis to confirm); the state survives rotation and restart (a tablet back from the drawer is still in stand mode) | Manual + feature test |
+| D-1 | On and off by staff: hold a finger still on the **bottom-right corner of the Home screen** (long press; nothing is drawn while off, a faint dot shows while on; it works on Home only, so a visitor deep in a feature cannot trigger it); the state survives rotation and restart (a tablet back from the drawer is still in stand mode) | Manual + feature test |
 | D-2 | On: Android asks once to pin the screen (startLockTask); after accepting, Home and Recents do not leave the app. Off: the pin is released (`stopLockTask`) | Manual (the system dialog cannot be driven on the JVM) |
 | D-3 | On: the screen stays on (no sleep, no dim to black) for at least 20 minutes untouched; off: normal timeout returns | Manual |
 | D-4 | On: after N idle minutes the app returns to the home screen from any screen (site, ABP demo, Mandate, Licences, Diagnostics) and the animation/page state is reset; any touch resets the idle timer; N is stated | Feature test with a fake clock + Manual |
@@ -71,6 +71,18 @@ Context: the app runs on the team's own tablets at a stand, mostly in landscape,
 | D-7 | App killed or crashed while pinned: it comes back and the state is sensible (documented either way) | Manual |
 | D-8 | Rotation does not reset the idle timer wrongly and does not drop the pin | Manual |
 | D-9 | Works on Android 14 and 15 tablets (Lenovo Tab One, Idea Tab 11, Idea Tab Plus per `docs/play/device-test-checklist.md`) | Manual |
+
+## F. What's new (`features/releases/`)
+| # | Criterion | How |
+|---|---|---|
+| F-1 | Opens a list of bundled articles, newest first; each shows title, date, summary; an empty store shows a plain "nothing yet" (no crash) | `features/releases` tests + Manual |
+| F-2 | An article opens in a reader; Markdown renders (headings, lists, bold, italic, code); anything unsupported shows as plain text; Back returns to the list, then to home | Feature tests + Manual |
+| F-3 | Works offline (articles are in the APK); on a Portuguese device the pt-PT article shows when there is one, else English | Manual (airplane mode, pt-PT) |
+| F-4 | A link in an article opens only if it is on riskmandate.ai over https (`Links.isAllowed`, through `Browser.open`); any other link is plain text, not clickable | `qa/FeatureLinksTest` (no raw intents) + Manual |
+| F-5 | Images come only from the article's own `screenshots/` folder; a missing image leaves the caption, not a hole or a crash | Feature tests |
+| F-6 | After an update the What's new button on Home carries a "New" badge (a generic `homeBadge`), hidden in stand mode; once the screen is opened (marked seen) the badge is gone | Manual: install the next build over this one |
+| F-7 | A malformed article folder is skipped, never fatal; the "Sample" mark shows on the sample article only | Feature tests |
+| F-8 | Rotation keeps the open article and its scroll; one Back and one title (host frame) | Manual |
 
 ## E. Regression: home, licences, diagnostics (already covered by 31+ JVM tests)
 | # | Criterion | How |
@@ -87,26 +99,26 @@ Context: the app runs on the team's own tablets at a stand, mostly in landscape,
 `./gradlew testDebugUnitTest lintDebug assembleRelease bundleRelease assembleDebugAndroidTest` green; on the branch's merge with `dev`, not only the branch alone. The CI `smoke` job runs `connectedDebugAndroidTest` on an API 34 emulator after a push to `dev`; on a branch QA can only compile it (`assembleDebugAndroidTest`) here, there is no emulator in this container, so the emulator run is first seen on `dev`.
 
 ## 10-minute manual run for Dinis (tablet, before the doors open)
-Do it on the tablet that will be on the stand, on the venue Wi-Fi, in the orientation it will stand in. Tick as you go; stop at the first red and tell the conductor the number.
+Do it on the tablet that will be on the stand, on the venue Wi-Fi, in the orientation it will stand in. Tick as you go; stop at the first red and tell the conductor the row number. Home shows these buttons today: **Open riskmandate.ai**, **RiskMandate**, **ABP in every layer**, **This app's mandate**, **What's new** (and, further down, Open source licences and Diagnostics). The chat, ABP Lab and Model setup buttons are not there yet: that is right until those features are turned on.
 
 | Min | # | Do | Expect | OK |
 |---|---|---|---|---|
-| 0:00 | 1 | Update from App Tester; open the app | Opens, no crash; bottom of home says `Build 0.1.<n>` with the n App Tester shows | [ ] |
-| 0:30 | 2 | Look at home | RiskMandate title, one button per finished feature (site, ABP demo, mandate), Device section, Licences, Diagnostics | [ ] |
-| 1:00 | 3 | Language: set the tablet to Português (Portugal), reopen | All home and feature text Portuguese, nothing cut off; then set back to the language for the stand | [ ] |
-| 2:00 | 4 | **Site**: tap it; wait for the page; tap each tab; follow one link on riskmandate.ai; press Back twice | Page loads, tabs switch, Back goes back then home | [ ] |
-| 3:30 | 5 | **Site offline**: Wi-Fi off, open the site again | Offline copy shows and says it is a copy; no blank page | [ ] |
-| 4:00 | 6 | Wi-Fi on. **ABP demo**: tap it, play it to the end, replay, press Back mid-way | Says "demonstration"; six layers stop the planted instruction; Back goes home | [ ] |
-| 5:30 | 7 | **Mandate**: tap it; read the three parts | Reach, mandate, gap; permissions are Internet and network state only; says it collects nothing | [ ] |
-| 6:30 | 8 | Rotate to portrait and back while on a feature | Same screen, nothing lost, nothing cut off | [ ] |
-| 7:00 | 9 | **Stand mode**: long-press the bottom-end corner (a staff dialog opens), switch it on; accept the pin dialog; press Home and Recents | Cannot leave the app; screen stays on | [ ] |
-| 8:00 | 10 | In stand mode open the site, leave it alone for the idle time (N minutes, per the screen) | Returns to home by itself | [ ] |
-| 9:00 | 11 | Unpin (hold Back and Overview, or the way the screen says); switch stand mode off | Normal again | [ ] |
-| 9:30 | 12 | Switch stand mode **on** again, leave the app on home | Ready for the doors. Note the time and the build number | [ ] |
+| 0:00 | 1 | Update from App Tester; open the app; look at the bottom of Home | Opens, no crash; `Build 0.1.<n>` equals the number App Tester shows (never `0.0.0-local`) | [ ] |
+| 0:30 | 2 | Look at Home | The five buttons above, Device section (managed or not), About | [ ] |
+| 1:00 | 3 | Set the tablet to Português (Portugal); reopen the app | Home and every screen below in Portuguese, nothing cut off; set the language back for the stand when done | [ ] |
+| 2:00 | 4 | **RiskMandate**: tap it; wait for the page; tap two of the tabs; rotate the tablet; press Back | Page loads in the app; tabs switch; after rotating you are still on the same tab; Back goes back, then to Home; exactly one Back button and one title at the top | [ ] |
+| 3:00 | 5 | **RiskMandate offline**: Wi-Fi off, open it again | A banner says this is an offline copy and its date; pages show; "Try online" is there; no blank page. Wi-Fi back on, tap Try online | [ ] |
+| 3:30 | 6 | On an online page tap a link that leaves riskmandate.ai (for example a GitHub or sharness.ai link) | Your browser opens that page (default; Dinis has not yet confirmed this, see the status page). Press Back to return to the app | [ ] |
+| 4:00 | 7 | **ABP in every layer**: open it, step through to the end (or auto-play), replay, press Back midway | Says it is a demonstration; six layers stop the planted instruction one by one; Back goes home | [ ] |
+| 5:00 | 8 | **This app's mandate**: open it; read Reach, Mandate, Gap | Permissions are Internet and network state; says the app collects nothing; the Gap line says none, or lists something you can explain (write down anything odd) | [ ] |
+| 6:00 | 9 | **What's new**: open it, open the newest article, scroll, tap a riskmandate.ai link if there is one, Back twice | List, then article, then Home; the link opens and Back returns | [ ] |
+| 7:00 | 10 | **Stand mode on**: on Home, hold a finger still on the bottom-right corner until the staff dialog opens. Switch Stand mode on; accept Android's pin dialog | Dialog says the screen is pinned; Home and Recents do nothing; a faint dot shows in the corner | [ ] |
+| 7:45 | 11 | In stand mode open RiskMandate and leave it alone for the idle time (3 minutes by default; the dialog shows it) | The app returns to Home by itself. While waiting, in stand mode: tap a link that leaves riskmandate.ai, and (back on Home, after the idle return) tap **Open riskmandate.ai**: each shows a message that web pages are not opened in a browser while pinned, and nothing opens | [ ] |
+| 10:45 | 12 | **Stand mode off**: hold the corner, switch off; unpin by holding Back and Overview together (or swipe up and hold with gesture navigation); then switch Stand mode **on** again for the day and leave the app on Home | Normal tablet after unpinning; ready for the doors. Note the time and the build number | [ ] |
 
-Anything red: write the row, what you saw, a screenshot, and send it to the conductor. Open items for Dinis are in `briefs/2026-11-08__riskmandate-android/status/qa.md`.
+Row 11 takes about three minutes of waiting (time rows 1 to 10 yourself; stand mode set up is the only step that cannot be done faster). Anything red: write the row, what you saw, a screenshot, send it to the conductor. Open items for Dinis are in `briefs/2026-11-08__riskmandate-android/status/qa.md`.
 
 ## Português (pt-PT): para quem testa no stand
 1. Instale a versão nova pelo App Tester e confirme o número em baixo no ecrã inicial.
-2. Percorra as linhas 2 a 12 da tabela acima. Em cada ecrã, verifique que o texto está em português e que nada está cortado.
+2. Percorra as linhas 2 a 12 da tabela acima (o modo de bancada liga-se mantendo o dedo parado no canto inferior direito do ecrã inicial). Em cada ecrã, verifique que o texto está em português e que nada está cortado.
 3. Se algo falhar, anote o número da linha, o que viu e tire uma captura de ecrã.

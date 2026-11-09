@@ -35,7 +35,7 @@ For Dinis and for the person lending the device. Written 8 November 2026 by play
 - **A person who should not change phone security settings, or an organisation's staff:** Play internal testing, once it exists. An employer's managed phone may block unknown sources: say so up front.
 - **Devices Dinis lends or that the agent owns (M2):** neither; managed install (`devices/README.md`).
 - **Never mix them on one device** (signatures differ): uninstall first.
-- **No secrets or personal data change hands in either route.** The app collects nothing.
+- **No secrets or personal data change hands in either route.** The app collects no personal data.
 
 ## What to tell the person lending the device (English)
 

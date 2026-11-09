@@ -11,6 +11,7 @@ Checks every page in the output directory:
   * the privacy page has no unfinished marker and still says the app collects nothing
   * no scripts other than JSON-LD, no external stylesheets, no inline event handlers, no http links
   * one <h1>, a lang, a title and a description; every <img> has alt, width and height
+  * no absolute data claims ("collects nothing", "keeps no data") that the privacy policy does not make
   * no build tokens, banned words or dashes used as punctuation (em-dash) left behind
   * nothing secret-shaped, no email address (the reserved .example domain is allowed, for the worked bypass example), no Google project path in any output file
   * the files exist (robots.txt, llms.txt, sitemap.xml); CNAME is the deploy workflow's, not the build's
@@ -36,6 +37,13 @@ SECRETS = (('private key block', r'PRIVATE ' + r'KEY-----'), ('Google API key', 
            ('Google access token', r'ya29\.[0-9A-Za-z_-]{20,}'), ('GitHub token', r'gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{20,}'),
            ('service-account JSON', r'"type"\s*:\s*"service_account"'), ('Google project path', r'projects/\d{6,}'),
            ('AWS key id', r'(AKIA|ASIA)[0-9A-Z]{16}'), ('email address', r'[\w.+-]+@[\w-]+(?:\.[\w-]+)*\.(?!example\b)[A-Za-z]{2,}\b'))
+
+
+# Absolute claims about data that the privacy policy does not make (R-art-1, R-art-4, R-art-5). The app keeps a few
+# settings and, in some builds, chat history and model files on the device, and its in-app view loads riskmandate.ai.
+# Use the policy's own words: "no personal data", "nothing sent to its makers".
+OVERCLAIMS = (r'collects? nothing', r'keeps? no\b', r'stores? nothing', r'sends? nothing(?! to its makers)', r'\bno data\b',
+              r'nothing is lost')
 
 
 class Page(HTMLParser):
@@ -121,6 +129,9 @@ def validate(out):
         for word in BANNED:
             if re.search(rf'\b{re.escape(word)}\b', lowered):
                 problems.append(f'{name}: banned word "{word}"')
+        for pattern in () if name == 'privacy.html' else OVERCLAIMS:  # the policy itself is docs/play's, reviewed by security
+            if re.search(pattern, lowered):
+                problems.append(f'{name}: an absolute data claim ({pattern}); use the privacy policy\'s words')
         if '—' in text_only:
             problems.append(f'{name}: an em-dash in the text')
         for block in page.scripts:
