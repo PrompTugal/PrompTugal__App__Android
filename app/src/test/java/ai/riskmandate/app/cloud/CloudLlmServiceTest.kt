@@ -13,6 +13,7 @@ import ai.riskmandate.app.llm.ToolSpec
 import ai.riskmandate.app.llm.checkToolCall
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -323,6 +324,25 @@ class CloudLlmServiceTest {
         run(s); run(s)
         assertEquals(2, starts.size)
         assertTrue("gap was ${(starts[1] - starts[0]) / 1_000_000} ms", (starts[1] - starts[0]) / 1_000_000 >= 55)
+    }
+
+    @Test fun twoServicesOnOneLedgerNeverRunAtTheSameTime() {
+        val inFlight = java.util.concurrent.atomic.AtomicInteger()
+        var most = 0
+        val slow = FakeTransport { _, _, _ ->
+            val now = inFlight.incrementAndGet(); synchronized(this) { most = maxOf(most, now) }
+            Thread.sleep(40)
+            inFlight.decrementAndGet()
+            FakeResponse(200, sse(content("x"), FINISH, usage(1, 1, 0.0)))
+        }
+        val a = CloudLlmService(CloudModels.SONNET, key, spend, switch, slow, Dispatchers.IO, System::currentTimeMillis, gapMs = 0)
+        val b = CloudLlmService(CloudModels.GEMMA4, key, spend, switch, slow, Dispatchers.IO, System::currentTimeMillis, gapMs = 0)
+        runBlocking {
+            val jobs = (1..4).map { i -> async { (if (i % 2 == 0) a else b).stream(ask).toList() } }
+            jobs.forEach { it.await() }
+        }
+        assertEquals("one request at a time across services", 1, most)
+        assertEquals(4, slow.calls.size)
     }
 
     @Test fun onlyPinnedModelsCanBeUsed() {
