@@ -48,9 +48,20 @@ class MandateModelTest {
         val extra = listOf(
             ReachItem(ReachKind.NETWORK, "cleartext"),
             ReachItem(ReachKind.STORAGE, "backup"),
-            ReachItem(ReachKind.STORAGE, "files", count = 3),
+            ReachItem(ReachKind.STORAGE, "files/notes.txt", count = 1),
         )
         assertEquals(extra, MandateReport(cleanReach + extra, mandate).gap)
+    }
+
+    @Test fun stand_and_site_storage_is_mandated_but_a_stray_file_is_gap() {
+        val mandated = listOf(
+            ReachItem(ReachKind.STORAGE, "shared_prefs/stand_mode.xml", count = 1),
+            ReachItem(ReachKind.STORAGE, "app_webview", count = 12),
+            ReachItem(ReachKind.STORAGE, "cache", count = 40),
+        )
+        assertTrue(MandateReport(cleanReach + mandated, mandate).gapIsEmpty)
+        val stray = ReachItem(ReachKind.STORAGE, "shared_prefs/other.xml", count = 1)
+        assertEquals(listOf(stray), MandateReport(cleanReach + mandated + stray, mandate).gap)
     }
 
     @Test fun sameIdOfAnotherKindIsNotCovered() {
@@ -70,7 +81,7 @@ class MandateModelTest {
 
     @Test fun mandateEntriesNothingUsesAreReportedAsUnused() {
         val report = MandateReport(cleanReach.take(2), mandate)
-        assertEquals(2, report.unused.size)
+        assertEquals(5, report.unused.size)
         assertTrue(report.unused.any { it.id.endsWith("MainActivity") })
     }
 

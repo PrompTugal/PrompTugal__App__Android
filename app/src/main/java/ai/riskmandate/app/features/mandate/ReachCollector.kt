@@ -24,8 +24,7 @@ object ReachCollector {
             if (appFlags and ApplicationInfo.FLAG_ALLOW_BACKUP != 0) {
                 add(ReachItem(ReachKind.STORAGE, "backup"))
             }
-            val files = storageFileCount(context)
-            if (files > 0) add(ReachItem(ReachKind.STORAGE, "files", count = files))
+            addAll(storage(context))
         }
     }
 
@@ -68,15 +67,24 @@ object ReachCollector {
         }
     }
 
-    /** Files the app keeps (files, databases, shared preferences). Caches are not data the app keeps. */
-    fun storageFileCount(context: Context): Int = try {
-        val dirs = listOf(
-            context.filesDir,
-            File(context.applicationInfo.dataDir, "databases"),
-            File(context.applicationInfo.dataDir, "shared_prefs"),
-        )
-        dirs.sumOf { dir -> dir.walkTopDown().count { it.isFile } }
+    /**
+     * What the app keeps on the device: each file in files/, databases/ and shared_prefs/ (id is the path under
+     * the data directory), and app_webview/ and cache/ as directories (the in-app view's web storage and cache),
+     * each only when it holds a file. Never throws.
+     */
+    fun storage(context: Context): List<ReachItem> = try {
+        val data = File(context.applicationInfo.dataDir)
+        val perFile = listOf(context.filesDir, File(data, "databases"), File(data, "shared_prefs"))
+            .flatMap { dir -> dir.walkTopDown().filter { it.isFile }.take(MAX_FILES).toList() }
+            .map { ReachItem(ReachKind.STORAGE, it.relativeTo(data).invariantSeparatorsPath, count = 1) }
+        val dirs = listOf(File(data, "app_webview"), context.cacheDir).mapNotNull { dir ->
+            val n = dir.walkTopDown().filter { it.isFile }.take(MAX_FILES).count()
+            if (n > 0) ReachItem(ReachKind.STORAGE, dir.relativeTo(data).invariantSeparatorsPath, count = n) else null
+        }
+        perFile + dirs
     } catch (e: RuntimeException) {
-        0
+        emptyList()
     }
+
+    private const val MAX_FILES = 500
 }

@@ -27,14 +27,14 @@ data class ReachItem(
     val componentType: ComponentType? = null,
     /** Components: the permission a caller must hold to reach an exported component, if any. */
     val guardedBy: String? = null,
-    /** Storage: how many files were found. */
+    /** Storage: how many files were found (1 for a single file). */
     val count: Int = 0,
 ) {
     val key: String get() = "${kind.name.lowercase()}:$id"
 }
 
 /** Why the mandate allows an item. Mapped to a string resource in the UI, so the reasons are translated. */
-enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD }
+enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE }
 
 data class MandateEntry(val kind: ReachKind, val id: String, val reason: Reason) {
     val key: String get() = "${kind.name.lowercase()}:$id"
@@ -59,8 +59,9 @@ data class Mandate(
 
         /**
          * The current mandate for [packageName]. The app opens riskmandate.ai in the user's browser (INTERNET),
-         * says plainly when it is offline (ACCESS_NETWORK_STATE), has one launcher screen, and holds the one
-         * signature-level permission AndroidX adds to guard the app's own dynamic receivers. Nothing else.
+         * says plainly when it is offline (ACCESS_NETWORK_STATE), has one launcher screen, holds the one
+         * signature-level permission AndroidX adds to guard the app's own dynamic receivers, and may keep stand
+         * mode's two settings and the in-app view's own web storage and cache. Nothing else.
          */
         fun current(packageName: String, managedKeys: List<String>): Mandate = Mandate(
             entries = listOf(
@@ -68,6 +69,10 @@ data class Mandate(
                 MandateEntry(ReachKind.PERMISSION, "android.permission.ACCESS_NETWORK_STATE", Reason.OFFLINE_HINT),
                 MandateEntry(ReachKind.PERMISSION, "$packageName.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION", Reason.INTERNAL_GUARD),
                 MandateEntry(ReachKind.COMPONENT, "$packageName.MainActivity", Reason.LAUNCHER),
+                // Storage the summit features may keep, on this device only. None exists until the feature is used.
+                MandateEntry(ReachKind.STORAGE, "shared_prefs/stand_mode.xml", Reason.STAND_SETTINGS),
+                MandateEntry(ReachKind.STORAGE, "app_webview", Reason.SITE_STORAGE),
+                MandateEntry(ReachKind.STORAGE, "cache", Reason.SITE_CACHE),
             ),
             hosts = HOSTS,
             port = 443,

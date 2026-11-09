@@ -15,6 +15,15 @@ Waiting for conductor review. design.android's shared components have not landed
 
 - Second round (conductor, 9 Nov): merged `origin/dev` (FeatureContext v2: the feature now takes `config` and `device` from the context, no Activity, no second read). qa's FeatureLinksTest flagged URL literals in `MandateModel.kt`; the on-screen refusal probes are now built from parts (`HostProbe.Sample(scheme, host, port, userinfo)`), so no URL literal remains in feature sources and the probes still run through the real `Links.isAllowed`.
 
+- Third round (architect HOLD on 78ae8d6), merged `origin/dev` again:
+  - A-man-1: the screen draws content only (no Back, no title, no insets); the host's FeatureFrame draws those.
+  - A-man-2: already clean without an exemption: the probes are built from parts, no URL literal in feature sources, so `MandateModel.kt` needs no `// qa: probe` marker or qa exemption. Say if architect still wants the marker.
+  - A-man-3: `context.config` and `context.device`, and the report is re-read when either changes.
+  - A-man-4: reach now lists each file in files/, databases/ and shared_prefs/ by path, and app_webview/ and cache/ as directories with a file count. The mandate has entries for `shared_prefs/stand_mode.xml` (stand's two settings, taken from `work/dev.stand`'s `StandSettings.FILE`), `app_webview` and `cache` (the in-app view). A stray file is gap; the tests check both. If stand's file name changes, change the entry in `Mandate.current`.
+  - A-man-6: reach is read on `Dispatchers.IO` in a `LaunchedEffect`, with a loading line.
+  - A-man-7: `ManagedConfig.KEY_*` instead of literals.
+  - A-man-5 not done: `Links.ALLOWED_HOSTS` is private (not my file). See "For app".
+
 ## Vocabulary (riskmandate.ai, https://riskmandate.ai/, read 9 Nov 2026)
 - Reach: "Everything the agent can actually access in this deployment, including what nobody thought to check."
 - Mandate: "The job, written down: what the business authorised it to do."
@@ -29,6 +38,8 @@ Nothing.
 
 ## For app (app.android)
 The release merged manifest exports `androidx.profileinstaller.ProfileInstallReceiver` (`exported="true"`, guarded by `android.permission.DUMP`, which only the shell and system hold). The mandate does not need it, so the screen's gap is **1** on a release build, shown plainly. Removing it is a manifest change outside my paths: `<receiver android:name="androidx.profileinstaller.ProfileInstallReceiver" tools:node="remove" />` (check first that dropping baseline-profile installation is acceptable). After that the gap reads none. Debug builds also export test activities from `ui-test-manifest`; those never ship.
+
+Also (A-man-5): make `Links.ALLOWED_HOSTS` public so `Mandate.HOSTS` can use it instead of copying it. The run-time probes catch drift meanwhile.
 
 ## For Dinis
 Decision for the stand: leave the gap of 1 visible (it is true and makes the point of the feature), or have app.android remove the receiver so it reads none.

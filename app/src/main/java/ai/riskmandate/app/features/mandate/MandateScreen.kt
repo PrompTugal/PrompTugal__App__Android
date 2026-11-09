@@ -1,23 +1,20 @@
 package ai.riskmandate.app.features.mandate
 
+import ai.riskmandate.app.ManagedConfig
 import ai.riskmandate.app.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -25,7 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 object MandateTags {
-    const val BACK = "mandate_back"
+    const val LOADING = "mandate_loading"
     const val SUMMARY = "mandate_summary"
     const val GAP_STATUS = "mandate_gap_status"
     const val REACH = "mandate_reach"
@@ -36,19 +33,12 @@ object MandateTags {
 }
 
 @Composable
-fun MandateScreen(state: MandateState, onBack: () -> Unit) {
+fun MandateScreen(state: MandateState) {
     val report = state.report
-    val back = stringResource(R.string.mandate_back_description)
     Column(
-        Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        TextButton(
-            onClick = onBack,
-            modifier = Modifier.heightIn(min = 48.dp).testTag(MandateTags.BACK).semantics { contentDescription = back },
-        ) { Text(stringResource(R.string.mandate_back)) }
-
-        Heading(stringResource(R.string.feature_mandate_title), big = true)
         Text(stringResource(R.string.mandate_intro), style = MaterialTheme.typography.bodyMedium)
         Text(
             stringResource(R.string.mandate_summary, report.reach.size, report.mandate.entries.size, report.gap.size),
@@ -127,13 +117,13 @@ private fun MandateSection(state: MandateState) {
         val unset = stringResource(R.string.mandate_managed_unset)
         mandate.managedKeys.forEach { key ->
             val value = when (key) {
-                "start_url" -> state.config.startUrl
-                "device_label" -> state.config.deviceLabel ?: unset
+                ManagedConfig.KEY_START_URL -> state.config.startUrl
+                ManagedConfig.KEY_DEVICE_LABEL -> state.config.deviceLabel ?: unset
                 else -> unset
             }
             Line(stringResource(R.string.mandate_managed_value, key, value), mono = true)
         }
-        if (state.config.startUrlRefused) Line(stringResource(R.string.mandate_managed_refused, "start_url"))
+        if (state.config.startUrlRefused) Line(stringResource(R.string.mandate_managed_refused, ManagedConfig.KEY_START_URL))
         Line(stringResource(R.string.mandate_mandate_data))
     }
 }
@@ -180,14 +170,20 @@ private fun componentText(item: ReachItem): String {
 }
 
 @Composable
-private fun storageText(item: ReachItem): String =
-    if (item.id == "backup") stringResource(R.string.mandate_backup_on) else stringResource(R.string.mandate_storage_files, item.count)
+private fun storageText(item: ReachItem): String = when {
+    item.id == "backup" -> stringResource(R.string.mandate_backup_on)
+    item.id.contains('/') -> stringResource(R.string.mandate_storage_file, item.id)
+    else -> stringResource(R.string.mandate_storage_dir, item.id, item.count)
+}
 
 private fun reasonRes(reason: Reason): Int = when (reason) {
     Reason.OPEN_ALLOWED_PAGES -> R.string.mandate_reason_open_pages
     Reason.OFFLINE_HINT -> R.string.mandate_reason_offline_hint
     Reason.LAUNCHER -> R.string.mandate_reason_launcher
     Reason.INTERNAL_GUARD -> R.string.mandate_reason_internal_guard
+    Reason.STAND_SETTINGS -> R.string.mandate_reason_stand_settings
+    Reason.SITE_STORAGE -> R.string.mandate_reason_site_storage
+    Reason.SITE_CACHE -> R.string.mandate_reason_site_cache
 }
 
 @Composable

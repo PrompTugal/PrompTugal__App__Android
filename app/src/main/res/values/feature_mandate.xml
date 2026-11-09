@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="mandate_back">Back</string>
-    <string name="mandate_back_description">Back to the home screen</string>
     <string name="mandate_intro">This app\'s own reach, mandate and gap, on this device, now. Reach is read from Android as you open this screen. The gap is computed from the two, never written by hand.</string>
     <string name="mandate_summary">Reach %1$d, mandate %2$d, gap %3$d</string>
     <string name="mandate_gap_none">Gap: none. Everything this app can reach, its mandate needs.</string>
@@ -30,7 +28,6 @@
     <string name="mandate_cleartext_on">Cleartext (http) traffic: allowed</string>
     <string name="mandate_reach_storage">Storage</string>
     <string name="mandate_storage_none">Storage used: none. No files, databases or preferences, and no cloud backup.</string>
-    <string name="mandate_storage_files">Files kept on the device: %1$d</string>
     <string name="mandate_backup_on">Cloud backup of the app\'s data: allowed</string>
     <string name="mandate_reach_device">Device management</string>
     <string name="mandate_reach_none">none</string>
@@ -50,6 +47,13 @@
     <string name="mandate_reason_offline_hint">to tell you when the device is offline</string>
     <string name="mandate_reason_launcher">the one screen that starts the app</string>
     <string name="mandate_reason_internal_guard">guards the app\'s own receivers; only apps signed by the same key can hold it</string>
+
+    <string name="mandate_loading">Reading this app\'s reach from the device…</string>
+    <string name="mandate_storage_file">Stored file: %1$s</string>
+    <string name="mandate_storage_dir">Stored directory: %1$s (%2$d files)</string>
+    <string name="mandate_reason_stand_settings">stand mode\'s two settings (on or off, idle minutes), on this device only</string>
+    <string name="mandate_reason_site_storage">web storage of the in-app riskmandate.ai view, on this device only</string>
+    <string name="mandate_reason_site_cache">cache of the in-app riskmandate.ai view; Android can clear it</string>
 
     <string name="mandate_gap_heading">Gap: reach minus mandate</string>
 </resources>

@@ -12,9 +12,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
 import androidx.test.core.app.ApplicationProvider
@@ -51,23 +51,23 @@ class MandateScreenTest {
         MandateReport(reach, mandate), HostProbe.run(Links::isAllowed), config, DeviceStatus.from(false, false, null),
     )
 
-    private fun show(s: MandateState, onBack: () -> Unit = {}, fontScale: Float = 1f) = compose.setContent {
+    private fun show(s: MandateState, fontScale: Float = 1f) = compose.setContent {
         val d = LocalDensity.current
         CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale)) {
-            RiskMandateTheme { MandateScreen(s, onBack) }
+            RiskMandateTheme { MandateScreen(s) }
         }
     }
 
     @Test fun noGapIsSaidPlainly() {
         show(state(cleanReach))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 4, mandate 4, gap 0")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 4, mandate 7, gap 0")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Gap: none. Everything this app can reach, its mandate needs.")
     }
 
     @Test fun aGapIsShownPlainlyWithItsItems() {
         show(state(cleanReach + dump))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 5, mandate 4, gap 1")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 5, mandate 7, gap 1")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Gap: 1. This app can reach things its mandate does not need:")
         compose.onNodeWithTag(MandateTags.gapItem(dump.key)).performScrollTo().assertIsDisplayed()
@@ -89,17 +89,10 @@ class MandateScreenTest {
         compose.onNodeWithText("start_url was set but refused", substring = true).performScrollTo().assertIsDisplayed()
     }
 
-    @Test fun backButtonWorks() {
-        var back = 0
-        show(state(cleanReach), onBack = { back++ })
-        compose.onNodeWithTag(MandateTags.BACK).performClick()
-        assertEquals(1, back)
-    }
-
     @Test @Config(qualifiers = "pt-rPT")
     fun portugueseOnAPortugueseDevice() {
         show(state(cleanReach + dump))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Alcance 5, mandato 4, lacuna 1")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Alcance 5, mandato 7, lacuna 1")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Lacuna: 1. Esta app consegue alcançar coisas de que o seu mandato não precisa:")
         compose.onNodeWithText("Dados recolhidos: nenhuns", substring = true).performScrollTo().assertIsDisplayed()
@@ -107,14 +100,7 @@ class MandateScreenTest {
 
     @Test fun layoutSurvives200PercentFontScale() {
         show(state(cleanReach + dump), fontScale = 2f)
-        compose.onNodeWithTag(MandateTags.BACK).assertIsDisplayed()
         compose.onNodeWithTag(MandateTags.gapItem(dump.key)).performScrollTo().assertIsDisplayed()
-    }
-
-    @Test fun backTouchTargetIsAtLeast48dp() {
-        show(state(cleanReach))
-        val dp = app.resources.displayMetrics.density
-        assertTrue(compose.onNodeWithTag(MandateTags.BACK).fetchSemanticsNode().boundsInRoot.height >= 48 * dp - 1)
     }
 
     /** Real collection on this (Robolectric) device: the facts that must hold for the app as built. */
@@ -127,7 +113,7 @@ class MandateScreenTest {
         // Cleartext is off, backup is off, nothing stored: none of these are reach.
         assertFalse(keys.contains("network:cleartext"))
         assertFalse(keys.contains("storage:backup"))
-        assertFalse(keys.contains("storage:files"))
+        assertEquals(emptyList<String>(), keys.filter { it.startsWith("storage:") })
         // No permission beyond the mandated ones is requested.
         val perms = reach.filter { it.kind == ReachKind.PERMISSION }.map { it.id }.toSet()
         assertEquals(
@@ -141,14 +127,24 @@ class MandateScreenTest {
         assertEquals(ComponentType.ACTIVITY, main.componentType)
     }
 
-    @Test fun collectorSeesFilesTheAppKeeps() {
-        assertEquals(0, ReachCollector.storageFileCount(app))
-        java.io.File(app.filesDir, "x.txt").writeText("x")
+    @Test fun collectorSeesEveryFileAndDirectoryTheAppKeeps() {
+        assertEquals(emptyList<ReachItem>(), ReachCollector.storage(app))
+        val data = java.io.File(app.applicationInfo.dataDir)
+        val made = listOf("files/x.txt", "shared_prefs/stand_mode.xml", "app_webview/Default/Cookies", "app_webview/Default/b").map {
+            java.io.File(data, it).also { f -> f.parentFile!!.mkdirs(); f.writeText("x") }
+        }
+        java.io.File(app.cacheDir, "c.bin").writeText("x")
         try {
-            assertEquals(1, ReachCollector.storageFileCount(app))
-            assertTrue(ReachCollector.collect(app).any { it.key == "storage:files" && it.count == 1 })
+            val items = ReachCollector.storage(app).associateBy { it.id }
+            assertEquals(setOf("files/x.txt", "shared_prefs/stand_mode.xml", "app_webview", "cache"), items.keys)
+            assertEquals(2, items.getValue("app_webview").count)
+            val report = MandateReport(ReachCollector.collect(app), mandate)
+            // Stand's settings, the in-app view's storage and its cache are mandated; a stray file is not.
+            assertEquals(listOf("files/x.txt"), report.gap.filter { it.kind == ReachKind.STORAGE }.map { it.id })
         } finally {
-            java.io.File(app.filesDir, "x.txt").delete()
+            made.forEach { it.delete() }
+            java.io.File(app.cacheDir, "c.bin").delete()
+            java.io.File(data, "app_webview").deleteRecursively()
         }
     }
 
@@ -158,6 +154,8 @@ class MandateScreenTest {
         val config = ManagedConfig.fromMap(mapOf("device_label" to "Stand 1"))
         val context = FeatureContext(onBack = {}, config = config, device = DeviceStatus.from(false, false, config.deviceLabel))
         compose.setContent { RiskMandateTheme { MandateFeature.Content(context) } }
+        // Reach is read off the main thread: wait for the report.
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag(MandateTags.SUMMARY).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag(MandateTags.SUMMARY).assertIsDisplayed()
         compose.onNodeWithTag(MandateTags.GAP_STATUS).assertIsDisplayed()
         compose.onNodeWithTag(MandateTags.REACH).performScrollTo().assertIsDisplayed()
