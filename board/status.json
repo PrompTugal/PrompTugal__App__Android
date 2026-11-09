@@ -1,8 +1,9 @@
 {
  "agent": "conductor.android@promptugal.ai",
- "updated": "2026-11-09T04:25Z",
- "state": "Summit phase, design pass and on-device LLM. On dev: theme A and the logo redraw (Dinis's yes), P7 on every feature, stand mode signal, Lab rework, mandate storage reach, privacy texts, openFeature. Waiting on QA (Q-llm-1 lift, FeatureNavigationTest sign-off) to merge work/app (shell, RM icon), then dev.llm (LlmService, LlmHost, model setup G), then architect's FeatureContext.llm, then chat and lab live runs.",
+ "updated": "2026-11-09T05:25Z",
+ "state": "Summit phase. On dev: the shell (RM icon, splash, Now cards, theme A in green), the on-device LLM (LlmService, LlmHost, LiteRT-LM runtime, model setup G, speed bench), FeatureContext.llm and openFeature, chat's adapter, the lab on checkToolCall. In security: app passing llm to every feature, chat on context.llm. Next: lab live runs, then Dinis's tablet run of the bench and model setup. Models, chat and lab stay disabled until Dinis tries them on the tablet.",
  "done": [
+  "05:25 UTC (hourly runs 7 and 8): merged the shell with QA's tests (83d683b), the website icon fix, dev.llm with G (25d9cb7), the accent fix and real-app screenshots (67e30bb), FeatureContext.llm and LlmProcess (fff1219), chat's LlmServiceChat, lab A-lab-7, mandate reach from DownloadPolicy, and the icon ruling (356021c). All with security PASS and the full gate; CI passed and Firebase delivered 83d683b and 25d9cb7.",
   "04:25 UTC (hourly run 7): merged dev.releases ea5d6f8 (badge read on the first frame, QA's mis-tap point; security PASS). QA was stuck in one long stress-test turn for over an hour with the LLM merge waiting on it; interrupted it and asked for the Q-llm-1 verdict and the FeatureNavigationTest sign-off first. Security has passed work/app 0833ca0 and work/dev.llm dc63ad8.",
   "03:30 UTC: merged and pushed dev.stand 16eb08b, the seven P7 fills, design 64b0e5b (accent A, logo redraw), dev.mandate 7061378, play f438a94 and ea13a31, architect a26f037; all security PASS, gate green each time. Security read both Gemma 4 model cards (Apache-2.0) and passed feature G (924c23e).",
   "02:58 UTC: merged and pushed P7 (architect, Feature icon, kicker and summary) and dev.lab acf34e8 (strict tool-call parsing, rule-based ABP checks, Lab lanes on replayed samples), both with security PASS and the gate green. Sent design's A/B variants and logo redraw to Dinis.",
@@ -45,7 +46,7 @@
   "Dinis: a Contact tab in the in-app site (its form posts to another host, so it would open in the browser)? A staff PIN for stand mode after the summit?",
   "Dinis: links tapped inside the in-app riskmandate.ai view to other https sites open in the device's own browser (never inside the app, never while pinned, only on a real tap). Today's default by the conductor, since the alternative is that such links do nothing; say if you want them blocked instead (security R-ext-2).",
   "Dinis: set a $5 credit limit on the OpenRouter key itself (eval also stops at $5 in code).",
-  "Dinis: should stand mode's idle reset also clear the chat history on a shared stand tablet? (security recommends yes)"
+  "Dinis: when you try it on the tablet, the model download (2.6 GB for E2B) runs only while the Models screen is open; leaving pauses it and it resumes on return (no background service, no new permission). Start it on good Wi-Fi."
  ],
  "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
  "decisions": [
