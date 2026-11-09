@@ -37,3 +37,9 @@ Nothing.
 
 ## Update: instrumented SmokeTest in the emulator job
 The `smoke` job now runs `scripts/emulator-checks.sh` on the one emulator: the release-APK launch check, then `./gradlew connectedDebugAndroidTest` (app.android's `SmokeTest`), uninstalling the release APK in between (signature mismatch otherwise). Debug and test APKs are built before the emulator boots; Android test reports are in `smoke-<run>`. Budget: job timeout 40 min, estimated 10 to 15 min per attempt (not measured). Verified here: `assembleDebugAndroidTest` builds, actionlint, gate pass. Not run: the emulator part (no KVM).
+
+## Update: Firebase auth via Workload Identity Federation (urgent, from conductor)
+Release job: `id-token: write` added, `environment: release` kept. `google-github-actions/auth` v2.1.13 (pinned by SHA, lightweight tag, c200f36...) before the Firebase step, with `vars.GCP_WIF_PROVIDER` and `vars.GCP_SERVICE_ACCOUNT`; `fad.json` and `FIREBASE_SERVICE_ACCOUNT_JSON` removed (no fallback: keys cannot be created). Firebase step gated on both variables and `FIREBASE_APP_ID` (variable or secret). Summary reports a failed auth. `docs/ci.md` has the variables table, the WIF setup and the Play follow-up (its JSON key hits the same policy). actionlint, gate and secret-scan pass; the auth and Firebase steps are untested (no run possible from here).
+
+## Update: fix to the WIF commit
+The Firebase step had the `npm ci` line and the `firebase` command joined into one (my edit dropped a newline); now two commands, checked by parsing the YAML. "(provisional)" removed from the summary and `docs/ci.md`. actionlint passes; the Gradle gate was not re-run, since only the workflow and docs text changed after the last pass.
