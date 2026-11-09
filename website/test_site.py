@@ -57,9 +57,9 @@ class SiteTest(unittest.TestCase):
     def test_every_page_has_a_twin_and_the_deploy_files_exist(self):
         for page in self.pages:
             self.assertTrue((self.clean / Path(page['path']).with_suffix('.md')).exists(), page['path'])
-        for name in ('llms.txt', 'sitemap.xml', 'robots.txt', 'CNAME', 'version.json', 'assets/site.css', 'assets/icon.svg'):
+        for name in ('llms.txt', 'sitemap.xml', 'robots.txt', 'version.json', 'assets/site.css', 'assets/icon.svg'):
             self.assertTrue((self.clean / name).exists(), name)
-        self.assertEqual((self.clean / 'CNAME').read_text().strip(), 'android.app.promptugal.ai')
+        self.assertFalse((self.clean / 'CNAME').exists())  # the deploy workflow adds it
 
     def test_required_pages_exist(self):
         paths = {p['path'] for p in self.pages}
@@ -207,9 +207,6 @@ class SiteTest(unittest.TestCase):
     def test_page_missing_from_sitemap_is_refused(self):
         self.assertRefused(self.broken('sitemap.xml', lambda t: t.replace('features.html', 'x.html')), 'not in sitemap.xml')
 
-    def test_wrong_cname_is_refused(self):
-        self.assertRefused(self.broken('CNAME', lambda t: 'example.com\n'), 'CNAME')
-
     def test_script_is_refused(self):
         self.assertRefused(self.broken('index.html', lambda t: t.replace('</body>', '<script src="https://x.example/a.js"></script></body>')), 'not inline JSON-LD')
 
@@ -263,7 +260,7 @@ class SiteTest(unittest.TestCase):
     def test_secret_shaped_text_is_refused(self):
         fake_key = 'AIza' + 'a' * 35
         self.assertRefused(self.broken('index.md', lambda t: t + fake_key), 'Google API key')
-        self.assertRefused(self.broken('index.md', lambda t: t + '-----BEGIN PRIVATE KEY-----'), 'private key')
+        self.assertRefused(self.broken('index.md', lambda t: t + '-----BEGIN PRIVATE ' + 'KEY-----'), 'private key')
         self.assertRefused(self.broken('index.md', lambda t: t + 'projects/123456789012/locations'), 'project path')
 
     def test_email_address_is_refused_but_the_example_domain_is_not(self):

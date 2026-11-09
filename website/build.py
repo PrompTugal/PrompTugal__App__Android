@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Build the android.app.promptugal.ai site into website/public/.
+"""Build the android.app.promptugal.ai site into website/_site/.
 
 One template, one source file per page (HTML or Markdown) under website/pages/. Every
 fact about the app (application ID, SDK levels, permissions, languages, feature flags,
 latest release, test counts, licences) is read from the repository by facts.py at build
 time, never typed. Each page gets a Markdown twin at the same path for agents; llms.txt
-and sitemap.xml list every page.
+and sitemap.xml list every page. The deploy workflow adds CNAME and build.json itself.
 
 Standard library only. Usage: python3 website/build.py [--out DIR]
 CI may set SITE_COMMIT to stamp the commit.
@@ -249,8 +249,6 @@ def build(out):
     (out / 'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                                      + '\n'.join(sitemap) + '\n</urlset>\n')
     (out / 'robots.txt').write_text(f'User-agent: *\nAllow: /\nSitemap: {SITE_URL}sitemap.xml\n')
-    (out / 'CNAME').write_text('android.app.promptugal.ai\n')
-    (out / '.nojekyll').write_text('')
     (out / 'version.json').write_text(json.dumps(
         {'app_id': facts['app_id'], 'latest_release': latest['tag'] if latest else None, 'commit': facts['commit']}, indent=2) + '\n')
     return facts, pages
@@ -258,7 +256,7 @@ def build(out):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument('--out', type=Path, default=WEBSITE / 'public')
+    parser.add_argument('--out', type=Path, default=WEBSITE / '_site')
     args = parser.parse_args()
     facts, pages = build(args.out)
     print(f'built {len(pages)} pages for {facts["app_id"]} ({facts["latest"]["tag"] if facts["latest"] else "no release"}) into {args.out}')

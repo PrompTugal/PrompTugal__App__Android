@@ -12,7 +12,7 @@ Checks every page in the output directory:
   * one <h1>, a lang, a title and a description; every <img> has alt, width and height
   * no build tokens, banned words or dashes used as punctuation (em-dash) left behind
   * nothing secret-shaped, no email address (the reserved .example domain is allowed, for the worked bypass example), no Google project path in any output file
-  * the deploy files exist (CNAME, robots.txt, llms.txt, sitemap.xml)
+  * the files exist (robots.txt, llms.txt, sitemap.xml); CNAME is the deploy workflow's, not the build's
 
 Standard library only. Usage: python3 website/validate.py [DIR]
 """
@@ -31,7 +31,7 @@ import facts as factsmod  # noqa: E402
 
 BANNED = ('seamless', 'revolutionary', 'cutting-edge', 'game-changing', 'game changer', 'effortless',
           'blazing', 'unleash', 'world-class', 'best-in-class', 'supercharge', 'lorem ipsum', 'todo')
-SECRETS = (('private key block', r'PRIVATE KEY-----'), ('Google API key', r'AIza[0-9A-Za-z_-]{35}'),
+SECRETS = (('private key block', r'PRIVATE ' + r'KEY-----'), ('Google API key', r'AIza[0-9A-Za-z_-]{35}'),
            ('Google access token', r'ya29\.[0-9A-Za-z_-]{20,}'), ('GitHub token', r'gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{20,}'),
            ('service-account JSON', r'"type"\s*:\s*"service_account"'), ('Google project path', r'projects/\d{6,}'),
            ('AWS key id', r'(AKIA|ASIA)[0-9A-Z]{16}'), ('email address', r'[\w.+-]+@[\w-]+(?:\.[\w-]+)*\.(?!example\b)[A-Za-z]{2,}\b'))
@@ -184,9 +184,6 @@ def validate(out):
     for name in ('llms.txt', 'sitemap.xml', 'robots.txt'):
         if not (out / name).exists():
             problems.append(f'no {name}')
-    cname = out / 'CNAME'
-    if not cname.exists() or cname.read_text().strip() != 'android.app.promptugal.ai':
-        problems.append('CNAME is missing or is not android.app.promptugal.ai')
 
     problems += check_facts(out, parsed)
     return problems
@@ -257,7 +254,7 @@ def check_facts(out, parsed):
 
 
 def main():
-    out = Path(sys.argv[1]) if len(sys.argv) > 1 else WEBSITE / 'public'
+    out = Path(sys.argv[1]) if len(sys.argv) > 1 else WEBSITE / '_site'
     problems = validate(out)
     for line in problems:
         print(line)
