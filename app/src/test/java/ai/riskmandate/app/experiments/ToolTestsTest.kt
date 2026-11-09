@@ -1,4 +1,4 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.experiments
 
 import ai.riskmandate.app.llm.FakeLlmService
 import ai.riskmandate.app.llm.FakeReply
@@ -16,7 +16,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 
 class ToolTestsTest {
-    private val cat = LabTestData.toolCatalogue()
+    private val cat = ExperimentsTestData.toolCatalogue()
 
     /** A model that follows [steps]: one per request, the last repeated. NATIVE proposals or a JSON call in the text. */
     private fun scripted(steps: List<RefStep>, mode: ToolMode): FakeLlmService {
@@ -251,7 +251,7 @@ class ToolTestsTest {
         val slow = ToolTestSuite.run(h5.llm, cases, one, 5, now = { t += ToolTestSuite.MAX_TOTAL_MS / 3; t }, onRun = h5.onRun)
         assertEquals(StopReason.TIME_CAP, slow.stop); assertTrue(slow.runs.size in 1..3)
         val failing = ToolTestSuite.run(FakeLlmService(reply = { FakeReply(error = LlmEvent.Error(LlmError.INFERENCE_FAILED, "x")) }), cat.cases, one, 3)
-        assertEquals(StopReason.ERRORS, failing.stop); assertEquals(LoopRunner.MAX_CONSECUTIVE_ERRORS, failing.runs.size)
+        assertEquals(StopReason.ERRORS, failing.stop); assertEquals(RunCaps.MAX_CONSECUTIVE_ERRORS, failing.runs.size)
         assertEquals(0, failing.report.overall().finished)
     }
 
@@ -261,7 +261,7 @@ class ToolTestsTest {
     fun theExportIsTheLabsEnvelopeWithRunRecordsAndAPerModeSummary() = runBlocking {
         val h = Harness(cat.cases.take(3), ToolMode.entries, 1) { it.reference!! }
         val out = ToolTestSuite.run(h.llm, cat.cases.take(3), ToolMode.entries, 1, guard = Guard(pct = 70), onRun = h.onRun)
-        val text = ToolTestExport.build(cat.hash, out, LiveRunner.Settings(), "2026-11-09T10:00:00Z", "0.1.99", 99, mapOf("os" to "15"))
+        val text = ToolTestExport.build(cat.hash, out, RunSettings(), "2026-11-09T10:00:00Z", "0.1.99", 99, mapOf("os" to "15"))
         val d = StrictJson.parse(text) as Map<String, Any?>
         assertEquals("abp-lab-loop-export/1", d["format"])
         assertEquals("tool-tests", d["kind"])
@@ -360,12 +360,12 @@ class ToolTestsTest {
     // ---- the format is strict --------------------------------------------------------------------------
 
     private fun file(vararg edits: Pair<String, String>): String {
-        var t = LabTestData.text("tooltests/01_right_tool.json")
+        var t = ExperimentsTestData.text("tooltests/01_right_tool.json")
         for ((a, b) in edits) { assertTrue("edit target missing: $a", a in t); t = t.replaceFirst(a, b) }
         return t
     }
 
-    private fun rejected(text: String) = try { ToolTestFormats.parse(text); fail("accepted") } catch (_: LabFormats.FormatException) {}
+    private fun rejected(text: String) = try { ToolTestFormats.parse(text); fail("accepted") } catch (_: FormatException) {}
 
     @Test fun theFormatIsStrict() {
         ToolTestFormats.parse(file())

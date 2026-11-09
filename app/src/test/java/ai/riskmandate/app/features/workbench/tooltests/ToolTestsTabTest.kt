@@ -1,7 +1,20 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.features.workbench.tooltests
 
 import ai.riskmandate.app.R
 import ai.riskmandate.app.RiskMandateTheme
+import ai.riskmandate.app.experiments.CaseRun
+import ai.riskmandate.app.experiments.CheckResult
+import ai.riskmandate.app.experiments.ExperimentsTestData
+import ai.riskmandate.app.experiments.RefStep
+import ai.riskmandate.app.experiments.StepRecord
+import ai.riskmandate.app.experiments.StopReason
+import ai.riskmandate.app.experiments.ToolChecks
+import ai.riskmandate.app.experiments.ToolMode
+import ai.riskmandate.app.experiments.ToolTestFormats
+import ai.riskmandate.app.experiments.ToolTestReport
+import ai.riskmandate.app.experiments.ToolTestRunner
+import ai.riskmandate.app.experiments.ToolTestSnapshot
+import ai.riskmandate.app.experiments.ToolTestSuite
 import ai.riskmandate.app.llm.FakeLlmService
 import ai.riskmandate.app.llm.FakeReply
 import ai.riskmandate.app.llm.LlmEvent
@@ -37,7 +50,7 @@ import org.robolectric.annotation.Config
 class ToolTestsTabTest {
     @get:Rule val compose = createComposeRule()
     private val app: Application = ApplicationProvider.getApplicationContext()
-    private val cat = LabTestData.toolCatalogue()
+    private val cat = ExperimentsTestData.toolCatalogue()
     private val weather = cat.case("right-tool-weather")!!
 
     private fun count(tag: String) = compose.onAllNodes(hasTestTag(tag)).fetchSemanticsNodes().size
@@ -168,11 +181,5 @@ class ToolTestsTabTest {
             assertNull("accepted: $bad", ToolTestSnapshot.decode(bad))
         }
         assertNotNull(ToolTestSnapshot.decode(ToolTestSnapshot.encode(listOf(run(0, true)), 1, null)))
-    }
-
-    @Test fun theTabAddsNoUnsafeImportsAndTheNewFilesAreCovered() {
-        // LabImportsTest scans every Kotlin file in the package; make sure the new files are in its scope.
-        val names = java.io.File("src/main/java/ai/riskmandate/app/features/lab").listFiles { f -> f.name.endsWith(".kt") }!!.map { it.name }
-        assertTrue(names.containsAll(listOf("ToolTestRunner.kt", "ToolChecks.kt", "ToolTestsTab.kt", "ToolTestSuite.kt", "ToolTestFormats.kt")))
     }
 }

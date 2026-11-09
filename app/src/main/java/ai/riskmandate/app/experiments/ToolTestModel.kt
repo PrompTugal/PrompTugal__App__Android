@@ -1,4 +1,4 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.experiments
 
 /**
  * Tool tests: small deterministic functional evals of tool calling on the on-device model (Workbench tab 3).

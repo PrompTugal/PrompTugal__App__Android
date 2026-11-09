@@ -1,6 +1,17 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.features.workbench.tooltests
 
 import ai.riskmandate.app.R
+import ai.riskmandate.app.experiments.AndroidDeviceGuard
+import ai.riskmandate.app.experiments.CaseRun
+import ai.riskmandate.app.experiments.PassStat
+import ai.riskmandate.app.experiments.RunSettings
+import ai.riskmandate.app.experiments.StopReason
+import ai.riskmandate.app.experiments.ToolCatalogue
+import ai.riskmandate.app.experiments.ToolMode
+import ai.riskmandate.app.experiments.ToolTestAssets
+import ai.riskmandate.app.experiments.ToolTestReport
+import ai.riskmandate.app.experiments.ToolTestSnapshot
+import ai.riskmandate.app.experiments.ToolTestSuite
 import ai.riskmandate.app.llm.LlmService
 import ai.riskmandate.app.llm.LlmState
 import ai.riskmandate.app.ui.ChipKind
@@ -111,23 +122,23 @@ fun ToolTestsTab(
     llm: LlmService?,
     openFeature: (String) -> Unit = {},
     onBusy: (Boolean) -> Unit = {},
-    settings: LiveRunner.Settings = LiveRunner.Settings(),
+    settings: RunSettings = RunSettings(),
     catalogue: ToolCatalogue? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val loaded by produceState(catalogue) { if (catalogue == null) value = withContext(Dispatchers.IO) { LabAssets.loadToolTests(context.assets) } }
+    val loaded by produceState(catalogue) { if (catalogue == null) value = withContext(Dispatchers.IO) { ToolTestAssets.load(context.assets) } }
     val cat = loaded
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
-        if (cat == null) { Text(stringResource(R.string.lab_tt_loading), style = MaterialTheme.typography.titleMedium); return@Column }
-        if (cat.cases.isEmpty()) { Text(stringResource(R.string.lab_tt_none), style = MaterialTheme.typography.titleMedium); return@Column }
-        if (cat.problems.isNotEmpty()) Text(stringResource(R.string.lab_problems, cat.problems.size), style = MaterialTheme.typography.bodyMedium)
+        if (cat == null) { Text(stringResource(R.string.workbench_tt_loading), style = MaterialTheme.typography.titleMedium); return@Column }
+        if (cat.cases.isEmpty()) { Text(stringResource(R.string.workbench_tt_none), style = MaterialTheme.typography.titleMedium); return@Column }
+        if (cat.problems.isNotEmpty()) Text(stringResource(R.string.workbench_tt_problems, cat.problems.size), style = MaterialTheme.typography.bodyMedium)
         Body(cat, llm, openFeature, onBusy, settings)
     }
 }
 
 @Composable
-private fun Body(cat: ToolCatalogue, llm: LlmService?, openFeature: (String) -> Unit, onBusy: (Boolean) -> Unit, settings: LiveRunner.Settings) {
+private fun Body(cat: ToolCatalogue, llm: LlmService?, openFeature: (String) -> Unit, onBusy: (Boolean) -> Unit, settings: RunSettings) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val st = rememberSaveable(saver = suiteSaver) { SuiteState() }
@@ -172,52 +183,52 @@ private fun Body(cat: ToolCatalogue, llm: LlmService?, openFeature: (String) -> 
         }
     }
 
-    Text(stringResource(R.string.lab_tt_intro), style = MaterialTheme.typography.bodyLarge)
+    Text(stringResource(R.string.workbench_tt_intro), style = MaterialTheme.typography.bodyLarge)
 
     // Scope: all, one kind, or one case.
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ScopeButton(stringResource(R.string.lab_tt_scope_all), kindId.isEmpty(), ToolTestTags.SCOPE_ALL, !st.running) { kindId = ""; caseId = "" }
+        ScopeButton(stringResource(R.string.workbench_tt_scope_all), kindId.isEmpty(), ToolTestTags.SCOPE_ALL, !st.running) { kindId = ""; caseId = "" }
         for (k in cat.kinds) ScopeButton(k.title, kindId == k.id, ToolTestTags.scope(k.id), !st.running) { kindId = k.id; caseId = "" }
     }
     if (kindId.isNotEmpty()) {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ScopeButton(stringResource(R.string.lab_tt_whole_kind), caseId.isEmpty(), ToolTestTags.scopeCase("whole"), !st.running) { caseId = "" }
+            ScopeButton(stringResource(R.string.workbench_tt_whole_kind), caseId.isEmpty(), ToolTestTags.scopeCase("whole"), !st.running) { caseId = "" }
             for (c in cat.casesOf(kindId)) ScopeButton(c.id, caseId == c.id, ToolTestTags.scopeCase(c.id), !st.running) { caseId = c.id }
         }
     }
 
     // Mode and repeats.
-    Text(stringResource(R.string.lab_tt_mode_help), style = MaterialTheme.typography.bodyMedium)
+    Text(stringResource(R.string.workbench_tt_mode_help), style = MaterialTheme.typography.bodyMedium)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ScopeButton(stringResource(R.string.lab_tt_native), modeName == "NATIVE", ToolTestTags.MODE_NATIVE, !st.running) { modeName = "NATIVE" }
-        ScopeButton(stringResource(R.string.lab_tt_text), modeName == "TEXT", ToolTestTags.MODE_TEXT, !st.running) { modeName = "TEXT" }
-        ScopeButton(stringResource(R.string.lab_tt_both), modeName == "BOTH", ToolTestTags.MODE_BOTH, !st.running) { modeName = "BOTH" }
+        ScopeButton(stringResource(R.string.workbench_tt_native), modeName == "NATIVE", ToolTestTags.MODE_NATIVE, !st.running) { modeName = "NATIVE" }
+        ScopeButton(stringResource(R.string.workbench_tt_text), modeName == "TEXT", ToolTestTags.MODE_TEXT, !st.running) { modeName = "TEXT" }
+        ScopeButton(stringResource(R.string.workbench_tt_both), modeName == "BOTH", ToolTestTags.MODE_BOTH, !st.running) { modeName = "BOTH" }
     }
-    val repeatsLabel = stringResource(R.string.lab_tt_repeats, repeats)
-    val fewer = stringResource(R.string.lab_decrease, repeatsLabel)
-    val more = stringResource(R.string.lab_increase, repeatsLabel)
+    val repeatsLabel = stringResource(R.string.workbench_tt_repeats, repeats)
+    val fewer = stringResource(R.string.workbench_tt_decrease, repeatsLabel)
+    val more = stringResource(R.string.workbench_tt_increase, repeatsLabel)
     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton({ repeats = (repeats - 1).coerceAtLeast(1) }, Modifier.heightIn(min = 56.dp).semantics { contentDescription = fewer }.testTag(ToolTestTags.REPEATS_MINUS), enabled = !st.running) { Text(stringResource(R.string.lab_minus), fontSize = 22.sp) }
+        OutlinedButton({ repeats = (repeats - 1).coerceAtLeast(1) }, Modifier.heightIn(min = 56.dp).semantics { contentDescription = fewer }.testTag(ToolTestTags.REPEATS_MINUS), enabled = !st.running) { Text(stringResource(R.string.workbench_tt_minus), fontSize = 22.sp) }
         Text(repeatsLabel, style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag(ToolTestTags.REPEATS))
-        OutlinedButton({ repeats = (repeats + 1).coerceAtMost(ToolTestSuite.MAX_REPEATS) }, Modifier.heightIn(min = 56.dp).semantics { contentDescription = more }.testTag(ToolTestTags.REPEATS_PLUS), enabled = !st.running) { Text(stringResource(R.string.lab_plus), fontSize = 22.sp) }
-        Text(stringResource(R.string.lab_tt_planned, planned), style = MaterialTheme.typography.bodyMedium)
+        OutlinedButton({ repeats = (repeats + 1).coerceAtMost(ToolTestSuite.MAX_REPEATS) }, Modifier.heightIn(min = 56.dp).semantics { contentDescription = more }.testTag(ToolTestTags.REPEATS_PLUS), enabled = !st.running) { Text(stringResource(R.string.workbench_tt_plus), fontSize = 22.sp) }
+        Text(stringResource(R.string.workbench_tt_planned, planned), style = MaterialTheme.typography.bodyMedium)
     }
 
     if (!ready) {
-        SectionCard(stringResource(R.string.lab_no_model_title), Modifier.testTag(ToolTestTags.NO_MODEL)) {
+        SectionCard(stringResource(R.string.workbench_tt_no_model_title), Modifier.testTag(ToolTestTags.NO_MODEL)) {
             val loading = llmState as? LlmState.Loading
-            Text(if (loading != null) stringResource(R.string.lab_loading_model, loading.modelId) else stringResource(R.string.lab_tt_no_model_body), style = MaterialTheme.typography.bodyLarge)
-            if (llm != null && loading == null) Button({ openFeature("models") }, Modifier.heightIn(min = 56.dp).testTag(ToolTestTags.OPEN_MODELS)) { Text(stringResource(R.string.lab_open_models), fontSize = 20.sp) }
+            Text(if (loading != null) stringResource(R.string.workbench_tt_loading_model, loading.modelId) else stringResource(R.string.workbench_tt_no_model_body), style = MaterialTheme.typography.bodyLarge)
+            if (llm != null && loading == null) Button({ openFeature("models") }, Modifier.heightIn(min = 56.dp).testTag(ToolTestTags.OPEN_MODELS)) { Text(stringResource(R.string.workbench_tt_open_models), fontSize = 20.sp) }
         }
     } else {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (st.running) OutlinedButton({ st.stopRequested = true }, Modifier.heightIn(min = 56.dp).testTag(ToolTestTags.STOP)) { Text(stringResource(R.string.lab_stop), fontSize = 20.sp) }
-            else Button({ start() }, Modifier.heightIn(min = 56.dp).testTag(ToolTestTags.RUN)) { Text(stringResource(R.string.lab_run), fontSize = 20.sp) }
+            if (st.running) OutlinedButton({ st.stopRequested = true }, Modifier.heightIn(min = 56.dp).testTag(ToolTestTags.STOP)) { Text(stringResource(R.string.workbench_tt_stop), fontSize = 20.sp) }
+            else Button({ start() }, Modifier.heightIn(min = 56.dp).testTag(ToolTestTags.RUN)) { Text(stringResource(R.string.workbench_tt_run), fontSize = 20.sp) }
         }
     }
     if (st.running) {
         Text(
-            stringResource(if (st.stopRequested) R.string.lab_loop_stopping else R.string.lab_loop_run_of, (st.runs.size + 1).coerceAtMost(st.planned.coerceAtLeast(1)), st.planned),
+            stringResource(if (st.stopRequested) R.string.workbench_tt_loop_stopping else R.string.workbench_tt_loop_run_of, (st.runs.size + 1).coerceAtMost(st.planned.coerceAtLeast(1)), st.planned),
             style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag(ToolTestTags.PROGRESS).semantics { liveRegion = LiveRegionMode.Polite },
         )
         LinearProgressIndicator(progress = { if (st.planned == 0) 0f else st.runs.size.toFloat() / st.planned }, modifier = Modifier.fillMaxWidth())
@@ -227,7 +238,7 @@ private fun Body(cat: ToolCatalogue, llm: LlmService?, openFeature: (String) -> 
 
 @Composable
 private fun ScopeButton(label: String, selected: Boolean, tag: String, enabled: Boolean, onClick: () -> Unit) {
-    val selectedText = stringResource(R.string.lab_selected)
+    val selectedText = stringResource(R.string.workbench_tt_selected)
     val mod = Modifier.heightIn(min = 56.dp).testTag(tag).semantics { if (selected) stateDescription = selectedText }
     if (selected) Button(onClick, mod, enabled = enabled) { Text(label, fontSize = 18.sp) } else OutlinedButton(onClick, mod, enabled = enabled) { Text(label, fontSize = 18.sp) }
 }
@@ -238,23 +249,23 @@ private fun pct(s: PassStat): String = s.rate?.let { String.format(Locale.getDef
 private fun Results(cat: ToolCatalogue, st: SuiteState) {
     val report = remember(st.runs) { ToolTestReport(st.runs) }
     val modes = report.modes()
-    val short = mapOf(ToolMode.NATIVE to stringResource(R.string.lab_tt_native_short), ToolMode.TEXT to stringResource(R.string.lab_tt_text_short))
+    val short = mapOf(ToolMode.NATIVE to stringResource(R.string.workbench_tt_native_short), ToolMode.TEXT to stringResource(R.string.workbench_tt_text_short))
     Column(verticalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
         // Overall, one tile per mode: the headline is which way of asking works on this model.
         Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.Gap), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
             for (m in modes) {
                 val s = report.overall(m)
                 StatTile(
-                    "${pct(s)}  " + stringResource(R.string.lab_stat_of, s.passed, s.finished), stringResource(if (m == ToolMode.NATIVE) R.string.lab_tt_native else R.string.lab_tt_text),
+                    "${pct(s)}  " + stringResource(R.string.workbench_tt_stat_of, s.passed, s.finished), stringResource(if (m == ToolMode.NATIVE) R.string.workbench_tt_native else R.string.workbench_tt_text),
                     Modifier.testTag(if (m == ToolMode.NATIVE) ToolTestTags.OVERALL_NATIVE else ToolTestTags.OVERALL_TEXT), large = true,
                 )
             }
             val unfinished = report.overall().notFinished
-            if (unfinished > 0) StatTile(unfinished.toString(), stringResource(R.string.lab_stat_unfinished), Modifier.testTag(ToolTestTags.UNFINISHED))
+            if (unfinished > 0) StatTile(unfinished.toString(), stringResource(R.string.workbench_tt_stat_unfinished), Modifier.testTag(ToolTestTags.UNFINISHED))
         }
         stopText(st.stop)?.let { Text(stringResource(it), style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag(ToolTestTags.STOP_REASON)) }
 
-        SectionCard(stringResource(R.string.lab_tt_by_kind)) {
+        SectionCard(stringResource(R.string.workbench_tt_by_kind)) {
             for (k in cat.kinds) {
                 if (report.byKind(k.id).finished + report.byKind(k.id).notFinished == 0) continue
                 Row(Modifier.fillMaxWidth().testTag(ToolTestTags.kind(k.id)), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -263,7 +274,7 @@ private fun Results(cat: ToolCatalogue, st: SuiteState) {
                 }
             }
         }
-        SectionCard(stringResource(R.string.lab_tt_by_case)) {
+        SectionCard(stringResource(R.string.workbench_tt_by_case)) {
             for (c in cat.cases) {
                 if (report.byCase(c.id).let { it.finished + it.notFinished } == 0) continue
                 Column(Modifier.fillMaxWidth().testTag(ToolTestTags.case(c.id)).padding(vertical = 4.dp)) {
@@ -280,10 +291,10 @@ private fun Results(cat: ToolCatalogue, st: SuiteState) {
         }
         val failures = report.failures()
         if (failures.isNotEmpty()) {
-            Text(stringResource(R.string.lab_tt_failures, failures.size), style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.workbench_tt_failures, failures.size), style = MaterialTheme.typography.titleLarge)
             for (f in failures.take(MAX_FAILURES_SHOWN)) Failure(f)
-            if (failures.size > MAX_FAILURES_SHOWN) Text(stringResource(R.string.lab_tt_more_failures, failures.size - MAX_FAILURES_SHOWN), style = MaterialTheme.typography.bodyMedium)
-            if (failures.any { it.steps.isEmpty() }) Text(stringResource(R.string.lab_tt_nothing_kept), Modifier.testTag(ToolTestTags.NOTHING_KEPT), style = MaterialTheme.typography.bodyMedium)
+            if (failures.size > MAX_FAILURES_SHOWN) Text(stringResource(R.string.workbench_tt_more_failures, failures.size - MAX_FAILURES_SHOWN), style = MaterialTheme.typography.bodyMedium)
+            if (failures.any { it.steps.isEmpty() }) Text(stringResource(R.string.workbench_tt_nothing_kept), Modifier.testTag(ToolTestTags.NOTHING_KEPT), style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
@@ -291,11 +302,11 @@ private fun Results(cat: ToolCatalogue, st: SuiteState) {
 private const val MAX_FAILURES_SHOWN = 20
 
 @Composable
-private fun modeShort(m: ToolMode) = stringResource(if (m == ToolMode.NATIVE) R.string.lab_tt_native_short else R.string.lab_tt_text_short)
+private fun modeShort(m: ToolMode) = stringResource(if (m == ToolMode.NATIVE) R.string.workbench_tt_native_short else R.string.workbench_tt_text_short)
 
 @Composable
 private fun Failure(r: CaseRun) {
-    SectionCard(r.caseId + "  ·  " + modeShort(r.mode) + "  ·  " + stringResource(R.string.lab_tt_run_n, r.rep + 1), Modifier.testTag(ToolTestTags.FAILURE)) {
+    SectionCard(r.caseId + "  ·  " + modeShort(r.mode) + "  ·  " + stringResource(R.string.workbench_tt_run_n, r.rep + 1), Modifier.testTag(ToolTestTags.FAILURE)) {
         for (c in r.checks.filter { !it.passed }) {
             StatusChip(c.label, ChipKind.Blocked)
             if (c.detail.isNotEmpty()) Text(c.detail, style = MaterialTheme.typography.bodyMedium)
@@ -304,4 +315,15 @@ private fun Failure(r: CaseRun) {
         val raw = if (r.calls.isEmpty() && r.steps.size == 1 && r.finalText.isEmpty()) r.steps.first().text else ToolTestSnapshot.rawExcerpt(r).ifEmpty { "" }
         if (raw.isNotEmpty()) SelectionContainer { Text(raw, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace) }
     }
+}
+
+@androidx.annotation.StringRes
+private fun stopText(stop: StopReason?): Int? = when (stop) {
+    StopReason.LOW_BATTERY -> R.string.workbench_tt_stop_low_battery
+    StopReason.HOT -> R.string.workbench_tt_stop_hot
+    StopReason.TIME_CAP -> R.string.workbench_tt_stop_time
+    StopReason.ERRORS -> R.string.workbench_tt_stop_errors
+    StopReason.STOPPED -> R.string.workbench_tt_stop_user
+    StopReason.INTERRUPTED -> R.string.workbench_tt_stop_turned
+    StopReason.DONE, null -> null
 }
