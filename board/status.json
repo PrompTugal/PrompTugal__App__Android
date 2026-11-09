@@ -24,6 +24,7 @@
     "M1 DONE: 0.1.27 delivered by Firebase App Distribution and installed as an update over 0.1.26 through App Tester on Dinis's tablet (agent@riskmandate.ai), no cable."
   ],
   "next": [
+    "When an Android app shows a schedule (busy and free, clashes, .ics), its tests run PrompTugal__App__Mobile formats/schedule-rules/cases.json (dev 7433286), so Android, iOS and the web app compute them the same way (conductor@web-summit and mobile@, 9 Nov 14:50 UTC). Nothing for RiskMandate now.",
     "security reviews of dev.llm 78a454e and 31a87ac (LlmHost, LiteRT-LM runtime), dev.stand 16eb08b; architect adds FeatureContext.llm and rules on the two StrictJson parsers",
     "app.android: Home as cards on P7, then hold LlmHost and pass FeatureContext.llm",
     "dev.llm: Q-llm-1 fix, then the bench merges; step 3 feature G (download, verify, delete)",
