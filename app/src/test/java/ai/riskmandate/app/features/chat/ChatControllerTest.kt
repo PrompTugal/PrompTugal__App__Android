@@ -126,6 +126,43 @@ class ChatControllerTest {
         assertEquals("remember me", second.state.conversations[1].title())
     }
 
+    @Test fun startReopensTheChatThatWasOpenBeforeARotation() {
+        val store = MemoryChatHistoryStore()
+        val first = started(FakeChatLlm(), store)
+        first.send("one"); first.newChat(); first.send("two")
+        val openId = first.state.currentId
+        val second = controller(FakeChatLlm(), store).also { runBlocking { it.start(reopen = openId) } }
+        assertEquals(openId, second.state.currentId)
+        assertEquals("two", second.state.current.messages.first().text)
+        val unknown = controller(FakeChatLlm(), store).also { runBlocking { it.start(reopen = "gone") } }
+        assertTrue(unknown.state.current.isEmpty) // an id that was never saved opens a new chat
+    }
+
+    @Test fun theVisitorsMessageIsSavedBeforeTheAnswerFinishes() {
+        val ch = Channel<String>(Channel.UNLIMITED)
+        val store = MemoryChatHistoryStore()
+        val c = started(channelLlm(ch), store)
+        c.send("still typing the answer")
+        assertTrue(c.state.generating)
+        assertEquals(listOf("still typing the answer"), store.saved.single().messages.map { it.text }) // no empty answer saved
+        ch.close()
+    }
+
+    @Test fun aPartialAnswerIsSavedEvenWhenTheScopeEndsMidStream() {
+        // A rotation cancels the composition's scope: the partial answer must still reach the disk.
+        val job = kotlinx.coroutines.Job()
+        val ch = Channel<String>(Channel.UNLIMITED)
+        val store = MemoryChatHistoryStore()
+        val c = ChatController(channelLlm(ch), store, CoroutineScope(Dispatchers.Unconfined + job), Dispatchers.Unconfined, { now }, { "c${ids++}" })
+        runBlocking { c.start() }
+        c.send("question")
+        ch.trySend("half an "); ch.trySend("answer")
+        job.cancel()
+        val saved = store.saved.single().messages
+        assertEquals("half an answer", saved.last().text)
+        assertTrue(saved.last().stopped)
+    }
+
     @Test fun emptyChatsAreNeverSaved() {
         val store = MemoryChatHistoryStore()
         val c = started(FakeChatLlm(), store)

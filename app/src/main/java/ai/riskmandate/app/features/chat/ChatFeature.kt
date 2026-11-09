@@ -7,7 +7,11 @@ import ai.riskmandate.app.features.HoldIdleWhile
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
@@ -71,7 +75,11 @@ internal fun ChatContent(context: FeatureContext, llm: ChatLlm) {
         val store = provided ?: FileChatHistoryStore(File(android.applicationContext.noBackupFilesDir, "feature_chat"))
         ChatController(llm, store, scope)
     }
-    LaunchedEffect(controller) { controller.start() }
+    // The open chat survives a rotation (the Activity is recreated): its id is saved, small, and reselected after loading.
+    var openId by rememberSaveable { mutableStateOf<String?>(null) }
+    val reopen = remember { openId }
+    LaunchedEffect(controller) { controller.start(reopen = reopen) }
+    LaunchedEffect(controller.state.currentId) { openId = controller.state.currentId }
     if (ChatPolicy.WIPE_ON_LEAVE) DisposableEffect(controller) { onDispose { controller.wipeNow() } }
     // Generation can take a while: do not let stand mode's idle reset wipe the chat mid-answer.
     context.HoldIdleWhile(controller.state.generating)
