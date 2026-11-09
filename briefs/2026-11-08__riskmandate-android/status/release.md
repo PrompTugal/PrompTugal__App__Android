@@ -55,3 +55,7 @@ Closing message now points to Settings > Environments > release > Environment se
 - **Run time:** median 5.6 min before the smoke job, 12.7 min with it (measured from the Actions API, in `docs/ci.md`), of which about 8 min was waiting for the previous run; expected about 7 to 8 min after this change, to re-measure.
 - Gate, actionlint, secret-scan pass. Untested live: the paths filter, pending-release replacement, and the licences job on a runner.
 - For conductor: a docs-only push to dev now produces no run; the latest run is not a signal for it.
+
+## Update: website deploy (GitHub Pages)
+`.github/workflows/website.yml`: build (unit tests, build.py, validate.py) then deploy (upload-pages-artifact v4.0.0, deploy-pages v4.0.5, SHA-pinned, pages and id-token write only on deploy) then verify (live `build.json` carries the commit). Skips cleanly until `website/build.py` exists and until Pages source is GitHub Actions. What Dinis does is in `docs/ci.md` (Pages source, custom domain, DNS CNAME `android.app` -> `promptugal.github.io`, allow `dev` in the `github-pages` environment). Untested live; `website/` is not on any branch yet.
+- For editor.android: `build.py` must write the site to `website/_site/` (index.html at root); the workflow adds CNAME and build.json; `GH_TOKEN` (read-only) and `GITHUB_REPOSITORY` are set for the build step; no pip packages.
