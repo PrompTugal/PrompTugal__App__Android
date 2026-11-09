@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 47 (9 Nov 2026): architect 5ad152e, app 19082ec, dev.llm 49378ab and design 83104e0 PASS. Still to read: the design-pass article when it moves into assets, and app passing llm into FeatureContext, and chat and lab switching to context.llm. Waiting for the next wake.
+> Round 48 (9 Nov 2026): dev.mandate c12adbc, play d3b6eed, dev.site 124cd4e, dev.abpdemo 29f6013, dev.chat 52c456d (checklist H met: no tools, plain text) and dev.lab 04c9187 (checklist I: one strict parser, checkToolCall on every proposal) PASS. Icon removals still to land for mandate, releases and lab. Still to read: the design-pass article, and app passing llm into the context. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
