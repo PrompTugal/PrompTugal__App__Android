@@ -11,6 +11,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
-import ai.riskmandate.app.features.featureById
 import ai.riskmandate.app.features.stand.StandHost
 
 /** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
@@ -29,6 +29,8 @@ object Routes {
     const val LICENCES = "licences"
     const val DIAGNOSTICS = "diagnostics"
 }
+
+private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS)
 
 class MainActivity : ComponentActivity() {
     private var config by mutableStateOf(ManagedConfig.DEFAULT)
@@ -49,41 +51,36 @@ class MainActivity : ComponentActivity() {
                     // Saved, so turning a tablet round does not drop the user back on the home screen.
                     var screen by rememberSaveable { mutableStateOf(Routes.HOME) }
                     val goHome = { screen = Routes.HOME }
-                    StandHost(activity = this@MainActivity, atHome = screen == Routes.HOME, goHome = goHome) {
-                    when (screen) {
-                        Routes.LICENCES -> {
-                            BackHandler { screen = Routes.HOME }
-                            LicencesScreen(
+                    // A route that no longer exists or is switched off (restored after an app update or
+                    // process death) shows Home, and the saved route is reset after composition.
+                    val feature = FEATURES.firstOrNull { it.id == screen && it.enabled }
+                    val route = if (screen in BUILT_IN || feature != null) screen else Routes.HOME
+                    LaunchedEffect(route, screen) { if (route != screen) screen = route }
+                    StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome) {
+                        if (route != Routes.HOME) BackHandler(onBack = goHome)
+                        when {
+                            route == Routes.LICENCES -> LicencesScreen(
                                 text = remember { readLicences(this@MainActivity) },
                                 apacheText = remember { readApacheLicence(this@MainActivity) },
-                                onBack = { screen = Routes.HOME },
+                                onBack = goHome,
                             )
-                        }
-                        Routes.DIAGNOSTICS -> {
-                            BackHandler { screen = Routes.HOME }
-                            // Read again each time the screen opens, so it shows the current state.
-                            val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
-                            DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = { screen = Routes.HOME })
-                        }
-                        Routes.HOME -> HomeScreen(
-                            version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-                            device = device,
-                            message = message,
-                            onOpen = { message = open() },
-                            onLicences = { screen = Routes.LICENCES },
-                            onDiagnostics = { screen = Routes.DIAGNOSTICS },
-                            features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title) { screen = f.id } },
-                        )
-                        else -> {
-                            val feature = featureById(screen)
-                            if (feature == null) {
-                                screen = Routes.HOME
-                            } else {
-                                BackHandler { screen = Routes.HOME }
+                            route == Routes.DIAGNOSTICS -> {
+                                val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
+                                DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = goHome)
+                            }
+                            feature != null -> FeatureFrame(title = feature.title, onBack = goHome) {
                                 feature.Content(FeatureContext(activity = this@MainActivity, onBack = goHome))
                             }
+                            else -> HomeScreen(
+                                version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                                device = device,
+                                message = message,
+                                onOpen = { message = open() },
+                                onLicences = { screen = Routes.LICENCES },
+                                onDiagnostics = { screen = Routes.DIAGNOSTICS },
+                                features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title) { screen = f.id } },
+                            )
                         }
-                    }
                     }
                 }
             }

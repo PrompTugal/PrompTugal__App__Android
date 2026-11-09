@@ -22,7 +22,7 @@ For Dinis and for the person lending the device. Written 8 November 2026 by play
 | | Firebase App Distribution | Play internal testing |
 |---|---|---|
 | Needs from the person | A Google account (any); installing the App Tester app; allowing installs from unknown sources | A Google account (or Workspace); the Play Store; opt-in once |
-| Needs from us | A Firebase project and the `FIREBASE_*` secrets. **No Play Console account** | A Play Console developer account, the first AAB uploaded by hand, the tester list (`README.md` steps 1 to 5) |
+| Needs from us | A Firebase project and the keyless sign-in variables (`GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT`, `FIREBASE_APP_ID`; `docs/ci.md`) plus the upload-key environment secrets. **No Play Console account** | A Play Console developer account, the first AAB uploaded by hand, the tester list (`README.md` steps 1 to 5) |
 | Signed with | The upload key | Google's app-signing key |
 | Update | Email, then Install in App Tester | Play Store updates it automatically, within minutes |
 | Limits | None found; 30-day invitation, 150-day build life | 100 testers; Google account required; app not searchable |
