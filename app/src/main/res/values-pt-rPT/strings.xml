@@ -16,6 +16,8 @@
     <string name="message_refused">Esse endereço não pertence a riskmandate.ai, por isso a aplicação não o abre.</string>
 
     <string name="licences_title">Licenças de código aberto</string>
+    <string name="licences_models_heading">Ficheiros de modelos (descarregados a pedido)</string>
+    <string name="licences_models_note">Estes ficheiros não fazem parte da aplicação. O tablet só descarrega um quando lhe for pedido. A licença é a que a página do modelo indica.</string>
     <string name="licences_apache_heading">Apache License, Version 2.0 (texto completo)</string>
 
     <string name="nav_section_today">Hoje</string>

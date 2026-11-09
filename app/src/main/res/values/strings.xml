@@ -18,6 +18,8 @@
     <string name="message_refused">That address is not on riskmandate.ai, so the app will not open it.</string>
 
     <string name="licences_title">Open source licences</string>
+    <string name="licences_models_heading">Model files (downloaded on request)</string>
+    <string name="licences_models_note">These files are not part of the app. The tablet downloads one only when asked to. The licence is the one the model\'s page states.</string>
     <string name="licences_apache_heading">Apache License, Version 2.0 (full text)</string>
 
     <string name="nav_section_today">Today</string>

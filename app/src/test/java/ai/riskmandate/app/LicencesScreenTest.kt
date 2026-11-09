@@ -50,4 +50,16 @@ class LicencesScreenTest {
         compose.onNodeWithTag(LicenceTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(LicenceTags.APACHE).assertExists()
     }
+
+    @Test fun modelFilesGroupListsTheDownloadableGemma4ModelsOnly() {
+        val lines = modelLicenceLines()
+        assertEquals(listOf("Gemma 4 E2B (Apache-2.0)", "Gemma 4 E4B (Apache-2.0)"), lines)
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        compose.setContent {
+            MaterialTheme { LicencesScreen(text = readLicences(context), apacheText = readApacheLicence(context)) }
+        }
+        compose.onNodeWithTag(LicenceTags.MODELS).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Gemma 4 E2B (Apache-2.0)", substring = true).assertExists()
+        compose.onNodeWithText("Gemma 3", substring = true).assertDoesNotExist()
+    }
 }
