@@ -6,6 +6,7 @@
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Review app 4e26cca (45752f8 Preview) PASS: matches the ruling (`preview_<id>`); A-app-14: host tables iconFor/sectionOf/NAV_ORDER belong on Feature/FEATURES (offer: P7 icon as @DrawableRes). README preview section aligned with the code.
 - Ruling: preview of disabled features through a separate host route `preview/<id>` from Diagnostics only. openFeature stays refused except from a feature itself opened in preview. README section written.
 - FeatureContext.llm: LlmService? = null, with FeatureContextLlmTest (null by default; a feature reaches a FakeLlmService). Gate green, secret scan clean.
 - FeatureContext.openFeature(id) (a26f037) with FeatureContextOpenFeatureTest.

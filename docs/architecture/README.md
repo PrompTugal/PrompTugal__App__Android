@@ -145,11 +145,10 @@ No new dependency without the architect's OK (in your status page, then in a rev
 - **No new dependency without the architect's OK.** Material 3 and Compose foundation cover the shell (`ListDetailPaneScaffold` from material3-adaptive is a new dependency: ask first). A bundled font is allowed only as a `res/font` file with its licence recorded in `docs/security/licences.md` and the in-app licences, and an OFL or Apache licence. No downloadable fonts (a network call).
 - **When features switch:** once design's components and app's shell are on dev together, the conductor tells the feature devs. Until then features keep using `MaterialTheme` and the current `ui/` components, which keep working under the new theme.
 
-## Preview of disabled features (staff only; conductor's request, 9 Nov)
-A feature with `enabled = false` is never on Home, in the sidebar, or reachable through `openFeature`. To let Dinis try one on a release build before it is enabled, the host has **one separate path**:
-- **A distinct route form:** `preview/<id>`, produced **only** by the Preview group in Diagnostics. `resolveRoute` accepts `preview/<id>` when `<id>` is a known feature (enabled or not) and stand mode is off; otherwise Home. Plain `<id>` for a disabled feature still resolves to Home, so a restored or guessed route cannot open it.
-- **Saved like any route** (the same `rememberSaveable` string), so rotation keeps the preview open. Stand mode turning on sends a preview route Home, as it does for Diagnostics.
-- **`openFeature` is unchanged:** `resolveOpenFeature` refuses disabled ids from enabled features. One exception, so the flows can be tried end to end: a feature **itself opened in preview** may open another disabled feature, which also opens in preview form (chat in preview, then "set up a model", then `preview/models`). Enabled features never reach disabled ones.
-- **Marked:** the frame shows a "Preview" label next to the title (string in `strings.xml`), so nobody mistakes it for a finished feature in a screenshot.
-- **Same contract:** the feature gets the same `FeatureContext` (`llm` included). Nothing in `features/` knows it is in preview, and no feature may read the route.
-- **Tests (app):** `resolveRoute` for `preview/<id>` (stand on and off, unknown id); plain disabled id goes Home; `resolveOpenFeature` from preview and from normal routes.
+## Preview of disabled features (staff only; conductor's request, 9 Nov; as built by app 45752f8)
+A feature with `enabled = false` is never on Home, in the sidebar, or reachable through `openFeature` from an enabled feature. To let Dinis try one on a release build before it is enabled, the host has **one separate path**:
+- **A distinct route:** `preview_<id>` (the underscore cannot collide with a feature id), produced **only** by Diagnostics > Preview. `resolveRoute` keeps it only while `<id>` is still switched off and stand mode is off; otherwise Home. A plain `<id>` for a disabled feature still goes Home.
+- **Saved like any route** (the same `rememberSaveable` string), so rotation keeps it. Stand mode turning on sends it Home, as with Diagnostics.
+- **`openFeature`:** refused in stand mode, and refused for disabled ids from enabled screens. While a Preview screen is showing, a disabled target opens as `preview_<target>` (chat in preview, then "set up a model", then models).
+- **Marked:** the frame's kicker reads "Preview".
+- **Same contract:** the same `FeatureContext` (`llm` included). Nothing in `features/` knows it is in preview, and no feature reads the route.
