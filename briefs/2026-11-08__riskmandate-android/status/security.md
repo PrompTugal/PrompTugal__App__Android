@@ -1,11 +1,12 @@
 # security.android status
 
-> Re-review 9 Nov 2026 (about 00:35 UTC): release c4832f9 PASS (R-wif-1 fixed). Google Cloud hardening R-wif-2 to R-wif-4 still for Dinis. Waiting for the next wake.
+> Round 8 (9 Nov 2026, about 00:45 UTC): release 8d3256d PASS (make-upload-key.sh text and docker note only). play, app and devices have nothing beyond dev. Waiting for the next wake (a play docs head is expected).
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Review `2026-11-09-release-8d3256d.md`: **PASS**; the script's behaviour is unchanged, the printed steps now put secrets in the `release` environment (the A-2 fix). R-key-1 pin the docker image by digest, R-key-2 `mkdir -m 700` first (both info).
 - Re-review `2026-11-09-release-c4832f9.md`: **PASS**. The Firebase step is two commands (parsed and `bash -n` checked). 2392f9f HOLD is superseded.
 - Urgent review `2026-11-09-release-2392f9f.md`: **HOLD**. R-wif-1: the `npm ci ... --prefix` line and the `firebase appdistribution:distribute` line were joined and the continuation lost, so the step fails (exit 127) and skips Play and the GitHub release. Fix described for release. Design checked: pin verified, `id-token: write` on the release job only, key removed. For Dinis: WIF condition should use repository and owner ids and the ref (R-wif-2, R-wif-3), service account least privilege (R-wif-4).
 - Round 6 review: `2026-11-08-release-2d77de1.md` (PASS): the smoke job still holds no secret; new Gradle build there reads but does not write the cache (keep `cache-read-only` at its default); R-rel-7 info.
