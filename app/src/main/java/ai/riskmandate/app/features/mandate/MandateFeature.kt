@@ -8,6 +8,8 @@ import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +30,9 @@ object MandateFeature : Feature {
     override val id = "mandate"
     override val title = R.string.feature_mandate_title
     override val enabled = true
+    override val icon = Icons.Filled.CheckCircle
+    override val kicker = R.string.mandate_card_kicker
+    override val summary = R.string.mandate_card_summary
 
     @Composable
     override fun Content(context: FeatureContext) {
