@@ -8,6 +8,8 @@ import android.webkit.ValueCallback
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -87,6 +89,19 @@ class SiteScreenTest {
         // A frame inside a page never takes the visitor out.
         assertTrue(c.shouldOverrideUrlLoading(wv, request("https://evil.example/frame", main = false)))
         assertEquals(3, external.size)
+    }
+
+    @Test fun theSelectedTabAndTheOfflineModeSurviveRotation() {
+        val restoration = androidx.compose.ui.test.junit4.StateRestorationTester(compose)
+        val switch = OfflineSwitch(false)
+        restoration.setContent {
+            RiskMandateTheme { SiteScreen(switch, onBack = {}, isSystemOffline = { false }, openExternal = { _, _ -> null }) }
+        }
+        compose.onNodeWithTag(SiteTags.tab("pricing")).performClick()
+        compose.waitForIdle()
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag(SiteTags.tab("pricing")).assertIsSelected()
+        compose.onNodeWithTag(SiteTags.tab("home")).assertIsNotSelected()
     }
 
     @Test fun onlyARealTapOpensTheSystemBrowser() {
