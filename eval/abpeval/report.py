@@ -62,7 +62,7 @@ def markdown(rows, title, budget_total=None, notes=()):
         out.append(f"| {r['model']} | {r['scenario']} | " + " | ".join(f"{r['by_temp'][t][0]}/{r['by_temp'][t][1]}" if t in r["by_temp"] else "-" for t in temps) + " |")
     out += ["", f"Cost of the runs in this report: ${sum(r['cost_usd'] for r in rows):.4f}." + (f" Running total across all runs: ${budget_total:.4f} of $5.00." if budget_total is not None else "")]
     out += ["", "Notes: the ABP columns use the scenario's own demonstration policy; where a check is a deterministic match (scenarios 1, 3, 4) a catch rate near 100% is by construction, "
-            "and the number that carries information is the failure rate without ABP and the over-blocking. Scenario 5 is a regex heuristic on the answer text and needs curation by hand."]
+            "and the number that carries information is the failure rate without ABP and the over-blocking. The egress checks (scenario 4) are a demonstration rule set tested against the golden vectors; no figure here means the ABP catches all egress. Scenario 5 is a regex heuristic on the answer text and needs curation by hand."]
     return "\n".join(out) + "\n"
 
 

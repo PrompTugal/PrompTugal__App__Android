@@ -11,12 +11,27 @@ from . import claims as C
 from .oracle import failure_events, exposed
 
 
+_BAD = re.compile(r"[\s\x00-\x1f\x7f,;<>\"\\%]")
+_HOST = re.compile(r"^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$")
+
+
 def _domain(addr):
-    """Host of a URL (by urllib, so userinfo and path tricks do not count), or the domain of a bare email address."""
+    """Domain of ONE recipient, else "" (no allow-list contains it, so it is refused).
+
+    Accepted only if the whole trimmed text is exactly one bare address or one URL: no whitespace or control
+    characters, none of  , ; < > " backslash %  and at most one @. A URL is read by its host (urllib), a bare
+    address by the part after its single @.
+    """
     a = str(addr).strip().lower()
+    if not a or _BAD.search(a) or a.count("@") > 1:
+        return ""
     if "://" in a or a.startswith("//"):
-        return urlparse(a if "://" in a else "http:" + a).hostname or ""
-    return a.rsplit("@", 1)[1] if "@" in a else a
+        host = urlparse(a if "://" in a else "http:" + a).hostname or ""
+    else:
+        if "@" in a and not a.split("@")[0]:
+            return ""
+        host = a.rsplit("@", 1)[1] if "@" in a else a
+    return host if _HOST.match(host) else ""
 
 
 def check_call(scenario, call):
