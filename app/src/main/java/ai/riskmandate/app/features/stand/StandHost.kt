@@ -108,8 +108,16 @@ internal fun StandHostContent(
     val currentAtHome by rememberUpdatedState(atHome)
     val currentGoHome by rememberUpdatedState(goHome)
     val currentHeld by rememberUpdatedState(idleHeld)
+    // What the idle countdown last saw. The timer starts counting when it is created, so the first run of
+    // an effect must not restart it (effects run a little later, and would swallow time already idle).
+    val seen = remember { object { var enabled = enabled; var held = idleHeld } }
     // Released: count from now, so the reset does not fire at once for time spent held.
-    LaunchedEffect(idleHeld) { if (!idleHeld) timer.touch() }
+    LaunchedEffect(idleHeld) {
+        if (seen.held != idleHeld) {
+            seen.held = idleHeld
+            if (!idleHeld) timer.touch()
+        }
+    }
 
     // Keep the screen on with the view flag: no WAKE_LOCK permission needed.
     val view = LocalView.current
@@ -119,13 +127,17 @@ internal fun StandHostContent(
     }
     LaunchedEffect(enabled) {
         if (enabled) {
-            timer.touch()
+            if (!seen.enabled) timer.touch()
+            seen.enabled = true
             if (!asked && !lock.isLocked()) {
                 asked = true
                 lock.lock()
             }
             wasOn = true
-        } else if (wasOn) {
+        } else {
+            seen.enabled = false
+        }
+        if (!enabled && wasOn) {
             lock.unlock()
             asked = false
             wasOn = false
