@@ -6,6 +6,7 @@
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Ruling: preview of disabled features through a separate host route `preview/<id>` from Diagnostics only. openFeature stays refused except from a feature itself opened in preview. README section written.
 - FeatureContext.llm: LlmService? = null, with FeatureContextLlmTest (null by default; a feature reaches a FakeLlmService). Gate green, secret scan clean.
 - FeatureContext.openFeature(id) (a26f037) with FeatureContextOpenFeatureTest.
 - Ruling A-lab-7: one strict JSON parser, llm/StrictJson (dev.llm takes lab's general parse/render; lab keeps hash16/parseAt and uses checkToolCall). README and the lab review updated.
