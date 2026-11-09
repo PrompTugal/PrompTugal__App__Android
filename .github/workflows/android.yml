@@ -27,7 +27,8 @@ env:
 # Third-party actions are pinned by full commit SHA, the tag is in the comment.
 # actions/checkout v4.2.2, actions/setup-java v4.7.1, gradle/actions v4.4.4,
 # actions/upload-artifact v4.6.2, actions/download-artifact v4.3.0, actions/cache v4.2.3,
-# reactivecircus/android-emulator-runner v2.37.0, google-github-actions/auth v2.1.13.
+# reactivecircus/android-emulator-runner v2.37.0, google-github-actions/auth v2.1.13,
+# actions/attest-build-provenance v4.1.1.
 jobs:
   # Did this push change anything the app is built from? Decides whether `release` builds and distributes.
   changes:
@@ -251,8 +252,9 @@ jobs:
     # The GitHub Environment `release` holds the release secrets and can require a reviewer (docs/ci.md).
     environment: release
     permissions:
-      contents: write   # to create the GitHub release
-      id-token: write   # keyless Google auth (Workload Identity Federation) for Firebase
+      contents: write       # to create the GitHub release
+      id-token: write       # keyless Google auth (Workload Identity Federation) for Firebase, and the build attestation
+      attestations: write   # the build provenance of the signed APK and AAB
     env:
       HAS_UPLOAD_KEY: ${{ secrets.UPLOAD_KEYSTORE_BASE64 != '' && secrets.UPLOAD_KEYSTORE_PASSWORD != '' && secrets.UPLOAD_KEY_ALIAS != '' && secrets.UPLOAD_KEY_PASSWORD != '' }}
       # Firebase via Workload Identity Federation: the provider and service account are variables (not secrets).
@@ -320,6 +322,17 @@ jobs:
           # SHA256SUMS travels with the build: play.yml checks the AAB it uploads from main against it.
           (cd out && sha256sum "riskmandate-$VERSION_NAME$suffix.apk" "riskmandate-$VERSION_NAME$suffix.aab" > SHA256SUMS)
           ls -la out
+
+      # Build provenance (SLSA, Sigstore, stored by GitHub): a signed statement that THIS workflow built these exact
+      # files from this commit. play.yml verifies it with `gh attestation verify` before uploading the AAB to Play.
+      # SHA256SUMS, in the same release as the AAB, only catches corruption; this catches tampering.
+      - name: Attest the build provenance of the signed APK and AAB
+        if: env.HAS_UPLOAD_KEY == 'true'
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: |
+            out/*.apk
+            out/*.aab
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

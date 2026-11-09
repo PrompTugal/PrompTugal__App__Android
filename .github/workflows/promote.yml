@@ -43,6 +43,7 @@ jobs:
       contents: write         # the pinned branch for the fallback pull request
       pull-requests: write    # the fallback pull request
       checks: read            # the result of `security-gate` on the commit
+      statuses: write         # the `security-approval` status on a verified promotion pull request (below)
     env:
       HAS_APP: ${{ secrets.PROMOTE_APP_ID != '' && secrets.PROMOTE_APP_PRIVATE_KEY != '' }}
     steps:
@@ -71,7 +72,7 @@ jobs:
             echo "bootstrapped=true" >> "$GITHUB_OUTPUT"
             sha=$(bash scripts/promote-select.sh origin/main origin/dev 2> "$RUNNER_TEMP/why.txt")
             if [ -z "$sha" ]; then summary "- nothing promotable: $(cat "$RUNNER_TEMP/why.txt")"; exit 0; fi
-            gate=$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == "security-gate")] | sort_by(.started_at) | last | .conclusion // "none"' 2>/dev/null || echo error)
+            gate=$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == "security-gate" and .app.slug == "github-actions")] | sort_by(.started_at) | last | .conclusion // "none"' 2>/dev/null || echo error)
             if [ "$gate" != success ]; then summary "- ${sha:0:7} has a security PASS but its security-gate is: $gate. Not promoted now; a later run re-evaluates."; exit 0; fi
             summary "- promoting ${sha:0:12}: valid signed PASS (verifier from main) and green security-gate"
           else
@@ -132,6 +133,15 @@ jobs:
           } > "$RUNNER_TEMP/pr-body.md"
           if gh pr create --base main --head "$branch" --title "Promote ${SHA:0:12} to main" --body-file "$RUNNER_TEMP/pr-body.md" >/dev/null 2> "$RUNNER_TEMP/pr-err.txt"; then
             echo "- pull request opened from $branch" | tee -a "$GITHUB_STEP_SUMMARY"
+            # A pull request opened with GITHUB_TOKEN starts no workflows, so the android.yml jobs never run
+            # on it. security-gate needs nothing: the pinned commit already has its check run from the dev run.
+            # security-approval is a pull_request job, so for a VERIFIED promotion this workflow, which has just
+            # run the verifier from main, records the result as a commit status with the same name.
+            if [ "$BOOT" = true ]; then
+              gh api -X POST "repos/$GITHUB_REPOSITORY/statuses/$SHA" -f state=success -f context=security-approval \
+                -f description="signed PASS verified by promote.yml with the verifier from main" >/dev/null \
+                && echo "- status security-approval: success on ${SHA:0:12} (set by promote.yml after its own verification)" | tee -a "$GITHUB_STEP_SUMMARY"
+            fi
           else
             echo "- could NOT open the pull request: $(tr '\n' ' ' < "$RUNNER_TEMP/pr-err.txt") (Dinis: Settings, Actions, General, allow GitHub Actions to create pull requests; or merge the branch $branch by hand)" | tee -a "$GITHUB_STEP_SUMMARY"
             exit 1

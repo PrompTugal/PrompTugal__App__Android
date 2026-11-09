@@ -87,11 +87,19 @@ jobs:
           case "$(ls *.aab)" in *-unsigned.aab) echo "the release carries an unsigned AAB: refusing" >&2; exit 1;; esac
           sha256sum --check --strict SHA256SUMS
           aab=$(ls "$PWD"/*.aab); apk=$(ls "$PWD"/*.apk)
+          # Provenance, not just a checksum: SHA256SUMS sits in the same release as the AAB and only catches
+          # corruption. The attestation proves this repository's android.yml built these exact files from the
+          # commit the release tag points at (a signed statement made at build time, outside the release).
+          built=$(git rev-parse "$TAG^{commit}")
+          for f in "$aab" "$apk"; do
+            gh attestation verify "$f" --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/android.yml" --source-digest "$built"
+          done
           aapt2=$(ls "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/aapt2 | sort -V | tail -1)
           app_id=$("$aapt2" dump badging "$apk" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
           [ -n "$app_id" ] || { echo "could not read the application ID" >&2; exit 1; }
           echo "aab=$aab" >> "$GITHUB_OUTPUT"; echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
-          echo "- $(basename "$aab") matches SHA256SUMS ($(sha256sum "$aab" | cut -c1-16)...), application ID $app_id" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- $(basename "$aab") matches SHA256SUMS ($(sha256sum "$aab" | cut -c1-16)...) and its build attestation (built by android.yml from ${built:0:12}), application ID $app_id" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Write the Play service account
         if: env.HAS_PLAY == 'true'
