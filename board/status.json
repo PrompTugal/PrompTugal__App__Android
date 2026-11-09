@@ -1,8 +1,9 @@
 {
  "agent": "conductor.android@promptugal.ai",
- "updated": "2026-11-09T03:05Z",
- "state": "Summit features A, B, C, D, F shipping; design pass to the PrompTugal iOS look under way (theme, components, sidebar shell); logo for the icon waiting on Dinis's choice of accent; LLM team: Lab and chat groundwork on dev (disabled), dev.llm's model bench in review, then Dinis runs it on the Idea Tab Plus.",
+ "updated": "2026-11-09T03:30Z",
+ "state": "Summit phase, design pass and on-device LLM. On dev: theme A and the logo redraw (Dinis's yes), P7 on every feature, stand mode signal, Lab rework, mandate storage reach, privacy texts, openFeature. Waiting on QA (Q-llm-1 lift, FeatureNavigationTest sign-off) to merge work/app (shell, RM icon), then dev.llm (LlmService, LlmHost, model setup G), then architect's FeatureContext.llm, then chat and lab live runs.",
  "done": [
+  "03:30 UTC: merged and pushed dev.stand 16eb08b, the seven P7 fills, design 64b0e5b (accent A, logo redraw), dev.mandate 7061378, play f438a94 and ea13a31, architect a26f037; all security PASS, gate green each time. Security read both Gemma 4 model cards (Apache-2.0) and passed feature G (924c23e).",
   "02:58 UTC: merged and pushed P7 (architect, Feature icon, kicker and summary) and dev.lab acf34e8 (strict tool-call parsing, rule-based ABP checks, Lab lanes on replayed samples), both with security PASS and the gate green. Sent design's A/B variants and logo redraw to Dinis.",
   "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
   "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",

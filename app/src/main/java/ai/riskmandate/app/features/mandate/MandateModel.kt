@@ -34,7 +34,7 @@ data class ReachItem(
 }
 
 /** Why the mandate allows an item. Mapped to a string resource in the UI, so the reasons are translated. */
-enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE, SITE_VIEW }
+enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE, SITE_VIEW, SHELL_UI, RELEASES_SEEN, CHAT_HISTORY, MODELS, MODELS_ADB }
 
 data class MandateEntry(val kind: ReachKind, val id: String, val reason: Reason) {
     val key: String get() = "${kind.name.lowercase()}:$id"
@@ -60,8 +60,9 @@ data class Mandate(
         /**
          * The current mandate for [packageName]. The app loads riskmandate.ai pages in its in-app view and opens them in the user's browser (INTERNET),
          * says plainly when it is offline (ACCESS_NETWORK_STATE), has one launcher screen, holds the one
-         * signature-level permission AndroidX adds to guard the app's own dynamic receivers, and may keep stand
-         * mode's two settings and the in-app view's own web storage and cache. Nothing else.
+         * signature-level permission AndroidX adds to guard the app's own dynamic receivers, and may keep the settings,
+         * chat history and model files of its features, and the in-app view's own web storage and cache, all on this
+         * device. Nothing else.
          */
         fun current(packageName: String, managedKeys: List<String>): Mandate = Mandate(
             entries = listOf(
@@ -76,6 +77,11 @@ data class Mandate(
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/stand_mode.xml", Reason.STAND_SETTINGS),
                 MandateEntry(ReachKind.STORAGE, "app_webview", Reason.SITE_STORAGE),
                 MandateEntry(ReachKind.STORAGE, "cache", Reason.SITE_CACHE),
+                MandateEntry(ReachKind.STORAGE, "shared_prefs/shell.xml", Reason.SHELL_UI),
+                MandateEntry(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", Reason.RELEASES_SEEN),
+                MandateEntry(ReachKind.STORAGE, "no_backup/feature_chat", Reason.CHAT_HISTORY),
+                MandateEntry(ReachKind.STORAGE, "no_backup/models", Reason.MODELS),
+                MandateEntry(ReachKind.STORAGE, "external/models", Reason.MODELS_ADB),
             ),
             hosts = HOSTS,
             port = 443,

@@ -69,9 +69,12 @@ object ReachCollector {
     }
 
     /**
-     * What the app keeps on the device: each file in files/, databases/ and shared_prefs/ (id is the path under
-     * the data directory), and app_webview/ and cache/ as directories (the in-app view's web storage and cache),
-     * each only when it holds a file. Never throws.
+     * What the app keeps on the device. Ids are paths: relative to the data directory for files/, databases/,
+     * shared_prefs/, no_backup/ (noBackupFilesDir), app_webview/ and cache/; "external/..." relative to the app's
+     * folder on shared storage (getExternalFilesDir). Files in files/, databases/ and shared_prefs/ are listed one
+     * by one; each top-level folder in no_backup/ and external/ is listed as a directory with its file count (a
+     * loose file there is listed by path); app_webview/ and cache/ are directories, each only when it holds a file.
+     * Never throws.
      */
     fun storage(context: Context): List<ReachItem> = try {
         val data = File(context.applicationInfo.dataDir)
@@ -79,13 +82,26 @@ object ReachCollector {
             .flatMap { dir -> dir.walkTopDown().filter { it.isFile }.take(MAX_FILES).toList() }
             .map { ReachItem(ReachKind.STORAGE, it.relativeTo(data).invariantSeparatorsPath, count = 1) }
         val dirs = listOf(File(data, "app_webview"), context.cacheDir).mapNotNull { dir ->
-            val n = dir.walkTopDown().filter { it.isFile }.take(MAX_FILES).count()
-            if (n > 0) ReachItem(ReachKind.STORAGE, dir.relativeTo(data).invariantSeparatorsPath, count = n) else null
+            dirItem(dir, dir.relativeTo(data).invariantSeparatorsPath)
         }
-        perFile + dirs
+        val noBackup = children(context.noBackupFilesDir, data, "")
+        val external = context.getExternalFilesDir(null)?.let { children(it, it, "external/") }.orEmpty()
+        perFile + dirs + noBackup + external
     } catch (e: RuntimeException) {
         emptyList()
     }
+
+    private fun dirItem(dir: File, id: String): ReachItem? {
+        val n = dir.walkTopDown().filter { it.isFile }.take(MAX_FILES).count()
+        return if (n > 0) ReachItem(ReachKind.STORAGE, id, count = n) else null
+    }
+
+    /** Top-level children of [root]: a file by path, a folder as a directory item. [base] is what ids are relative to. */
+    private fun children(root: File, base: File, prefix: String): List<ReachItem> =
+        root.listFiles().orEmpty().sortedBy { it.name }.mapNotNull { child ->
+            val id = prefix + child.relativeTo(base).invariantSeparatorsPath
+            if (child.isFile) ReachItem(ReachKind.STORAGE, id, count = 1) else dirItem(child, id)
+        }
 
     private const val MAX_FILES = 500
 }
