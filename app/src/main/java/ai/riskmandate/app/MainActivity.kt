@@ -20,6 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.IdleHolds
@@ -36,6 +38,14 @@ object Routes {
     /** The on-device LLM bench (dev.llm), reached from Diagnostics only on a debuggable build or once a model file is pushed. */
     const val MODEL_BENCH = "modelbench"
 }
+
+/**
+ * The route to open when a feature asks for [id] through `FeatureContext.openFeature`, or null when the host
+ * refuses: an id that is unknown or switched off, or any request while stand mode is on (stand mode keeps a
+ * visitor on the screens staff chose).
+ */
+fun resolveOpenFeature(id: String, standOn: Boolean, enabledIds: Set<String>): String? =
+    if (!standOn && id in enabledIds) id else null
 
 /** How many of an app's [requested] permissions are Android's own: the app's own custom ones (from `<packageName>.`) do not count. */
 fun countRequestedPermissions(requested: Array<String>?, packageName: String): Int =
@@ -125,6 +135,7 @@ class MainActivity : ComponentActivity() {
                     val idle = remember { IdleHolds() }
                     // Destinations, grouped as in docs/design/android-theme.md. Features are grouped by id (a
                     // `section` on Feature is the architect's to add) and use their own icon when they give one.
+                    val enabledFeatureIds = FEATURES.filter { it.enabled }.map { it.id }.toSet()
                     val featureItems = FEATURES.filter { it.enabled }.map { f ->
                         NavItem(f.id, f.title, iconFor(f.id), f.homeBadge(), vector = f.icon)
                     }
@@ -194,7 +205,15 @@ class MainActivity : ComponentActivity() {
                                     FeatureFrame(title = R.string.diagnostics_title, kicker = R.string.nav_section_device) {
                                         DiagnosticsScreen(
                                             text = text, onCopy = rememberCopyAction(text),
-                                            onModelBench = if (benchAvailable) ({ screen = Routes.MODEL_BENCH }) else null,
+                                            onModelBench = if (benchAvailable) {
+                                                {
+                                                    // The bench loads its own copy of a model: free the app's one first.
+                                                    lifecycleScope.launch { LlmProcess.peek()?.unload() }
+                                                    screen = Routes.MODEL_BENCH
+                                                }
+                                            } else {
+                                                null
+                                            },
                                         )
                                     }
                                 }
@@ -202,7 +221,16 @@ class MainActivity : ComponentActivity() {
                                     ModelBenchScreen()
                                 }
                                 feature != null -> FeatureFrame(title = feature.title, kicker = feature.kicker ?: sectionOf(feature.id)) {
-                                    feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device, holdIdle = idle::hold) })
+                                    feature.Content(
+                                        remember(config, device, standOn) {
+                                            FeatureContext(
+                                                onBack = goHome, config = config, device = device, holdIdle = idle::hold,
+                                                // A feature asks for another by id (chat's "set up a model" opens "models"); the
+                                                // host decides: unknown or disabled ids and stand mode are refused.
+                                                openFeature = { id -> resolveOpenFeature(id, standOn, enabledFeatureIds)?.let { screen = it } },
+                                            )
+                                        },
+                                    )
                                 }
                                 else -> HomeScreen(
                                     version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
@@ -235,6 +263,13 @@ class MainActivity : ComponentActivity() {
         }
         // The browser opens anyway and shows its own error page; this tells the user why it may fail.
         return Browser.message(result) ?: if (Browser.isOffline(this)) R.string.message_offline else null
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // Only tells an existing host (it unloads the model when the app is in the background or memory is
+        // critical); never creates one.
+        LlmProcess.peek()?.onTrimMemory(level)
     }
 
     override fun onResume() {

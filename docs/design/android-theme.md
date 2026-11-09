@@ -27,6 +27,23 @@ Compose: `Theme.kt` holds both schemes (`lightColorScheme`, `darkColorScheme`, M
 
 **Contrast (measured with the WCAG formula):** ink on paper 16.5:1 light, 14.7:1 dark; muted on paper 6.2:1, 7.9:1; muted on paper2 5.5:1, 7.2:1; red on card 6.8:1 (both); green on card 6.6:1, 8.3:1; amber on card 5.8:1, 9.5:1; blue on card 7.6:1, 7.7:1; white on red button 6.9:1, paper on dark-mode red 7.8:1. Status chips are the tone on its own 13% tint over the card colour: at least 4.9:1 light, 5.5:1 dark (AA text). `rule` is a hairline and is decoration only (1.4:1): borders that must be seen as controls (text fields, outlined buttons) use `outline` = `muted`.
 
+## Which colour for what (variant A, shipped)
+
+| Meaning | Token | Never |
+|---|---|---|
+| Brand: kicker, primary button, selected row (tint at 12%), selected icon and label, links, count and word pills, progress | `Pt.colors.accent` (or `MaterialTheme.colorScheme.primary`) | `Pt.colors.red` |
+| Blocked, failure, error, "bad" | `RiskMandateStatus.palette.blocked`, `MaterialTheme.colorScheme.error`, `Tone.Bad` | `accent` |
+| Good, allowed, native | `RiskMandateStatus.palette.allowed`, `Tone.Good` | `accent` (green accent and "good" green are close: always add a word or glyph) |
+| Held, partial, notices | `RiskMandateStatus.palette.held`, `NoticeBanner`, `Tone.Warn` | |
+| Web, redacted | `RiskMandateStatus.palette.redacted`, `KindBadge(Web)` | |
+| Text, second line, hairline | `ink`, `muted`, `rule` | a hex value |
+
+`Pt.colors.red` is the iOS red and in variant A it means only "blocked" and "error": outside `Theme.kt` it should appear only through the status palette and the Material `error` role. If it is used for the brand colour the screen turns red when the app is green (a bug seen in the first shell render, fixed by switching to `accent`). `ColourRulesTest` (`app/src/test/.../ui/`) fails the gate if `.red` or `Color.Red` appears outside `Theme.kt` and `ui/StatTile.kt` (`Tone.Bad`), or if any screen writes a `Color(0x...)` literal. Variant B (fallback) makes `accent` the same colour as `red`, so code that uses `accent` for the brand is correct in both.
+
+## Icons (ruling, 9 Nov 2026)
+
+One style: 24 dp **line** icons, 2 dp stroke, drawn by the host (`app.android`, vector drawables, Apache 2.0, noted on the Licences screen). **Features do not set `Feature.icon`**: leave it `null`, and the host's id-based line icon applies. Filled Material icons (`material-icons-core`) next to the host's line icons mix two styles and are not allowed. A feature that needs an icon of its own asks app.android through its status page ("For app"), naming its id and what the icon shows; design supplies the drawing if asked. Until the host has one for an id, the shell's default icon is used. (`Feature.icon` stays in the contract for the architect to remove or keep; nothing should use it.)
+
 ## Type
 
 Serif for headlines, sans for interface text, monospace for data, as the iOS `Typo`. `FontFamily.Serif` is the device's own serif (Noto Serif on Android), so no font is bundled and there is no licence to record; if the stand tablets' serif looks wrong a bundled open-licence serif can replace it later (record the licence, security checks) behind the same `Typography`. All sizes are `sp` and follow the user's font scale.

@@ -15,12 +15,13 @@ Corrections to `listing.md`: the 3840 px maximum and the 2:1 limit apply to ever
 
 ## Icon
 
-- **Today:** a placeholder (`ic_launcher_foreground.xml`, a white "R" block on `#1B2A41`). Not for the store.
-- **Candidate:** the "RM" mark from riskmandate.ai, only if Dinis confirms it may be the app icon. Whether it matches the iOS RiskMandate icon is Dinis's call (consistency across stores is usual, not required).
-- **Deliverables from the designer:** (1) 512 x 512 PNG with alpha for the Console, full bleed square (Play applies its own rounded mask); (2) an Android adaptive icon source: foreground and background layers on a 108 x 108 dp canvas with the mark inside the central 66 dp safe zone; (3) a monochrome layer for themed icons (Android 13+). app.android integrates (2) and (3) into `app/src/main/res`.
+- **Today (updated 9 November 2026):** design.android's RM redraw is the launcher icon (`app/src/main/res/mipmap/ic_launcher_rm.xml`: navy background, white RM with two green corner brackets, a monochrome layer for themed icons), approved by Dinis on 9 November via the conductor. The Play icon is `docs/design/brand/play-icon-512.png`: 512 x 512, RGBA, 7 KB (limit 1024 KB), full bleed, no text, no badge. It meets the specs on the page above as far as I can check by eye and by file size; I did not run Google's icon checker, and the Console's own validator is the final test.
+- **What it is not:** the original artwork. It is a vector redraw from a 634 x 418 JPEG: letters drawn by eye, the R's small top-left notch omitted, flat colour instead of the bracket gradient, wordmark typeset (`docs/design/brand/README-redraw.md`). If the original SVG arrives, replace the four drawables and re-render the PNG (`UiScreenshotTest.playIcon`). Whether it matches the iOS RiskMandate icon is Dinis's call.
+- The old placeholder (`ic_launcher_foreground.xml`, a white "R" block) is no longer the icon.
+- **Deliverables, status:** (1) the 512 x 512 PNG: done (`play-icon-512.png`); (2) the adaptive icon on a 108 dp canvas inside the 66 dp safe zone: done (design's notes say the brackets' far corners sit 32.2 dp from the centre); (3) the monochrome layer: done. What is still open for the **feature graphic only** (below) and for the original vector.
 - Not Apache 2.0: keep the final icon files in their own folder with a note that the mark is a trademark (`open-source.md`).
 
-### Designer brief (placeholder, no brand changes)
+### Designer brief (placeholder, no brand changes; the icon part is done, keep it for the feature graphic)
 
 > Product: RiskMandate for Android, an app that opens riskmandate.ai and shows device-management status. Audience: staff who run organisations' devices and AI agents.
 > Use the existing RiskMandate mark and colours from riskmandate.ai. Do not invent a new logo, tagline or colour. If the mark does not work at 48 px, say so and propose a simplification for Dinis to approve; do not apply it.
@@ -58,4 +59,4 @@ Minimum set for the first public listing: 2 phone screenshots (1 and 2, plus 6 f
 
 ## Order of work
 
-1. Dinis: confirm the mark and the feature set. 2. app.android: render harness. 3. Designer: icon and feature graphic. 4. Real-device captures after M1 (a tester's phone) and M2 (a managed tablet). 5. Dinis uploads in the Console.
+1. Dinis: confirm the mark and the feature set. 2. app.android: render harness. 3. Designer: feature graphic (the icon is done, see above). 4. Real-device captures after M1 (a tester's phone) and M2 (a managed tablet). 5. Dinis uploads in the Console.
