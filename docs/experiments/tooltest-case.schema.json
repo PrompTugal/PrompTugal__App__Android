@@ -40,6 +40,71 @@
    "items": {
     "$ref": "#/$defs/case"
    }
+  },
+  "judges": {
+   "type": "array",
+   "maxItems": 3,
+   "uniqueItems": true,
+   "description": "Optional. The judge layers this file's cases are run through, at most one per layer. The code layer is always authoritative; model layers add an opinion and every disagreement is recorded. Each case may also carry its own `judges {ask, expect}`.",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "layer"
+    ],
+    "properties": {
+     "layer": {
+      "enum": [
+       "code",
+       "local",
+       "cloud"
+      ]
+     },
+     "model": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "Optional model id, for the local and cloud layers."
+     },
+     "prompt_ref": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9/._-]{0,99}$",
+      "description": "The judge prompt: an id such as tool-output, or a path such as prompts/judges/tool-output.json. Required for local and cloud, absent for code."
+     }
+    },
+    "allOf": [
+     {
+      "if": {
+       "properties": {
+        "layer": {
+         "const": "code"
+        }
+       }
+      },
+      "then": {
+       "not": {
+        "anyOf": [
+         {
+          "required": [
+           "model"
+          ]
+         },
+         {
+          "required": [
+           "prompt_ref"
+          ]
+         }
+        ]
+       }
+      },
+      "else": {
+       "required": [
+        "prompt_ref"
+       ]
+      }
+     }
+    ]
+   }
   }
  },
  "$defs": {

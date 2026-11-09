@@ -37,7 +37,30 @@ object ToolTestFormats {
         if (cases.isEmpty() || cases.size > MAX_CASES_PER_FILE) fail("$kind: between 1 and $MAX_CASES_PER_FILE cases")
         val parsed = cases.map { case(it.obj("case"), kind) }
         if (parsed.map { it.id }.toSet().size != parsed.size) fail("$kind: duplicate case id")
-        return ToolKind(kind, title) to parsed
+        return ToolKind(kind, title, if ("judges" in m) judgeRefs(m["judges"].list("$kind: judges"), kind) else emptyList()) to parsed
+    }
+
+    private val PROMPT_REF = Regex("[a-z0-9][a-z0-9/._-]{0,99}")
+
+    /** The file-level `judges[]`: at most one entry per layer; code takes no model or prompt, the model layers need a prompt_ref. */
+    private fun judgeRefs(list: List<*>, kind: String): List<JudgeRef> {
+        if (list.size > 3) fail("$kind: judges lists at most three layers")
+        val refs = list.map { e ->
+            val o = e.obj("$kind: a judges entry")
+            val layer = o["layer"] as? String
+            if (layer !in setOf("code", "local", "cloud")) fail("$kind: judges layer is code, local or cloud")
+            val model = o["model"]?.let { it as? String ?: fail("$kind: judges model is text") }
+            if (model != null && (model.isBlank() || model.length > 80)) fail("$kind: judges model is 1 to 80 characters")
+            val ref = o["prompt_ref"]?.let { it as? String ?: fail("$kind: judges prompt_ref is text") }
+            if (layer == "code") {
+                if (model != null || ref != null) fail("$kind: the code layer has no model and no prompt_ref")
+            } else {
+                if (ref == null || !PROMPT_REF.matches(ref) || ".." in ref || "//" in ref) fail("$kind: the $layer layer needs a prompt_ref (an id or a path of lowercase letters, digits and - _ . /)")
+            }
+            JudgeRef(layer!!, model, ref)
+        }
+        if (refs.map { it.layer }.toSet().size != refs.size) fail("$kind: judges lists a layer twice")
+        return refs
     }
 
     private fun case(c: Map<String, Any?>, kind: String): ToolCase {

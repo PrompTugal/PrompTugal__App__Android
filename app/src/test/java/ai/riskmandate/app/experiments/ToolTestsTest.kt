@@ -453,6 +453,30 @@ class ToolTestsTest {
         assertNull(ToolTestFormats.parse(StrictJson.render(without)).second.first().judges)
     }
 
+    @Test fun aFileListsItsJudgeLayersAndTheListIsChecked() {
+        // Every bundled file declares the three layers; code takes nothing, the model layers name a prompt.
+        for (k in cat.kinds) assertEquals(listOf(JudgeRef("code", null, null), JudgeRef("local", null, "tool-output"), JudgeRef("cloud", null, "tool-output")), k.judges)
+        @Suppress("UNCHECKED_CAST")
+        val doc = StrictJson.parse(file()) as Map<String, Any?>
+        fun with(judges: Any?) = StrictJson.render(doc + ("judges" to judges))
+        fun entry(vararg p: Pair<String, Any?>) = mapOf(*p)
+        // A model and a path are fine; the list is optional.
+        val ok = ToolTestFormats.parse(with(listOf(entry("layer" to "cloud", "model" to "some/model", "prompt_ref" to "prompts/judges/tool-output.json")))).first.judges
+        assertEquals(listOf(JudgeRef("cloud", "some/model", "prompts/judges/tool-output.json")), ok)
+        assertEquals(emptyList<JudgeRef>(), ToolTestFormats.parse(StrictJson.render(doc - "judges")).first.judges)
+        rejected(with(listOf(entry("layer" to "code", "model" to "x"))))
+        rejected(with(listOf(entry("layer" to "code", "prompt_ref" to "tool-output"))))
+        rejected(with(listOf(entry("layer" to "local"))))
+        rejected(with(listOf(entry("layer" to "human", "prompt_ref" to "tool-output"))))
+        rejected(with(listOf(entry("layer" to "code"), entry("layer" to "code"))))
+        rejected(with(listOf(entry("layer" to "local", "prompt_ref" to "../secret"))))
+        rejected(with(listOf(entry("layer" to "local", "prompt_ref" to "/etc/passwd"))))
+        rejected(with(listOf(entry("layer" to "local", "prompt_ref" to "Tool Output"))))
+        rejected(with(listOf(entry("layer" to "cloud", "model" to "", "prompt_ref" to "tool-output"))))
+        rejected(with("code"))
+        rejected(with(listOf("code")))
+    }
+
     @Test fun theToolSuiteIsCappedLikeEveryOtherRunOfMany() {
         assertEquals(RunCaps.MAX_RUNS, ToolTestSuite.MAX_RUNS)
         assertEquals(100, ToolTestSuite.plan(cat.cases, ToolMode.entries, 10).size)
