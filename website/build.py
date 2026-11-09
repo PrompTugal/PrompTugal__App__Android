@@ -31,7 +31,7 @@ ANDROID_NAMES = {'26': '8.0', '27': '8.1', '28': '9', '29': '10', '30': '11', '3
 SUMMIT_FEATURES = [  # (letter, name, what it will be, where it lives)
     ('A', 'RiskMandate inside the app', 'riskmandate.ai pages in an in-app view limited to the same address check, with native tabs and an offline copy for bad venue Wi-Fi.', 'site'),
     ('B', 'ABP in every layer', 'A native, animated, clearly labelled demonstration of one Agent Behaviour Policy stopping a planted instruction at six layers.', 'abpdemo'),
-    ('C', 'This app’s own mandate', 'A live view of this app on this device: its reach (permissions, address allow-list), its mandate and the gap, and what it collects (nothing).', 'mandate'),
+    ('C', 'This app’s own mandate', 'A live view of this app on this device: its reach (permissions, address allow-list), its mandate and the gap, and what it stores on the device.', 'mandate'),
     ('D', 'Stand mode', 'Screen pinning, screen kept on, and back to the home screen after a few idle minutes, switched on and off from the home screen.', 'stand'),
     ('F', 'What\u2019s new', 'Release articles inside the app: what changed in each version, with screenshots. (E, demo videos, waits for the videos.)', 'releases'),
 ]

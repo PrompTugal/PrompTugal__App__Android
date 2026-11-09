@@ -51,7 +51,7 @@ Device: ______________  Android: ______  Build number: ______  Date: ______  Tes
 | 16 | **Diagnostics screen** (per the conductor's note, 8 November 2026; not yet pushed): opens from the home screen. Check each value against Settings, About: app version and versionCode (= build number in App Tester); Android version and model; managed state (matches row 15); managed configuration as received (`start_url`, `device_label`, and whether each was refused: on a personal device expect none set); installer package (expect the App Tester / Firebase installer, not `com.android.vending`, for a Firebase build). **Copy** button: copies a report; paste it into a note and read it: no serial, IMEI, account email or other personal data. Record the installer package you saw: ______ | [ ] | [ ] | |
 | 17 | Screenshot of home (portrait, light) and, if you like, landscape and dark: keep for `store-assets.md` (real-device captures). No account pages or notifications in the shot | [ ] | [ ] | |
 | 18 | Install the **next** build over this one: updates without uninstalling, same Firebase signature | [ ] | [ ] | |
-| 19 | Uninstall: removes cleanly; nothing left (the app stores nothing) | [ ] | [ ] | |
+| 19 | Uninstall: removes cleanly; reinstalling shows the defaults again (side menu expanded, stand mode off, What's new shown, chat history empty). The app keeps only those small settings | [ ] | [ ] | |
 | 20 | Anything else odd (battery, heat, slow start, wrong orientation lock) | [ ] | [ ] | |
 
 ### Per-device extras

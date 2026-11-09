@@ -56,7 +56,7 @@ As definições no ecrã são citações, em inglês, do riskmandate.ai, lido a 
 
 O botão RiskMandate abre as páginas do riskmandate.ai dentro da app, com separadores nativos: Início, O que é uma ABP, Como funciona, Preços, SHarness e Sobre. A vista dentro da app está limitada pela mesma verificação de endereços do resto da app: só abre páginas https em riskmandate.ai e www.riskmandate.ai.
 
-Para uma bancada com Wi-Fi fraca, a app tem uma cópia offline das páginas, lidas a 9 de novembro de 2026. Mostra uma faixa a dizê-lo, com um botão Tentar online. Uma página que não está na cópia diz-o e pede ligação. O ecrã avisa ainda que o riskmandate.ai tem a sua própria política de privacidade e pode definir os seus próprios cookies, enquanto esta app não recolhe nada.
+Para uma bancada com Wi-Fi fraca, a app tem uma cópia offline das páginas, lidas a 9 de novembro de 2026. Mostra uma faixa a dizê-lo, com um botão Tentar online. Uma página que não está na cópia diz-o e pede ligação. O ecrã avisa ainda que o riskmandate.ai tem a sua própria política de privacidade e pode definir os seus próprios cookies, enquanto esta app não recolhe dados pessoais.
 
 As capturas de ecrã abaixo mostram a moldura da app em volta da página: os separadores, a faixa offline e a linha de privacidade. Não mostram a página em si.
 

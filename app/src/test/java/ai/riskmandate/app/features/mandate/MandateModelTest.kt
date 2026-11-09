@@ -58,6 +58,12 @@ class MandateModelTest {
             ReachItem(ReachKind.STORAGE, "shared_prefs/stand_mode.xml", count = 1),
             ReachItem(ReachKind.STORAGE, "app_webview", count = 12),
             ReachItem(ReachKind.STORAGE, "cache", count = 40),
+            ReachItem(ReachKind.STORAGE, "shared_prefs/shell.xml", count = 1),
+            ReachItem(ReachKind.STORAGE, "shared_prefs/feature_models.xml", count = 1),
+            ReachItem(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", count = 1),
+            ReachItem(ReachKind.STORAGE, "no_backup/feature_chat", count = 1),
+            ReachItem(ReachKind.STORAGE, "no_backup/models", count = 2),
+            ReachItem(ReachKind.STORAGE, "external/models", count = 2),
         )
         assertTrue(MandateReport(cleanReach + mandated, mandate).gapIsEmpty)
         val stray = ReachItem(ReachKind.STORAGE, "shared_prefs/other.xml", count = 1)
@@ -72,6 +78,15 @@ class MandateModelTest {
         // A connection to any other host would be gap.
         val other = ReachItem(ReachKind.NETWORK, "connects:example.com")
         assertEquals(listOf(other), MandateReport(cleanReach + site + other, mandate).gap)
+    }
+
+    @Test fun modelDownloadHostsAreReachOnlyWhenModelsIsOn_andMandated() {
+        assertEquals(emptyList<ReachItem>(), networkReach(setOf("mandate")))
+        val models = networkReach(setOf("models"))
+        assertEquals(listOf("connects:huggingface.co", "connects:hf.co", "connects:*.hf.co"), models.map { it.id })
+        assertTrue(MandateReport(cleanReach + models, mandate).gapIsEmpty)
+        val other = ReachItem(ReachKind.NETWORK, "connects:example.org")
+        assertEquals(listOf(other), MandateReport(cleanReach + models + other, mandate).gap)
     }
 
     @Test fun sameIdOfAnotherKindIsNotCovered() {
@@ -91,7 +106,7 @@ class MandateModelTest {
 
     @Test fun mandateEntriesNothingUsesAreReportedAsUnused() {
         val report = MandateReport(cleanReach.take(2), mandate)
-        assertEquals(7, report.unused.size)
+        assertEquals(mandate.entries.size - 2, report.unused.size)
         assertTrue(report.unused.any { it.id.endsWith("MainActivity") })
     }
 
