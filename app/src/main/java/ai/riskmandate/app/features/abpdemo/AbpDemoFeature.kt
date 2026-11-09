@@ -3,6 +3,7 @@ package ai.riskmandate.app.features.abpdemo
 import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
+import ai.riskmandate.app.features.HoldIdleWhile
 import androidx.annotation.StringRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -58,7 +59,7 @@ object AbpDemoFeature : Feature {
     override val enabled = true
 
     @Composable
-    override fun Content(context: FeatureContext) = AbpDemoScreen()
+    override fun Content(context: FeatureContext) = AbpDemoScreen(context)
 }
 
 object AbpDemoTags {
@@ -93,11 +94,13 @@ private fun Strength.label() = when (this) {
 }
 
 @Composable
-fun AbpDemoScreen(initial: DemoPlayer = DemoPlayer()) {
+fun AbpDemoScreen(context: FeatureContext? = null, initial: DemoPlayer = DemoPlayer()) {
     // Saved, so turning the tablet round does not restart the walk-through.
     var index by rememberSaveable { mutableIntStateOf(initial.index) }
     var auto by rememberSaveable { mutableStateOf(initial.autoPlay) }
     val player = DemoPlayer(index, auto)
+    // The stand's idle reset must not interrupt auto-play: hold it off while auto-play runs.
+    context?.HoldIdleWhile(auto)
     fun set(p: DemoPlayer) { index = p.index; auto = p.autoPlay }
 
     // Auto-play: one tick per interval; restarts whenever the step or the mode changes.

@@ -28,7 +28,7 @@ class AbpDemoScreenshotTest {
             RuntimeEnvironment.setQualifiers("w1280dp-h800dp-land-${if (dark) "night" else "notnight"}-xhdpi")
             ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
                 scenario.onActivity {
-                    it.setContent { RiskMandateTheme(darkTheme = dark) { AbpDemoScreen(DemoPlayer(step)) } }
+                    it.setContent { RiskMandateTheme(darkTheme = dark) { AbpDemoScreen(initial = DemoPlayer(step)) } }
                 }
                 compose.waitForIdle()
                 var bitmap: Bitmap? = null

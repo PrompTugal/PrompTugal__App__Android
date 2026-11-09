@@ -1,6 +1,10 @@
 package ai.riskmandate.app.features.abpdemo
 
+import ai.riskmandate.app.DeviceStatus
+import ai.riskmandate.app.ManagedConfig
 import ai.riskmandate.app.R
+import ai.riskmandate.app.features.FeatureContext
+import ai.riskmandate.app.features.IdleHolds
 import ai.riskmandate.app.RiskMandateTheme
 import android.app.Application
 import androidx.compose.ui.test.assertIsDisplayed
@@ -19,6 +23,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -35,7 +40,7 @@ class AbpDemoScreenTest {
         compose.setContent {
             val d = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale)) {
-                RiskMandateTheme { AbpDemoScreen(DemoPlayer(index, auto)) }
+                RiskMandateTheme { AbpDemoScreen(initial = DemoPlayer(index, auto)) }
             }
         }
 
@@ -99,6 +104,24 @@ class AbpDemoScreenTest {
         compose.onNodeWithText(app.getString(R.string.abpdemo_autoplay_start)).assertIsDisplayed()
         compose.mainClock.advanceTimeBy(AUTO_PLAY_STEP_MS * 2)
         compose.onNodeWithText(app.getString(R.string.abpdemo_step_of, 3, 7)).assertIsDisplayed()
+    }
+
+    @Test fun autoPlayHoldsTheStandIdleResetAndReleasesWhenItStops() {
+        val holds = IdleHolds()
+        val ctx = FeatureContext(
+            onBack = {}, config = ManagedConfig.DEFAULT,
+            device = DeviceStatus.from(hasDeviceOwner = false, inWorkProfile = false, label = null),
+            holdIdle = holds::hold,
+        )
+        compose.mainClock.autoAdvance = false
+        compose.setContent { RiskMandateTheme { AbpDemoScreen(ctx) } }
+        assertFalse(holds.held)
+        compose.onNodeWithTag(AbpDemoTags.AUTOPLAY).performClick()
+        compose.mainClock.advanceTimeByFrame()
+        assertTrue(holds.held)
+        compose.onNodeWithTag(AbpDemoTags.AUTOPLAY).performClick()
+        compose.mainClock.advanceTimeByFrame()
+        assertFalse(holds.held)
     }
 
     @Test fun hasNoTitleOrHomeOfItsOwn() {
