@@ -36,6 +36,13 @@ class CloudSpend internal constructor(
     }
 
     private var session = 0L
+
+    /**
+     * One request at a time across every service that shares this ledger (one per model): the cap check and the
+     * call run under it, so two services cannot both pass the check and then both spend (security R-cloud-5).
+     * The host makes one [CloudSpend] per tablet and gives it to every [CloudLlmService].
+     */
+    val gate = kotlinx.coroutines.sync.Mutex()
     private val file get() = File(dir, FILE)
 
     @Synchronized
@@ -66,9 +73,15 @@ class CloudSpend internal constructor(
         if (load() is Ledger.Missing) store(0)
     }
 
-    /** Staff, on purpose: the total and the session counter go back to zero, and a damaged ledger is replaced. */
+    /**
+     * Staff, on purpose: the total and the session counter go back to zero, and a damaged ledger is replaced.
+     * [confirmed] must be true: a screen may only call this from a confirmed action on the staff-only key screen,
+     * never from a plain button and never from anything a visitor can reach (security R-cloud-4). The credit limit
+     * on the key itself, set at OpenRouter, stays the real backstop.
+     */
     @Synchronized
-    fun reset() {
+    fun reset(confirmed: Boolean) {
+        require(confirmed) { "the ledger is reset only after an explicit confirmation" }
         session = 0
         store(0)
     }

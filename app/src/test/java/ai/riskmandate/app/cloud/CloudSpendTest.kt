@@ -69,16 +69,18 @@ class CloudSpendTest {
         assertFalse(d.snapshot().ledgerOk); assertTrue(d.wouldExceed(0))
         d.initialise() // staff saving the key again does not hide the damage
         assertTrue(d.wouldExceed(0))
-        d.reset()
+        d.reset(confirmed = true)
         assertTrue(d.snapshot().ledgerOk); assertFalse(d.wouldExceed(1))
         File(dir, CloudSpend.FILE).writeText("""{"v":1,"spent":-5}""")
         assertTrue(spend().wouldExceed(0)) // a negative total is damage, not a refund
     }
 
     @Test fun resetZeroesTheTotalAndTheSession() {
-        val s = spend(); s.initialise(); s.record(300); s.reset()
+        val s = spend(); s.initialise(); s.record(300); s.reset(confirmed = true)
         assertEquals(0, s.snapshot().totalSpentMicros); assertEquals(0, s.snapshot().sessionSpentMicros)
         assertThrows(IllegalArgumentException::class.java) { s.record(-5) }
+        assertThrows("no reset without a confirmation", IllegalArgumentException::class.java) { s.reset(confirmed = false) }
+        assertEquals(0, s.snapshot().totalSpentMicros)
     }
 
     @Test fun anUnwritableLedgerBecomesRefusingNotSilentlyBehind() {
