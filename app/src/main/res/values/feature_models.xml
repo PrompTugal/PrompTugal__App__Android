@@ -35,6 +35,8 @@
     <string name="models_bench_none">No model file found yet. Push one with adb into the folder below, then tap Refresh.</string>
     <string name="models_bench_pick">Model</string>
     <string name="models_bench_model_line">%1$s, %2$s (%3$s)</string>
+    <string name="models_bench_where_installed">installed by Model setup</string>
+    <string name="models_bench_where_adb">pushed with adb</string>
     <string name="models_bench_backend">Runs on</string>
     <string name="models_bench_gpu">GPU</string>
     <string name="models_bench_cpu">CPU</string>

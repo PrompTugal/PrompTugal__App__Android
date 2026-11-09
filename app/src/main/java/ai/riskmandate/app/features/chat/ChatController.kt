@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -49,15 +50,18 @@ class ChatController(
     private var job: Job? = null
     private val saveLock = Mutex()
 
-    /** Reads saved history and the installed models. Call once. */
-    suspend fun start() {
+    /**
+     * Reads saved history and the installed models. Call once. [reopen] is the id of the chat that was open before a
+     * rotation (kept by the screen in `rememberSaveable`): it is reselected when it was saved, else a new empty chat opens.
+     */
+    suspend fun start(reopen: String? = null) {
         val saved = withContext(io) { store.load() }
         val models = llm.installedModels()
         val fresh = Conversation(newId())
         // Open on a new empty chat; old chats are one tap away in the history list.
         val conversations = (listOf(fresh) + saved.filter { !it.isEmpty }).take(ChatLimits.MAX_CONVERSATIONS)
         state = state.copy(
-            conversations = conversations, currentId = fresh.id, models = models,
+            conversations = conversations, currentId = reopen?.takeIf { id -> conversations.any { it.id == id } } ?: fresh.id, models = models,
             modelId = state.modelId?.takeIf { id -> models.any { it.id == id } } ?: models.firstOrNull()?.id,
             modelsLoaded = true,
         )
@@ -108,6 +112,7 @@ class ChatController(
         val history = state.current.messages
         update(convId) { it + ChatMessage(ChatRole.USER, input) + ChatMessage(ChatRole.ASSISTANT, "") }
         state = state.copy(generating = true, error = null)
+        scope.launch { persistNow() } // the visitor's message is on disk before the answer starts
         val turns = ChatPrompt.turns(history + ChatMessage(ChatRole.USER, input))
         val system = groundingText?.let(ChatPresets::system)
         val started = clock()
@@ -142,7 +147,8 @@ class ChatController(
                     ChatRole.ASSISTANT, sb.toString(), shownTokens, r?.totalMs ?: (end - started), shownTps, stopped, failed, failure,
                 ))
                 state = state.copy(generating = false)
-                persist()
+                // Also when the scope is ending (a rotation, leaving the screen): the partial answer is written anyway.
+                withContext(NonCancellable) { persistNow() }
             }
         }
     }
@@ -153,12 +159,12 @@ class ChatController(
 
     private fun replaceLast(id: String, m: ChatMessage) = update(id) { if (it.isEmpty()) it else it.dropLast(1) + m }
 
-    private fun persist() {
-        // Empty chats are not saved. Launched on the scope, not on the answer's job, so a stop still saves.
-        val snapshot = state.conversations.filter { !it.isEmpty }
-        scope.launch {
-            val ok = withContext(io) { saveLock.withLock { runCatching { store.save(snapshot) }.isSuccess } }
-            if (!ok) state = state.copy(error = ChatError.SAVE_FAILED)
-        }
+    /** Saves every chat that has something in it. A placeholder for an answer that has not started yet is not saved. */
+    private suspend fun persistNow() {
+        val snapshot = state.conversations.map { c ->
+            c.copy(messages = c.messages.filterNot { it.role == ChatRole.ASSISTANT && it.text.isEmpty() && !it.failed && !it.stopped })
+        }.filter { !it.isEmpty }
+        val ok = withContext(io) { saveLock.withLock { runCatching { store.save(snapshot) }.isSuccess } }
+        if (!ok) state = state.copy(error = ChatError.SAVE_FAILED)
     }
 }
