@@ -1,7 +1,13 @@
 package ai.riskmandate.app.experiments
 
 /** The three layers that judge a result, in the order they run. */
-enum class JudgeLayer { CODE, LOCAL, CLOUD }
+enum class JudgeLayer {
+    CODE, LOCAL, CLOUD;
+
+    /** Where the service behind a model layer must run (the code layer has none and is never given a service). */
+    val location: ai.riskmandate.app.llm.LlmLocation
+        get() = if (this == CLOUD) ai.riskmandate.app.llm.LlmLocation.CLOUD else ai.riskmandate.app.llm.LlmLocation.LOCAL
+}
 
 /** [UNSURE] is a verdict too: the judge could not tell, or did not run, or its answer could not be read. Never read as a pass. */
 enum class JudgeOutcome { PASS, FAIL, UNSURE }
