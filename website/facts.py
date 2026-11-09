@@ -96,9 +96,10 @@ def features():
             continue
         text = files[0].read_text()
         ident = re.search(r'override val id = "(\w+)"', text)
-        enabled = re.search(r'override val enabled = (true|false)', text)
+        # A literal true or false only. Any other form (a getter, a condition) is not provably on, so it counts as off.
+        enabled = re.search(r'override val enabled(?:\s*:\s*Boolean)?\s*(?:=|get\(\)\s*=)\s*(true|false)\b\s*$', text, re.M)
         rows.append({'name': name, 'id': ident.group(1) if ident else name.lower(),
-                     'enabled': (enabled.group(1) == 'true') if enabled else True,
+                     'enabled': (enabled.group(1) == 'true') if enabled else ('override val enabled' not in text),
                      'file': files[0].relative_to(ROOT).as_posix()})
     return rows
 
