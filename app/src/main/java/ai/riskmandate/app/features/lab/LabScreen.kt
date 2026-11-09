@@ -7,9 +7,9 @@ import ai.riskmandate.app.ui.LocalWideLayout
 import ai.riskmandate.app.ui.NoticeBanner
 import ai.riskmandate.app.ui.SectionCard
 import ai.riskmandate.app.ui.StatusChip
+import ai.riskmandate.app.ui.StepRow
 import ai.riskmandate.app.ui.UiTokens
 import ai.riskmandate.app.ui.rememberReduceMotion
-import androidx.annotation.StringRes
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -27,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -40,46 +42,66 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 object LabTags {
     const val BANNER = "lab_banner"
     const val RUN = "lab_run"
     const val RAW = "lab_path_raw"
     const val ABP = "lab_path_abp"
-    const val RESULT_RAW = "lab_result_raw"
-    const val RESULT_ABP = "lab_result_abp"
+    const val SUMMARY_RAW = "lab_summary_raw"
+    const val SUMMARY_ABP = "lab_summary_abp"
     const val NETWORK = "lab_network"
+    const val REPLAY_STRIP = "lab_replay_strip"
     fun scenario(id: String) = "lab_scenario_$id"
 }
 
-/** Delay between steps while a run is revealed, so a visitor can follow it. Snaps to the end for reduced motion. */
+/** Delay between steps while a run is revealed, so a visitor can follow it. All at once with animations off. */
 private const val STEP_MS = 700L
 
 /**
- * The ABP Lab, side by side: the same turns run down a raw path (fake tools that only record) and down the
- * ABP path (every call checked in Kotlin first). Replay only for now: [recordings] supplies the turns.
- * [network] is injected for tests; null reads the device's real state.
+ * The ABP Lab, side by side: the same run down a raw lane (fake tools that only record) and an ABP lane
+ * (every call checked in Kotlin first). This build replays recordings (and labels them as replays);
+ * [data] is injected by tests, null loads the bundled files off the main thread. [network] likewise: null
+ * reads the device's real network state for scenario 5.
  */
 @Composable
-fun LabScreen(
-    recordings: List<Recording> = LabPresets.ALL,
-    initialScenario: String = LabScenarios.PLANTED,
-    network: NetworkState? = null,
-) {
+fun LabScreen(data: LabData? = null, initialScenario: String? = null, network: NetworkState? = null) {
     val context = LocalContext.current
     val reduce = rememberReduceMotion()
-    var scenarioId by rememberSaveable { mutableStateOf(initialScenario) }
-    val scenario = LabScenarios.byId(scenarioId) ?: LabScenarios.ALL.first()
-    val recording = recordings.firstOrNull { it.scenarioId == scenario.id }
-    val net = remember(network) { network ?: NetworkReader.read(context) }
+    val loaded by produceState(data) {
+        if (data == null) value = withContext(Dispatchers.IO) { LabAssets.load(context.assets) }
+    }
+    val lab = loaded
+    FeatureContent(maxContentWidth = 1200.dp) {
+        NoticeBanner(stringResource(R.string.lab_banner_fakes), Modifier.testTag(LabTags.BANNER))
+        if (lab == null) {
+            Text(stringResource(R.string.lab_loading), Modifier.padding(top = UiTokens.Gap), style = MaterialTheme.typography.titleMedium)
+            return@FeatureContent
+        }
+        if (lab.scenarios.isEmpty()) {
+            Text(stringResource(R.string.lab_none), Modifier.padding(top = UiTokens.Gap), style = MaterialTheme.typography.titleMedium)
+            return@FeatureContent
+        }
+        if (lab.problems.isNotEmpty()) Text(stringResource(R.string.lab_problems, lab.problems.size), Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodyMedium)
+        LabBody(lab, initialScenario, network ?: remember { NetworkReader.read(context) }, reduce)
+    }
+}
+
+@Composable
+private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, reduce: Boolean) {
+    var scenarioId by rememberSaveable { mutableStateOf(initialScenario ?: lab.scenarios.first().id) }
+    val scenario = lab.scenario(scenarioId) ?: lab.scenarios.first()
+    val recording = lab.recordingsFor(scenario.id).firstOrNull()
     var runId by rememberSaveable(scenario.id) { mutableIntStateOf(0) }
     var shown by remember(scenario.id) { mutableIntStateOf(0) }
 
-    val result = remember(scenario.id, recording, net) {
-        recording?.let { LabRunner.runBoth(scenario, it.raw, it.abp, net) }
-    }
-    val total = result?.let { maxOf(it.raw.events.size, it.abp.events.size) } ?: 0
+    val rawRows = remember(scenario, recording) { recording?.let { LaneModel.rows(scenario, it.raw, abp = false) }.orEmpty() }
+    val abpRows = remember(scenario, recording) { recording?.let { LaneModel.rows(scenario, it.abp, abp = true) }.orEmpty() }
+    val total = maxOf(rawRows.size, abpRows.size)
     LaunchedEffect(scenario.id, runId) {
         if (runId == 0) { shown = 0; return@LaunchedEffect }
         if (reduce) { shown = total; return@LaunchedEffect }
@@ -87,157 +109,129 @@ fun LabScreen(
         while (shown < total) { delay(STEP_MS); shown++ }
     }
 
-    FeatureContent(maxContentWidth = 1200.dp) {
-        if (recording?.sample != false) NoticeBanner(stringResource(R.string.lab_banner_sample), Modifier.testTag(LabTags.BANNER))
-        Text(stringResource(R.string.lab_fakes_note), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 12.dp))
-
-        Row(
-            Modifier.padding(vertical = UiTokens.Gap).horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            for (s in LabScenarios.ALL) {
-                val selected = s.id == scenario.id
-                val select = { scenarioId = s.id }
-                val selectedText = stringResource(R.string.lab_selected)
-                val mod = Modifier.heightIn(min = UiTokens.MinTouch).testTag(LabTags.scenario(s.id)).semantics { if (selected) stateDescription = selectedText }
-                if (selected) Button(select, mod) { Text(stringResource(s.title)) } else OutlinedButton(select, mod) { Text(stringResource(s.title)) }
-            }
+    Row(
+        Modifier.padding(vertical = UiTokens.Gap).horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        for (s in lab.scenarios) {
+            val selected = s.id == scenario.id
+            val selectedText = stringResource(R.string.lab_selected)
+            val mod = Modifier.heightIn(min = 56.dp).testTag(LabTags.scenario(s.id)).semantics { if (selected) stateDescription = selectedText }
+            if (selected) Button({ scenarioId = s.id }, mod) { Text(s.title, fontSize = 20.sp) } else OutlinedButton({ scenarioId = s.id }, mod) { Text(s.title, fontSize = 20.sp) }
         }
+    }
 
-        SectionCard(stringResource(scenario.title)) {
-            Text(stringResource(scenario.blurb), style = MaterialTheme.typography.bodyLarge)
-            Text(stringResource(R.string.lab_failure_is, stringResource(scenario.failure)), style = MaterialTheme.typography.bodyMedium)
-            LabeledText(R.string.lab_task_label, scenario.task)
-            if (scenario.document.isNotEmpty()) LabeledText(R.string.lab_document_label, scenario.document)
+    SectionCard(scenario.title) {
+        if (scenario.description.isNotEmpty()) Text(scenario.description, style = MaterialTheme.typography.bodyLarge)
+        Labeled(R.string.lab_task_label, scenario.user)
+        Labeled(R.string.lab_system_label, scenario.system)
+    }
+
+    if (scenario.failure.type == FailureType.CLAIMS_REMOTE) {
+        SectionCard(stringResource(R.string.lab_net_title), Modifier.padding(top = UiTokens.Gap).testTag(LabTags.NETWORK)) {
+            val state = if (net.connected) stringResource(R.string.lab_net_connected, stringResource(transportName(net.transport))) else stringResource(R.string.lab_net_offline)
+            StatusChip(state, if (net.connected) ChipKind.Held else ChipKind.Neutral)
+            Text(stringResource(R.string.lab_net_note), style = MaterialTheme.typography.bodyMedium)
         }
+    }
 
-        if (scenario.selfKnowledge) {
-            SectionCard(stringResource(R.string.lab_net_title), Modifier.padding(top = UiTokens.Gap).testTag(LabTags.NETWORK)) {
-                val state = if (net.connected) stringResource(R.string.lab_net_connected, stringResource(transportName(net.transport)))
-                else stringResource(R.string.lab_net_offline)
-                StatusChip(state, if (net.connected) ChipKind.Held else ChipKind.Neutral)
-                Text(stringResource(R.string.lab_net_note), style = MaterialTheme.typography.bodyMedium)
-            }
+    if (recording == null) {
+        Text(stringResource(R.string.lab_no_recording), Modifier.padding(top = UiTokens.Gap), style = MaterialTheme.typography.titleMedium)
+        return
+    }
+
+    Provenance(recording, scenario)
+    Button(
+        onClick = { runId++ },
+        modifier = Modifier.padding(vertical = UiTokens.Gap).heightIn(min = 56.dp).testTag(LabTags.RUN),
+    ) { Text(stringResource(if (runId == 0) R.string.lab_replay else R.string.lab_replay_again), fontSize = 20.sp) }
+
+    if (runId > 0) {
+        val lanes: @Composable (Modifier, Boolean) -> Unit = { m, abp ->
+            Lane(
+                title = if (abp) R.string.lab_abp_title else R.string.lab_raw_title, sub = if (abp) R.string.lab_abp_sub else R.string.lab_raw_sub,
+                rows = if (abp) abpRows else rawRows, otherCount = if (abp) rawRows.size else abpRows.size, total = total, shown = shown,
+                recording = recording, tag = if (abp) LabTags.ABP else LabTags.RAW, modifier = m,
+            )
         }
-
-        Button(
-            onClick = { runId++ },
-            enabled = result != null,
-            modifier = Modifier.padding(vertical = UiTokens.Gap).heightIn(min = 56.dp).testTag(LabTags.RUN),
-        ) { Text(stringResource(if (runId == 0) R.string.lab_run else R.string.lab_run_again)) }
-
-        if (result != null && runId > 0) {
-            val raw: @Composable (Modifier) -> Unit = { m ->
-                PathPanel(R.string.lab_raw_title, R.string.lab_raw_sub, result.raw, shown, total, false, LabTags.RAW, LabTags.RESULT_RAW, m)
-            }
-            val abp: @Composable (Modifier) -> Unit = { m ->
-                PathPanel(R.string.lab_abp_title, R.string.lab_abp_sub, result.abp, shown, total, true, LabTags.ABP, LabTags.RESULT_ABP, m)
-            }
-            if (LocalWideLayout.current) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
-                    raw(Modifier.weight(1f)); abp(Modifier.weight(1f))
-                }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(UiTokens.Gap)) { raw(Modifier); abp(Modifier) }
-            }
+        if (LocalWideLayout.current) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(UiTokens.Gap)) { lanes(Modifier.weight(1f), false); lanes(Modifier.weight(1f), true) }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(UiTokens.Gap)) { lanes(Modifier, false); lanes(Modifier, true) }
         }
+        if (shown >= total) Summary(recording, rawRows, abpRows)
     }
 }
 
 @Composable
-private fun LabeledText(@StringRes label: Int, text: String) {
-    Text(stringResource(label), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    // Plain text, monospaced: the planted strings are shown, never parsed or opened.
-    Text(text, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
+private fun Provenance(recording: Recording, scenario: Scenario) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+        StatusChip(stringResource(R.string.lab_chip_replay), ChipKind.Held)
+        if (recording.sourceKind == "sample") StatusChip(stringResource(R.string.lab_chip_sample), ChipKind.Neutral)
+        recording.modelLabel?.let { StatusChip(stringResource(R.string.lab_model_line, it), ChipKind.Neutral) }
+        if (scenario.failure.heuristic) StatusChip(stringResource(R.string.lab_chip_heuristic), ChipKind.Held)
+    }
 }
 
 @Composable
-private fun PathPanel(
-    @StringRes title: Int,
-    @StringRes sub: Int,
-    path: PathResult,
-    shown: Int,
-    total: Int,
-    abp: Boolean,
-    tag: String,
-    resultTag: String,
-    modifier: Modifier,
+private fun Lane(
+    title: Int, sub: Int, rows: List<LaneRow>, otherCount: Int, total: Int, shown: Int,
+    recording: Recording, tag: String, modifier: Modifier,
 ) {
-    SectionCard(stringResource(title), modifier.testTag(tag)) {
+    SectionCard(stringResource(title), modifier.testTag(tag), large = true) {
+        val what = listOf(recording.backend, recording.recordedAt).filter { !it.isNullOrBlank() }.joinToString(", ")
+        Text(
+            stringResource(R.string.lab_replay_strip, what.ifEmpty { recording.modelLabel.orEmpty() }),
+            style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.testTag(LabTags.REPLAY_STRIP),
+        )
         Text(stringResource(sub), style = MaterialTheme.typography.bodyMedium)
-        path.events.take(shown).forEachIndexed { i, e -> EventRow(i + 1, e) }
-        if (shown >= total) {
-            val failed = !abp && path.failed
-            val msg = when {
-                !abp && failed -> stringResource(R.string.lab_result_raw_failed)
-                !abp -> stringResource(R.string.lab_result_raw_ok)
-                path.stopped > 0 -> stringResource(R.string.lab_result_abp_stopped, path.stopped)
-                else -> stringResource(R.string.lab_result_abp_none)
+        for (n in 0 until minOf(shown, total)) {
+            val r = rows.getOrNull(n)
+            if (r == null) {
+                StepRow(n + 1, stringResource(R.string.lab_not_reached), stringResource(R.string.lab_not_reached), ChipKind.Neutral, large = true)
+                continue
             }
-            val kind = if (!abp) (if (failed) ChipKind.Blocked else ChipKind.Neutral) else (if (path.stopped > 0) ChipKind.Allowed else ChipKind.Neutral)
-            StatusChip(msg, kind, Modifier.testTag(resultTag).semantics { liveRegion = LiveRegionMode.Polite })
+            r.say?.let { SelectionContainer { Text(it, style = MaterialTheme.typography.bodyMedium) } }
+            StepRow(
+                index = n + 1,
+                title = if (r.titleArg != null) stringResource(r.titleRes, r.titleArg) else stringResource(r.titleRes),
+                verdict = if (r.chipArg != null) stringResource(r.chipRes, r.chipArg) else stringResource(r.chipRes),
+                kind = r.kind, detail = r.detail, large = true,
+            )
+            r.note?.let { Text(it, style = MaterialTheme.typography.bodyLarge, fontSize = 18.sp, fontFamily = FontFamily.Monospace) }
         }
     }
 }
 
 @Composable
-private fun EventRow(n: Int, e: Event) {
-    Column(Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(stringResource(R.string.lab_step, n), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        e.say?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-        e.call?.let { Text(formatCall(it), style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace) }
-        e.claim?.let { Text(formatClaim(it), style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace) }
-        OutcomeChip(e.outcome)
+private fun Summary(recording: Recording, rawRows: List<LaneRow>, abpRows: List<LaneRow>) {
+    val rawStep = LaneModel.decisiveStep(rawRows)
+    val abpStep = LaneModel.decisiveStep(abpRows)
+    val live = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+    Column(Modifier.padding(top = UiTokens.Gap), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            if (recording.raw.outcome.failure && rawStep != null) stringResource(R.string.lab_summary_raw_failed, rawStep) else stringResource(R.string.lab_summary_raw_ok),
+            fontSize = 28.sp, lineHeight = 34.sp, modifier = live.testTag(LabTags.SUMMARY_RAW),
+        )
+        Text(
+            when {
+                recording.abp.outcome.failure -> stringResource(R.string.lab_summary_abp_missed)
+                recording.abp.outcome.caught && abpStep != null -> stringResource(R.string.lab_summary_abp_caught, abpStep)
+                else -> stringResource(R.string.lab_summary_abp_none)
+            },
+            fontSize = 28.sp, lineHeight = 34.sp, modifier = live.testTag(LabTags.SUMMARY_ABP),
+        )
     }
 }
 
 @Composable
-private fun OutcomeChip(o: Outcome) {
-    when (o) {
-        is Outcome.Ran -> StatusChip(
-            stringResource(if (o.violation) R.string.lab_chip_ran_violation else R.string.lab_chip_ran),
-            if (o.violation) ChipKind.Blocked else ChipKind.Neutral,
-        )
-        is Outcome.Stopped -> {
-            StatusChip(stringResource(R.string.lab_chip_stopped, stringResource(blockName(o.reason))), ChipKind.Allowed)
-            Text(o.detail, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
-        }
-        is Outcome.ClaimShown -> StatusChip(
-            stringResource(if (o.invented) R.string.lab_chip_invented else R.string.lab_chip_in_graph),
-            if (o.invented) ChipKind.Blocked else ChipKind.Neutral,
-        )
-        is Outcome.ClaimChecked ->
-            if (o.flag == null) StatusChip(stringResource(R.string.lab_chip_within), ChipKind.Neutral)
-            else StatusChip(stringResource(R.string.lab_chip_flagged, stringResource(flagName(o.flag))), ChipKind.Allowed)
-        is Outcome.Answer -> if (o.remote) StatusChip(stringResource(R.string.lab_chip_remote), ChipKind.Blocked)
-    }
+private fun Labeled(label: Int, text: String) {
+    Text(stringResource(label), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    // Plain, selectable, monospaced text: planted strings are shown, never parsed, linked or opened.
+    SelectionContainer { Text(text, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace) }
 }
 
-internal fun formatCall(c: ToolCall): String =
-    c.name + "(" + c.args.entries.joinToString(", ") { "${it.key}=\"${it.value}\"" } + ")"
-
-internal fun formatClaim(c: Claim): String =
-    "${c.subject} | ${c.relation} | ${c.obj}" + (c.cites?.let { "  [$it]" } ?: "")
-
-@StringRes
-internal fun blockName(b: Block): Int = when (b) {
-    Block.UNKNOWN_TOOL -> R.string.lab_block_unknown_tool
-    Block.BAD_ARGUMENTS -> R.string.lab_block_bad_arguments
-    Block.OUT_OF_MANDATE -> R.string.lab_block_out_of_mandate
-    Block.READ_ONLY -> R.string.lab_block_read_only
-    Block.EGRESS_DESTINATION -> R.string.lab_block_egress_destination
-    Block.EGRESS_SECRET -> R.string.lab_block_egress_secret
-}
-
-@StringRes
-internal fun flagName(f: Flag): Int = when (f) {
-    Flag.UNCITED -> R.string.lab_flag_uncited
-    Flag.MISMATCH -> R.string.lab_flag_mismatch
-    Flag.UNKNOWN_CITE -> R.string.lab_flag_unknown_cite
-    Flag.CONTRADICTS_DEVICE -> R.string.lab_flag_contradicts_device
-}
-
-@StringRes
+@androidx.annotation.StringRes
 internal fun transportName(t: Transport): Int = when (t) {
     Transport.WIFI -> R.string.lab_net_wifi
     Transport.CELLULAR -> R.string.lab_net_cellular
