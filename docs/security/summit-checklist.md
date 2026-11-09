@@ -91,3 +91,20 @@ The app is about to download a multi-gigabyte file, load it into native code, ru
 - `Links.isAllowed` stays the only allow-list for pages; the download host list is separate and exact.
 - Claims about RiskMandate and ABP come only from riskmandate.ai and sharness.ai.
 - Privacy, Data safety and the in-app licence list change in the same merge as the feature that needs it, or I HOLD (the app is not for Play yet, but the in-app privacy and licence screens are).
+
+---
+
+## L. Workbench (staff-only, Preview, added 9 November 2026 from the conductor's description; `briefs/2026-11-09__on-device-llm/workbench.md` was not on `dev` when I wrote this, so check it against the brief when it lands)
+
+Each item is something I will check; the first three are conditions for any head.
+
+1. **Staff-only.** Disabled (`enabled = false`), reachable only from Diagnostics > Preview, hidden in stand mode; its `openFeature` requests are refused in stand mode. Preview is in every build (R-app-2), so treat the Workbench as present in every build.
+2. **Fake tools only.** Every proposal goes through the per-turn cap, `checkToolCall` (exact name, strict flat arguments, required, typed, `maxLength`) and, where an ABP lane exists, `AbpChecks`, before a fake tool runs. The "Tool tests" tab defines tools as data checked at load (the Lab's contract: name, types, at most six parameters). No script, expression, file, URL or code typed by staff is ever executed or fetched.
+3. **No network, file, intent or process.** The package joins the import-ban tests (`LabImportsTest` style) and qa's `LlmSandboxTest` roots.
+4. **Run log** in `noBackupFilesDir/feature_workbench`: bounded (a cap on runs and bytes, oldest dropped), written only by the feature, a Clear button that removes it and anything cached in memory, never sent anywhere. Keep to counts, scores, settings, timings and the model's answers. If the typed prompt is logged, say so on the screen beside Clear. It must appear before the feature is turned on in any shipped build in: the mandate view (a reach entry and reason for the folder), the privacy policy and Data safety text ("what stays on your device"), the tester guide and the stored-data lists (the R-shell-1 lesson).
+5. **Typed prompts.** Bounded length (for example 2,000 characters), shown and kept as plain text; output is plain text; the only thing taken from it is a link that passes `Links.isAllowed`, opened on a tap through `Browser.open`.
+6. **Experiments and loops.** Settings clamped to ranges (temperature, top-p, top-k, seed, maximum output tokens within the service's 2,048), runs at most 100, 30 minutes, stop on heat, low battery (not charging) and three failed runs in a row; one request at a time through the service; idle reset held while it runs; saved state only validated counters.
+7. **No export path.** If one is ever added it is new outbound code and needs its own review (R-lab-11): an explicit tap, share sheet or file only, the exported text as the only payload, nothing that identifies the device or an account.
+8. **Models.** Only files from `ModelCatalog` (pinned revision, size, SHA-256) and only through feature G; no import of an arbitrary file and no URL field.
+9. **Stats.** Memory and speed from the service and `/proc/self` only; no serial number, Android ID, account or other identifier; the device label is read before anything is pasted (R-qa-2).
+10. **Claims.** Nothing on screen says more than the check can see (the Lab's "what this check sees" lines), and nothing claims more for RiskMandate than riskmandate.ai says.

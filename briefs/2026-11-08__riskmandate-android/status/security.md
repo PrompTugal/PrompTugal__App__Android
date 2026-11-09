@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 64 (9 Nov 2026): dev.chat f224f0c PASS (supersedes 6789451; pt-PT badge string only; R-chat-6 stands). Everything queued is reviewed. Still open: the design-pass article when it moves, the Lab export share path (R-lab-11), R-app-2 for Dinis. Waiting for the next wake.
+> Round 65 (9 Nov 2026): Workbench requirements added up front as checklist L (staff-only, fake tools, bounded run log listed in mandate and policy before it is turned on, no export). Everything queued is reviewed. Still open: the design-pass article when it moves, the Lab export share path (R-lab-11), R-app-2 for Dinis. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
