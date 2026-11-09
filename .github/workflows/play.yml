@@ -1,0 +1,117 @@
+name: play
+
+# Google Play, from main only. It does NOT rebuild: it takes the signed AAB that the dev run built for the
+# commit now on main (from that commit's GitHub release), checks its SHA-256, and uploads it as a DRAFT on
+# the internal track. A person completes the release in the Play Console. Runs from main's copy of this file
+# (a push to main), so a change on dev cannot touch it. Third-party actions pinned by SHA:
+# actions/checkout v4.2.2, r0adkll/upload-google-play v1.1.3.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Commit on main to upload (default, the head of main)
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: play
+  cancel-in-progress: false
+
+jobs:
+  play:
+    name: play (draft on the internal track)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The GitHub Environment `play` holds PLAY_SERVICE_ACCOUNT_JSON (Dinis; deployment branches main only).
+    environment: play
+    defaults:
+      run:
+        shell: bash   # -eo pipefail: a failing verifier before `| tee` must fail the step
+    env:
+      HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0   # tags and history: the release is found by tag
+
+      - name: Which commit, and is it approved
+        id: sha
+        env:
+          INPUT_SHA: ${{ inputs.sha }}
+        run: |
+          sha=$(git rev-parse "${INPUT_SHA:-HEAD}^{commit}")
+          git merge-base --is-ancestor "$sha" origin/main || { echo "$sha is not on main: refusing" >&2; exit 1; }
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "## play (run ${{ github.run_number }}): ${sha:0:12}" >> "$GITHUB_STEP_SUMMARY"
+          # Defence in depth: main only moves by promote.yml (an approved commit) or by Dinis. Re-check the
+          # signed approval with main's own verifier and keys, the approvals from dev.
+          git fetch -q origin dev 2>/dev/null || true
+          git show origin/dev:board/security/approvals.jsonl > "$RUNNER_TEMP/approvals.jsonl" 2>/dev/null || : > "$RUNNER_TEMP/approvals.jsonl"
+          if ! node scripts/verify-approval.mjs --sha "$sha" --approvals "$RUNNER_TEMP/approvals.jsonl" --keys board/keys.json 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"; then
+            echo "- not uploaded: no valid security PASS for this commit (a docs-only or hand-made commit on main needs its own approval; approve it, or dispatch with an approved sha)" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1
+          fi
+
+      - name: Find the dev build of this commit
+        id: rel
+        run: |
+          tag=$(bash scripts/find-release-tag.sh "${{ steps.sha.outputs.sha }}") || { echo "- no GitHub release of a dev build matches this commit: nothing to upload (play.yml never rebuilds)" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "- build: GitHub release $tag" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Download the signed AAB and check its SHA-256
+        id: aab
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.rel.outputs.tag }}
+        run: |
+          mkdir -p dl && cd dl
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.aab' --pattern '*.apk' --pattern SHA256SUMS
+          [ "$(ls *.aab | wc -l)" = 1 ] || { echo "expected exactly one .aab in release $TAG" >&2; exit 1; }
+          case "$(ls *.aab)" in *-unsigned.aab) echo "the release carries an unsigned AAB: refusing" >&2; exit 1;; esac
+          sha256sum --check --strict SHA256SUMS
+          aab=$(ls "$PWD"/*.aab); apk=$(ls "$PWD"/*.apk)
+          aapt2=$(ls "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/aapt2 | sort -V | tail -1)
+          app_id=$("$aapt2" dump badging "$apk" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
+          [ -n "$app_id" ] || { echo "could not read the application ID" >&2; exit 1; }
+          echo "aab=$aab" >> "$GITHUB_OUTPUT"; echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
+          echo "- $(basename "$aab") matches SHA256SUMS ($(sha256sum "$aab" | cut -c1-16)...), application ID $app_id" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Write the Play service account
+        if: env.HAS_PLAY == 'true'
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          umask 077
+          printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/play.json"
+
+      # status: draft: the release is created on the track, not rolled out, until a person completes it
+      # in the Play Console. The version code is the dev run number inside the AAB: it only goes up.
+      - name: Google Play (draft on internal)
+        id: play
+        if: env.HAS_PLAY == 'true'
+        uses: r0adkll/upload-google-play@935ef9c68bb393a8e6116b1575626a7f5be3a7fb # v1.1.3
+        with:
+          serviceAccountJson: ${{ runner.temp }}/play.json
+          packageName: ${{ steps.aab.outputs.app_id }}
+          releaseFiles: ${{ steps.aab.outputs.aab }}
+          track: internal
+          status: draft
+          releaseName: ${{ steps.rel.outputs.tag }}
+
+      - name: Remove the key and summarise
+        if: always()
+        env:
+          OUTCOME: ${{ steps.play.outcome }}
+        run: |
+          rm -f "$RUNNER_TEMP/play.json"
+          case "$OUTCOME" in
+            success) echo "- uploaded as a DRAFT on the internal track: a person completes it in the Play Console" ;;
+            failure) echo "- Google Play upload FAILED" ;;
+            *) [ "$HAS_PLAY" = true ] && echo "- not uploaded (an earlier step failed)" || echo "- not uploaded: PLAY_SERVICE_ACCOUNT_JSON is not set in the environment play (checks above passed)" ;;
+          esac >> "$GITHUB_STEP_SUMMARY"
