@@ -74,6 +74,18 @@ object ToolProtocol {
         return calls
     }
 
+    /**
+     * The text protocol for models asked to write a call in the answer instead of using the runtime's tool
+     * calling: the tools in one line each, and the one JSON shape to reply with. Appended to the system prompt.
+     */
+    fun textInstructions(tools: List<ToolSpec>): String = buildString {
+        append("You can call these tools:\n")
+        for (t in tools) append("- ${t.name}(${t.params.joinToString(", ") { "${it.name}: ${it.type}" + if (it.required) "" else "?" }}): ${t.description}\n")
+        append("\nTo call a tool, reply with only a JSON object on its own, exactly in this form:\n")
+        append("{\"tool\": \"<name>\", \"arguments\": {<arguments>}}\n")
+        append("You will then receive the tool result. When you have what you need, or when no tool fits, reply in plain text.")
+    }
+
     /** The scenario's tools as the shared contract's [LlmToolSpec]s (string arguments capped at [MAX_ARG_CHARS]). */
     fun llmTools(tools: List<ToolSpec>): List<LlmToolSpec> = tools.map { t ->
         LlmToolSpec(t.name, t.description, t.params.map { p ->

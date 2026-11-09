@@ -20,6 +20,14 @@ object LabTestData {
         return LabData(scenarios, recordings, emptyList())
     }
 
+    /** The tool-test catalogue straight from the source tree (the same files the app bundles). */
+    fun toolCatalogue(): ToolCatalogue {
+        val files = File(root, "tooltests").listFiles { f -> f.name.endsWith(".json") }!!.sortedBy { it.name }
+        val kinds = ArrayList<ToolKind>(); val cases = ArrayList<ToolCase>(); val texts = ArrayList<String>()
+        for (f in files) { val t = f.readText(); val (k, c) = ToolTestFormats.parse(t); kinds += k; cases += c; texts += t }
+        return ToolCatalogue(kinds, cases, emptyList(), ToolTestFormats.hash(texts))
+    }
+
     fun scenario(id: String): Scenario = load().scenario(id)!!
 
     fun call(name: String, vararg args: Pair<String, String>) = ToolCall(name, args.toMap())
