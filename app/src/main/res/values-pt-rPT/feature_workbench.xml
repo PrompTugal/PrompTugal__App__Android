@@ -5,7 +5,6 @@
     <string name="workbench_tab_run">Correr</string>
     <string name="workbench_tab_experiments">Experiências</string>
     <string name="workbench_tab_tools">Testes de ferramentas</string>
-    <string name="workbench_tools_soon">Os testes de ferramentas vêm do dev.lab.</string>
     <string name="workbench_experiment">Experiência</string>
     <string name="workbench_no_base">Configure primeiro uma execução válida no separador Correr: a experiência parte dessas definições.</string>
     <string name="workbench_mode_sweep">Varredura</string>

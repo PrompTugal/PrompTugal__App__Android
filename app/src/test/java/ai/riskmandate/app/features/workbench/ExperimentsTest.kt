@@ -1,5 +1,8 @@
 package ai.riskmandate.app.features.workbench
 
+import ai.riskmandate.app.experiments.DeviceGuard
+import ai.riskmandate.app.experiments.RunCaps
+import ai.riskmandate.app.experiments.StopReason
 import ai.riskmandate.app.llm.BackendPreference
 import ai.riskmandate.app.llm.DeviceSample
 import ai.riskmandate.app.llm.FakeLlmService
@@ -49,22 +52,39 @@ class ExperimentsTest {
         assertEquals(listOf("0.2", "0.7", "1.0"), ExperimentPlan.parseValues("0.2, 0.7  1.0,"))
     }
 
-    @Test fun theCapsAreTheLabs() {
-        assertNull(ExperimentCaps.check(0, 0, dev(), 0))
-        assertEquals(ExperimentStop.RUN_CAP, ExperimentCaps.check(100, 0, dev(), 0))
-        assertEquals(ExperimentStop.TIME_CAP, ExperimentCaps.check(1, 30 * 60_000L, dev(), 0))
-        assertEquals(ExperimentStop.FAILURES, ExperimentCaps.check(1, 0, dev(), 3))
-        assertEquals(ExperimentStop.BATTERY, ExperimentCaps.check(1, 0, dev(pct = 15), 0))
-        assertNull("charging is fine", ExperimentCaps.check(1, 0, dev(pct = 10, charging = true), 0))
-        assertEquals(ExperimentStop.HOT, ExperimentCaps.check(1, 0, dev(thermal = Thermal.SEVERE), 0))
-        assertNull(ExperimentCaps.check(1, 0, dev(thermal = Thermal.MODERATE), 0))
+    private class Guard(var pct: Int? = 80, var charging: Boolean = false, var hot: Boolean = false) : DeviceGuard {
+        override fun batteryPct() = pct
+        override fun charging() = charging
+        override fun hot() = hot
+    }
+
+    @Test fun theCapsAreExperimentsRunCaps() {
+        assertEquals(100, RunCaps.MAX_RUNS)
+        assertEquals(30 * 60_000L, RunCaps.MAX_TOTAL_MS)
+        assertEquals(15, RunCaps.LOW_BATTERY_PCT)
+        assertEquals(3, RunCaps.MAX_CONSECUTIVE_ERRORS)
+        assertEquals(ExperimentStop.BATTERY, ExperimentStop.of(StopReason.LOW_BATTERY))
+        assertEquals(ExperimentStop.HOT, ExperimentStop.of(StopReason.HOT))
+        assertEquals(ExperimentStop.TIME_CAP, ExperimentStop.of(StopReason.TIME_CAP))
+        assertEquals(ExperimentStop.FAILURES, ExperimentStop.of(StopReason.ERRORS))
+        assertNull(ExperimentStop.of(StopReason.DONE))
+    }
+
+    @Test fun lowBatteryOffChargeOrTheTimeCapStopBeforeTheNextRun() = runBlocking {
+        val plan = ExperimentPlan(SweepVariable.TEMPERATURE, listOf("0.2"), 5).expand(base).getOrThrow()
+        val runner = LlmRunner(FakeLlmService { FakeReply("ok") })
+        assertEquals(ExperimentStop.BATTERY, runExperiment(plan, runner, Guard(pct = 15)) {}.stop)
+        assertNull("charging is fine", runExperiment(plan, runner, Guard(pct = 10, charging = true)) {}.stop)
+        var t = 0L
+        val p = runExperiment(plan, runner, Guard(), clock = { t.also { t += 16 * 60_000L } }) {}
+        assertEquals(ExperimentStop.TIME_CAP, p.stop)
     }
 
     @Test fun anExperimentRunsLogsAndSummarises() = runBlocking {
         val logged = mutableListOf<String>()
         val plan = ExperimentPlan(SweepVariable.TEMPERATURE, listOf("0.2", "1.0"), 2)
         val fake = FakeLlmService { FakeReply("one two three") }
-        val p = runExperiment(plan.expand(base).getOrThrow(), LlmRunner(fake), { dev() }, onRecord = { l, _ -> logged += l }) {}
+        val p = runExperiment(plan.expand(base).getOrThrow(), LlmRunner(fake), Guard(), onRecord = { l, _ -> logged += l }) {}
         assertEquals(4, p.done)
         assertNull(p.stop)
         assertEquals(listOf("0.2", "1.0", "0.2", "1.0"), logged)
@@ -79,14 +99,19 @@ class ExperimentsTest {
     @Test fun heatOrLowBatteryStopsBeforeTheNextRun() = runBlocking {
         var n = 0
         val plan = ExperimentPlan(SweepVariable.TEMPERATURE, listOf("0.2"), 5).expand(base).getOrThrow()
-        val p = runExperiment(plan, LlmRunner(FakeLlmService { FakeReply("ok") }), { n++; if (n > 2) dev(thermal = Thermal.CRITICAL) else dev() }) {}
+        val guard = object : DeviceGuard {
+            override fun batteryPct() = 80
+            override fun charging() = false
+            override fun hot() = ++n > 2
+        }
+        val p = runExperiment(plan, LlmRunner(FakeLlmService { FakeReply("ok") }), guard) {}
         assertEquals(ExperimentStop.HOT, p.stop)
         assertTrue(p.done in 1..2)
     }
 
     @Test fun threeFailuresInARowStop() = runBlocking {
         val plan = ExperimentPlan(SweepVariable.TEMPERATURE, listOf("0.2"), 10).expand(base).getOrThrow()
-        val p = runExperiment(plan, LlmRunner(FakeLlmService(initial = LlmState.NoModel)), { dev() }) {}
+        val p = runExperiment(plan, LlmRunner(FakeLlmService(initial = LlmState.NoModel)), Guard()) {}
         assertEquals(ExperimentStop.FAILURES, p.stop)
         assertEquals(3, p.done)
         assertEquals(3, ExperimentSummary.of(listOf("0.2"), p.results)[0].failed)
@@ -97,7 +122,7 @@ class ExperimentsTest {
         var last: ExperimentProgress? = null
         val plan = ExperimentPlan(SweepVariable.TEMPERATURE, listOf("0.2"), 5).expand(base).getOrThrow()
         val job = async {
-            runExperiment(plan, LlmRunner(FakeLlmService(tokenDelayMs = 20) { FakeReply("w ".repeat(100)) }), { dev() }, onRecord = { _, r -> logged += r.stopReason }) { last = it }
+            runExperiment(plan, LlmRunner(FakeLlmService(tokenDelayMs = 20) { FakeReply("w ".repeat(100)) }), Guard(), onRecord = { _, r -> logged += r.stopReason }) { last = it }
         }
         delay(150)
         job.cancel()

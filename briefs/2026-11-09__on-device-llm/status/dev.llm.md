@@ -5,6 +5,11 @@
 ## Doing
 Workbench (brief `briefs/2026-11-09__on-device-llm/workbench.md`, Dinis 9 Nov ~10:00 UTC): tabs 1 (Run) and 2 (Experiments). Step 1 (stats) pushed; next the `workbench` feature and the Run tab, then the run log, sweep and A/B. Earlier work (bench, LlmService/LlmHost, feature G) is on dev; G stays `enabled = false` until Dinis's tablet run.
 
+## Workbench step 7: tab 3 and experiments/
+- Tab 3 hosts dev.lab's `features/workbench/tooltests/ToolTestsTab(llm, openFeature, onBusy, settings)` in a scroll the Workbench owns; its sampling and max tokens come from the Run tab's form; while it runs, the Workbench holds the idle reset and keeps the screen on (its `onBusy`).
+- Sweeps now decide their caps through `experiments/RunCaps.nextStop` with `experiments/AndroidDeviceGuard` (the Lab's and the tool tests' caps, one copy): `ExperimentCaps` is gone; the 100-run cap and 3 failures in a row use `RunCaps.MAX_RUNS` and `MAX_CONSECUTIVE_ERRORS`. `llm/DeviceProbe` stays only for what DeviceGuard does not give: the thermal level and app memory recorded before and after each run.
+- Tests: caps through a fake DeviceGuard (battery off charge, charging, time cap by a virtual clock, heat), the wide test opens tab 3.
+
 ## Contract additions for the cloud service (dev.chat)
 - `LlmError.CAP_REACHED` (appended; no existing value changed; no `when` over `LlmError` outside llm/ today) and `LlmStats.costUsd: Double? = null` (appended last, default null on the device); "Copy run" shows the cost when there is one. With `LlmService.location`, `LlmStats.location` (LlmLocation LOCAL, CLOUD) and `llm/prompts` (`Prompts.RISKMANDATE_BASE`, `assets/prompts/riskmandate_base.v1.txt`) from step 5, all four of dev.chat's asks are on this branch.
 - Team renamed (Dinis, 9 Nov ~11:00 UTC): commits from here are `dev.llm.android@promptugal.ai.dinis`.

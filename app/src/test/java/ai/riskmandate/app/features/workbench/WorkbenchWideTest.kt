@@ -61,5 +61,8 @@ class WorkbenchWideTest {
         compose.onNodeWithText("Experiments").performClick()
         compose.onNodeWithTag(ExperimentTags.START).assertIsDisplayed()
         compose.onNodeWithTag(ExperimentTags.VIEW).assertIsDisplayed()
+        // Tool tests: dev.lab's tab, hosted as the third tab (its catalogue loads from the bundled assets).
+        compose.onNodeWithText("Tool tests").performClick()
+        waitFor(ai.riskmandate.app.features.workbench.tooltests.ToolTestTags.RUN)
     }
 }
