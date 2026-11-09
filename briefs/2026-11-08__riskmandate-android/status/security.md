@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 53 (9 Nov 2026): app 4e26cca PASS with R-app-2 (Preview in every build: a decision for Dinis before any store or M3 build), dev.llm 1b80473 PASS, dev.chat acd3e5f PASS (R-chat-5 info), dev.lab 1799c03 PASS (loop mode; export off; R-lab-8 and R-lab-9 still open before the Lab is enabled). Still to read: the design-pass article, and the host share path for Lab export when it exists. Waiting for the next wake.
+> Round 54 (9 Nov 2026): app 093bdc4 PASS (replaces 4e26cca; R-app-2 stands), eval 79884c2 PASS (R-lab-8, R-lab-9, R-lab-10 closed in eval) with R-lab-12: do not merge it before dev.lab changes AbpChecks.domain to match, or GoldenVectorsTest goes red (10 of 16 new egress vectors fail on the current Kotlin). Still to read: dev.lab Kotlin fix, the design-pass article, the Lab export share path. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
