@@ -56,7 +56,7 @@ The definitions on screen are quoted in English from riskmandate.ai, read on 9 N
 
 The button called RiskMandate opens riskmandate.ai's pages inside the app, with native tabs: Home, What an ABP is, How it works, Pricing, SHarness and About. The in-app view is limited by the same address check as the rest of the app, so it opens only https pages on riskmandate.ai and www.riskmandate.ai.
 
-For a stand with bad Wi-Fi the app holds an offline copy of the pages, read on 9 November 2026. It shows a banner saying so, with a Try online button. A page that is not in the copy says so and asks for a connection. The screen also tells you that riskmandate.ai has its own privacy policy and may set its own cookies, while this app collects nothing.
+For a stand with bad Wi-Fi the app holds an offline copy of the pages, read on 9 November 2026. It shows a banner saying so, with a Try online button. A page that is not in the copy says so and asks for a connection. The screen also tells you that riskmandate.ai has its own privacy policy and may set its own cookies, while this app collects no personal data.
 
 The screenshots below show the app's frame around the page: the tabs, the offline banner and the privacy line. They do not show the page itself.
 

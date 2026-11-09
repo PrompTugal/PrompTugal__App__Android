@@ -43,7 +43,7 @@ This part arrives with the app's new shell. It is described from the design spec
 - **Tablets (landscape, or 840 dp wide or more):** a permanent sidebar on the left. It holds the brand block, then one row per feature, in sections. It can collapse to a narrow icon rail, and the app remembers that on the device.
 - **Stand mode:** the sidebar starts collapsed, so the content fills the screen. Staff can open it.
 - **Phones and portrait:** the same panel as a drawer, opened by a labelled menu button.
-- **Now:** the home page becomes a page of cards: three tiles (features on, what the app collects, anything that needs a look), then one card per feature.
+- **Now:** the home page becomes a page of cards: three tiles (features on, the permissions this app asks for, anything that needs a look), then one card per feature.
 
 The pictures below are renders of that design, drawn by the screenshot tests from sample content. They are not captures of the running app.
 
@@ -59,6 +59,6 @@ This app's mandate looks at more of what the app keeps on the device: the app's 
 
 ## The privacy texts
 
-The privacy policy and the Data safety answers were updated to list every item the app stores: the layout preference, the number of the last update note shown, and, where the features are present, chat history and model files, with how to delete them. The app still collects nothing and sends nothing. It still asks for only two permissions: internet and network state.
+The privacy policy and the Data safety answers were updated to list every item the app stores: the layout preference, the number of the last update note shown, and, where the features are present, chat history and model files, with how to delete them. The app collects no personal data and sends nothing to its makers. The in-app riskmandate.ai view loads pages from riskmandate.ai the way a browser does, and the model setup downloads a file from Hugging Face only when you tap Download. See the privacy policy for the details. The app still asks for only two permissions: internet and network state.
 
 The build number is at the bottom of the home screen. Quote it when you report a problem.
