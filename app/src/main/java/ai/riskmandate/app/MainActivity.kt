@@ -28,15 +28,19 @@ import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.IdleHolds
 import ai.riskmandate.app.features.stand.StandHost
+import ai.riskmandate.app.llm.ModelFiles
+import ai.riskmandate.app.llm.bench.ModelBenchScreen
 
 /** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
 object Routes {
     const val HOME = "home"
     const val LICENCES = "licences"
     const val DIAGNOSTICS = "diagnostics"
+    /** The on-device LLM bench (dev.llm), reached from Diagnostics only while feature G is switched off. */
+    const val MODEL_BENCH = "modelbench"
 }
 
-private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS)
+private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS, Routes.MODEL_BENCH)
 
 class MainActivity : ComponentActivity() {
     private var config by mutableStateOf(ManagedConfig.DEFAULT)
@@ -85,6 +89,7 @@ class MainActivity : ComponentActivity() {
                         Routes.HOME -> R.string.nav_home
                         Routes.LICENCES -> R.string.home_licences
                         Routes.DIAGNOSTICS -> R.string.home_diagnostics
+                        Routes.MODEL_BENCH -> R.string.feature_models_title
                         else -> feature?.title ?: R.string.nav_home
                     }
                     StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome, idleHeld = idle.held) {
@@ -104,7 +109,15 @@ class MainActivity : ComponentActivity() {
                                 )
                                 route == Routes.DIAGNOSTICS -> {
                                     val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
-                                    DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = goHome)
+                                    // Only on a debuggable build or once a model file is pushed (architect A-llm-5).
+                                    val bench = remember { ModelFiles.benchAvailable(this@MainActivity) }
+                                    DiagnosticsScreen(
+                                        text = text, onCopy = rememberCopyAction(text), onBack = goHome,
+                                        onModelBench = if (bench) ({ screen = Routes.MODEL_BENCH }) else null,
+                                    )
+                                }
+                                route == Routes.MODEL_BENCH -> FeatureFrame(title = R.string.feature_models_title, onBack = goHome) {
+                                    ModelBenchScreen()
                                 }
                                 feature != null -> FeatureFrame(title = feature.title, onBack = goHome) {
                                     feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device, holdIdle = idle::hold) })

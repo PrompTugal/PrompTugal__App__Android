@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Funcionalidade G (configuração do modelo), responsável dev.llm. Passo 1: a bancada de testes escondida. -->
+    <string name="models_kicker">No dispositivo</string>
+    <string name="models_summary">Descarregue um modelo de linguagem uma vez, verifique-o e use-o neste tablet sem rede.</string>
+    <string name="models_bench_intro">Bancada de testes do modelo no dispositivo. Envie um ficheiro de modelo com o adb, escolha-o, corra o pedido fixo e copie os números. Tudo corre neste dispositivo; nada é enviado para lado nenhum.</string>
+    <string name="models_bench_none">Ainda não há nenhum ficheiro de modelo. Envie um com o adb para a pasta abaixo e toque em Atualizar.</string>
+    <string name="models_bench_pick">Modelo</string>
+    <string name="models_bench_model_line">%1$s, %2$s (%3$s)</string>
+    <string name="models_bench_backend">Corre em</string>
+    <string name="models_bench_gpu">GPU</string>
+    <string name="models_bench_cpu">CPU</string>
+    <string name="models_bench_run">Correr</string>
+    <string name="models_bench_stop">Parar</string>
+    <string name="models_bench_refresh">Atualizar</string>
+    <string name="models_bench_copy">Copiar resultados</string>
+    <string name="models_bench_copied">Resultados copiados.</string>
+    <string name="models_bench_copy_failed">Não foi possível copiar os resultados.</string>
+    <string name="models_bench_verifying">A verificar o SHA-256 do ficheiro: %1$d%%</string>
+    <string name="models_bench_loading">A carregar o modelo. Pode demorar um minuto.</string>
+    <string name="models_bench_generating">A responder: %1$d partes até agora</string>
+    <string name="models_bench_done">Concluído. Os números estão em Resultados.</string>
+    <string name="models_bench_wrong_size">O ficheiro não tem o tamanho esperado, por isso não foi carregado. Se o adb ainda o estiver a copiar, aguarde e toque de novo em Correr.</string>
+    <string name="models_bench_wrong_hash">O SHA-256 do ficheiro não corresponde, por isso foi apagado e não foi carregado. Envie-o de novo.</string>
+    <string name="models_bench_failed">A execução falhou: %1$s</string>
+    <string name="models_bench_output">Resposta</string>
+    <string name="models_bench_results">Resultados</string>
+    <string name="models_bench_how">Como adicionar um modelo</string>
+    <string name="models_bench_folder">Pasta: %1$s</string>
+    <string name="models_bench_no_storage">A pasta do adb não está disponível: precisa do Android 11 ou posterior e do armazenamento partilhado montado.</string>
+    <string name="models_bench_files">Ficheiros exatos (descarregue-os num computador e depois envie-os):</string>
+</resources>
