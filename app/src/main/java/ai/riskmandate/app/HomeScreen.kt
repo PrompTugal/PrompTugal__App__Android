@@ -44,9 +44,7 @@ object HomeTags {
     const val DEVICE_MANAGEMENT = "device_management"
     const val DEVICE_LABEL = "device_label"
     const val MESSAGE = "message"
-    const val WHATS_NEW = "whats_new"
-    const val WHATS_NEW_OPEN = "whats_new_open"
-    const val WHATS_NEW_LATER = "whats_new_later"
+    fun featureBadge(id: String) = "feature_badge_$id"
     const val LICENCES = "licences"
     const val DIAGNOSTICS = "diagnostics"
     fun feature(id: String) = "feature_$id"
@@ -73,7 +71,6 @@ fun HomeScreen(
     onLicences: () -> Unit = {},
     onDiagnostics: () -> Unit = {},
     features: List<FeatureButton> = emptyList(),
-    whatsNew: WhatsNewOffer? = null,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
         val twoPane = maxWidth >= TwoPaneMinWidth && maxWidth > maxHeight
@@ -94,13 +91,13 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        PrimaryPane(onOpen, message, features, whatsNew)
+                        PrimaryPane(onOpen, message, features)
                     }
                     Column(Modifier.weight(1f)) { InfoPane(version, device, onLicences, onDiagnostics) }
                 }
             } else {
                 Column(Modifier.widthIn(max = ContentMaxWidth), horizontalAlignment = Alignment.CenterHorizontally) {
-                    PrimaryPane(onOpen, message, features, whatsNew)
+                    PrimaryPane(onOpen, message, features)
                     Spacer(Modifier.height(32.dp))
                     HorizontalDivider()
                     Spacer(Modifier.height(16.dp))
@@ -116,7 +113,6 @@ private fun ColumnScope.PrimaryPane(
     onOpen: () -> Unit,
     @StringRes message: Int?,
     features: List<FeatureButton>,
-    whatsNew: WhatsNewOffer?,
 ) {
     Text(
         stringResource(R.string.app_name),
@@ -125,10 +121,6 @@ private fun ColumnScope.PrimaryPane(
         textAlign = TextAlign.Center,
         modifier = Modifier.semantics { heading() },
     )
-    if (whatsNew != null) {
-        Spacer(Modifier.height(16.dp))
-        WhatsNewCard(whatsNew)
-    }
     Spacer(Modifier.height(24.dp))
     val openAction = stringResource(R.string.home_open_action)
     Button(
@@ -159,7 +151,22 @@ private fun ColumnScope.PrimaryPane(
             onClick = f.onClick,
             modifier = Modifier.widthIn(min = ButtonMinWidth).heightIn(min = MinTouch).testTag(HomeTags.feature(f.id)),
         ) {
-            Text(stringResource(f.title))
+            val title = stringResource(f.title)
+            Text(title)
+            if (f.badge != null) {
+                val badge = stringResource(f.badge)
+                // A small label inside the button; TalkBack reads "<title>, <badge>".
+                Text(
+                    badge,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .testTag(HomeTags.featureBadge(f.id)),
+                )
+            }
         }
     }
 }
@@ -232,42 +239,5 @@ private fun HomePreview() = RiskMandateTheme {
     )
 }
 
-/**
- * "New in this version", offered once after an update (features/releases): Open goes to the What's new
- * screen, Later just dismisses it. Both record the version as seen (the host does that).
- */
-data class WhatsNewOffer(val onOpen: () -> Unit, val onLater: () -> Unit)
-
-@Composable
-private fun WhatsNewCard(offer: WhatsNewOffer) {
-    Column(
-        modifier = Modifier
-            .widthIn(max = ContentMaxWidth)
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp))
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .testTag(HomeTags.WHATS_NEW),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        TextButton(
-            onClick = offer.onOpen,
-            modifier = Modifier.heightIn(min = 56.dp).testTag(HomeTags.WHATS_NEW_OPEN),
-        ) {
-            Text(
-                stringResource(R.string.feature_releases_offer),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                textAlign = TextAlign.Center,
-            )
-        }
-        TextButton(
-            onClick = offer.onLater,
-            modifier = Modifier.heightIn(min = 56.dp).testTag(HomeTags.WHATS_NEW_LATER),
-        ) {
-            Text(stringResource(R.string.home_whats_new_later), color = MaterialTheme.colorScheme.onPrimaryContainer)
-        }
-    }
-}
-
 /** A home-screen button for a summit feature. */
-data class FeatureButton(val id: String, @StringRes val title: Int, val onClick: () -> Unit)
+data class FeatureButton(val id: String, @StringRes val title: Int, @StringRes val badge: Int? = null, val onClick: () -> Unit)

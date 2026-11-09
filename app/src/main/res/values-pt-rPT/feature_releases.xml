@@ -6,4 +6,5 @@
     <string name="feature_releases_sample_note">Este é um artigo de exemplo que mostra o formato. As notas de versão reais substituem-no.</string>
     <string name="feature_releases_image_fallback">Captura de ecrã</string>
     <string name="feature_releases_offer">Veja o que há de novo nesta versão</string>
+    <string name="feature_releases_badge">Novo</string>
 </resources>

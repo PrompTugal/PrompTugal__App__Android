@@ -6,4 +6,5 @@
     <string name="feature_releases_sample_note">This is a sample article that shows the format. The real release notes replace it.</string>
     <string name="feature_releases_image_fallback">Screenshot</string>
     <string name="feature_releases_offer">See what\'s new in this version</string>
+    <string name="feature_releases_badge">New</string>
 </resources>
