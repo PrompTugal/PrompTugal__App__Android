@@ -152,3 +152,12 @@ A feature with `enabled = false` is never on Home, in the sidebar, or reachable 
 - **`openFeature`:** refused in stand mode, and refused for disabled ids from normal screens. While a Preview screen is showing, a disabled target opens as `preview/<target>` (chat in preview, then "set up a model", then models).
 - **Marked:** `FeatureFrame(preview = true)` shows a "Preview" pill next to the title.
 - **Same contract:** the same `FeatureContext` (`llm` included). Nothing in `features/` knows it is in preview, and no feature reads the route.
+
+## Post-summit items (approved, not before the summit build)
+- **P8, feature icons as drawables** (conductor's go for after the build; design chose drawables):
+  1. Add `@DrawableRes iconRes: Int? = null` to `Feature`, mark `icon: ImageVector?` `@Deprecated`; the shell uses `iconRes`, then its default icon (it ignores `icon`). Contract test.
+  2. design draws `res/drawable/ic_feature_<id>.xml` (24 dp, 2 dp stroke, line style) on request; each owner replaces its `icon` override with `iconRes`. No borrowed Material icons.
+  3. When no feature overrides `icon`, delete it.
+  - Same round: app derives the sidebar order from `FEATURES` (`NAV_ORDER` goes); sections move onto `Feature` through the architect only if they stay (A-app-14).
+- **Kotlin, Compose plugin and AGP bump** so LiteRT-LM's 2.4 metadata reads without `-Xskip-metadata-version-check`, then drop the flag (A-llm-2; release and app).
+- **APK size:** an AAB-only or ABI-split path for the arm64 and x86_64 native libraries (A-llm-8; release).

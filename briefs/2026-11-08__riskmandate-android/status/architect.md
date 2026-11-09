@@ -1,6 +1,6 @@
 # architect.android status
 
-> 9 Nov 2026, about 05:00 UTC: FeatureContext.llm pushed (merged with dev 25d9cb7, gate green, contract tests). openFeature(id) pushed earlier (a26f037). Waiting for new heads to review.
+> 9 Nov 2026, about 06:00 UTC: contract on dev or pending merge: homeBadge, icon/kicker/summary, openFeature, llm. Preview path reviewed (app 093bdc4 PASS). Post-summit, approved: P8 (iconRes), the Kotlin bump to drop the metadata flag, APK split. Waiting for new heads.
 
 ## Doing
 Waiting for the first feature or app commits to review.
@@ -32,6 +32,7 @@ Waiting for the first feature or app commits to review.
 - Review round 1 (01:35 UTC): `git log origin/dev..origin/work/<role>` empty for app, design, qa, dev.site, dev.abpdemo, dev.mandate, dev.stand. play has fb617fd (docs only, not app-touching, not reviewed).
 
 ## Next
+- After the summit build: P8 step 1 (iconRes, icon deprecated), then steps 2 and 3 with design and the owners; review app's NAV_ORDER from FEATURES. See README "Post-summit items".
 At each wake: fetch, review every app-touching branch head into `docs/architecture/reviews/<date>-<role>-<sha>.md`, message the conductor with the verdict.
 
 ## Blocked
