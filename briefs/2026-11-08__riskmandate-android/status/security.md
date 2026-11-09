@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 73 (9 Nov 2026): cloud client dev.chat e84e63d PASS to merge unwired (R-cloud-1 User-Agent and R-cloud-4 cap controls must close before wiring; six lower notes), architect 4412132 PASS (usesCloud and cloudLlm), dev.mandate 55a26c3 PASS (Workbench log entry). Waiting for: the move to cloud/ and feature_cloud, the key screen and the host wiring (checklist M), play lines for the Workbench log (R-wb-5), a real-device check of KeystoreCipher. Still open: the design-pass article, R-lab-11, R-app-2, Dinis asks for the cloud key.
+> Round 74 (9 Nov 2026): play 6303b91 PASS (Workbench log lines closed R-wb-5; cloud draft), dev.llm d25dcfb PASS (R-wb-4, 6, 7 closed), dev.lab 109b6a9 PASS (experiments/ move, import-ban test; R-lab-15 closed), dev.chat 14f671b PASS (cloud client in cloud/ and feature_cloud; R-cloud-1, 2, 3, 6, 7 closed; R-cloud-9 and 10 low, still unwired). Waiting for: the key screen and host wiring (checklist M), a real-device check of KeystoreCipher. Still open: the design-pass article, R-lab-11, R-app-2, Dinis asks for the cloud key.
 
 ## Doing
 Nothing. Stopped until woken.
