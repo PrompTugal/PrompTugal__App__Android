@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Workbench (dev.llm owns tabs Run and Experiments). Staff tool: reached from Diagnostics > Preview. -->
+    <string name="workbench_title">Workbench</string>
+    <string name="workbench_tab_run">Run</string>
+    <string name="workbench_tab_experiments">Experiments</string>
+    <string name="workbench_tab_tools">Tool tests</string>
+    <string name="workbench_experiments_soon">The run log, sweeps and A/B come next.</string>
+    <string name="workbench_tools_soon">Tool tests come from dev.lab.</string>
+    <string name="workbench_no_service">No model is set up yet. Download one in Model setup, then come back.</string>
+    <string name="workbench_model">Model</string>
+    <string name="workbench_model_current">Current</string>
+    <string name="workbench_backend">Runs on</string>
+    <string name="workbench_backend_auto">GPU, else CPU</string>
+    <string name="workbench_backend_gpu">GPU only (falls back if it cannot load)</string>
+    <string name="workbench_backend_cpu">CPU only</string>
+    <string name="workbench_system">System prompt</string>
+    <string name="workbench_system_label">System prompt (editable)</string>
+    <string name="workbench_system_none">None</string>
+    <string name="workbench_system_brief">Brief assistant</string>
+    <string name="workbench_system_tools">Uses tools</string>
+    <string name="workbench_prompt">Prompt</string>
+    <string name="workbench_sampling">Sampling</string>
+    <string name="workbench_temperature">Temperature</string>
+    <string name="workbench_top_k">Top-k</string>
+    <string name="workbench_top_p">Top-p</string>
+    <string name="workbench_seed">Seed (empty: none)</string>
+    <string name="workbench_max_tokens">Max output tokens</string>
+    <string name="workbench_tools">Tools offered (fake, nothing runs)</string>
+    <string name="workbench_tools_none">None</string>
+    <string name="workbench_invalid">Fill in a prompt and check the numbers: temperature 0 to 2, top-k 1 to 1000, top-p above 0 up to 1, max tokens 1 to 2048.</string>
+    <string name="workbench_run">Run</string>
+    <string name="workbench_stop">Stop</string>
+    <string name="workbench_rerun">Run again</string>
+    <string name="workbench_copy">Copy run</string>
+    <string name="workbench_copied">Run copied as text.</string>
+    <string name="workbench_copy_failed">Could not copy the run.</string>
+    <string name="workbench_live">Running: %1$s, first token after %2$s, %3$d pieces</string>
+    <string name="workbench_answer">Answer</string>
+    <string name="workbench_stats">Figures</string>
+</resources>
