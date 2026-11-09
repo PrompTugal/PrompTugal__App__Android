@@ -31,6 +31,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -93,26 +94,33 @@ class ModelSetupScreenTest {
         assertEquals(1, released)
     }
 
-    @Test fun deletingThroughTheFeatureRefreshesTheHostsService() = kotlinx.coroutines.runBlocking {
+    @Test fun deletingThroughTheFeatureRefreshesTheHostsService() {
         fakeInstalled(e2b)
         val host = ai.riskmandate.app.llm.LlmHost({ dir }, object : ai.riskmandate.app.llm.LlmRuntime {
             override fun load(file: File, backend: ai.riskmandate.app.llm.BenchBackend, maxTokens: Int) = throw IllegalStateException("not in this test")
         })
-        host.refresh()
+        kotlinx.coroutines.runBlocking { host.refresh() }
         assertEquals(ai.riskmandate.app.llm.LlmState.Idle(e2b.id), host.state.value)
+        // ModelsContent is ModelsFeature.Content with the file work run in step: no waiting on IO.
         compose.setContent {
             RiskMandateTheme {
-                ModelsFeature.Content(FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), llm = host))
+                ModelsContent(
+                    FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), llm = host),
+                    io = Dispatchers.Unconfined,
+                )
             }
         }
-        waitFor(ModelSetupTags.delete(e2b.id))
+        shadowOf(Looper.getMainLooper()).idle()
+        compose.waitForIdle()
         compose.onNodeWithTag(ModelSetupTags.delete(e2b.id)).performScrollTo().performClick()
         compose.onNodeWithTag(ModelSetupTags.CONFIRM_DELETE).performClick()
-        val end = System.currentTimeMillis() + 5_000
-        while (host.state.value != ai.riskmandate.app.llm.LlmState.NoModel && System.currentTimeMillis() < end) {
-            shadowOf(Looper.getMainLooper()).idle(); compose.waitForIdle(); Thread.sleep(20)
+        shadowOf(Looper.getMainLooper()).idle()
+        compose.waitForIdle()
+        assertFalse(File(dir, e2b.fileName).exists())
+        // The refresh runs on the host's own dispatcher: wait on the state itself, not on a clock.
+        kotlinx.coroutines.runBlocking {
+            kotlinx.coroutines.withTimeout(10_000) { host.state.first { it == ai.riskmandate.app.llm.LlmState.NoModel } }
         }
-        assertEquals(ai.riskmandate.app.llm.LlmState.NoModel, host.state.value)
     }
 
     @Test fun listsTheOfferedModelsWithSizeAndLicence() {
