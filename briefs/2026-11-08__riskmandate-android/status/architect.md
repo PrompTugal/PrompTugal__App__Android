@@ -1,11 +1,13 @@
 # architect.android status
 
-> 9 Nov 2026, about 02:30 UTC: LLM side team reviewed: dev.llm c02632a PASS (LiteRT-LM 0.18.1 approved; the metadata flag only for the summit), dev.chat 4c6d11e PASS, eval 2aebd3d PASS, dev.lab b67a7c5 PASS (fix-forward). Dev up to 8410fb8 PASS after merge. Design-pass rules written. FeatureContext.llm waits for dev.llm's LlmService (step 3).
+> 9 Nov 2026, about 02:40 UTC: P7 pushed (c9233a0: Feature icon, kicker, summary). app shell step 1 (894a93b) PASS; step 2 must merge FeatureFrame into the shell (A-app-11: two headers on phones). FeatureContext.llm waits for dev.llm step 3.
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- P7: `icon`, `kicker`, `summary` on `Feature` (null defaults) plus `FeaturePresentationTest`. Gate green.
+- Review: app 894a93b shell step 1 PASS (A-app-11 double header on phones and Back next to the sidebar; A-app-12 use P7; A-app-13 unused import).
 - Reviews: dev.llm c02632a PASS (A-llm-1 licences, A-llm-2 metadata flag only for the summit, A-llm-3/4/5: bench route through app, out of features/, debug or model-present only); dev.chat 4c6d11e PASS (A-chat-1: use context.llm, not a chat-owned CompositionLocal); eval 2aebd3d PASS (A-eval-1 budget ledger path); dev.lab b67a7c5 PASS fix-forward (A-lab-1 argument validation, A-lab-2 golden vectors shared with eval, A-lab-3 parse eval's formats). README: contract adds `installed` and `modelId`; noBackupFilesDir; LiteRT-LM approved.
 - Reviews: site 747b521 PASS; app 62a5ee6 HOLD (A-app-10: the What's new card imports ReleasesNotice and StandSettings and reads disk in composition; rework onto homeBadge). A-app-8 closed.
 - P6 pushed: `Feature.homeBadge()` (default null) plus `FeatureBadgeTest` (default, override, every listed feature answers). Gate green. README: the host must not import feature packages except `StandHost`.
