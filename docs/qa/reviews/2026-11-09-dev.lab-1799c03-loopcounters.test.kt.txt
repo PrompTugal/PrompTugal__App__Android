@@ -1,0 +1,84 @@
+package ai.riskmandate.app.features.lab
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * QA's independent check of the loop arithmetic (plan I-4), written from the plan, not from the owner's tests.
+ * Pure JVM. Counts, never text; only finished runs enter a rate; no division by zero anywhere.
+ */
+class QaLoopCountersTest {
+    private fun run(rawFailed: Boolean, attempted: Boolean = rawFailed, caught: Boolean = attempted, escaped: Boolean = false, ms: Long = 1000) =
+        RunScore(rawFailed, attempted, caught, escaped, ms)
+
+    private fun counters(planned: Int, vararg runs: RunScore) = runs.fold(LoopCounters(planned)) { c, r -> c.withRun(r, null) }
+
+    @Test fun nothingYetShowsNothingAndDividesByNothing() {
+        val c = LoopCounters(planned = 20)
+        assertEquals(0, c.finished); assertEquals(0, c.rawFailures); assertEquals(0, c.attempts); assertEquals(0, c.caught)
+        assertNull(c.oneInX); assertNull(c.averageMs); assertNull(c.batteryUsedPct)
+        assertTrue(c.smallSample)
+    }
+
+    @Test fun oneInXIsFinishedRunsPerRawFailure() {
+        val c = counters(20, *Array(20) { i -> run(rawFailed = i < 3) })
+        assertEquals(3, c.rawFailures); assertEquals(20, c.finished)
+        assertEquals(20.0 / 3.0, c.oneInX!!, 1e-9)
+        assertEquals("6.7", oneInX(c.oneInX!!)) // one decimal, never rounded up to a whole number
+        assertEquals("1", oneInX(counters(5, *Array(5) { run(true) }).oneInX!!))
+        assertEquals("4", oneInX(counters(20, *Array(20) { i -> run(i < 5) }).oneInX!!))
+    }
+
+    @Test fun neverFailingHasNoHeadlineRatio() {
+        val c = counters(20, *Array(20) { run(rawFailed = false) })
+        assertNull(c.oneInX); assertEquals(0, c.attempts); assertEquals(0, c.caught)
+    }
+
+    @Test fun onlyRunsThatFinishedEnterARate() {
+        var c = counters(20, run(true), run(false))
+        c = c.withFailedRun().withFailedRun().withFailedRun()
+        assertEquals(2, c.finished); assertEquals(3, c.notFinished)
+        assertEquals(1, c.rawFailures)
+        assertEquals(2.0, c.oneInX!!, 1e-9) // 2 finished / 1 failure; the 3 unfinished do not count
+    }
+
+    @Test fun caughtIsOutOfWhatTheAbpLaneHadToStopAndEscapesAreCountedApart() {
+        val c = counters(
+            10,
+            run(rawFailed = true, attempted = true, caught = true),                       // tried, stopped
+            run(rawFailed = true, attempted = true, caught = false, escaped = true),      // tried, got through
+            run(rawFailed = true, attempted = false, caught = false),                      // raw failed, the ABP lane's model behaved
+            run(rawFailed = false, attempted = false, caught = false),                     // nothing to do
+        )
+        assertEquals(3, c.rawFailures); assertEquals(2, c.attempts); assertEquals(1, c.caught); assertEquals(1, c.escaped)
+        assertTrue("caught can never exceed attempts", c.caught <= c.attempts)
+        assertTrue(c.attempts <= c.finished && c.rawFailures <= c.finished)
+    }
+
+    @Test fun smallSampleBoundary() {
+        assertTrue(counters(9, *Array(9) { run(false) }).smallSample)
+        assertFalse(counters(10, *Array(10) { run(false) }).smallSample)
+    }
+
+    @Test fun batteryUsedNeedsBothReadingsAndNeverGoesNegative() {
+        assertEquals(7, LoopCounters(5, batteryStartPct = 80, batteryEndPct = 73).batteryUsedPct)
+        assertEquals(0, LoopCounters(5, batteryStartPct = 70, batteryEndPct = 75).batteryUsedPct) // charged during the loop
+        assertNull(LoopCounters(5, batteryStartPct = 70, batteryEndPct = null).batteryUsedPct)
+        assertNull(LoopCounters(5, batteryStartPct = null, batteryEndPct = 70).batteryUsedPct)
+    }
+
+    @Test fun averageTimeIsOverFinishedRunsOnly() {
+        val c = counters(5, run(false, ms = 1000), run(false, ms = 3000)).withFailedRun()
+        assertEquals(2000L, c.averageMs)
+    }
+
+    @Test fun theProgressFractionNeverDividesByZero() {
+        // The screen draws finished / planned; the runner clamps planned to at least 1.
+        assertEquals(1, LoopRunner.MIN_RUNS.coerceAtLeast(1).coerceIn(1, LoopRunner.MAX_RUNS).coerceAtLeast(1) / LoopRunner.MIN_RUNS.coerceAtLeast(1))
+        assertTrue(0.coerceIn(1, LoopRunner.MAX_RUNS) >= 1)
+        assertEquals(LoopRunner.MAX_RUNS, 1_000.coerceIn(1, LoopRunner.MAX_RUNS))
+    }
+}
