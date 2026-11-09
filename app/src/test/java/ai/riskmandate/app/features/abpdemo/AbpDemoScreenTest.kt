@@ -11,6 +11,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -27,8 +31,13 @@ class AbpDemoScreenTest {
     @get:Rule val compose = createComposeRule()
     private val app: Application = ApplicationProvider.getApplicationContext()
 
-    private fun show(index: Int = 0, auto: Boolean = false, onBack: () -> Unit = {}) =
-        compose.setContent { RiskMandateTheme { AbpDemoScreen(onBack, DemoPlayer(index, auto)) } }
+    private fun show(index: Int = 0, auto: Boolean = false, fontScale: Float = 1f) =
+        compose.setContent {
+            val d = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale)) {
+                RiskMandateTheme { AbpDemoScreen(DemoPlayer(index, auto)) }
+            }
+        }
 
     @Test fun everyStepRendersWithItsContentAndTheBanner() {
         show()
@@ -92,11 +101,27 @@ class AbpDemoScreenTest {
         compose.onNodeWithText(app.getString(R.string.abpdemo_step_of, 3, 7)).assertIsDisplayed()
     }
 
-    @Test fun homeCallsOnBack() {
-        var back = 0
-        show(onBack = { back++ })
-        compose.onNodeWithTag(AbpDemoTags.HOME).performClick()
-        assertEquals(1, back)
+    @Test fun hasNoTitleOrHomeOfItsOwn() {
+        show()
+        compose.onAllNodesWithText(app.getString(R.string.feature_abpdemo_title)).assertCountEquals(0)
+    }
+
+    @Test @Config(qualifiers = "w411dp-h891dp-port-xxhdpi")
+    fun portraitPhoneReachesEverythingByScrolling() {
+        show(index = 4)
+        compose.onNodeWithTag(AbpDemoTags.BANNER).assertIsDisplayed()
+        compose.onNodeWithTag(AbpDemoTags.layer(Layer.DEVICE)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(AbpDemoTags.NEXT).assertIsDisplayed().assertIsEnabled()
+        compose.onNodeWithTag(AbpDemoTags.AUTOPLAY).assertIsDisplayed()
+    }
+
+    @Test @Config(qualifiers = "w1280dp-h800dp-land-xhdpi")
+    fun at200PercentFontEverythingIsReachable() {
+        show(index = 5, fontScale = 2f)
+        compose.onNodeWithTag(AbpDemoTags.BANNER).assertIsDisplayed()
+        compose.onNodeWithTag(AbpDemoTags.layer(Layer.DEVICE)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(AbpDemoTags.AUTOPLAY).assertIsDisplayed()
+        compose.onNodeWithTag(AbpDemoTags.NEXT).assertIsDisplayed()
     }
 
     @Test @Config(qualifiers = "pt-rPT-w1280dp-h800dp-land-xhdpi")

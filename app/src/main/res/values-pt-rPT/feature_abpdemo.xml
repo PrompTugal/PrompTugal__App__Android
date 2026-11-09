@@ -51,7 +51,6 @@
     <string name="abpdemo_next">Seguinte</string>
     <string name="abpdemo_autoplay_start">Reprodução automática</string>
     <string name="abpdemo_autoplay_stop">Parar reprodução automática</string>
-    <string name="abpdemo_home">Início</string>
     <string name="abpdemo_step_of">Passo %1$d de %2$d</string>
     <string name="abpdemo_layer_state_done">Feito</string>
     <string name="abpdemo_layer_state_now">Agora</string>

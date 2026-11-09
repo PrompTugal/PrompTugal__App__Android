@@ -15,7 +15,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,6 +43,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -56,7 +58,7 @@ object AbpDemoFeature : Feature {
     override val enabled = true
 
     @Composable
-    override fun Content(context: FeatureContext) = AbpDemoScreen(onBack = context.onBack)
+    override fun Content(context: FeatureContext) = AbpDemoScreen()
 }
 
 object AbpDemoTags {
@@ -64,7 +66,6 @@ object AbpDemoTags {
     const val BACK = "abpdemo_back"
     const val NEXT = "abpdemo_next"
     const val AUTOPLAY = "abpdemo_autoplay"
-    const val HOME = "abpdemo_home"
     const val DETAIL = "abpdemo_detail"
     const val SCENARIO = "abpdemo_scenario"
     const val STEP = "abpdemo_step"
@@ -92,7 +93,7 @@ private fun Strength.label() = when (this) {
 }
 
 @Composable
-fun AbpDemoScreen(onBack: () -> Unit, initial: DemoPlayer = DemoPlayer()) {
+fun AbpDemoScreen(initial: DemoPlayer = DemoPlayer()) {
     // Saved, so turning the tablet round does not restart the walk-through.
     var index by rememberSaveable { mutableIntStateOf(initial.index) }
     var auto by rememberSaveable { mutableStateOf(initial.autoPlay) }
@@ -108,17 +109,32 @@ fun AbpDemoScreen(onBack: () -> Unit, initial: DemoPlayer = DemoPlayer()) {
     }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground) {
-    Column(Modifier.fillMaxSize()) {
-        Banner()
-        Row(
-            Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            Diagram(player, Modifier.weight(0.42f))
-            Detail(player, Modifier.weight(0.58f))
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            // Two panes only when there is room for both at a readable size: a landscape tablet at normal
+            // font. Portrait, small windows and large font scales get one scrolling column.
+            val twoPanes = maxWidth >= 720.dp && maxWidth > maxHeight && LocalDensity.current.fontScale <= 1.3f
+            Column(Modifier.fillMaxSize()) {
+                Banner()
+                if (twoPanes) {
+                    Row(
+                        Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    ) {
+                        Diagram(player, Modifier.weight(0.42f).verticalScroll(rememberScrollState()))
+                        Detail(player, Modifier.weight(0.58f).testTag(AbpDemoTags.DETAIL))
+                    }
+                } else {
+                    Column(
+                        Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Diagram(player, Modifier)
+                        Detail(player, Modifier.testTag(AbpDemoTags.DETAIL))
+                    }
+                }
+                Controls(player, compact = !twoPanes, ::set)
+            }
         }
-        Controls(player, onBack, ::set)
-    }
     }
 }
 
@@ -137,14 +153,8 @@ private fun Banner() {
 
 @Composable
 private fun Diagram(player: DemoPlayer, modifier: Modifier) {
-    Column(modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            stringResource(R.string.feature_abpdemo_title),
-            Modifier.semantics { heading() },
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(stringResource(R.string.abpdemo_subtitle), fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.abpdemo_subtitle), fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         val done = player.layersDone()
         Layer.entries.forEachIndexed { i, layer ->
             val state = when {
@@ -152,7 +162,7 @@ private fun Diagram(player: DemoPlayer, modifier: Modifier) {
                 layer in done -> LayerState.DONE
                 else -> LayerState.WAITING
             }
-            LayerRow(i + 1, layer, state, Modifier.weight(1f))
+            LayerRow(i + 1, layer, state, Modifier)
         }
     }
 }
@@ -166,7 +176,7 @@ private fun LayerRow(number: Int, layer: Layer, state: LayerState, modifier: Mod
     val container by animateColorAsState(
         when (state) {
             LayerState.NOW -> scheme.primaryContainer
-            LayerState.DONE -> scheme.surfaceVariantOrSurface()
+            LayerState.DONE -> scheme.surfaceVariant
             LayerState.WAITING -> scheme.surface
         },
         tween(400),
@@ -181,14 +191,14 @@ private fun LayerRow(number: Int, layer: Layer, state: LayerState, modifier: Mod
     val name = stringResource(layer.text().name)
     val rowCd = stringResource(R.string.abpdemo_layer_cd, number, name, stateText)
     Surface(
-        modifier.fillMaxWidth().testTag(AbpDemoTags.layer(layer)).semantics(mergeDescendants = true) {
+        modifier.fillMaxWidth().heightIn(min = 76.dp).testTag(AbpDemoTags.layer(layer)).semantics(mergeDescendants = true) {
             contentDescription = rowCd
         },
         shape = RoundedCornerShape(12.dp),
         color = container,
         border = BorderStroke(if (state == LayerState.NOW) 4.dp else 1.dp, if (state == LayerState.NOW) scheme.primary else scheme.outlineVariant),
     ) {
-        Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(number.toString(), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = scheme.primary, modifier = Modifier.width(40.dp))
             Text(
                 name, Modifier.weight(1f), fontSize = 24.sp,
@@ -200,13 +210,10 @@ private fun LayerRow(number: Int, layer: Layer, state: LayerState, modifier: Mod
     }
 }
 
-// Material3's surfaceVariant is not set in the brand scheme; fall back on the pale primary container tone.
-private fun androidx.compose.material3.ColorScheme.surfaceVariantOrSurface() = surfaceVariant
-
 @Composable
 private fun Detail(player: DemoPlayer, modifier: Modifier) {
     Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag(AbpDemoTags.DETAIL),
+        modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         val layer = player.step.layer
@@ -290,34 +297,39 @@ private fun Label(@StringRes res: Int) = Text(
 )
 
 @Composable
-private fun Controls(player: DemoPlayer, onBack: () -> Unit, set: (DemoPlayer) -> Unit) {
-    val big = Modifier.height(64.dp)
+private fun Controls(player: DemoPlayer, compact: Boolean, set: (DemoPlayer) -> Unit) {
+    val big = Modifier.heightIn(min = 64.dp)
+    val stepText = stringResource(R.string.abpdemo_step_of, player.index + 1, STEPS.size)
+    val autoLabel = stringResource(if (player.autoPlay) R.string.abpdemo_autoplay_stop else R.string.abpdemo_autoplay_start)
+    @Composable fun back(m: Modifier) = OutlinedButton(onClick = { set(player.backByHand()) }, enabled = player.canGoBack, modifier = m.testTag(AbpDemoTags.BACK)) {
+        Text(stringResource(R.string.abpdemo_back), fontSize = 24.sp)
+    }
+    @Composable fun next(m: Modifier) = Button(onClick = { set(player.nextByHand()) }, enabled = player.canGoNext, modifier = m.testTag(AbpDemoTags.NEXT)) {
+        Text(stringResource(R.string.abpdemo_next), fontSize = 24.sp)
+    }
+    @Composable fun auto(m: Modifier) = Button(
+        onClick = { set(player.toggleAutoPlay()) },
+        modifier = m.testTag(AbpDemoTags.AUTOPLAY),
+        colors = if (player.autoPlay) ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary) else ButtonDefaults.buttonColors(),
+    ) { Text(autoLabel, fontSize = 24.sp) }
+
     Surface(tonalElevation = 3.dp) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            OutlinedButton(onClick = onBack, modifier = big.testTag(AbpDemoTags.HOME)) {
-                Text(stringResource(R.string.abpdemo_home), fontSize = 22.sp)
+        if (compact) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stepText, Modifier.testTag(AbpDemoTags.STEP), fontSize = 22.sp)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    back(big.weight(1f)); next(big.weight(1f))
+                }
+                auto(big.fillMaxWidth())
             }
-            Text(
-                stringResource(R.string.abpdemo_step_of, player.index + 1, STEPS.size),
-                Modifier.weight(1f).testTag(AbpDemoTags.STEP),
-                fontSize = 22.sp,
-            )
-            OutlinedButton(onClick = { set(player.backByHand()) }, enabled = player.canGoBack, modifier = big.testTag(AbpDemoTags.BACK)) {
-                Text(stringResource(R.string.abpdemo_back), fontSize = 24.sp)
-            }
-            Button(onClick = { set(player.nextByHand()) }, enabled = player.canGoNext, modifier = big.testTag(AbpDemoTags.NEXT)) {
-                Text(stringResource(R.string.abpdemo_next), fontSize = 24.sp)
-            }
-            Button(
-                onClick = { set(player.toggleAutoPlay()) },
-                modifier = big.testTag(AbpDemoTags.AUTOPLAY),
-                colors = if (player.autoPlay) ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary) else ButtonDefaults.buttonColors(),
+        } else {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(if (player.autoPlay) R.string.abpdemo_autoplay_stop else R.string.abpdemo_autoplay_start), fontSize = 24.sp)
+                Text(stepText, Modifier.weight(1f).testTag(AbpDemoTags.STEP), fontSize = 22.sp)
+                back(big); next(big); auto(big)
             }
         }
     }
