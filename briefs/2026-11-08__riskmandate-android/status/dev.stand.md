@@ -14,7 +14,7 @@ Waiting for review (architect, QA, security) and Dinis's word on the open questi
 - **Rotation / process death**: settings in private SharedPreferences (`stand_mode`); stand mode comes back on after a restart and asks to pin only if not already pinned.
 - **Staff exit**: (1) Android's own gesture, written in the dialog and here: three-button navigation, hold Back and Overview together; gesture navigation, swipe up and hold (enter the lock-screen PIN if asked); (2) in-app long-press corner.
 - **No PIN** (security checklist D.2: none unless Dinis asks). Removed after the first push, which had an optional salted-SHA-256 PIN. Exits: Android's own gesture, or the long-press corner. If Dinis wants a PIN: PBKDF2 in Keystore-backed storage, lockout, and a privacy-page change first.
-- Tests (`app/src/test/.../features/stand/`): `IdleTimerTest` (pure JVM, fake clock), `StandSettingsTest` and `StandHostTest` (Robolectric/Compose: long-press, on/off, PIN gate, idle reset, refusal, throwing lock, pt-PT), `StandLocalisationTest`. English and pt-PT in `feature_stand.xml`.
+- Tests (`app/src/test/.../features/stand/`): `IdleTimerTest` (pure JVM, fake clock), `StandSettingsTest` and `StandHostTest` (Robolectric/Compose: long-press, on/off, idle reset, refusal, throwing lock, pt-PT), `StandLocalisationTest`. English and pt-PT in `feature_stand.xml`.
 
 ## Next
 Fixes from reviews. Not tested on a real tablet: the screen-pinning prompt itself needs a device (QA: first run per tablet, accept the prompt once; if "Screen pinning" is off in Settings, Security, turn it on).
