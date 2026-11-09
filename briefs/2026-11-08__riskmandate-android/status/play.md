@@ -41,6 +41,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 18. Icon: `listing.md` and `store-assets.md` now describe design's RM redraw (`mipmap/ic_launcher_rm`, approved by Dinis 9 Nov) and `docs/design/brand/play-icon-512.png` (512 x 512 RGBA, 7 KB; looked at, not run through Google's checker), with its limits (a redraw from a JPEG, not the original SVG); only the feature graphic remains for the designer. R-play-11: the internal line "result on the store page: No data collected" is gone from `data-safety.md`.
 
+19. Q-g-1: the privacy draft quotes dev.llm's exact on-screen sentence ("...from huggingface.co (and its download servers, hf.co). Nothing you type leaves the device."), from `work/dev.llm` `feature_models.xml`; the pt-PT sentence is recorded in the policy's notes (the hosted page is English only).
+
 ## Next
 Nothing until Dinis decides (below).
 
