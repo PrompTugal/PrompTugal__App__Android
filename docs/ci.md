@@ -6,8 +6,9 @@ Only Dinis adds secrets (repository settings, Secrets and variables, Actions). A
 
 | Job | Runs on | Does |
 |---|---|---|
-| `check` | every push to `dev`, every pull request, manual | unit tests and lint, then the dependency licence gate; uploads the reports (`reports-<run>`), Robolectric screenshots when `app/build/screenshots/` exists (`screenshots-<run>`) and the licence list (`licences-<run>`), always, pass or fail |
-| `release` | push to `dev` and manual runs on `dev`, after `check` passes, in the GitHub Environment `release` | release notes, release APK and AAB, signing, artifact `riskmandate-<version>`, distribution |
+| `check` | every push to `dev` that touches a build path (below), every pull request, manual | unit tests and lint; uploads the reports (`reports-<run>`) and Robolectric screenshots when `app/build/screenshots/` exists (`screenshots-<run>`), always, pass or fail |
+| `licences` | same, in parallel with `check` | the dependency licence gate (below); uploads the licence list (`licences-<run>`); `release` needs it |
+| `release` | push to `dev` and manual runs on `dev`, after `check` and `licences` pass, in the GitHub Environment `release` | release notes, release APK and AAB, signing, artifact `riskmandate-<version>`, distribution |
 | `smoke` | after `release`, same triggers | emulator smoke test of the release APK (below); nothing depends on it |
 
 Both jobs write a job summary: version, application ID (read from the built APK with `aapt2 dump badging`, never hardcoded, so a change of ID needs no workflow edit), signed or not, and each distribution step as ran, FAILED or skipped with the reason.
@@ -28,9 +29,50 @@ Flakiness, how it is handled:
 
 **Untested from here** (no way to run workflows, no KVM in this session): the whole `smoke` job, the `uiautomator dump` text match on a real emulator (Compose text should appear as `text="..."`), and the throwaway-signing step. `actionlint` and shellcheck (through it) pass; `scripts/smoke-test.sh` was only syntax-checked.
 
+## The website: `.github/workflows/website.yml` (GitHub Pages)
+
+The Android site (`website/`, by editor.android) is built and deployed to **https://android.app.promptugal.ai** by its own workflow. Jobs: `build` (python3 unit tests `website/test_site.py`, `website/build.py`, `website/validate.py`), `deploy` (`actions/upload-pages-artifact` v4.0.0 and `actions/deploy-pages` v4.0.5, both pinned by SHA; `pages: write` and `id-token: write` only on this job) and `verify` (polls the live `build.json` until it carries the built commit, 4 minutes, fails if not).
+
+Triggers: push to `dev` touching `website/**` or the workflow file; pull requests touching them (build and validate only, never deploy); a finished `android` run on `dev` (so the releases page refreshes; a release made with the built-in `GITHUB_TOKEN` fires no `release` event, a `workflow_run` does); a published release; manual. Runs caused by an android run or a release build the latest `dev`.
+
+Contract with `website/build.py` (editor.android, tell release.android if it differs): it writes the site to **`website/_site/`** with `index.html` at the root; the workflow then adds `CNAME` (`android.app.promptugal.ai`) and `build.json` (`{"sha", "run"}`) to the artifact itself, so the repository needs neither. The build step has `GH_TOKEN` (read-only) and `GITHUB_REPOSITORY` in its environment if the script lists releases through the API. Python is the runner's `python3`, no third-party packages.
+
+Skipped cleanly: until `website/build.py` exists the `build` job only writes a summary line and everything after is skipped. Until Pages is set to deploy from GitHub Actions (API `build_type` is `workflow`, or the repository variable `PAGES_ENABLED` is `true` as an override) the site is built and validated but not deployed; the summary says which.
+
+**What Dinis does (once):**
+1. Settings, Pages, Source: **GitHub Actions**.
+2. Settings, Pages, Custom domain: `android.app.promptugal.ai`; tick "Enforce HTTPS" once the certificate is ready.
+3. DNS at the promptugal.ai DNS host: `CNAME  android.app  ->  promptugal.github.io` (the `app` part of the name is a label under promptugal.ai: the record is `android.app.promptugal.ai`). Certificate issue takes minutes to an hour after DNS resolves.
+4. Settings, Environments, `github-pages`: its deployment-branch rule must allow `dev` (a new Pages environment allows only the default branch, `main`); add `dev`, otherwise the deploy job is refused on pushes to `dev`. (Runs started by a `workflow_run` use `main`'s version of the workflow file and the default branch as their ref, so the refresh route needs `website.yml` on `main`; push, release and manual runs work from `dev`.)
+5. Optional: set the repository variable `PAGES_ENABLED` to `true` if the Pages API cannot be read by the workflow.
+The `verify` job stays red until DNS, the certificate and the settings above are in place if the Pages URL redirects to the custom domain; that is the signal, not a bug.
+
+**Untested** (no way to run workflows or open Pages from here): all three jobs; the Pages API check; `deploy-pages` with the environment rule; the live check. The shell steps were run locally with a stub site (unit test file path form, build, marker JSON). `website/` does not exist on any branch yet, so the first real run is the first test. `actionlint` passes.
+
+## Cost under load: what runs, what is cancelled, how long it takes
+
+**Docs-only pushes run nothing.** The `push` trigger has a `paths` filter: the workflow runs on a push to `dev` only if it changes a file under `app/`, `gradle/` or `.github/`, any `*.gradle.kts`, `gradle.properties`, `gradlew`, `gradlew.bat` or `scripts/`. A push that changes only `docs/`, `board/`, `briefs/`, `devices/`, `README.md` and the like has no run: no tests, no build, no Firebase notification, no GitHub release, and no run number used (so versions skip nothing). GitHub evaluates the filter on every commit of the push, so a push that carries one app change still builds. Pull requests and manual runs are not filtered. Consequences: the conductor sees no new run for a docs-only push (the last run stays the latest signal); `devices/` changes are not built (the APK does not contain them and its tests are not part of this workflow, run `node --test devices/test/*.test.mjs` as the gate says); a change to a path outside the list that the build reads would need adding to it.
+
+**Concurrency is per job** (it was per workflow, which made a push wait for the whole previous run, smoke test included):
+- `check`, `licences`, `smoke`: `cancel-in-progress: true` per ref. A newer push cancels the older run's job; the older run's `release` then does not start (`needs`), so that commit is not built and the newer one is. Its release notes cover both.
+- `release`: group `release-<ref>`, `cancel-in-progress: false`. A running release (it may be distributing to testers) is never cancelled; at most one more waits, and a newer waiting one replaces an older waiting one (GitHub cancels the pending run in the group, not the running one). Nothing else shares that group, so a newer push's `check` cannot cancel it.
+- A cancelled older run shows as cancelled in the Actions list; that is the saving, not a failure. Not tested live: the pending-release replacement and how it interacts with a required reviewer on the `release` environment (a job waiting for approval may count as pending).
+
+**Run time (measured, 8 to 9 November 2026, runs 1 to 31 of this workflow, from the Actions API: `run_started_at` to `updated_at`, so it includes time spent waiting for the workflow-level concurrency group):**
+
+| Period | Runs (successful) | Median | Range |
+|---|---|---|---|
+| Before the smoke job (runs 1 to 18) | 12 | 5.6 min | 3.8 to 9.0 |
+| With the smoke job (runs 22 to 27) | 6 | 12.7 min | 8.1 to 17.2 |
+| Failed at the licence gate (runs 28 to 31) | 4 | 1.6 to 2.6 min | n/a |
+
+Where one run's time goes (run 27, per-job timestamps): `check` 1 m 45 s (tests and lint 53 s), `release` 2 m 0 s (APK and AAB 75 s, Firebase 13 s), `smoke` 3 m (APK build 39 s, emulator launch check and instrumented test 1 m 43 s). That is about 7 minutes of work; the run took 15 minutes because it waited about 8 minutes for the previous run's whole workflow to finish (check started at 00:35:29, run started at 00:27:22). Per-job concurrency removes that wait: `check` no longer queues behind the previous run's smoke job. Expected after this change (not yet measured): about 7 to 8 minutes from push to Firebase notification for a build that changes app code, and nothing for a docs-only push. Re-measure after a few runs; the median above will be replaced.
+
 ## Dependency licence gate
 
-`scripts/ci-licences.sh` runs `scripts/licences.sh` (security.android's; it lists the release runtime classpath from each POM) and then fails the `check` job if any artifact's licence is not Apache-2.0, MIT or BSD, or is unknown; for an artifact with several licences, every one must be allowed (R-rel-1). `licences.sh` itself also accepts ISC and public domain and never exits non-zero; the wrapper is stricter on purpose and reads its table (`docs/security/licences.md`, regenerated in the job, uploaded as `licences-<run>`). Exceptions go in `scripts/licences-allow.txt` (`group:artifact` plus a reason; security.android reviews it). Checked: passes now (84 artifacts, with a clean Gradle cache so the POMs are fetched by the script's own Gradle call); a doctored table with a GPL and an UNKNOWN row fails with exit 1 and an allow-list line clears that row. Proposed policy, to agree with security.android on its status page: allow-list empty, ISC and public domain not accepted without an exception.
+Own job `licences` (beside `check`, so no wall-clock cost), with a **fresh Gradle home** (`GRADLE_USER_HOME` under `$RUNNER_TEMP`). Reason, found on runs 28 to 31: inside the `check` job, where `setup-gradle` restores a warm Gradle cache, `scripts/licences.sh` found no POM for any of the 84 artifacts (all UNKNOWN) and the gate failed every run, blocking `release`. The script reads each POM from the Gradle cache; a restored cache has the resolution metadata but not the POM files, so Gradle never re-fetched them. This is an inference from the log and from a clean-cache run passing locally; the fix is the first live test. A fresh home costs about a minute of metadata downloads, in parallel with `check`.
+
+`scripts/ci-licences.sh` runs `scripts/licences.sh` (security.android's; it lists the release runtime classpath from each POM) and then fails the `licences` job if any artifact's licence is not Apache-2.0, MIT or BSD, or is unknown; for an artifact with several licences, every one must be allowed (R-rel-1). `licences.sh` itself also accepts ISC and public domain and never exits non-zero; the wrapper is stricter on purpose and reads its table (`docs/security/licences.md`, regenerated in the job, uploaded as `licences-<run>`). Exceptions go in `scripts/licences-allow.txt` (`group:artifact` plus a reason; security.android reviews it). Checked: passes now (84 artifacts, with a clean Gradle cache so the POMs are fetched by the script's own Gradle call); a doctored table with a GPL and an UNKNOWN row fails with exit 1 and an allow-list line clears that row. Proposed policy, to agree with security.android on its status page: allow-list empty, ISC and public domain not accepted without an exception.
 
 ## Release notes
 
