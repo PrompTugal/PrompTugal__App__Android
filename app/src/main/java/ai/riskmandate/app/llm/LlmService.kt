@@ -45,6 +45,14 @@ interface LlmService {
      * Workbench and the bench call it (security R-wb-1). The default does nothing (services without a model).
      */
     suspend fun unload() {}
+
+    /**
+     * The most [request] could cost, in micro-dollars (1,000,000 = US$1), so a screen can show a cloud sweep's
+     * worst case before it starts without knowing the service's class (security note on R-wb-8). Null when the
+     * service does not charge (on-device) or cannot price the request. A paid service overrides it with the same
+     * worst case its cap check uses.
+     */
+    fun maxCostMicros(request: LlmRequest): Long? = null
 }
 
 /** Where a service runs the model. llm/ never imports the cloud package; a cloud service says CLOUD itself. */
