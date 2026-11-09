@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 37 (9 Nov 2026): app a787cf9 PASS (R-shell-2 closed), architect a26f037 PASS, play ea13a31 PASS, dev.llm 924c23e (feature G) PASS with R-llm-9 as a condition for enabling G. Both Gemma 4 model cards read (Apache-2.0), recorded in models.md. Waiting for the next wake (qa 680c53d, eval harness).
+> Round 38 (9 Nov 2026): dev.llm dc63ad8 PASS (R-llm-9 and R-llm-10 closed, so the condition on enabling Models is met from my side), app 0833ca0 PASS (G.7 closed). Waiting for the next wake (qa 680c53d, eval harness).
 
 ## Doing
 Nothing. Stopped until woken.
