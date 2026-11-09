@@ -6,6 +6,7 @@ import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.Feature
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -21,6 +22,11 @@ import org.junit.runner.RunWith
  * survive a rotation (activity recreation) on its own screen, and return home with Back.
  * A feature still disabled is not tested here; the owner turns it on when its screen works end to end,
  * and from then on this test covers it with no change.
+ *
+ * Deterministic by construction: no step trusts that one `waitForIdle()` was enough. After every action the test
+ * waits for the state it expects (exactly one node of the expected screen, none of the other), so a recreation or
+ * a back press that is still settling on a loaded machine cannot make it flaky. The upper bound of each wait is
+ * only a failure limit, never a delay the test depends on.
  */
 @RunWith(AndroidJUnit4::class)
 class FeatureNavigationTest {
@@ -30,9 +36,30 @@ class FeatureNavigationTest {
 
     private fun tag(f: Feature) = HomeTags.feature(f.id)
 
+    private fun count(tag: String) = compose.onAllNodesWithTag(tag).fetchSemanticsNodes().size
+
+    /** Waits until exactly [n] nodes carry [tag]. Fails with a clear message after the limit. */
+    private fun await(tag: String, n: Int) {
+        compose.waitForIdle()
+        try {
+            compose.waitUntil(LIMIT_MS) { count(tag) == n }
+        } catch (e: androidx.compose.ui.test.ComposeTimeoutException) {
+            throw AssertionError("expected $n node(s) tagged '$tag' but found ${count(tag)}", e)
+        }
+    }
+
+    private fun awaitHome() { await(HomeTags.OPEN, 1); await(FRAME_TITLE, 0) }
+
+    private fun awaitFeatureScreen() { await(HomeTags.OPEN, 0); await(FRAME_TITLE, 1) }
+
+    private fun open(f: Feature) {
+        compose.onNodeWithTag(tag(f)).performScrollTo().assertIsDisplayed().performClick()
+        awaitFeatureScreen()
+    }
+
     private fun back() {
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.waitForIdle()
+        awaitHome()
     }
 
     private fun rotate() {
@@ -40,68 +67,61 @@ class FeatureNavigationTest {
         compose.waitForIdle()
     }
 
-    private fun assertHome() = compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
-
-    private fun assertNotHome() = compose.onNodeWithTag(HomeTags.OPEN).assertDoesNotExistOrNotDisplayed()
-
     @Test fun everyEnabledFeatureOpensFromHomeAndBackReturns() {
+        awaitHome()
         for (f in enabled) {
-            assertHome()
-            compose.onNodeWithTag(tag(f)).performScrollTo().assertIsDisplayed().performClick()
-            compose.waitForIdle()
-            assertNotHome()
+            open(f)
             back()
-            assertHome()
+            compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
         }
     }
 
-    /** The host's visible Back button (FeatureFrame, on work/app): needed in stand mode, where the back gesture may be pinned off. */
+    /** The host's visible Back button (FeatureFrame): needed in stand mode, where the back gesture may be pinned off. */
     @Test fun frameBackButtonReturnsHomeAndTitleShowsOnce() {
+        awaitHome()
         for (f in enabled) {
-            compose.onNodeWithTag(tag(f)).performScrollTo().performClick()
-            compose.waitForIdle()
-            compose.onNodeWithTag("feature_title").assertIsDisplayed()
-            compose.onNodeWithTag("feature_back").assertIsDisplayed().performClick()
-            compose.waitForIdle()
-            assertHome()
+            open(f)
+            compose.onNodeWithTag(FRAME_TITLE).assertIsDisplayed()
+            compose.onNodeWithTag(FRAME_BACK).assertIsDisplayed().performClick()
+            awaitHome()
         }
     }
 
     @Test fun rotationKeepsTheFeatureScreen() {
+        awaitHome()
         for (f in enabled) {
-            compose.onNodeWithTag(tag(f)).performScrollTo().performClick()
-            compose.waitForIdle()
-            assertNotHome()
+            open(f)
             rotate()
-            assertNotHome() // still on the feature, not thrown back to home
+            awaitFeatureScreen() // still on the feature, not thrown back to home
             rotate()
-            assertNotHome()
+            awaitFeatureScreen()
             back()
-            assertHome()
         }
     }
 
     @Test fun rotationOnHomeStaysOnHome() {
+        awaitHome()
         rotate()
-        assertHome()
+        awaitHome()
     }
 
-    @Test fun backOnHomeDoesNotCrashTheFeatureList() {
-        // A feature button must exist on home for every enabled feature, and only for those.
+    @Test fun featureButtonsExistForEnabledFeaturesOnly() {
+        awaitHome()
         for (f in enabled) compose.onNodeWithTag(tag(f)).performScrollTo().assertIsDisplayed()
-        for (f in FEATURES.filter { !it.enabled }) compose.onNodeWithTag(tag(f)).assertDoesNotExist()
+        for (f in FEATURES.filter { !it.enabled }) assertEquals("disabled feature ${f.id} has a button", 0, count(tag(f)))
     }
 
     @Test fun featureIdsAreUniqueLowercaseLettersAndNotRoutes() {
         val ids = FEATURES.map { it.id }
         assertEquals("duplicate feature ids", ids.size, ids.toSet().size)
         for (id in ids) assertTrue("id '$id' must be lowercase letters only", id.matches(Regex("[a-z]+")))
-        val reserved = setOf("home", "licences", "diagnostics")
+        val reserved = setOf("home", "licences", "diagnostics", "modelbench")
         assertEquals("feature id clashes with a built-in route", emptySet<String>(), ids.toSet() intersect reserved)
     }
-}
 
-private fun androidx.compose.ui.test.SemanticsNodeInteraction.assertDoesNotExistOrNotDisplayed() {
-    // Home's Open button leaves the composition when a feature screen is shown.
-    assertDoesNotExist()
+    private companion object {
+        const val FRAME_TITLE = "feature_title"
+        const val FRAME_BACK = "feature_back"
+        const val LIMIT_MS = 15_000L
+    }
 }
