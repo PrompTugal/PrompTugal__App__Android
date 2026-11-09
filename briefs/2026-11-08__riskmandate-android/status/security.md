@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 52 (9 Nov 2026): dev.lab a01fcf7 PASS with R-lab-8 and R-lab-9 (backslash and multi-recipient egress bypasses in AbpChecks.domain and eval abp.py, to fix before the Lab is enabled) and R-lab-10 (golden vectors lack those cases); dev.chat 7859f64 PASS. Still to read: the design-pass article when it moves into assets. Waiting for the next wake.
+> Round 53 (9 Nov 2026): app 4e26cca PASS with R-app-2 (Preview in every build: a decision for Dinis before any store or M3 build), dev.llm 1b80473 PASS, dev.chat acd3e5f PASS (R-chat-5 info), dev.lab 1799c03 PASS (loop mode; export off; R-lab-8 and R-lab-9 still open before the Lab is enabled). Still to read: the design-pass article, and the host share path for Lab export when it exists. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
