@@ -45,7 +45,7 @@ fun StateView(phase: LoadPhase, hasData: Boolean, title: String, modifier: Modif
     ) {
         when (phase) {
             LoadPhase.Idle, LoadPhase.Loading -> {
-                CircularProgressIndicator(color = Pt.colors.red)
+                CircularProgressIndicator(color = Pt.colors.accent)
                 Text(stringResource(R.string.ui_loading, title), style = MaterialTheme.typography.bodyMedium, color = Pt.colors.muted)
             }
             is LoadPhase.Failed -> {

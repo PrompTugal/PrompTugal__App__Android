@@ -1,31 +1,24 @@
 package ai.riskmandate.app
 
+import ai.riskmandate.app.ui.Card
+import ai.riskmandate.app.ui.Columns
+import ai.riskmandate.app.ui.Page
+import ai.riskmandate.app.ui.ScreenHeader
+import ai.riskmandate.app.ui.StatGrid
+import ai.riskmandate.app.ui.StatTile
+import ai.riskmandate.app.ui.TitledCard
+import ai.riskmandate.app.ui.Tone
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -34,7 +27,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -44,24 +36,26 @@ object HomeTags {
     const val DEVICE_MANAGEMENT = "device_management"
     const val DEVICE_LABEL = "device_label"
     const val MESSAGE = "message"
-    fun featureBadge(id: String) = "feature_badge_$id"
     const val LICENCES = "licences"
     const val DIAGNOSTICS = "diagnostics"
+    const val STATS = "home_stats"
     fun feature(id: String) = "feature_$id"
+    fun featureBadge(id: String) = "feature_badge_$id"
 }
 
 /** Material's minimum touch target. */
 private val MinTouch = 48.dp
 
-/** Landscape and at least this wide: two panes side by side (7" and 10" tablets, phones on their side). */
-private val TwoPaneMinWidth = 640.dp
-
-/** Open and the feature buttons share a width, so the column looks tidy. */
-private val ButtonMinWidth = 240.dp
-
-/** Content never gets wider than this, so lines stay readable on a 10" tablet. */
-private val ContentMaxWidth = 560.dp
-
+/**
+ * Home, "Now" (docs/design/android-theme.md): a page of cards, not a list of buttons. A header, three
+ * stat tiles, one card per feature (kicker, serif title, one-line summary; the whole card opens it),
+ * then the device card and the links for this app. Two columns at 840 dp of content width, one below.
+ * TalkBack order: header, message, stats, feature cards, device, this app.
+ *
+ * @param permissions how many permissions this app asks for, read from its manifest (not a claim).
+ * @param attention how many things need a look (shown in the third tile; zero is good).
+ * @param showDiagnostics false hides the Diagnostics link (stand mode: visitors do not see it).
+ */
 @Composable
 fun HomeScreen(
     version: String,
@@ -71,173 +65,132 @@ fun HomeScreen(
     onLicences: () -> Unit = {},
     onDiagnostics: () -> Unit = {},
     features: List<FeatureButton> = emptyList(),
+    showDiagnostics: Boolean = true,
+    attention: Int = 0,
+    /** How many permissions the app asks for (derived from its manifest). */
+    permissions: Int = 0,
 ) {
-    BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
-        val twoPane = maxWidth >= TwoPaneMinWidth && maxWidth > maxHeight
-        // Always scrollable, so 200% font scale never cuts anything off. Reading order for TalkBack
-        // is the order written here: title, open button, message, device, about, licences, build.
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (twoPane) {
-                Row(
-                    modifier = Modifier.widthIn(max = ContentMaxWidth * 2),
-                    horizontalArrangement = Arrangement.spacedBy(48.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        PrimaryPane(onOpen, message, features)
-                    }
-                    Column(Modifier.weight(1f)) { InfoPane(version, device, onLicences, onDiagnostics) }
-                }
-            } else {
-                Column(Modifier.widthIn(max = ContentMaxWidth), horizontalAlignment = Alignment.CenterHorizontally) {
-                    PrimaryPane(onOpen, message, features)
-                    Spacer(Modifier.height(32.dp))
-                    HorizontalDivider()
-                    Spacer(Modifier.height(16.dp))
-                    Column(Modifier.fillMaxWidth()) { InfoPane(version, device, onLicences, onDiagnostics) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ColumnScope.PrimaryPane(
-    onOpen: () -> Unit,
-    @StringRes message: Int?,
-    features: List<FeatureButton>,
-) {
-    Text(
-        stringResource(R.string.app_name),
-        style = MaterialTheme.typography.headlineMedium,
-        color = MaterialTheme.colorScheme.onSurface,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.semantics { heading() },
-    )
-    Spacer(Modifier.height(24.dp))
-    val openAction = stringResource(R.string.home_open_action)
-    Button(
-        onClick = onOpen,
-        modifier = Modifier
-            .widthIn(min = ButtonMinWidth)
-            .heightIn(min = MinTouch)
-            .testTag(HomeTags.OPEN)
-            .semantics { onClick(label = openAction, action = null) },
-    ) {
-        Text(stringResource(R.string.home_open))
-    }
-    if (message != null) {
-        Spacer(Modifier.height(12.dp))
-        Text(
-            stringResource(message),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-            textAlign = TextAlign.Center,
-            // Announced by TalkBack as soon as it appears.
-            modifier = Modifier.testTag(HomeTags.MESSAGE).semantics { liveRegion = LiveRegionMode.Polite },
+    Page(Modifier.safeDrawingPadding()) {
+        ScreenHeader(
+            kicker = stringResource(R.string.app_name),
+            title = stringResource(R.string.home_now_title),
+            summary = stringResource(R.string.home_now_summary),
         )
-    }
-    // The summit features (features/Features.kt), one button each, under the main action.
-    for (f in features) {
-        Spacer(Modifier.height(12.dp))
-        OutlinedButton(
-            onClick = f.onClick,
-            modifier = Modifier.widthIn(min = ButtonMinWidth).heightIn(min = MinTouch).testTag(HomeTags.feature(f.id)),
-        ) {
-            val title = stringResource(f.title)
-            Text(title)
-            if (f.badge != null) {
-                val badge = stringResource(f.badge)
-                // A small label inside the button; TalkBack reads "<title>, <badge>".
+        if (message != null) {
+            Card {
                 Text(
-                    badge,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                        .testTag(HomeTags.featureBadge(f.id)),
+                    stringResource(message),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.error,
+                    // Announced by TalkBack as soon as it appears.
+                    modifier = Modifier.testTag(HomeTags.MESSAGE).semantics { liveRegion = LiveRegionMode.Polite },
                 )
             }
         }
+        StatGrid(Modifier.testTag(HomeTags.STATS)) {
+            tile { StatTile(features.size.toString(), stringResource(R.string.home_stat_features)) }
+            tile { StatTile(permissions.toString(), stringResource(R.string.home_stat_permissions)) }
+            tile {
+                StatTile(
+                    attention.toString(),
+                    stringResource(R.string.home_stat_attention),
+                    detail = stringResource(if (attention == 0) R.string.home_stat_attention_none else R.string.home_stat_attention_some),
+                    tone = if (attention == 0) Tone.Good else Tone.Warn,
+                )
+            }
+        }
+        Columns(
+            leading = {
+                for (f in features) {
+                    val badge = f.badge?.let { stringResource(it) }
+                    TitledCard(
+                        title = stringResource(f.title),
+                        kicker = f.kicker?.let { stringResource(it) },
+                        onClick = f.onClick,
+                        modifier = Modifier.testTag(HomeTags.feature(f.id)),
+                        accessory = { if (badge != null) BadgePill(badge, Modifier.testTag(HomeTags.featureBadge(f.id))) },
+                    ) {
+                        if (f.summary != null) {
+                            Text(stringResource(f.summary), style = MaterialTheme.typography.bodyMedium, color = Pt.colors.muted)
+                        }
+                    }
+                }
+            },
+            trailing = {
+                TitledCard(title = stringResource(R.string.home_device_heading)) {
+                    Text(
+                        stringResource(device.managementTextRes),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Pt.colors.muted,
+                        modifier = Modifier.testTag(HomeTags.DEVICE_MANAGEMENT),
+                    )
+                    if (device.label != null) {
+                        Text(
+                            stringResource(R.string.home_device_label, device.label),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Pt.colors.muted,
+                            modifier = Modifier.testTag(HomeTags.DEVICE_LABEL),
+                        )
+                    }
+                    Text(
+                        stringResource(R.string.home_build, version),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Pt.colors.muted,
+                        modifier = Modifier.testTag(HomeTags.VERSION),
+                    )
+                }
+                TitledCard(title = stringResource(R.string.home_links_heading)) {
+                    Text(
+                        stringResource(R.string.home_about_text),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Pt.colors.muted,
+                    )
+                    val openAction = stringResource(R.string.home_open_action)
+                    LinkRow(
+                        stringResource(R.string.home_open),
+                        HomeTags.OPEN,
+                        onOpen,
+                        Modifier.semantics { onClick(label = openAction, action = null) },
+                    )
+                    LinkRow(stringResource(R.string.home_licences), HomeTags.LICENCES, onLicences)
+                    if (showDiagnostics) LinkRow(stringResource(R.string.home_diagnostics), HomeTags.DIAGNOSTICS, onDiagnostics)
+                }
+            },
+        )
+        // Room to scroll the last card clear of the bottom-end corner (stand mode's long-press target).
+        Spacer(Modifier.height(48.dp))
     }
 }
 
+/** A text link row, 48 dp high: "small text rows, not buttons" (design spec). */
 @Composable
-private fun ColumnScope.InfoPane(version: String, device: DeviceStatus, onLicences: () -> Unit, onDiagnostics: () -> Unit) {
-    Text(
-        stringResource(R.string.home_device_heading),
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.semantics { heading() },
-    )
-    Spacer(Modifier.height(4.dp))
-    Text(
-        stringResource(device.managementTextRes),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.testTag(HomeTags.DEVICE_MANAGEMENT),
-    )
-    if (device.label != null) {
-        Text(
-            stringResource(R.string.home_device_label, device.label),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.testTag(HomeTags.DEVICE_LABEL),
-        )
+private fun LinkRow(text: String, tag: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    TextButton(onClick = onClick, modifier = modifier.heightIn(min = MinTouch).testTag(tag)) {
+        Text(text, color = Pt.colors.red)
     }
-    Spacer(Modifier.height(16.dp))
-    Text(
-        stringResource(R.string.home_about_heading),
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.semantics { heading() },
-    )
-    Spacer(Modifier.height(4.dp))
-    Text(
-        stringResource(R.string.home_about_text),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    TextButton(
-        onClick = onLicences,
-        modifier = Modifier.heightIn(min = MinTouch).testTag(HomeTags.LICENCES),
-    ) {
-        Text(stringResource(R.string.home_licences))
-    }
-    TextButton(
-        onClick = onDiagnostics,
-        modifier = Modifier.heightIn(min = MinTouch).testTag(HomeTags.DIAGNOSTICS),
-    ) {
-        Text(stringResource(R.string.home_diagnostics))
-    }
-    Spacer(Modifier.height(8.dp))
-    Text(
-        stringResource(R.string.home_build, version),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.testTag(HomeTags.VERSION),
-    )
 }
+
+/**
+ * A feature's card on Home. [badge] is the short word on its [Feature.homeBadge]; [kicker] and [summary]
+ * are the optional string resources a feature gives (Feature.kicker, Feature.summary).
+ */
+data class FeatureButton(
+    val id: String,
+    @StringRes val title: Int,
+    @StringRes val badge: Int? = null,
+    @StringRes val kicker: Int? = null,
+    @StringRes val summary: Int? = null,
+    val onClick: () -> Unit,
+)
 
 @Preview(showBackground = true)
-@Preview(showBackground = true, widthDp = 900, heightDp = 560)
+@Preview(showBackground = true, widthDp = 900, heightDp = 700)
 @Composable
 private fun HomePreview() = RiskMandateTheme {
     HomeScreen(
         version = "0.0.0-local (1)",
         device = DeviceStatus.from(hasDeviceOwner = true, inWorkProfile = false, label = "Lisbon kiosk 3"),
         onOpen = {},
+        features = listOf(FeatureButton("site", R.string.home_open, kicker = R.string.app_name, summary = R.string.home_now_summary) {}),
     )
 }
-
-/** A home-screen button for a summit feature. */
-data class FeatureButton(val id: String, @StringRes val title: Int, @StringRes val badge: Int? = null, val onClick: () -> Unit)

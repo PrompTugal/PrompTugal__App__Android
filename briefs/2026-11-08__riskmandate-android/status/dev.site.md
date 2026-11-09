@@ -1,6 +1,6 @@
 # dev.site.android status
 
-> Feature A built and switched on (`enabled = true`), reworked to security's checklist A and architect's WebView rules (9 Nov, 01:20 UTC), then to architect's HOLD (FeatureFrame draws Back, title and insets; no Activity). **Gate green: 255 tests, 0 failures** (qa's guard fix arrived with the dev merge). Not yet run on a real device or a real WebView: the first check is on the team tablets.
+> Feature A built and switched on (`enabled = true`), reworked to security's checklist A and architect's WebView rules (9 Nov, 01:20 UTC), then to architect's HOLD (FeatureFrame draws Back, title and insets; no Activity). **Gate green: 353 tests, 0 failures** (qa's guard fix arrived with the dev merge). Not yet run on a real device or a real WebView: the first check is on the team tablets.
 
 ## Doing
 Waiting for the conductor's merge and for design.android's `ui/` components.
@@ -17,6 +17,8 @@ Waiting for the conductor's merge and for design.android's `ui/` components.
 - Security checklist A and architect WebView rules: main-frame navigation and redirects decided by `SitePolicy`; sub-resources off the allow-list blocked; `onReceivedSslError` cancels; `onRenderProcessGone` drops the WebView (it is recreated); permission, geolocation, file chooser and new-window requests denied; no DownloadListener; debugging not enabled; cache, cookies and web storage cleared when the screen closes; privacy small print on the screen (riskmandate.ai has its own privacy policy and may set its own cookies; the app collects nothing); strings named `feature_site_*`; no Activity cast (uses `LocalContext`, only `onBack` from `FeatureContext`, so FeatureContext v2 needs no change here). A banner "Offline copy from 9 November 2026" with a "Try online" button shows the mode. Strings in English and pt-PT.
 - 31 tests under `app/src/test/.../features/site/`: URL decision (in-app vs external, 40 cases), sub-resource block, offline page lookup, the offline switch, a Robolectric render of the screen (online, offline banner, try online, back), the client's navigation and intercept behaviour, WebView settings, no hardcoded text.
 - Gate `./gradlew testDebugUnitTest lintDebug assembleRelease bundleRelease`: green (195 tests, 0 failures, 0 lint errors; APK 1.1 MB unsigned, AAB 2.4 MB). `scripts/secret-scan.sh`: clean.
+
+- P7 (Home card and sidebar): `icon` = `Icons.Filled.Info` (material-icons-core; `Public` is in extended, not allowed), `kicker` "riskmandate.ai", `summary` one line, en and pt-PT, no em-dashes, no claim beyond what the feature does.
 
 ## Next
 - Swap the plain chrome for design.android's components when they land.

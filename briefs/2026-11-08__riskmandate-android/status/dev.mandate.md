@@ -31,6 +31,8 @@ Waiting for conductor review. design.android's shared components have not landed
 
 - Seventh round (conductor): `MandateScreenshotTest` writes `app/build/screenshots/mandate-<size>-<theme>.png` for phone and 10" tablet, light and dark (viewport, and `-full` for the whole scrolling screen: 8 files). Fixed clean reach with the site view on, so the picture does not depend on the machine. Read them: no clipping at the tablet width, chip and sentence both say "no gap". The screen quotes riskmandate.ai's privacy page: "There is no analytics, no tag manager, no advertising pixel and no cookie set by this site." (riskmandate.ai/privacy, read 9 Nov 2026; verified on the page myself, not only from the relay). The page also says operators have "no log access"; I did not add that, since the app's own claim is only what the sentence above supports.
 
+- Eighth round (conductor, P7 on dev 1202040): `MandateFeature` overrides `icon` (`Icons.Filled.CheckCircle`, material-icons-core), `kicker` ("Live on this device") and `summary` ("This app's own reach, mandate and gap, read from the device as you open it."), en and pt-PT, no claim about RiskMandate. Open from architect (A-llm-10): list `noBackupFilesDir/models/` in the mandate when dev.llm's model setup lands on dev; not on dev yet, so not done.
+
 ## Vocabulary (riskmandate.ai, https://riskmandate.ai/, read 9 Nov 2026)
 - Reach: "Everything the agent can actually access in this deployment, including what nobody thought to check."
 - Mandate: "The job, written down: what the business authorised it to do."

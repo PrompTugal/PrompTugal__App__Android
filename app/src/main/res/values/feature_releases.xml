@@ -7,4 +7,6 @@
     <string name="feature_releases_image_fallback">Screenshot</string>
     <string name="feature_releases_offer">See what\'s new in this version</string>
     <string name="feature_releases_badge">New</string>
+    <string name="feature_releases_kicker">Release notes</string>
+    <string name="feature_releases_summary">One article per version, with screenshots of what changed.</string>
 </resources>

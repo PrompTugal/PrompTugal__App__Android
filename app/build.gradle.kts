@@ -51,7 +51,8 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
-        // LiteRT-LM is built with Kotlin 2.4 metadata; Google's own Edge Gallery uses the same flag.
+        // SUMMIT ONLY. LiteRT-LM is built with Kotlin 2.4 metadata and we are on 2.0.21; Google's Edge Gallery uses
+        // the same flag. It switches off a safety check, so A-llm-2 removes it after a Kotlin/AGP bump.
         freeCompilerArgs += "-Xskip-metadata-version-check"
     }
     buildFeatures { compose = true; buildConfig = true }

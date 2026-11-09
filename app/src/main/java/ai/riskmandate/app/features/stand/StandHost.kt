@@ -69,6 +69,7 @@ object StandTags {
  * @param goHome takes the app back to the home screen (for the idle reset).
  * @param idleHeld true while a feature needs the screen left alone (e.g. an auto-play loop): no idle reset.
  *   When it turns false the countdown restarts from that moment.
+ * @param onEnabledChange called with whether stand mode is on: once at start with the saved value, then on each change.
  */
 @Composable
 fun StandHost(
@@ -76,11 +77,12 @@ fun StandHost(
     atHome: Boolean,
     goHome: () -> Unit,
     idleHeld: Boolean = false,
+    onEnabledChange: (Boolean) -> Unit = {},
     content: @Composable () -> Unit,
 ) {
     val settings = remember(activity) { StandSettings.of(activity) }
     val lock = remember(activity) { ActivityScreenLock(activity) }
-    StandHostContent(settings, lock, activity.lifecycle, SystemClock::elapsedRealtime, atHome, goHome, idleHeld, content)
+    StandHostContent(settings, lock, activity.lifecycle, SystemClock::elapsedRealtime, atHome, goHome, idleHeld, onEnabledChange, content)
 }
 
 private const val CORNER_DP = 48
@@ -96,6 +98,7 @@ internal fun StandHostContent(
     atHome: Boolean,
     goHome: () -> Unit,
     idleHeld: Boolean,
+    onEnabledChange: (Boolean) -> Unit = {},
     content: @Composable () -> Unit,
 ) {
     var enabled by remember { mutableStateOf(settings.enabled) }
@@ -111,6 +114,8 @@ internal fun StandHostContent(
     val currentAtHome by rememberUpdatedState(atHome)
     val currentGoHome by rememberUpdatedState(goHome)
     val currentHeld by rememberUpdatedState(idleHeld)
+    val currentOnEnabledChange by rememberUpdatedState(onEnabledChange)
+    LaunchedEffect(enabled) { currentOnEnabledChange(enabled) }
     // What the idle countdown last saw. The timer starts counting when it is created, so the first run of
     // an effect must not restart it (effects run a little later, and would swallow time already idle).
     val seen = remember { object { var enabled = enabled; var held = idleHeld } }
