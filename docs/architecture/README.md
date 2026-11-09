@@ -16,7 +16,7 @@ MainActivity (app.android)                 one Activity, one Compose tree, no Fr
 ```
 
 - **Host** (`MainActivity`, `HomeScreen`, `Browser`, `Links`, `ManagedConfig`, `DeviceStatus`, `Diagnostics*`): owned by app.android. Holds the only Activity-level state: `config` (managed configuration, re-read on resume and on `ACTION_APPLICATION_RESTRICTIONS_CHANGED`), `device`, the home message, and the current route.
-- **Features contract** (`features/Feature.kt`, architect): `interface Feature { id; @StringRes title; enabled; @Composable Content(FeatureContext) }`. `FeatureContext` is everything a feature gets from the host (today: `activity`, `onBack`).
+- **Features contract** (`features/Feature.kt`, architect): `interface Feature { id; @StringRes title; enabled; @Composable Content(FeatureContext) }`. `FeatureContext` is everything a feature gets from the host: `onBack` (go home), `config` (the host's `ManagedConfig`), `device` (the host's `DeviceStatus`). It deliberately does not carry the Activity (decided 9 Nov, after security's summit checklist E).
 - **Feature list** (`features/Features.kt`, conductor): `FEATURES` in home-screen order. A feature never edits it.
 - **Features** (`features/<id>/`, one session each): a Kotlin `object` implementing `Feature`, plus whatever private files the package needs.
 
@@ -48,10 +48,10 @@ MainActivity (app.android)                 one Activity, one Compose tree, no Fr
 
 | A feature may | A feature may not |
 |---|---|
-| Read and write files in its own package, its own `res/values*/feature_<id>.xml`, its own raw assets (`res/raw/feature_<id>_*` or `assets/feature_<id>/`), its own tests under `app/src/test/java/ai/riskmandate/app/features/<id>/` | Edit another feature's package, `Feature.kt`, `Features.kt`, `MainActivity`, `HomeScreen`, the manifest, `build.gradle.kts`, `strings.xml`, `features.xml`, `Theme.kt`, `ui/` |
+| Read and write files in its own package, its own `res/values*/feature_<id>.xml`, its own raw assets (`res/raw/feature_<id>_*` or `app/src/main/assets/feature_<id>/`), its own tests under `app/src/test/java/ai/riskmandate/app/features/<id>/` | Edit another feature's package, `Feature.kt`, `Features.kt`, `MainActivity`, `HomeScreen`, the manifest, `build.gradle.kts`, `strings.xml`, `features.xml`, `Theme.kt`, `ui/` |
 | Use `FeatureContext`, `LocalContext`, `LocalLifecycleOwner`, `LocalView`, `MaterialTheme`, and the shared components in `ui/` (design) | Import another feature's package. Shared code goes to `ui/` (design) or to the host (app), via a request |
-| Call pure host helpers that already exist: `Links.isAllowed`, `ManagedConfig.fromMap`, `DeviceStatus.from`, `Browser.open` (allow-listed) | Read `ManagedConfig.read(...)` or `DeviceStatus.detect(...)` itself: the host already holds the current values; ask for them through `FeatureContext` (proposal P1 below) |
-| Use `context.activity` for things that genuinely need an Activity (`startLockTask` is stand's, and stand gets the Activity anyway) | Cast `context.activity` to `MainActivity`, change the window, theme, orientation or system bars, call `finish()`, `recreate()`, or start another Activity of this app |
+| Call pure host helpers that already exist: `Links.isAllowed`, `ManagedConfig.fromMap`, `DeviceStatus.from`, `Browser.open` (allow-listed) | Call `ManagedConfig.read(...)` or `DeviceStatus.detect(...)` itself: use `context.config` and `context.device`, which the host keeps current |
+| Use `LocalContext` for resources and its own `PackageManager` entry, `LocalLifecycleOwner`, `LocalView` (`keepScreenOn`, which sets `FLAG_KEEP_SCREEN_ON` only while attached) | Cast `LocalContext` to an Activity or `MainActivity`; change the window, theme, orientation or system bars; call `finish()`, `recreate()`; start any Activity except an `ACTION_VIEW` for a URL that passed `Links.isAllowed` (through `Browser.open`). `startLockTask`/`stopLockTask` are stand's alone, through `StandHost`'s Activity parameter |
 | Ask for a new permission, manifest entry or dependency through the owner (below) | Add a permission, `<queries>`, service, receiver, provider or dependency itself |
 
 ### How a feature asks the host for something
@@ -76,12 +76,12 @@ No new dependency without the architect's OK (in your status page, then in a rev
 - Turn `enabled = true` only when the screen works end to end on the gate and on a tablet.
 
 ## WebView rules (site; security reviews these too)
-- Main-frame navigation decided by a pure function in the site package: allowed if `Links.isAllowed(url)` or it is the offline copy's origin (`https://appassets.androidplatform.net/feature_site/...` through `WebViewAssetLoader`). Everything else is refused in `shouldOverrideUrlLoading(view, WebResourceRequest)`; whether a refused link opens in the browser is a decision for security and stand (it escapes screen pinning), not a default.
+- Security's checklist (`docs/security/summit-checklist.md`, section A) is the full list; this is the structural part.
+- Main-frame navigation decided by a pure function in the site package: allowed if `Links.isAllowed(url)` or it is the offline copy (`https://appassets.androidplatform.net/assets/feature_site/...`, `WebViewAssetLoader` with an `AssetsPathHandler` on `/assets/` only, files in `app/src/main/assets/feature_site/`). Never `file://`, never `loadDataWithBaseURL` with a riskmandate.ai base. Everything else is refused in `shouldOverrideUrlLoading(view, WebResourceRequest)`; whether a refused link opens in the browser is a decision for security and stand (it escapes screen pinning), not a default.
 - `setSupportMultipleWindows(false)` so `target=_blank` comes through the same check; `allowFileAccess = false`, `allowContentAccess = false`; no `addJavascriptInterface`; `mixedContentMode = MIXED_CONTENT_NEVER_ALLOW`; JavaScript only if the pages need it; `WebChromeClient.onPermissionRequest` denies, no geolocation, no file chooser; downloads ignored; `onReceivedSslError` cancels; `onRenderProcessGone` returns true and drops the WebView (otherwise the app dies); `WebView.setWebContentsDebuggingEnabled` only in debug builds.
 - Mandate (C) states what this app collects. If the site's pages load third-party resources, that statement must say so or site must block them: site and mandate agree the sentence, security checks it.
 
-## Proposals for `FeatureContext` (not yet applied; see the architect's status page)
-- **P1** `config: ManagedConfig` and `device: DeviceStatus`, the host's current values (mandate shows the allow-list, start URL and management state; site starts at `config.startUrl`).
-- **P2** rename nothing, but document `onBack` as "go to the home screen".
-- **P3** the host builds the context with `remember(config, device) { ... }` so features can key effects on it.
-- **P4** stand mode's on/off switch on the home screen: a small `StandController` the host hoists and passes to both `StandHost` and `HomeScreen` (app and stand agree it; not a `FeatureContext` field).
+## `FeatureContext` history
+- **9 Nov, v2 (architect):** `activity` removed; `config` and `device` added (P1); `onBack` kept and means "go home" (P2). A deprecated `FeatureContext(activity, onBack)` constructor stays only so `MainActivity` compiles until app.android passes its own values, built with `remember(config, device)` (P3); then it is deleted.
+- **Open, P4:** stand mode's on/off switch on the home screen: a small `StandController` the host hoists and passes to `StandHost` and `HomeScreen` (app and stand agree it; not a `FeatureContext` field).
+- Anything else a feature needs from the host: ask (above). A new field needs a reason and a test.
