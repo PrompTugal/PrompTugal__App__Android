@@ -43,7 +43,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import ai.riskmandate.app.R
 import kotlinx.coroutines.delay
 
@@ -151,13 +150,15 @@ internal fun StandHostContent(
     }
     LaunchedEffect(enabled) {
         if (!enabled) return@LaunchedEffect
-        // Only counts while the app is in front; coming back after a long time away resets at once.
-        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            while (true) {
+        // Checked once a second in this effect's own coroutine (no hop to another dispatcher, so a test's
+        // clock drives it). Only acts while the app is in front; coming back after a long time away resets
+        // at once, because the countdown is measured on the clock, not by ticks.
+        while (true) {
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
                 if (currentHeld) timer.touch()
                 else if (timer.poll() && !currentAtHome) currentGoHome()
-                delay(1_000)
             }
+            delay(1_000)
         }
     }
 
