@@ -4,6 +4,7 @@
     <string name="models_kicker">On device</string>
     <string name="models_summary">Download a language model once, check it, and run it on this tablet without a network.</string>
     <string name="models_setup_intro">Choose a model and download it once. After that it runs on this tablet, without a network.</string>
+    <string name="models_privacy_host">huggingface.co (and its download servers, hf.co)</string>
     <string name="models_privacy">Downloads a model file once from %1$s. Nothing you type leaves the device.</string>
     <string name="models_wifi">This device is not on Wi-Fi or another unmetered network. The files are large (2.6 to 3.7 GB): Wi-Fi is recommended.</string>
     <string name="models_size_licence">%1$s, licence %2$s</string>
