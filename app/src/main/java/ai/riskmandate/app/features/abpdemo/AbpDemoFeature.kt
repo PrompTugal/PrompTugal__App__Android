@@ -169,7 +169,7 @@ private fun LayerRow(number: Int, layer: Layer, state: LayerState, modifier: Mod
             LayerState.DONE -> scheme.surfaceVariantOrSurface()
             LayerState.WAITING -> scheme.surface
         },
-        tween(400), label = "layer",
+        tween(400),
     )
     val stateText = stringResource(
         when (state) {
@@ -179,9 +179,10 @@ private fun LayerRow(number: Int, layer: Layer, state: LayerState, modifier: Mod
         },
     )
     val name = stringResource(layer.text().name)
+    val rowCd = stringResource(R.string.abpdemo_layer_cd, number, name, stateText)
     Surface(
         modifier.fillMaxWidth().testTag(AbpDemoTags.layer(layer)).semantics(mergeDescendants = true) {
-            contentDescription = "$number. $name, $stateText"
+            contentDescription = rowCd
         },
         shape = RoundedCornerShape(12.dp),
         color = container,

@@ -12,6 +12,7 @@ Nothing; pushed, waiting for the conductor.
 - Tests: `AbpDemoModelTest` (JVM: step order, strengths, ends, auto-play and loop, hand-press), `AbpDemoScreenTest` (Robolectric: every step renders with the banner, Next/Back, auto-play on the test clock, pt-PT, strings translated, no em-dashes).
 - Gate `./gradlew testDebugUnitTest lintDebug assembleRelease bundleRelease`: green (16 abpdemo tests). `AbpDemoScreenshotTest` writes `app/build/screenshots/abpdemo-step{1,2,5,7}-tablet-{light,dark}.png` (1280x800 dp landscape); a dark-theme text-colour bug found that way is fixed.
 - Environment note: Robolectric fetches its Android jar from repo1.maven.org (429 here); I pre-seeded `~/.m2` from repo.maven.apache.org. Not a repo change.
+- After conductor's note: merged origin/dev (fa5dfc4, FeatureContext v2); removed the last hardcoded text (a row content description and an animation label) from `AbpDemoFeature.kt`, now `abpdemo_layer_cd` in both languages. Full gate green with qa's `FeatureStringsTest` and `LocalisationTest`. The screen uses only `context.onBack`, no Activity.
 - Sources read 9 Nov 2026: https://riskmandate.ai (v1.40.3) and https://sharness.ai (v0.6.35).
 - `enabled = true` is set in `AbpDemoFeature`. Reasoning: the screen works end to end under test; the conductor can revert if the gate or reviews say otherwise.
 
@@ -32,6 +33,7 @@ Nothing; pushed, waiting for the conductor.
 7. The banner says "DEMONSTRATION ... nothing is sent and nothing is at risk". That is true of this screen (it sends nothing, it has no network code), but it is my wording.
 
 ## Next
+- Host now draws Back, title and insets (FeatureFrame): once it is on this branch, check whether my Home button and heading are redundant and drop them.
 - design.android's layer-row component (`app/.../ui/`) has not landed on this branch; the layer row here is private to the feature. When it lands, swap it in (small change in `LayerRow`).
 
 ## Blocked
