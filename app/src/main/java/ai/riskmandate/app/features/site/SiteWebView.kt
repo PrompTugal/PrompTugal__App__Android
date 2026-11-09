@@ -131,9 +131,14 @@ fun WebView.applySiteSettings() {
 /** Forget what the pages stored (cache, cookies, web storage) and free the WebView. */
 fun WebView.disposeSite() {
     stopLoading()
+    clearSiteData()
+    destroy()
+}
+
+/** Cache, history, cookies and web storage: cleared when the screen opens and when it closes. */
+fun WebView.clearSiteData() {
     clearCache(true)
     clearHistory()
     CookieManager.getInstance().removeAllCookies(null)
     WebStorage.getInstance().deleteAllData()
-    destroy()
 }

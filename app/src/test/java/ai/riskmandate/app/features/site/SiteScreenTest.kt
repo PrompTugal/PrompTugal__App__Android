@@ -43,7 +43,6 @@ class SiteScreenTest {
         compose.setContent {
             RiskMandateTheme { SiteScreen(OfflineSwitch(false), onBack = {}, isSystemOffline = { false }, openExternal = { _, _ -> null }) }
         }
-        compose.onNodeWithTag(SiteTags.BACK).assertIsDisplayed()
         compose.onNodeWithTag(SiteTags.TABS).assertIsDisplayed()
         for (tab in SITE_TABS) compose.onNodeWithTag(SiteTags.tab(tab.id)).assertExists()
         compose.onNodeWithTag(SiteTags.WEBVIEW).assertExists()
@@ -72,13 +71,6 @@ class SiteScreenTest {
         compose.waitForIdle()
         assertTrue(switch.offline)
         compose.onNodeWithTag(SiteTags.OFFLINE_BANNER).assertIsDisplayed()
-    }
-
-    @Test fun backButtonLeaves() {
-        var left = false
-        compose.setContent { RiskMandateTheme { SiteScreen(OfflineSwitch(false), onBack = { left = true }, isSystemOffline = { false }, openExternal = { _, _ -> null }) } }
-        compose.onNodeWithTag(SiteTags.BACK).performClick()
-        assertTrue(left)
     }
 
     @Test fun anAllowedLinkStaysInTheWebViewAndAnythingElseGoesOut() {

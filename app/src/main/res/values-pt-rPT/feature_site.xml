@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_site_back">Voltar</string>
-    <string name="feature_site_back_description">Voltar ao ecrã inicial</string>
     <string name="feature_site_tab_home">Início</string>
     <string name="feature_site_tab_abp">O que é uma ABP</string>
     <string name="feature_site_tab_how">Como funciona</string>

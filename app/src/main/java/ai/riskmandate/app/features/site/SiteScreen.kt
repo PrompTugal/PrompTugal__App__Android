@@ -12,14 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -33,15 +31,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
 object SiteTags {
-    const val BACK = "site_back"
     const val TABS = "site_tabs"
     const val OFFLINE_BANNER = "site_offline_banner"
     const val TRY_ONLINE = "site_try_online"
@@ -68,18 +63,9 @@ fun SiteScreen(
 
     BackHandler { if (webView?.canGoBack() == true) webView?.goBack() else onBack() }
 
-    Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+    // Content only: the host's FeatureFrame draws Back, the title and the insets.
+    Column(Modifier.fillMaxSize()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            TextButton(
-                onClick = onBack,
-                modifier = Modifier.heightIn(min = 48.dp).testTag(SiteTags.BACK)
-                    .semantics { contentDescription = context.getString(R.string.feature_site_back_description) },
-            ) { Text(stringResource(R.string.feature_site_back)) }
-            Text(
-                stringResource(R.string.feature_site_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(end = 8.dp).semantics { heading() },
-            )
             ScrollableTabRow(
                 selectedTabIndex = tabIndex,
                 edgePadding = 0.dp,
@@ -134,6 +120,7 @@ fun SiteScreen(
             factory = { c ->
                 WebView(c).also { wv ->
                     wv.applySiteSettings()
+                    wv.clearSiteData() // every visit starts clean, even after a process kill
                     wv.contentDescription = description
                     wv.webViewClient = SiteWebViewClient(
                         context = c.applicationContext,
