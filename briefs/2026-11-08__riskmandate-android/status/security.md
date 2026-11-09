@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 55 (9 Nov 2026): dev.llm 7138be1 PASS (flake fix, production unchanged), dev.lab 89fcacc PASS (limit lines on screen). Still open: R-lab-8 and R-lab-9 in the Kotlin AbpChecks.domain (eval 79884c2 waits for it, R-lab-12), the design-pass article, the Lab export share path. Waiting for the next wake.
+> Round 56 (9 Nov 2026): dev.lab c65b516 PASS to merge (R-lab-8 and R-lab-9 mostly fixed; fuzz against eval found R-lab-13: a later "://" in an address or authority still reads as vendor.example, fix and four vectors given), eval f41312c PASS (R-eval-7 low). R-lab-13 must close before the Lab is enabled. Still to read: R-lab-13 fix, the design-pass article, the Lab export share path. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
