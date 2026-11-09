@@ -87,12 +87,14 @@ class StandHostTest {
     }
 
     /**
-     * Moves virtual time on in one-second steps and lets the main looper run after each, so the idle loop
-     * (a coroutine on the main dispatcher) always gets its turn: no dependence on real time or scheduling.
+     * Moves both virtual clocks (Compose's and the main looper's) on in one-second steps, so the idle loop
+     * always gets its turn: no dependence on real time or scheduling.
      */
     private fun tick(seconds: Int) = repeat(seconds) {
         compose.mainClock.advanceTimeBy(1_000)
-        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        // The idle loop runs under repeatOnLifecycle, i.e. on the main dispatcher, so its delay(1000) is
+        // driven by Robolectric's main-looper clock, not by Compose's: move that one on as well.
+        org.robolectric.shadows.ShadowLooper.idleMainLooper(1_000, java.util.concurrent.TimeUnit.MILLISECONDS)
         compose.waitForIdle()
     }
 
