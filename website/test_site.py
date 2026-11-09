@@ -139,10 +139,31 @@ class SiteTest(unittest.TestCase):
         (folder / 'A.kt').write_text('class A {\n  @Test fun a() {}\n  @Test\n  fun b() {}\n  // @Test in a comment\n}\n')
         self.assertEqual(facts.count_tests(folder), 2)
 
-    def test_icon_is_built_from_the_launcher_drawable(self):
+    def test_icon_follows_the_manifest_to_the_real_launcher_drawable(self):
         svg = facts.icon_svg()
-        self.assertIn('<path d="M40,32', svg)
-        self.assertRegex(svg, r'fill="#[0-9A-Fa-f]{6}"')
+        self.assertIn('<g transform="translate(23.066 29.215) scale(0.07591 0.07591)">', svg)
+        self.assertIn('fill="#6CC69B"', svg)
+        self.assertIn('fill-rule="evenodd"', svg)
+        self.assertEqual(svg.count('<path'), 4)
+        self.assertRegex(svg, r'<rect[^>]*fill="#051223"')
+
+    def test_icon_also_reads_a_plain_one_path_adaptive_icon(self):
+        res = self.tmp / 'res'
+        for d in ('mipmap', 'drawable', 'values'):
+            (res / d).mkdir(parents=True, exist_ok=True)
+        (self.tmp / 'M.xml').write_text('<manifest><application android:icon="@mipmap/ic_launcher"/></manifest>')
+        (res / 'mipmap' / 'ic_launcher.xml').write_text('<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/bg"/><foreground android:drawable="@drawable/fg"/></adaptive-icon>')
+        (res / 'values' / 'c.xml').write_text('<resources><color name="bg">#1B2A41</color></resources>')
+        (res / 'drawable' / 'fg.xml').write_text('<vector xmlns:android="http://schemas.android.com/apk/res/android" android:viewportWidth="108" android:viewportHeight="108"><path android:fillColor="#FFFFFF" android:pathData="M40,32h18z"/></vector>')
+        svg = facts.icon_svg(self.tmp / 'M.xml', res)
+        self.assertIn('<path d="M40,32h18z" fill="#FFFFFF"/>', svg)
+        self.assertIn('fill="#1B2A41"', svg)
+        self.assertNotIn('<g ', svg)
+
+    def test_icon_refuses_a_manifest_without_an_icon(self):
+        (self.tmp / 'N.xml').write_text('<manifest><application/></manifest>')
+        with self.assertRaises(SystemExit):
+            facts.icon_svg(self.tmp / 'N.xml', self.tmp / 'res')
 
     # --- summit features: in progress until the source says otherwise --------
 
@@ -315,6 +336,13 @@ class SiteTest(unittest.TestCase):
 
     def test_banned_word_is_refused(self):
         self.assertRefused(self.broken('index.html', lambda t: t.replace('<main id="main">', '<main id="main"><p>A seamless app.</p>')), 'banned word')
+
+    def test_absolute_data_claims_are_refused(self):
+        for claim in ('The app collects nothing.', 'The app keeps no data.', 'It stores nothing.', 'The app sends nothing.', 'No data is kept.', 'So nothing is lost.'):
+            problems = self.broken('index.html', lambda t, c=claim: t.replace('<main id="main">', f'<main id="main"><p>{c}</p>'))
+            self.assertRefused(problems, 'absolute data claim')
+        # the policy's own wording is allowed
+        self.assertEqual(self.broken('index.html', lambda t: t.replace('<main id="main">', '<main id="main"><p>It sends nothing to its makers and collects no personal data.</p>')), [])
 
     def test_em_dash_is_refused(self):
         self.assertRefused(self.broken('index.html', lambda t: t.replace('<main id="main">', '<main id="main"><p>One — two.</p>')), 'em-dash')
