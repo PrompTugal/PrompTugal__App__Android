@@ -12,4 +12,6 @@
     <string name="feature_site_not_in_copy">Esta página não está na cópia offline. Ligue o dispositivo à internet para a ler.</string>
     <string name="feature_site_webview_description">Página de riskmandate.ai</string>
     <string name="feature_site_privacy">riskmandate.ai tem a sua própria política de privacidade e pode definir os seus próprios cookies. Esta app não recolhe nada.</string>
+    <string name="feature_site_kicker">riskmandate.ai</string>
+    <string name="feature_site_summary">As páginas de riskmandate.ai dentro da app, com uma cópia offline para quando o Wi-Fi falha.</string>
 </resources>
