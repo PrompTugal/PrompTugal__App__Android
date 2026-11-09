@@ -6,6 +6,7 @@
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Cloud ruling (README "Cloud model via OpenRouter"): llm/cloud/CloudLlmService (dev.chat), pinned openrouter.ai, no new dependency, model allow-list, in-code spend cap; a separate FeatureContext.cloudLlm plus Feature.usesCloud opt-in (Workbench first); the Cloud/On device badge rule; key via Keystore AES-GCM entered in Diagnostics; judges in experiments/ (code authoritative, every disagreement recorded); platform-neutral formats; claims change in the same merge. Contract fields wait for the conductor's OK.
 - Workbench ruling (README "Workbench"): id workbench, Preview only, no new FeatureContext capability; features/workbench (dev.llm) with tooltests/ sub-package (dev.lab); new shared experiments/ package (dev.lab: tool-test format and checks, runner, loop caps, device readings, text protocol extractor); stats and run options additive in llm/ (stopReason, backendUsed/fellBack, coldLoad, BackendPreference, unload()); no model parameter; storage noBackupFilesDir/feature_workbench.
 - Review app 4e26cca (45752f8 Preview) PASS: matches the ruling (`preview_<id>`); A-app-14: host tables iconFor/sectionOf/NAV_ORDER belong on Feature/FEATURES (offer: P7 icon as @DrawableRes). README preview section aligned with the code.
 - Ruling: preview of disabled features through a separate host route `preview/<id>` from Diagnostics only. openFeature stays refused except from a feature itself opened in preview. README section written.

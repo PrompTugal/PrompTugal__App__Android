@@ -175,6 +175,39 @@ A feature with `enabled = false` is never on Home, in the sidebar, or reachable 
 - **Storage:** `noBackupFilesDir/feature_workbench/`, JSON through `llm/StrictJson`, written off the main thread, with a clear button. mandate lists it with its own reason in the same merge. No export path yet beyond "Copy run" (plain text, no identifiers). Results use the Lab's export format, so eval can read them later.
 - **Output:** plain text only; tools are fakes that record calls; nothing executes.
 
+## Cloud model via OpenRouter (Dinis, 9 Nov, about 10:35 UTC; architect ruling)
+### The service
+- `llm/cloud/CloudLlmService : LlmService`, the same contract as the on-device service: a cold `stream`, exactly one Done or Error, coroutine cancellation, main-safe, tool calls only **proposed**, never executed. `llm/cloud/` is a sub-package owned by **dev.chat**; the rest of `llm/` stays dev.llm's.
+- Network: **one pinned host, `openrouter.ai`**, HTTPS only, in a list in `llm/cloud/` separate from `Links` and from the model-download list. `HttpURLConnection` with the server-sent-events stream parsed by hand. **No new dependency** (no OkHttp, no SDK). Request JSON built with `org.json`; tool arguments come back through `llm/StrictJson` and `checkToolCall` like local ones.
+- **Models:** an allow-list of OpenRouter model ids pinned in code. A spending cap enforced in code per install (default **US$1** until Dinis sets one), shown as a counter, and a credit limit on the key itself in OpenRouter (Dinis). On the cap, stop with `LlmError` and a clear message.
+- No user data unless a person typed it on that screen for a cloud run. Synthetic scenario and tool-test data only for judging. Nothing from other features, the device or the managed configuration goes into a prompt.
+
+### How a feature gets it
+- **A separate field, never mixed with `llm`:** `FeatureContext.cloudLlm: LlmService? = null`. `llm` stays **on-device only**, so a feature can never send text to the cloud by accident through the field it already uses.
+- **Opt-in per feature:** `Feature.usesCloud: Boolean = false`. The host passes `cloudLlm` only when (a) the feature declares `usesCloud = true`, (b) a key is stored, and (c) stand mode is off. At first only the Workbench declares it. Chat stays on-device unless Dinis asks.
+- **Contract changes (architect, after the conductor's OK):** `usesCloud` on `Feature`, `cloudLlm` on `FeatureContext`, both with defaults, plus contract tests. The host wiring is app's.
+
+### The "Cloud" badge rule
+- Every answer, judgement or stat that came from the cloud carries a visible **"Cloud"** badge with the model id and "via openrouter.ai". On-device ones carry **"On device"**. Never an unlabelled mix on one screen.
+- While a screen can use the cloud, it shows a persistent "Cloud on" indicator. Screenshots must keep the badges.
+
+### The key
+- Entered by staff in **Diagnostics** (host UI, app owns it): pasted once, never shown again (only the last 4 characters), with a delete button, and hidden in stand mode.
+- Stored by `llm/cloud/CloudKey` (dev.chat): AES-GCM with a key in the **Android Keystore** (`javax.crypto` and `AndroidKeyStore`, no `security-crypto` dependency), ciphertext in `noBackupFilesDir/cloud/`, so never backed up. It is never logged, never in a crash or diagnostics text, never in results or screenshots, and never sent anywhere but `openrouter.ai` as `Authorization: Bearer`.
+- Security reviews it before merge.
+
+### Judges (experiments/, dev.lab)
+- `interface Judge { val layer: JudgeLayer; suspend fun judge(case, output): JudgeVerdict }` with `CodeJudge` (pure), `LocalModelJudge(llm)` and `CloudJudge(cloudLlm)`. A verdict is pass, fail or unsure, with a reason, the layer, the model id and the prompt version.
+- A `JudgePanel` runs the layers in order: code, then local, then cloud. Where `CodeJudge` can decide, it is authoritative, and the model judges are recorded but never override it. Where code cannot decide, the model verdicts are reported side by side.
+- **Every disagreement between layers is recorded** (case, outputs, each verdict) and counted per case and per kind.
+- Judge prompts are versioned files. Judge output is parsed as strict JSON; unparseable output is "unsure", never "pass". The cloud judge sees only the synthetic case and the output under test.
+
+### Platform-neutral formats (for the shared PrompTugal__App__Mobile repo)
+- Scenario, tool-test, judge-prompt and result files are JSON with a `format` and `version` field, lowercase string enums, explicit units (`_ms`, `_tokens`, `_usd`), no Kotlin or Android names, UTF-8, and documented once in a spec file (eval's FORMATS.md today, the shared repo later). App code parses them through `llm/StrictJson`. iOS must be able to read the same files unchanged.
+
+### Claims change in the same merge
+The app has said "nothing you type leaves the device" and "connects only to riskmandate.ai". With OpenRouter in the app, security, play and mandate update the privacy page, Data safety, the in-app privacy and about screens, and mandate's network and data lines **in the same merge** as the first cloud call. openrouter.ai is named as a new destination for staff-entered cloud runs.
+
 ## Post-summit items (approved, not before the summit build)
 - **P8, feature icons as drawables** (conductor's go for after the build; design chose drawables):
   1. Add `@DrawableRes iconRes: Int? = null` to `Feature`, mark `icon: ImageVector?` `@Deprecated`; the shell uses `iconRes`, then its default icon (it ignores `icon`). Contract test.
