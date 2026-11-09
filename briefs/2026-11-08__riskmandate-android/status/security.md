@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 69 (9 Nov 2026): dev.chat c4f4b85 PASS (test-only flake fix). Waiting for the Workbench screens (dev.llm tabs 1 and 2, dev.lab experiments/ and Tool tests). Still open: the design-pass article, the Lab export share path (R-lab-11), R-app-2 for Dinis.
+> Round 70 (9 Nov 2026): checklist M written for the OpenRouter cloud model (key per tablet in the Keystore, one pinned host, no redirects, off in stand mode, spend caps, consent and badge, claims made conditional). Waiting for the Workbench screens and for dev.chat's cloud build. Still open: the design-pass article, the Lab export share path (R-lab-11), R-app-2 for Dinis; new asks for Dinis: a credit limit per key, the spend numbers, the Data safety answer.
 
 ## Doing
 Nothing. Stopped until woken.
