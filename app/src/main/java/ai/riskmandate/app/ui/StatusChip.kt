@@ -31,7 +31,8 @@ enum class ChipKind(val glyph: String) {
 /**
  * A short status label: a glyph, then a word. Colour is a third cue, never the only one.
  * [label] must already say the status ("Blocked", "Allowed"): the glyph is hidden from TalkBack.
- * Not clickable. Text size follows the user's font scale; pass [large] for a stand screen read at a distance.
+ * One line, never wrapped: give a chip a column wide enough for its words (in a table, a weight of 1.3 or more for a
+ * two-word chip). Not clickable. Text size follows the user's font scale; pass [large] for a stand screen read at a distance.
  */
 @Composable
 fun StatusChip(label: String, kind: ChipKind, modifier: Modifier = Modifier, large: Boolean = false) {
@@ -47,7 +48,7 @@ fun StatusChip(label: String, kind: ChipKind, modifier: Modifier = Modifier, lar
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(kind.glyph, style = style, color = colors.content, modifier = Modifier.clearAndSetSemantics {})
-        Text(label, style = style, fontWeight = FontWeight.SemiBold, color = colors.content)
+        Text(label, style = style, fontWeight = FontWeight.SemiBold, color = colors.content, maxLines = 1, softWrap = false)
     }
 }
 
