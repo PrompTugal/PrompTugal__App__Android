@@ -40,6 +40,8 @@ class LlmHost(
     private val catalog: List<ModelSpec> = ModelCatalog.ALL.filter { it.downloadable },
     private val idleMs: Long = IDLE_MS,
     private val maxTokens: Int = CONTEXT_TOKENS,
+    /** The stored choice (feature G), read at each pick; [preferredModelId] overrides it. */
+    private val storedPreference: () -> String? = { null },
     dispatcher: CoroutineDispatcher = Dispatchers.Default.limitedParallelism(1),
 ) : LlmService {
     private val dispatcher = dispatcher
@@ -164,7 +166,8 @@ class LlmHost(
     private fun installed(): FoundModel? {
         val dir = modelDir()
         val found = catalog.mapNotNull { spec -> File(dir, spec.fileName).takeIf { it.isFile }?.let { FoundModel(spec, it) } }
-        return found.firstOrNull { it.spec.id == preferredModelId } ?: found.firstOrNull()
+        val wanted = preferredModelId ?: storedPreference()
+        return found.firstOrNull { it.spec.id == wanted } ?: found.firstOrNull()
     }
 
     /**
@@ -194,6 +197,7 @@ class LlmHost(
             return LlmHost(
                 modelDir = { ModelFiles.internalDir(app) },
                 runtime = LiteRtRuntime(File(app.cacheDir, ModelFiles.DIR)),
+                storedPreference = { ModelPrefs.preferred(app) },
             )
         }
     }

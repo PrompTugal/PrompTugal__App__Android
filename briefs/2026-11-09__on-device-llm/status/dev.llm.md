@@ -3,7 +3,12 @@
 > Step 1 (bench) pushed: the bench in features/models, plus one separate commit with the host lines for app.android's review (LiteRT-LM 0.18.1, one compiler flag, an R8 keep rule, one manifest line, a Diagnostics "Model bench" button). Gate green. Next: Dinis runs it on the Idea Tab Plus. Third model: every small Google model is gated, Dinis's call (the conductor is asking him).
 
 ## Doing
-Step 2 done in code: contract, `FakeLlmService`, and now `LlmHost` with the LiteRT-LM runtime. Waiting for app to hold `LlmHost` and architect to add `FeatureContext.llm`, and for Dinis's bench numbers. Next: step 3 (feature G).
+Step 3 (feature G) built and pushed, `enabled = false` until it works end to end on the tablet. Waiting on: the merge order for A-llm-3 (work/app onto dev first), `FeatureContext.llm` (architect), app holding `LlmHost`, play's privacy text, and Dinis's bench numbers.
+
+## Step 3: feature G, model setup
+- `features/models/ModelSetupScreen.kt` (G's Content now; the speed bench stays in Diagnostics): the downloadable models (E2B default, E4B), size and weight licence, state (not installed, partly downloaded, installed and checked, in use), Download or Resume, Stop, a progress bar, "Use the file pushed with adb" when one is in the adb folder, "Use this model" when two are installed (stored in `feature_models` prefs; `LlmHost` reads it), Delete with a confirmation. A Wi-Fi notice when the network is metered. The privacy sentence on screen: "Downloads a model file once from huggingface.co. Nothing you type leaves the device." Native, plain-language errors for each failure.
+- `llm/ModelInstaller.kt` (security G): `HttpURLConnection`, `instanceFollowRedirects = false`, redirects by hand through `llm/DownloadPolicy.kt` (https, port 443, no user info, every hop `huggingface.co` or a host under `hf.co`, at most 5); no Authorization header, no cookies, no caches; 15 s connect and 30 s read timeouts. Resumable with `Range` into `noBackupFilesDir/models/<file>.part` (a server that does not resume where asked starts again from zero); `Content-Length` must equal what is left; the pinned size is enforced while streaming (one byte over: the part is deleted). Storage check first (the rest of the file plus 500 MB). Then SHA-256 over the finished file, atomic rename, verified marker; a mismatch deletes the file. adb import: copied into the internal folder, checked after the copy, then the adb copy is deleted to free space (A-llm-9, R-llm-4); a bad adb file is not installed. Runs in the screen's coroutine (no service, WorkManager or DownloadManager); leaving the screen stops it and keeps the part.
+- Tests: `DownloadPolicyTest` (hosts, pinned URLs, cleartext, ports, user info, redirect resolution), `ModelInstallerTest` (fake connections: through the CDN, no Authorization or cookies, resume with Range, a server that ignores Range, wrong bytes deleted, oversize refused, redirect off the list refused, redirect loop stopped, dropped connection keeps the part, HTTP error, storage, adb copy and source removal, bad adb file, delete), `ModelSetupScreenTest` (the privacy sentence, the list, gated models not offered, an offline download explained, adb import offered, switching and deleting).
 
 ## Step 2: the LLM contract (for dev.chat, dev.lab, qa, architect)
 All in `app/src/main/java/ai/riskmandate/app/llm/`:
@@ -51,7 +56,7 @@ The bench shows the exact folder and commands on screen too. The first run of ea
    Security R-llm-4 (PASS on c02632a): the adb folder is used only on API 30+ (`ModelFiles.adbDir` returns null below; tested); G copies to internal and verifies again after the copy (step 3); proguard header comment fixed (it said the app uses no JNI). Architect fix-forwards on c02632a: A-llm-4 and A-llm-5 done (this commit); A-llm-3: the host lines in c02632a stay byte-identical to what app.android re-commits on work/app (I will not change them; if app's copy differs, I take app's on merge).
 1. Dinis measures E2B and E4B (GPU and CPU), plus 270M or 1B if he pushes them; I record the numbers here and the device confirmation of the pins for security's models.md.
 2. Step 2: `LlmService` (generate, stream, cancel, tool calls with a JSON schema), the LiteRT-LM implementation, `FakeLlmService`; architect adds it to `FeatureContext`.
-3. Step 3: feature G (download with resume and progress, storage check, Wi-Fi advice, verify, delete, adb fallback, privacy text).
+3. G on the tablet with Dinis (download E2B over venue-like Wi-Fi, stop and resume, adb import), then `enabled = true`.
 
 ## Blocked
 - Nothing. The bench needs Dinis and the tablet.
@@ -66,6 +71,7 @@ Carried on this branch, as conductor agreed, in one separate commit for your rev
 6. Size: the release APK goes from about 0.9 MB to **50 MB**, all of it `liblitertlm_jni.so` stored uncompressed for arm64-v8a (22 MB) and x86_64 (26 MB). AAB 24.8 MB; Play would split per ABI. `ndk { abiFilters += "arm64-v8a" }` would halve the APK, but release's x86_64 emulator smoke test could no longer install it. app and release decide.
 
 ## For app
+- Licence screen (security G.7): list the models G offers with their weight licences: "Gemma 4 E2B and Gemma 4 E4B (LiteRT-LM builds by litert-community on Hugging Face): Apache-2.0". Source of truth: `ModelCatalog` (downloadable entries).
 - Hold one `LlmHost.create(applicationContext)` for the process (Application subclass or the host's holder; your call per architect), pass it as `FeatureContext.llm` once architect adds the field, and forward `onTrimMemory(level)` to it. The bench (Diagnostics) loads its own engine: call `host.unload()` before opening it if a feature has a model in memory, or two copies fill memory. A one-line `LaunchedEffect` in the bench route would do.
 
 ## For architect
