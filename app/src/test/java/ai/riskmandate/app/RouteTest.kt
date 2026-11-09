@@ -34,4 +34,16 @@ class RouteTest {
         assertEquals(2, countRequestedPermissions(arrayOf("android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE", "$pkg.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"), pkg))
         assertEquals(0, countRequestedPermissions(null, pkg))
     }
+
+    @Test fun openFeatureOpensAnEnabledFeature() {
+        assertEquals("models", resolveOpenFeature("models", standOn = false, enabledIds = setOf("models", "chat")))
+    }
+
+    @Test fun openFeatureIsRefusedInStandModeAndForUnknownOrDisabledIds() {
+        val enabled = setOf("models", "chat")
+        assertEquals(null, resolveOpenFeature("models", standOn = true, enabledIds = enabled))
+        assertEquals(null, resolveOpenFeature("lab", standOn = false, enabledIds = enabled))
+        assertEquals(null, resolveOpenFeature(Routes.DIAGNOSTICS, standOn = false, enabledIds = enabled))
+        assertEquals(null, resolveOpenFeature("", standOn = false, enabledIds = enabled))
+    }
 }
