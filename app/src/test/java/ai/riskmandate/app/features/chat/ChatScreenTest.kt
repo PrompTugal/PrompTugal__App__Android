@@ -10,6 +10,7 @@ import ai.riskmandate.app.llm.FakeReply
 import ai.riskmandate.app.llm.LlmService
 import ai.riskmandate.app.llm.LlmState
 import androidx.compose.runtime.CompositionLocalProvider
+import kotlinx.coroutines.Dispatchers
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -37,7 +38,7 @@ class ChatScreenTest {
 
     private fun show(llm: ChatLlm, store: ChatHistoryStore = MemoryChatHistoryStore()) = compose.setContent {
         val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null), openFeature = { opened += it })
-        CompositionLocalProvider(LocalChatStore provides store) {
+        CompositionLocalProvider(LocalChatStore provides store, LocalChatIo provides Dispatchers.Unconfined) {
             RiskMandateTheme { ChatContent(ctx, llm) }
         }
     }
@@ -45,7 +46,7 @@ class ChatScreenTest {
     /** The production path: the host's LlmService through FeatureContext.llm, adapted inside chat. */
     private fun showWithService(service: LlmService?) = compose.setContent {
         val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null), openFeature = { opened += it }, llm = service)
-        CompositionLocalProvider(LocalChatStore provides MemoryChatHistoryStore()) { RiskMandateTheme { ChatFeature.Content(ctx) } }
+        CompositionLocalProvider(LocalChatStore provides MemoryChatHistoryStore(), LocalChatIo provides Dispatchers.Unconfined) { RiskMandateTheme { ChatFeature.Content(ctx) } }
     }
 
     @Test fun nullServiceShowsTheNoModelStateWithOpenModels() {
@@ -74,9 +75,9 @@ class ChatScreenTest {
     }
 
     /**
-     * start() reads history on a real IO thread, which the compose test clock cannot see, so waitForIdle alone can
-     * return while the screen still says "looking for models". Wait for the loaded state itself: either the
-     * no-model notice or the input row. No timing, no sleeps.
+     * The screen's history IO runs on an immediate dispatcher here ([LocalChatIo]), so no real thread is involved. This
+     * still waits for the loaded state itself (either the no-model notice or the input row) rather than for idle, as a
+     * belt and braces: no timing, no sleeps.
      */
     private fun loaded() {
         compose.waitUntil(15_000) { count(ChatTags.NO_MODEL) == 1 || count(ChatTags.INPUT) == 1 }
@@ -92,7 +93,7 @@ class ChatScreenTest {
         val restoration = androidx.compose.ui.test.junit4.StateRestorationTester(compose)
         restoration.setContent {
             val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null))
-            CompositionLocalProvider(LocalChatStore provides store) { RiskMandateTheme { ChatContent(ctx, FakeChatLlm(pieces = listOf("An ", "answer."))) } }
+            CompositionLocalProvider(LocalChatStore provides store, LocalChatIo provides Dispatchers.Unconfined) { RiskMandateTheme { ChatContent(ctx, FakeChatLlm(pieces = listOf("An ", "answer."))) } }
         }
         loaded()
         tag(ChatTags.INPUT).performTextInput("hello there")

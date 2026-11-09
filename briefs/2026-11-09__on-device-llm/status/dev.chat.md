@@ -100,6 +100,9 @@ Dinis (spoken, relayed by the conductor, 9 Nov about 13:25 UTC): a per-device se
 ## maxCostMicros (dev.llm 09c4d56)
 `CloudLlmService.maxCostMicros(request)` returns the same worst case the cap check uses (so a sweep shows the number a call is refused on), and null when the request cannot be priced because it cannot be sent: over the 32 KB request limit, or tools on a model that takes none. Tested, including that a spend one micro-dollar short of the figure refuses the call.
 
+## CI flake: ChatScreenTest.showsTheOnDeviceBadgeAndNoModelState (run 107, slower runner)
+Cause: `start()` read history through a real IO thread that the compose test clock cannot see; on a slow runner the wait timed out. Fix: the history dispatcher is now injectable for tests (`LocalChatIo`, default `Dispatchers.IO`; the app is unchanged), and `ChatScreenTest` provides an immediate one, so no real thread is involved. Assertions unchanged; waits still 15 s. Stress: 20 runs of the class under 4 busy CPU loops on 4 cores, 0 failures.
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 
