@@ -56,7 +56,7 @@
 
     <string name="mandate_mandate_data">Dados recolhidos por esta app: nenhuns. A vista dentro da app carrega páginas de riskmandate.ai por HTTPS, como um navegador. Esta app não acrescenta nenhum identificador.</string>
     <string name="mandate_site_quote">As palavras do próprio site, em inglês: \"There is no analytics, no tag manager, no advertising pixel and no cookie set by this site.\" (riskmandate.ai/privacy, lido a 9 de novembro de 2026)</string>
-    <string name="mandate_connects">Esta app liga-se a: %1$s (a vista do site dentro da app)</string>
+    <string name="mandate_connects">Esta app liga-se a: %1$s</string>
     <string name="mandate_connects_none">Esta app não se liga a nada por si própria. As páginas abrem no seu navegador, que faz a sua própria ligação.</string>
     <string name="mandate_reason_site_view">a vista riskmandate.ai dentro da app carrega páginas deste anfitrião</string>
 
@@ -69,5 +69,7 @@
     <string name="mandate_reason_chat_history">as suas conversas na funcionalidade Chat, só neste dispositivo, nunca copiadas para a nuvem</string>
     <string name="mandate_reason_models">ficheiros de modelos de linguagem guardados dentro da app, só neste dispositivo, nunca copiados para a nuvem</string>
     <string name="mandate_reason_models_adb">ficheiros de modelos de linguagem postos na pasta da própria app no armazenamento partilhado (por exemplo com adb), nunca copiados para a nuvem</string>
+    <string name="mandate_reason_model_choice">que modelo de linguagem escolheu, só neste dispositivo</string>
+    <string name="mandate_reason_model_download">o botão Descarregar da configuração do modelo vai buscar um modelo aqui, só quando o toca</string>
     <string name="mandate_gap_heading">Lacuna: alcance menos mandato</string>
 </resources>

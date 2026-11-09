@@ -60,14 +60,14 @@ class MandateScreenTest {
 
     @Test fun noGapIsSaidPlainly() {
         show(state(cleanReach))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 4, mandate 14, gap 0")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 4, mandate ${mandate.entries.size}, gap 0")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Gap: none. Everything this app can reach, its mandate needs.")
     }
 
     @Test fun aGapIsShownPlainlyWithItsItems() {
         show(state(cleanReach + dump))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 5, mandate 14, gap 1")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 5, mandate ${mandate.entries.size}, gap 1")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Gap: 1. This app can reach things its mandate does not need:")
         compose.onNodeWithTag(MandateTags.gapItem(dump.key)).performScrollTo().assertIsDisplayed()
@@ -104,7 +104,7 @@ class MandateScreenTest {
     @Test @Config(qualifiers = "pt-rPT")
     fun portugueseOnAPortugueseDevice() {
         show(state(cleanReach + dump))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Alcance 5, mandato 14, lacuna 1")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Alcance 5, mandato ${mandate.entries.size}, lacuna 1")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Lacuna: 1. Esta app consegue alcançar coisas de que o seu mandato não precisa:")
         compose.onNodeWithText("Dados recolhidos por esta app: nenhuns", substring = true).performScrollTo().assertIsDisplayed()

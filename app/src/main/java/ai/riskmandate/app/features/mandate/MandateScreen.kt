@@ -201,6 +201,8 @@ private fun reasonRes(reason: Reason): Int = when (reason) {
     Reason.CHAT_HISTORY -> R.string.mandate_reason_chat_history
     Reason.MODELS -> R.string.mandate_reason_models
     Reason.MODELS_ADB -> R.string.mandate_reason_models_adb
+    Reason.MODEL_CHOICE -> R.string.mandate_reason_model_choice
+    Reason.MODEL_DOWNLOAD -> R.string.mandate_reason_model_download
 }
 
 @Composable
