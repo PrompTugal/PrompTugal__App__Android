@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_site_back">Back</string>
+    <string name="feature_site_back_description">Back to the home screen</string>
+    <string name="site_tab_home">Home</string>
+    <string name="site_tab_abp">What an ABP is</string>
+    <string name="site_tab_how">How it works</string>
+    <string name="site_tab_pricing">Pricing</string>
+    <string name="site_tab_harness">SHarness</string>
+    <string name="site_tab_about">About</string>
+    <!-- The day the bundled pages were read from riskmandate.ai (keep in step with OfflineCopy.SNAPSHOT_DATE_ISO). -->
+    <string name="site_snapshot_date">9 November 2026</string>
+    <string name="site_offline_banner">Offline copy from %1$s. Pages and links outside this copy are not available until the device is online.</string>
+    <string name="site_try_online">Try online</string>
+    <string name="site_not_in_copy">This page is not in the offline copy. Connect the device to the internet to read it.</string>
+    <string name="site_webview_description">riskmandate.ai page</string>
+</resources>

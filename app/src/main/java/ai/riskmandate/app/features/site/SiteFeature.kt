@@ -1,24 +1,21 @@
 package ai.riskmandate.app.features.site
 
+import ai.riskmandate.app.Browser
 import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.remember
 
-/** Placeholder: the owning session replaces this file's contents (keep the object name and id). */
+/** riskmandate.ai inside the app: an in-app WebView limited to the allow-list, native tabs and an offline copy. */
 object SiteFeature : Feature {
     override val id = "site"
     override val title = R.string.feature_site_title
-    override val enabled = false
+    override val enabled = true
 
     @Composable
     override fun Content(context: FeatureContext) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(title)) }
+        val switch = remember { OfflineSwitch(Browser.isOffline(context.activity)) }
+        SiteScreen(switch = switch, onBack = context.onBack)
     }
 }
