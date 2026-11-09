@@ -49,3 +49,7 @@ To deploy (GitHub Pages workflow):
 
 ## Note: secret-scan
 My first commit `d722a6b` makes `scripts/secret-scan.sh` report a `private key block` in `website/validate.py` and `website/test_site.py`: they hold the detection pattern as literal text, not a key. Fixed in the next commit by splitting the string; history keeps the match (no rewrite). security.android may want to note it as a known false positive.
+
+## Update: R-art-4 and R-art-5 (security, High)
+Fixed in `website/pages/features.html` (the app keeps a few things on the device only, listed, and the policy lists every item) and `website/pages/install.html` (the app's own settings stay across an update). Also `build.py`'s feature C text ("what it collects (nothing)" is now "what it stores on the device"). I grepped the site, the two published release articles and the draft for other "nothing" or "no data" claims: none left outside the policy and the app's own quoted strings. `validate.py` now refuses absolute data claims (collects nothing, keeps no, stores nothing, sends nothing without "to its makers", no data, nothing is lost), with a test for each; `privacy.html` is exempt because it is docs/play's reviewed text.
+For play: docs/play/privacy.html still says "Because the app collects nothing, we hold no personal data about you from the app" (Your rights). It is the same kind of claim; suggest "Because the app collects no personal data".
