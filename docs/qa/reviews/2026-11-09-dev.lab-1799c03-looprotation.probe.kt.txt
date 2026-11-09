@@ -1,0 +1,72 @@
+package ai.riskmandate.app.features.lab
+
+import ai.riskmandate.app.RiskMandateTheme
+import ai.riskmandate.app.llm.FakeLlmService
+import ai.riskmandate.app.llm.FakeReply
+import ai.riskmandate.app.llm.LlmEvent
+import ai.riskmandate.app.llm.LlmRequest
+import ai.riskmandate.app.llm.LlmRole
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.junit4.StateRestorationTester
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/** QA probe (plan I-4, X-3): what a rotation does to a loop in progress and to its counters. */
+@RunWith(AndroidJUnit4::class)
+class QaLoopRotationProbeTest {
+    @get:Rule val compose = createComposeRule()
+    private val data = LabTestData.load()
+    private fun count(tag: String) = compose.onAllNodes(hasTestTag(tag)).fetchSemanticsNodes().size
+    private fun click(tag: String) { compose.onNodeWithTag(tag).performScrollTo().performClick() }
+
+    private fun obedient(req: LlmRequest): FakeReply {
+        val last = req.messages.last()
+        return when {
+            last.role == LlmRole.USER -> FakeReply("I will read the note.", listOf(LlmEvent.ToolCallProposed("read_note", "{\"name\":\"quarterly\"}")))
+            last.role == LlmRole.TOOL && last.toolName == "read_note" -> FakeReply("", listOf(LlmEvent.ToolCallProposed("share_document", "{\"to\":\"x@example.test\",\"text\":\"t\"}")))
+            else -> FakeReply("Done.")
+        }
+    }
+
+    private fun start(llm: FakeLlmService): StateRestorationTester {
+        val r = StateRestorationTester(compose)
+        r.setContent {
+            RiskMandateTheme { LabScreen(data = data, initialScenario = "sample-planted", network = NetworkState(true, Transport.WIFI), llm = llm) }
+        }
+        return r
+    }
+
+    @Test fun finishedLoopCountersSurviveARotation() {
+        val r = start(FakeLlmService(tokenDelayMs = 50, reply = ::obedient))
+        click(LabTags.MODE_LOOP)
+        repeat(3) { click(LabTags.LOOP_MINUS) }
+        click(LabTags.LOOP_RUN)
+        compose.waitUntil(30_000) { count(LabTags.STAT_HEADLINE) > 0 && count(LabTags.LOOP_RUN) > 0 }
+        println("PROBE finished loop: counters before rotation=${count(LabTags.STAT_FAILED)} headline=${count(LabTags.STAT_HEADLINE)}")
+        r.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+        println("PROBE finished loop: counters after rotation=${count(LabTags.STAT_FAILED)} headline=${count(LabTags.STAT_HEADLINE)} loopModeStillSelected=${count(LabTags.LOOP_RUN)}")
+        assertTrue("the loop's counters are still on screen after a rotation", count(LabTags.STAT_HEADLINE) > 0)
+    }
+
+    @Test fun aLoopInProgressSurvivesARotation() {
+        val r = start(FakeLlmService(tokenDelayMs = 100, reply = ::obedient))
+        click(LabTags.MODE_LOOP)
+        repeat(3) { click(LabTags.LOOP_MINUS) }
+        click(LabTags.LOOP_RUN)
+        compose.waitUntil(30_000) { count(LabTags.COUNTERS) > 0 }
+        r.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+        val tiles = count(LabTags.COUNTERS)
+        println("PROBE loop in progress: counters tile after rotation=$tiles stat_failed=${count(LabTags.STAT_FAILED)} runButton=${count(LabTags.LOOP_RUN)}")
+        assertTrue("a loop in progress still shows its counters after a rotation", tiles > 0)
+    }
+}

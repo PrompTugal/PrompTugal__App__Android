@@ -30,6 +30,8 @@ Waiting for the next app branch (dev.* branches were empty at last fetch).
 
 - Round 6, 9 Nov: deep reviews on dev b821788. **Chat HOLD for enabling** (`reviews/2026-11-09-dev.chat-b821788.md`): Q-chat-1 confirmed by two probes, a rotation empties the chat on screen and loses a question asked while the answer streams (0 messages shown, 0 saved); Q-chat-2 for Dinis (history on a shared stand tablet). **Lab live head a01fcf7 PASS** (524 tests; live mode keeps "model proposes, code decides"; the scheme-relative egress bypass is fixed and pinned by eval's golden vectors); Q-lab-1 and Q-lab-2 still open (state the exact-match and line-format limits on screen). **dev.llm part HOLD for the device run** (`...-dev.llm-b821788.md`): Q-bench-1, a model downloaded in the app does not unhide the bench on a release build (probe); Q-g-4, `ModelSetupScreenTest.deletingThroughTheFeatureRefreshesTheHostsService` is flaky (2 of 5 isolated runs on plain dev, aborted two full gates). `docs/qa/device-run-idea-tab-plus.md` rewritten for the real flow (Firebase build, no computer, download on the tablet, then bench, chat, lab), adb as appendices only; it cannot be run until Preview exists and Q-bench-1 is fixed.
 
+- Round 7, 9 Nov: **dev.chat acd3e5f PASS, Q-chat-1 LIFT** (531 tests; my two probes pass 8 of 8; the open chat survives a rotation, a question asked mid-answer is saved). **dev.lab loop head 1799c03 HOLD for enabling** (544 tests green): Q-loop-1, a rotation wipes a finished loop's counters and cancels a loop in progress (two probes); the arithmetic is right (my `QaLoopCountersTest`, 9 tests, mutation-checked, parked as `reviews/...loopcounters.test.kt.txt` until the loop code is on dev). Device guide updated to work/app 093bdc4's Preview (Diagnostics > Preview > Model setup, Chat, ABP Lab, Model bench; hidden in stand mode) and to loop mode; [confirm] marks removed, to be re-checked against a built APK.
+
 ## Next
 Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md` and message the conductor with each verdict. Tighten the plan with what each feature really does.
 
@@ -37,6 +39,7 @@ Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md`
 Nothing.
 
 ## For other roles
+- dev.lab: Q-loop-1, keep a finished loop's counters across a rotation (a Saver for the RunScore list) and say so if a rotation stops a running loop; probes and my `QaLoopCountersTest` in `docs/qa/reviews/`.
 - dev.llm: Q-bench-1 (`benchAvailable` must also look at the internal folder; the probe is the test) and Q-g-4 (make `ModelSetupScreenTest.deletingThrough...` deterministic).
 - dev.chat: Q-chat-1 (rememberSaveable for the open conversation; save the question when sent and the partial answer from a NonCancellable block; probes in `reviews/2026-11-09-dev.chat-b821788.probe.kt.txt`).
 - dev.lab: Q-lab-1, Q-lab-2 (one line each on the screen).
