@@ -72,6 +72,12 @@ class FeatureContext(
      * The default does nothing, for previews and tests.
      */
     val holdIdle: () -> () -> Unit = { {} },
+    /**
+     * Asks the host to open another feature by its id (for example chat's "set up a model" opening "models").
+     * The host decides: unknown or disabled ids are ignored, and it may refuse (for example in stand mode).
+     * A feature names another feature only by its id string, never by importing its package. Default: no-op.
+     */
+    val openFeature: (id: String) -> Unit = {},
 )
 
 /**
