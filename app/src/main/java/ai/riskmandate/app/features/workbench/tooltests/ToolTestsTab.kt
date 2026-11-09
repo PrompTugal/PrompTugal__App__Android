@@ -173,13 +173,13 @@ fun ToolTestsTab(
 ) {
     val context = LocalContext.current
     val loaded by produceState(catalogue) { if (catalogue == null) value = withContext(Dispatchers.IO) { ToolTestAssets.load(context.assets) } }
-    val prompts by produceState<Map<String, JudgePrompt>>(emptyMap()) { value = withContext(Dispatchers.IO) { ToolTestAssets.loadJudgePrompts(context.assets).first } }
+    val prompts by produceState<Map<String, JudgePrompt>?>(null) { value = withContext(Dispatchers.IO) { ToolTestAssets.loadJudgePrompts(context.assets).first } }
     val cat = loaded
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
         if (cat == null) { Text(stringResource(R.string.workbench_tt_loading), style = MaterialTheme.typography.titleMedium); return@Column }
         if (cat.cases.isEmpty()) { Text(stringResource(R.string.workbench_tt_none), style = MaterialTheme.typography.titleMedium); return@Column }
         if (cat.problems.isNotEmpty()) Text(stringResource(R.string.workbench_tt_problems, cat.problems.size), style = MaterialTheme.typography.bodyMedium)
-        Body(cat, llm, cloudLlm?.takeIf { it.location == LlmLocation.CLOUD }, prompts[JUDGE_PROMPT_ID], openFeature, onBusy, settings)
+        Body(cat, llm, cloudLlm?.takeIf { it.location == LlmLocation.CLOUD }, prompts?.get(JUDGE_PROMPT_ID), prompts != null, openFeature, onBusy, settings)
     }
 }
 
@@ -199,7 +199,7 @@ private fun caseSel(id: String) = "c:$id"
 
 @Composable
 private fun Body(
-    cat: ToolCatalogue, llm: LlmService?, cloud: LlmService?, judgePrompt: JudgePrompt?,
+    cat: ToolCatalogue, llm: LlmService?, cloud: LlmService?, judgePrompt: JudgePrompt?, promptsLoaded: Boolean,
     openFeature: (String) -> Unit, onBusy: (Boolean) -> Unit, settings: RunSettings,
 ) {
     val context = LocalContext.current
@@ -274,7 +274,7 @@ private fun Body(
         Right(
             cat, st, report, judgeReport, selCase, selKind, modeIndex, { modeIndex = it }, repeatIndex, { repeatIndex = it },
             pickedRun, { pickedRun = it }, judgeLocal, { judgeLocal = it }, judgeCloud, { judgeCloud = it },
-            cloud, cloudReady, cloudState, judgePrompt != null,
+            cloud, cloudReady, cloudState, judgePrompt != null, promptsLoaded,
         )
     }
     if (cloudOn) CloudOnBanner(modelIdOf(cloudState).orEmpty())
@@ -423,7 +423,7 @@ private fun Right(
     cat: ToolCatalogue, st: SuiteState, report: ToolTestReport, judgeReport: JudgeReport, selCase: ToolCase?, selKind: String?,
     modeIndex: Int, onMode: (Int) -> Unit, repeatIndex: Int, onRepeat: (Int) -> Unit, picked: Int, onPick: (Int) -> Unit,
     judgeLocal: Boolean, onLocal: (Boolean) -> Unit, judgeCloud: Boolean, onCloud: (Boolean) -> Unit,
-    cloud: LlmService?, cloudReady: Boolean, cloudState: LlmState?, haveJudgePrompt: Boolean,
+    cloud: LlmService?, cloudReady: Boolean, cloudState: LlmState?, haveJudgePrompt: Boolean, promptsLoaded: Boolean,
 ) {
     val running = st.running
     // The two ways to ask, and how often: apply to the next run, whichever scope it has.
@@ -433,7 +433,7 @@ private fun Right(
         Text(stringResource(R.string.workbench_tt_repeats_label), style = MaterialTheme.typography.titleSmall, color = Pt.colors.muted)
         SegmentedControl(REPEAT_CHOICES.map { stringResource(R.string.workbench_tt_repeat_n, it) }, repeatIndex, { if (!running) onRepeat(it) }, Modifier.testTag(ToolTestTags.REPEATS))
     }
-    Judges(judgeLocal, onLocal, judgeCloud, onCloud, cloud, cloudReady, cloudState, haveJudgePrompt, running)
+    Judges(judgeLocal, onLocal, judgeCloud, onCloud, cloud, cloudReady, cloudState, haveJudgePrompt, promptsLoaded, running)
     when {
         selCase != null -> CaseDetail(selCase, cat.kinds.firstOrNull { it.id == selCase.kind }?.title.orEmpty(), st, report, judgeReport, picked, onPick)
         selKind != null -> KindDetail(cat.kinds.firstOrNull { it.id == selKind }?.title.orEmpty(), selKind, cat, report, judgeReport)
@@ -444,11 +444,11 @@ private fun Right(
 @Composable
 private fun Judges(
     local: Boolean, onLocal: (Boolean) -> Unit, cloudOn: Boolean, onCloud: (Boolean) -> Unit,
-    cloud: LlmService?, cloudReady: Boolean, cloudState: LlmState?, havePrompt: Boolean, running: Boolean,
+    cloud: LlmService?, cloudReady: Boolean, cloudState: LlmState?, havePrompt: Boolean, promptsLoaded: Boolean, running: Boolean,
 ) {
     TitledCard(stringResource(R.string.workbench_tt_judges), kicker = stringResource(R.string.workbench_tt_judges_kicker)) {
         Text(stringResource(R.string.workbench_tt_judges_help), style = MaterialTheme.typography.bodyMedium, color = Pt.colors.muted)
-        if (!havePrompt) { Text(stringResource(R.string.workbench_tt_judges_missing), style = MaterialTheme.typography.bodyMedium); return@TitledCard }
+        if (!havePrompt) { if (promptsLoaded) Text(stringResource(R.string.workbench_tt_judges_missing), style = MaterialTheme.typography.bodyMedium); return@TitledCard }
         SwitchRow(stringResource(R.string.workbench_tt_judge_local), local, onLocal, !running, ToolTestTags.JUDGE_LOCAL)
         if (cloud != null) {
             SwitchRow(stringResource(R.string.workbench_tt_judge_cloud), cloudOn, onCloud, !running && cloudReady, ToolTestTags.JUDGE_CLOUD)
