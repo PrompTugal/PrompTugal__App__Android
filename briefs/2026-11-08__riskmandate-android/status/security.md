@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 17 (9 Nov 2026, about 05:25 UTC): dev.releases 61d2b70, app 95e7978, dev.mandate 42f7a7b, qa bdb73a5 all PASS. Open for Dinis: R-ext-2, R-play-9, A-2, R-wif-2 to R-wif-4, R-stand-4. Waiting for the next wake.
+> Round 18 (9 Nov 2026, about 05:35 UTC): dev.mandate 0b29d55 PASS. Everything else unchanged since round 17. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 18: **PASS** dev.mandate 0b29d55 (design components; the data sentence is shortened to what the code shows; the site's no-analytics statement is at https://riskmandate.ai/privacy if dev.mandate wants to quote it).
 - Round 17: **PASS** dev.releases 61d2b70 (What's new: reads only its own assets; links only through `Links.isAllowed` and `Browser.open`, other links plain text; image paths whitelisted; stores one int; committed PNG has no metadata), app 95e7978 (idle holds no longer cleared by the host), dev.mandate 42f7a7b (final strings, en and pt-PT, accurate), qa bdb73a5 (the asset-origin exemption is pinned to one host and folder; the SSL guard trips on `proceed()` only).
 - Round 16: **PASS** architect 0b521af (transitional Activity constructor deleted), app c68ed92, dev.mandate e552307 (R-site-1 closed: the screen now derives the app's own connections from the enabled features), dev.site ee25896 (openExternal wired with `hasGesture()` and not `isRedirect`: R-ext-1 met), editor 6e8845e (R-editor-1 closed). Open: R-ext-2 (Dinis, external-link rule), R-play-9 (Data safety answer), A-2 and R-wif-2 to R-wif-4 (Dinis, GitHub and Google Cloud settings), R-stand-4 (accepted).
 - Round 15: `docs/security/licences.md` regenerated with `scripts/licences.sh` on the work/app head (Android SDK installed under /tmp, Maven Central 429s needed a retry): 85 artifacts, 0 flagged; `scripts/osv-check.sh`: no known vulnerabilities (webkit 1.12.1 included). Reviews `2026-11-09-*` for architect 7be8651 (FeatureContext v3 holdIdle: a callback, cleared on route change), app e914cc6 (webkit dependency, IdleHolds), dev.stand 9f207e8 (corner long-press on the home screen only, idleHeld), dev.abpdemo b94232d, design b61b5d1, dev.site 13114fd (content only; cache cleared on open and close; openExternal still not wired), play 9c3e4c5 (texts match the code): all **PASS**. **HOLD** dev.mandate 5a43197: `mandate_mandate_data` still says "Nothing leaves the device from this app" and the INTERNET reason says "in your browser" (en and pt-PT); three-string fix.
