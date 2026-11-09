@@ -1,11 +1,13 @@
 # architect.android status
 
-> 9 Nov 2026, about 03:00 UTC: dev.llm step 2 (31a87ac) PASS: the contract is accepted, with Idle and LlmError. FeatureContext.llm is written and verified on a trial (gate green). It is pushed once llm/LlmService.kt is on dev, because it cannot compile before. dev.llm's host lines still conflict with app's shell (A-llm-3).
+> 9 Nov 2026, about 05:00 UTC: FeatureContext.llm pushed (merged with dev 25d9cb7, gate green, contract tests). openFeature(id) pushed earlier (a26f037). Waiting for new heads to review.
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- FeatureContext.llm: LlmService? = null, with FeatureContextLlmTest (null by default; a feature reaches a FakeLlmService). Gate green, secret scan clean.
+- FeatureContext.openFeature(id) (a26f037) with FeatureContextOpenFeatureTest.
 - Ruling A-lab-7: one strict JSON parser, llm/StrictJson (dev.llm takes lab's general parse/render; lab keeps hash16/parseAt and uses checkToolCall). README and the lab review updated.
 - Review dev.llm 31a87ac PASS (contract accepted with Idle and LlmError; ToolSpec, StrictJson and checkToolCall are the one validator; LlmHost per the README; A-llm-12 installed list for chat; A-llm-13 TOO_LONG mapping; A-llm-3 still open). README contract section updated to what was built. FeatureContext.llm patch verified on a trial and waiting for LlmService on dev.
 - Reviews: design fb824aa PASS (A-des-4 ScreenHeader belongs to the host frame; A-des-5 breakpoints written down); dev.llm 9c3fbd5 PASS (A-llm-4/5 closed; A-llm-3: conflicts with app's shell, app re-does the host lines). README: one title per screen.

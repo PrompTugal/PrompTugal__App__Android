@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.llm.StrictJson
+
 /**
  * Fake tools: they return canned data from the scenario and touch nothing real (no network, file, intent,
  * clipboard or account). Graph tools read the scenario's bundled demo graph. A port of eval's fake_tools.py.

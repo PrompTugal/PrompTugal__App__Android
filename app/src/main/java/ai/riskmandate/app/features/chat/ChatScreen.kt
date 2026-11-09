@@ -54,7 +54,7 @@ import java.util.Locale
 /** The chat screen. Content only: the host's FeatureFrame draws the title and Back. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ChatScreen(controller: ChatController) {
+fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
     val state = controller.state
     val androidContext = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -100,6 +100,10 @@ fun ChatScreen(controller: ChatController) {
                 Text(stringResource(R.string.chat_clear))
             }
         }
+        // One model (the one chosen in Models): a read-only label. A picker only if a service ever lists several.
+        state.models.singleOrNull()?.let {
+            Text(stringResource(R.string.chat_model_active, it.name), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp).testTag(ChatTags.MODEL_LABEL))
+        }
         if (state.models.size > 1) {
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
                 Text(stringResource(R.string.chat_model_label), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(end = 4.dp))
@@ -115,7 +119,7 @@ fun ChatScreen(controller: ChatController) {
 
         when {
             showHistory -> HistoryList(state, onPick = { controller.select(it); showHistory = false }, modifier = Modifier.weight(1f))
-            state.modelsLoaded && state.models.isEmpty() -> NoModel(Modifier.weight(1f))
+            state.modelsLoaded && state.models.isEmpty() -> NoModel(onOpenModels, Modifier.weight(1f))
             else -> {
                 // Presets only on an empty chat: once talking, the messages get the room.
                 if (state.modelsLoaded && state.current.isEmpty) {
@@ -176,10 +180,11 @@ fun ChatScreen(controller: ChatController) {
 }
 
 @Composable
-private fun NoModel(modifier: Modifier) {
+private fun NoModel(onOpenModels: () -> Unit, modifier: Modifier) {
     Column(modifier.padding(top = UiTokens.Gap).testTag(ChatTags.NO_MODEL), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         NoticeBanner(stringResource(R.string.chat_no_model_title))
         Text(stringResource(R.string.chat_no_model_body), style = MaterialTheme.typography.bodyLarge)
+        Button(onClick = onOpenModels, modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(ChatTags.OPEN_MODELS)) { Text(stringResource(R.string.chat_open_models)) }
     }
 }
 
@@ -241,7 +246,7 @@ private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int) {
             // Plain Text: the model's output is never parsed as markup, links or code.
             Text(if (m.text.isEmpty() && running) stringResource(R.string.chat_thinking) else m.text, style = MaterialTheme.typography.bodyLarge)
             if (m.stopped) Text(stringResource(R.string.chat_stopped), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (m.failed) Text(stringResource(R.string.chat_failed), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
+            if (m.failed) Text(stringResource(failureText(m.failure)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
             if (!mine && !running) {
                 // The only thing taken from the output: riskmandate.ai links, checked by Links.isAllowed, opened only on a tap.
                 ChatLinks.allowed(m.text).forEachIndexed { i, url ->
@@ -252,4 +257,13 @@ private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int) {
             }
         }
     }
+}
+
+/** Copy for the service's error reasons; anything else gets the generic line. */
+@androidx.annotation.StringRes
+internal fun failureText(reason: String?): Int = when (reason) {
+    "NO_MODEL" -> R.string.chat_failed_no_model
+    "LOAD_FAILED" -> R.string.chat_failed_load
+    "TOO_LONG" -> R.string.chat_failed_too_long
+    else -> R.string.chat_failed
 }

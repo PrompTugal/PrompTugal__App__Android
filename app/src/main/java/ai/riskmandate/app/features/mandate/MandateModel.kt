@@ -1,5 +1,8 @@
 package ai.riskmandate.app.features.mandate
 
+import ai.riskmandate.app.llm.DownloadPolicy
+import ai.riskmandate.app.llm.ModelCatalog
+
 /**
  * Pure Kotlin model of this app's own reach, mandate and gap (JVM-testable, no Android types).
  *
@@ -58,6 +61,22 @@ data class Mandate(
         val HOSTS = listOf("riskmandate.ai", "www.riskmandate.ai")
 
         /**
+         * The model files, by exact name, from the app's own catalogue (llm/ModelCatalog): in noBackupFilesDir/models
+         * the file, its ".part" while a download is unfinished and its ".verified" marker; in the adb folder on shared
+         * storage the file and its marker. Any other file there is gap.
+         */
+        fun modelFileEntries(): List<MandateEntry> = ModelCatalog.ALL.flatMap { spec ->
+            val name = spec.fileName
+            listOf(
+                MandateEntry(ReachKind.STORAGE, "no_backup/models/$name", Reason.MODELS),
+                MandateEntry(ReachKind.STORAGE, "no_backup/models/$name.part", Reason.MODELS),
+                MandateEntry(ReachKind.STORAGE, "no_backup/models/.$name.verified", Reason.MODELS),
+                MandateEntry(ReachKind.STORAGE, "external/models/$name", Reason.MODELS_ADB),
+                MandateEntry(ReachKind.STORAGE, "external/models/.$name.verified", Reason.MODELS_ADB),
+            )
+        }
+
+        /**
          * The current mandate for [packageName]. The app loads riskmandate.ai pages in its in-app view and opens them in the user's browser (INTERNET),
          * says plainly when it is offline (ACCESS_NETWORK_STATE), has one launcher screen, holds the one
          * signature-level permission AndroidX adds to guard the app's own dynamic receivers, and may keep the settings,
@@ -86,9 +105,7 @@ data class Mandate(
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", Reason.RELEASES_SEEN),
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/feature_models.xml", Reason.MODEL_CHOICE),
                 MandateEntry(ReachKind.STORAGE, "no_backup/feature_chat", Reason.CHAT_HISTORY),
-                MandateEntry(ReachKind.STORAGE, "no_backup/models", Reason.MODELS),
-                MandateEntry(ReachKind.STORAGE, "external/models", Reason.MODELS_ADB),
-            ),
+            ) + modelFileEntries(),
             hosts = HOSTS,
             port = 443,
             data = emptyList(),
@@ -99,15 +116,33 @@ data class Mandate(
 
 /**
  * Network the app makes itself: when the in-app site view is on, the app (not the browser) connects to the
- * allowed riskmandate.ai hosts; when the model setup is on, it may connect to Hugging Face, only when Download is tapped. Computed from which features are enabled; pages opened in the user's browser
+ * allowed riskmandate.ai hosts; the model download code may connect to Hugging Face, only when Download is tapped in Models. Computed from which features are enabled; pages opened in the user's browser
  * are the browser's traffic and are not counted.
  */
 fun networkReach(enabledFeatureIds: Set<String>): List<ReachItem> =
     (if ("site" in enabledFeatureIds) Mandate.HOSTS.map { ReachItem(ReachKind.NETWORK, "connects:$it") } else emptyList()) +
-        (if ("models" in enabledFeatureIds) MODEL_HOSTS.map { ReachItem(ReachKind.NETWORK, "connects:$it") } else emptyList())
+        modelDownloadReach()
 
-/** Where the model setup's Download button may connect, when tapped: the hosts its download policy accepts. */
-val MODEL_HOSTS = listOf("huggingface.co", "hf.co", "*.hf.co")
+/**
+ * The hosts the model download code in this build may connect to, asked of its own rule (llm/DownloadPolicy)
+ * rather than copied: each candidate is tried with [DownloadPolicy.hostAllowed], so if the policy ever accepts
+ * another host it appears here and, not being in the mandate, shows as gap. "*.hf.co" stands for hosts under hf.co.
+ * Counted whenever the code is in the build, switched on or not: reach is what the code can do, not what is on.
+ */
+fun modelDownloadReach(): List<ReachItem> = MODEL_HOST_CANDIDATES
+    .filter { (_, sample) -> DownloadPolicy.hostAllowed(sample) }
+    .map { (id, _) -> ReachItem(ReachKind.NETWORK, "connects:$id") }
+
+/** Candidate host id to a sample host for the policy's check; the last four should all be refused. */
+private val MODEL_HOST_CANDIDATES = listOf(
+    "huggingface.co" to "huggingface.co",
+    "hf.co" to "hf.co",
+    "*.hf.co" to "cdn.hf.co",
+    "example.com" to "example.com",
+    "huggingface.co.example.com" to "huggingface.co.example.com",
+    "evilhf.co" to "evilhf.co",
+    "riskmandate.ai" to "riskmandate.ai",
+)
 
 /** The comparison. [reach] and [mandate] are inputs; the gap is derived and never stored by hand. */
 data class MandateReport(val reach: List<ReachItem>, val mandate: Mandate) {

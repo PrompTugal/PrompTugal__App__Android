@@ -117,8 +117,10 @@ class ChatController(
             val sb = StringBuilder()
             var stopped = false
             var failed = false
+            var failure: String? = null
+            var reported: ChatAnswerStats? = null
             try {
-                llm.stream(model, system, turns).collect { piece ->
+                llm.stream(model, system, turns) { reported = it }.collect { piece ->
                     if (tokens == 0) firstAt = clock()
                     tokens++
                     if (sb.length < ChatLimits.MAX_MESSAGE_CHARS) sb.append(piece)
@@ -129,11 +131,15 @@ class ChatController(
                 stopped = true
             } catch (e: Exception) {
                 failed = true
+                failure = (e as? ChatLlmException)?.reason
             } finally {
                 val end = clock()
+                // The service's own numbers when it gave them (real tokens, real decode speed, answer time without model load).
+                val r = reported
+                val shownTokens = r?.outputTokens ?: tokens
+                val shownTps = r?.tokensPerSecond ?: if (tokens > 0) ChatStats.tokensPerSecond(tokens, firstAt, end) else 0.0
                 replaceLast(convId, ChatMessage(
-                    ChatRole.ASSISTANT, sb.toString(), tokens, end - started,
-                    if (tokens > 0) ChatStats.tokensPerSecond(tokens, firstAt, end) else 0.0, stopped, failed,
+                    ChatRole.ASSISTANT, sb.toString(), shownTokens, r?.totalMs ?: (end - started), shownTps, stopped, failed, failure,
                 ))
                 state = state.copy(generating = false)
                 persist()

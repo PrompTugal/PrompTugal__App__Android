@@ -28,8 +28,10 @@ import org.robolectric.annotation.Config
 class ChatScreenTest {
     @get:Rule val compose = createComposeRule()
 
+    private val opened = mutableListOf<String>()
+
     private fun show(llm: ChatLlm, store: ChatHistoryStore = MemoryChatHistoryStore()) = compose.setContent {
-        val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null))
+        val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null), openFeature = { opened += it })
         CompositionLocalProvider(LocalChatLlm provides llm, LocalChatStore provides store) {
             RiskMandateTheme { ChatFeature.Content(ctx) }
         }
@@ -50,6 +52,8 @@ class ChatScreenTest {
         tag(ChatTags.NETWORK).assertIsDisplayed()
         tag(ChatTags.NO_MODEL).assertIsDisplayed()
         assertEquals(0, count(ChatTags.INPUT))
+        tag(ChatTags.OPEN_MODELS).performClick()
+        assertEquals(listOf("models"), opened) // by id only, through the host
     }
 
     @Test fun badgeAndNetworkChipShowWithAModel() {
@@ -91,6 +95,12 @@ class ChatScreenTest {
         tag(ChatTags.STOP).performClick()
         compose.waitUntil(5_000) { count(ChatTags.SEND) == 1 }
         compose.onNodeWithText("Stopped").assertIsDisplayed()
+    }
+
+    @Test fun oneModelShowsAReadOnlyLabel() {
+        show(FakeChatLlm())
+        compose.waitForIdle()
+        tag(ChatTags.MODEL_LABEL).assertIsDisplayed()
     }
 
     @Test fun modelPickerOnlyWithMoreThanOneModel() {

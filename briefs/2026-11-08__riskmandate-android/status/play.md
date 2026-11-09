@@ -37,6 +37,12 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 16. G.8: the model-download draft (policy, `privacy.html`, `data-safety.md`) now carries dev.llm's details (download only on Download; `huggingface.co` and `hf.co` hosts, five redirects at most, no Authorization or cookies, resume, pinned size and SHA-256, `feature_models` prefs, `noBackupFilesDir/models`), still marked DRAFT until G is on; `model-licences.md` updated (generic files pinned to commits, Gemma 3 gated and not offered, the smallest-model placeholder reworded). Source: dev.llm's status page, not the merged code.
 
+17. R-art-6: "Because the app collects nothing" is now "collects no personal data" in `privacy-policy.md` and `privacy.html`; the same overclaim fixed in `tester-guide-m3.md`.
+
+18. Icon: `listing.md` and `store-assets.md` now describe design's RM redraw (`mipmap/ic_launcher_rm`, approved by Dinis 9 Nov) and `docs/design/brand/play-icon-512.png` (512 x 512 RGBA, 7 KB; looked at, not run through Google's checker), with its limits (a redraw from a JPEG, not the original SVG); only the feature graphic remains for the designer. R-play-11: the internal line "result on the store page: No data collected" is gone from `data-safety.md`.
+
+19. Q-g-1: the privacy draft quotes dev.llm's exact on-screen sentence ("...from huggingface.co (and its download servers, hf.co). Nothing you type leaves the device."), from `work/dev.llm` `feature_models.xml`; the pt-PT sentence is recorded in the policy's notes (the hosted page is English only).
+
 ## Next
 Nothing until Dinis decides (below).
 

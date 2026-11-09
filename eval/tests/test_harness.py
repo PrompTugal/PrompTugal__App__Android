@@ -186,6 +186,85 @@ class Golden(unittest.TestCase):
                     self.assertEqual(got, v["expected_flags"])
 
 
+class Security(unittest.TestCase):
+    """R-eval-1, R-eval-3, R-eval-4: a fake key never leaves in a record or goes to a redirect target; missing cost still counts."""
+    KEY = "fake-key-DO-NOT-USE-0123456789"
+
+    def serve(self, handler):
+        import http.server, threading
+        srv = http.server.HTTPServer(("127.0.0.1", 0), handler)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.shutdown)
+        return srv
+
+    def backend(self, d, url):
+        from abpeval.backends import OpenRouter
+        os.environ["OPEN_ROUTER_KEY"] = self.KEY
+        lp = os.path.join(d, "l.json"); init_ledger(lp)
+        be = OpenRouter(Budget(lp))
+        be.url = url
+        return be
+
+    def test_redirect_refused_and_key_not_forwarded(self):
+        import http.server
+        seen = []
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                seen.append((self.path, self.headers.get("Authorization")))
+                self.send_response(303 if self.path == "/a" else 200)
+                self.send_header("Location", f"http://127.0.0.1:{self.server.server_port}/b")
+                self.end_headers()
+                self.wfile.write(b"{}")
+
+            def log_message(self, *a):
+                pass
+        srv = self.serve(H)
+        with tempfile.TemporaryDirectory() as d:
+            be = self.backend(d, f"http://127.0.0.1:{srv.server_port}/a")
+            from abpeval.backends import BackendError
+            with self.assertRaises(BackendError):
+                be.chat({"id": "m"}, [{"role": "user", "content": "x"}], None, {"temperature": 0})
+        self.assertEqual([p for p, _ in seen], ["/a"])  # /b was never requested, so no header followed
+
+    def test_key_scrubbed_from_records_even_if_echoed(self):
+        import http.server
+        from abpeval.backends import scrub
+        key = self.KEY
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                body = json.dumps({"choices": [{"message": {"content": "my key is " + key}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 1, "completion_tokens": 1, "cost": 0.0001}}).encode()
+                self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(body)
+
+            def log_message(self, *a):
+                pass
+        srv = self.serve(H)
+        with tempfile.TemporaryDirectory() as d:
+            be = self.backend(d, f"http://127.0.0.1:{srv.server_port}/")
+            rec = runner.run_one(be, M, S5, "raw", ST, 0, "openrouter")
+        self.assertIn(self.KEY, json.dumps(rec))  # the echo is really there before scrubbing
+        self.assertNotIn(self.KEY, json.dumps(scrub(rec, self.KEY)))
+        self.assertNotIn(self.KEY, json.dumps(scrub({"error": f"x {self.KEY}", "n": [self.KEY]}, self.KEY)))
+
+    def test_missing_cost_counts_at_least_the_reserve(self):
+        import http.server
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                body = json.dumps({"choices": [{"message": {"content": "hi"}}], "usage": {"prompt_tokens": 0, "completion_tokens": 0}}).encode()
+                self.send_response(200); self.end_headers(); self.wfile.write(body)
+
+            def log_message(self, *a):
+                pass
+        srv = self.serve(H)
+        with tempfile.TemporaryDirectory() as d:
+            be = self.backend(d, f"http://127.0.0.1:{srv.server_port}/")
+            r = be.chat({"id": "m"}, [{"role": "user", "content": "x"}], None, {"temperature": 0})
+            self.assertEqual(r["cost_source"], "list-price-estimate")
+            self.assertGreaterEqual(be.budget.spent(), be.budget.reserve)
+
+
 class Plumbing(unittest.TestCase):
     def test_wilson_and_one_in(self):
         lo, hi = stats.wilson(5, 10)

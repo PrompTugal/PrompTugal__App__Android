@@ -17,6 +17,8 @@ data class ChatMessage(
     val tokensPerSecond: Double = 0.0,
     val stopped: Boolean = false,
     val failed: Boolean = false,
+    /** Why it failed, as the service's error reason name (NO_MODEL, LOAD_FAILED, TOO_LONG, INFERENCE_FAILED), or null. Never content. */
+    val failure: String? = null,
 )
 
 data class Conversation(val id: String, val messages: List<ChatMessage> = emptyList()) {

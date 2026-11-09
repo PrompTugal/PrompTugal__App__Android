@@ -1,0 +1,120 @@
+// QA probes for ModelInstaller (docs/qa/reviews/2026-11-09-dev.llm-dc63ad8-installer.probe.kt.txt on work/qa), adopted as tests.
+package ai.riskmandate.app.llm
+
+import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+
+/** QA probes for ModelInstaller (plan G-3, G-4): cases the owner's tests do not drive. */
+class QaInstallerProbeTest {
+    @get:Rule val tmp = TemporaryFolder()
+    private val bytes = ByteArray(2_000_000) { (it * 31 % 251).toByte() }
+    private val spec = ModelCatalog.GEMMA4_E2B.copy(sizeBytes = bytes.size.toLong(), sha256 = ModelFiles.sha256(bytes.inputStream()))
+
+    private class Conn(u: URL, val code: Int, val len: Int, val hdr: Map<String, String>, val body: () -> InputStream) : HttpURLConnection(u) {
+        val sent = mutableMapOf<String, String>()
+        override fun setRequestProperty(k: String, v: String) { sent[k] = v }
+        override fun getResponseCode() = code
+        override fun getHeaderField(n: String): String? = if (n.equals("Content-Length", true)) len.toString() else hdr.entries.firstOrNull { it.key.equals(n, true) }?.value
+        override fun getInputStream(): InputStream = body()
+        override fun connect() {}
+        override fun disconnect() {}
+        override fun usingProxy() = false
+    }
+
+    /** Serves [content] directly (no redirect) honouring Range. */
+    private fun server(content: ByteArray, body: (ByteArray) -> InputStream = { ByteArrayInputStream(it) }): (URL) -> HttpURLConnection = { u ->
+        object : HttpURLConnection(u) {
+            val sent = mutableMapOf<String, String>()
+            val start get() = sent["Range"]?.removePrefix("bytes=")?.removeSuffix("-")?.toLong()?.toInt() ?: 0
+            override fun setRequestProperty(k: String, v: String) { sent[k] = v }
+            override fun getResponseCode() = if (start > 0) 206 else 200
+            override fun getHeaderField(n: String): String? = when {
+                n.equals("Content-Length", true) -> (content.size - start).toString()
+                n.equals("Content-Range", true) && start > 0 -> "bytes $start-${content.size - 1}/${content.size}"
+                else -> null
+            }
+            override fun getInputStream(): InputStream = body(content.copyOfRange(start, content.size))
+            override fun connect() {}
+            override fun disconnect() {}
+            override fun usingProxy() = false
+        }
+    }
+
+    /** A single flipped bit in a file of exactly the right size is a hash failure: deleted, never installed, no marker. */
+    @Test fun oneFlippedBitIsDeleted() = runBlocking {
+        val bad = bytes.copyOf().also { it[1_234_567] = (it[1_234_567].toInt() xor 1).toByte() }
+        val i = ModelInstaller(tmp.root, server(bad)) { Long.MAX_VALUE }
+        val r = i.download(spec)
+        assertTrue("expected HASH, got $r", r is InstallResult.Failed && r.reason == InstallFailure.HASH)
+        assertFalse(i.finalFile(spec).exists()); assertFalse(i.partFile(spec).exists())
+        assertFalse(ModelFiles.markerFile(i.finalFile(spec)).exists())
+    }
+
+    /** A stale partial file longer than the pinned size is thrown away and the download starts again from zero. */
+    @Test fun anOversizedStalePartIsDiscarded() = runBlocking {
+        tmp.root.mkdirs()
+        java.io.File(tmp.root, spec.fileName + ".part").writeBytes(ByteArray(bytes.size + 10))
+        val i = ModelInstaller(tmp.root, server(bytes)) { Long.MAX_VALUE }
+        val r = i.download(spec)
+        assertTrue("got $r", r is InstallResult.Installed)
+        assertTrue(ModelFiles.isMarkedVerified(i.finalFile(spec), spec))
+    }
+
+    /** A partial file whose bytes are wrong (corrupt earlier) ends in a hash failure on completion, not an install. */
+    @Test fun aCorruptPartialIsCaughtAtTheEnd() = runBlocking {
+        java.io.File(tmp.root, spec.fileName + ".part").apply { parentFile.mkdirs() }.writeBytes(ByteArray(500_000) { 7 })
+        val i = ModelInstaller(tmp.root, server(bytes)) { Long.MAX_VALUE }
+        val r = i.download(spec)
+        assertTrue("expected HASH, got $r", r is InstallResult.Failed && r.reason == InstallFailure.HASH)
+        assertFalse(i.finalFile(spec).exists())
+    }
+
+    /** Cancelling mid-download (leaving the screen) keeps the partial file so the next try resumes, and installs nothing. */
+    @Test fun cancelKeepsThePartAndInstallsNothing() = runBlocking {
+        val started = java.util.concurrent.atomic.AtomicBoolean(false)
+        val slow = server(bytes) { data -> object : InputStream() {
+            var pos = 0
+            override fun read(): Int = if (pos < data.size) data[pos++].toInt() and 0xff else -1
+            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                if (pos >= data.size) return -1
+                started.set(true)
+                val n = minOf(len, 65_536, data.size - pos)
+                System.arraycopy(data, pos, b, off, n); pos += n
+                if (pos > 300_000) Thread.sleep(50)
+                return n
+            }
+        } }
+        val i = ModelInstaller(tmp.root, slow) { Long.MAX_VALUE }
+        val job = async(kotlinx.coroutines.Dispatchers.Default) { i.download(spec) }
+        while (!started.get()) Thread.sleep(5)
+        Thread.sleep(150)
+        job.cancel()
+        try { job.await(); assertTrue("cancelled download returned a result", false) } catch (e: CancellationException) { }
+        assertFalse("nothing installed after a cancel", i.finalFile(spec).exists())
+        val kept = i.partialBytes(spec)
+        assertTrue("the partial file is kept for resume", kept in 1 until bytes.size.toLong())
+        // and the next try resumes from it and installs the right bytes
+        val again = ModelInstaller(tmp.root, server(bytes)) { Long.MAX_VALUE }.download(spec)
+        assertTrue("resume after cancel: $again", again is InstallResult.Installed)
+    }
+
+    /** No room: no connection is even opened. */
+    @Test fun noRoomOpensNoConnection() = runBlocking {
+        var opened = 0
+        val i = ModelInstaller(tmp.root, { opened++; server(bytes)(it) }) { 1_000L }
+        val r = i.download(spec)
+        assertTrue(r is InstallResult.Failed && r.reason == InstallFailure.STORAGE)
+        assertEquals(0, opened)
+    }
+}

@@ -37,6 +37,16 @@ class ChatControllerTest {
         assertFalse(c.state.generating)
     }
 
+    @Test fun serviceReportedStatsWinOverOurOwnCount() {
+        val llm = FakeChatLlm(pieces = listOf("a", "b", "c")).apply { reportedStats = ChatAnswerStats(outputTokens = 42, tokensPerSecond = 17.5, totalMs = 2400) }
+        val c = started(llm)
+        c.send("hi")
+        val a = c.state.current.messages.last()
+        assertEquals(42, a.tokens)
+        assertEquals(17.5, a.tokensPerSecond, 1e-9)
+        assertEquals(2400L, a.millis)
+    }
+
     @Test fun statsUseTheClock() {
         val ch = Channel<String>(Channel.UNLIMITED)
         val c = started(channelLlm(ch))
@@ -57,7 +67,7 @@ class ChatControllerTest {
         var cancelled = false
         val c = started(object : ChatLlm {
             override suspend fun installedModels() = listOf(ChatModelInfo("m", "M"))
-            override fun stream(modelId: String, system: String?, turns: List<ChatTurn>): Flow<String> = flow {
+            override fun stream(modelId: String, system: String?, turns: List<ChatTurn>, onStats: (ChatAnswerStats) -> Unit): Flow<String> = flow {
                 try { ch.consumeAsFlow().collect { emit(it) } } finally { cancelled = true }
             }
         }, store)
@@ -238,6 +248,6 @@ class ChatControllerTest {
 
     private fun channelLlm(ch: Channel<String>) = object : ChatLlm {
         override suspend fun installedModels() = listOf(ChatModelInfo("m", "M"))
-        override fun stream(modelId: String, system: String?, turns: List<ChatTurn>) = ch.consumeAsFlow()
+        override fun stream(modelId: String, system: String?, turns: List<ChatTurn>, onStats: (ChatAnswerStats) -> Unit) = ch.consumeAsFlow()
     }
 }

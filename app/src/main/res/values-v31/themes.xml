@@ -1,0 +1,9 @@
+<resources>
+    <!-- Android 12+ splash (docs/design/brand/README-redraw.md): navy, the monogram, no animation. Older Android
+         uses windowBackground, as before. -->
+    <style name="Theme.RiskMandate" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:windowSplashScreenBackground">@color/rm_navy</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_rm_launcher_foreground</item>
+    </style>
+</resources>

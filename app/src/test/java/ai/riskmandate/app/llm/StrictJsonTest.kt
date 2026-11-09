@@ -1,10 +1,11 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.llm
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 
+/** dev.lab's tests for the parser, moved with it (A-lab-7), plus the flat-object cases for tool arguments. */
 class StrictJsonTest {
     private fun rejects(s: String, maxChars: Int = 1000) {
         try { StrictJson.parse(s, maxChars); fail("accepted: $s") } catch (_: StrictJson.JsonException) {}
@@ -62,5 +63,17 @@ class StrictJsonTest {
         // Computed with eval's Python: sha256 of that canonical text, first 16 hex characters.
         assertEquals("7883ba1acd648dce", StrictJson.hash16(v))
         assertTrue(StrictJson.render(mapOf("k" to listOf(1L, "s"))) == """{"k": [1, "s"]}""")
+    }
+
+    @Test fun flatObjectsOnly() {
+        assertEquals(
+            mapOf("a" to "x\n\u00e9\"", "b" to -12L, "c" to 1.5e3, "d" to true, "e" to null, "f" to false),
+            StrictJson.parseFlatObject(""" { "a" : "x\n\u00e9\"", "b":-12, "c":1.5e3, "d":true, "e":null, "f":false } """),
+        )
+        assertEquals(emptyMap<String, Any?>(), StrictJson.parseFlatObject("{}"))
+        listOf("""{"a":{"b":1}}""", """{"a":[1]}""", "[1]", "\"s\"", "{\"a\":01}", "", "x".repeat(10)).forEach {
+            try { StrictJson.parseFlatObject(it); fail("accepted: $it") } catch (_: StrictJson.JsonException) {}
+        }
+        try { StrictJson.parseFlatObject("{\"a\":\"" + "x".repeat(ToolSpec.MAX_ARGS_CHARS) + "\"}"); fail("too long accepted") } catch (_: StrictJson.JsonException) {}
     }
 }

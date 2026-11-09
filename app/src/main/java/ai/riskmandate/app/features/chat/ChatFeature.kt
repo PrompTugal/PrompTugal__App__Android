@@ -4,21 +4,20 @@ import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Face
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import java.io.File
 
 object ChatTags {
     const val BADGE = "chat_badge"
     const val NETWORK = "chat_network"
+    const val OPEN_MODELS = "chat_open_models"
+    const val MODEL_LABEL = "chat_model_label"
     const val INPUT = "chat_input"
     const val SEND = "chat_send"
     const val STOP = "chat_stop"
@@ -52,7 +51,7 @@ object ChatFeature : Feature {
     override val id = "chat"
     override val title = R.string.feature_chat_title
     override val enabled = false
-    override val icon: ImageVector get() = Icons.Filled.Face
+    private const val MODELS_ID = "models"
     override val kicker = R.string.chat_kicker
     override val summary = R.string.chat_summary
 
@@ -70,6 +69,7 @@ object ChatFeature : Feature {
         if (ChatPolicy.WIPE_ON_LEAVE) DisposableEffect(controller) { onDispose { controller.wipeNow() } }
         // Generation can take a while: do not let stand mode's idle reset wipe the chat mid-answer.
         context.HoldIdleWhile(controller.state.generating)
-        ChatScreen(controller)
+        // Features name each other by id only; the host decides (and refuses it in stand mode).
+        ChatScreen(controller, onOpenModels = { context.openFeature(MODELS_ID) })
     }
 }

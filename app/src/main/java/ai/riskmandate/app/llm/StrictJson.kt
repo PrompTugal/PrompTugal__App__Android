@@ -1,12 +1,17 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.llm
 
 import java.security.MessageDigest
 
 /**
- * A strict, bounded JSON parser (RFC 8259): no comments, no trailing commas, no single quotes, no leading
- * zeros, no duplicate keys, control characters refused inside strings, nesting capped at [MAX_DEPTH] and
- * input at a caller-given size. Values: Map<String, Any?>, List<Any?>, String, Long, Double, Boolean, null.
- * Used for model output (tool calls) and for the scenario and recording files, so both are held to one rule.
+ * The app's one strict, bounded JSON parser (RFC 8259; architect ruling A-lab-7): no comments, no trailing
+ * commas, no single quotes, no leading zeros, no duplicate keys, control characters refused inside strings,
+ * nesting capped at [MAX_DEPTH] and input at a caller-given size. Values: Map<String, Any?>, List<Any?>, String,
+ * Long, Double, Boolean, null. Used for model output (tool calls, [parseFlatObject] and [ToolSpec.check]) and for
+ * the Lab's scenario and recording files, so all are held to one rule. Android's org.json is not used for any
+ * of these: it is lenient (single quotes, unquoted words, comments, a repeated key silently overwrites).
+ *
+ * Written by dev.lab (features/lab/StrictJson.kt) and moved here unchanged in behaviour, with [parseFlatObject]
+ * added for tool arguments.
  */
 object StrictJson {
     const val MAX_DEPTH = 12
@@ -22,6 +27,17 @@ object StrictJson {
         p.skipWs()
         if (p.i != text.length) throw JsonException("unexpected characters after the value at ${p.i}")
         return v
+    }
+
+    /**
+     * A flat JSON object, the only shape tool arguments may have: values are strings, numbers, true, false or
+     * null; a nested object or array is refused. At most [maxChars] characters (default [ToolSpec.MAX_ARGS_CHARS]).
+     */
+    fun parseFlatObject(text: String, maxChars: Int = ToolSpec.MAX_ARGS_CHARS): Map<String, Any?> {
+        val v = parse(text, maxChars) as? Map<*, *> ?: throw JsonException("not a JSON object")
+        if (v.values.any { it is Map<*, *> || it is List<*> }) throw JsonException("nested values are not allowed")
+        @Suppress("UNCHECKED_CAST")
+        return v as Map<String, Any?>
     }
 
     /** Parses one value starting exactly at [start]; returns it and the index just after it. */
