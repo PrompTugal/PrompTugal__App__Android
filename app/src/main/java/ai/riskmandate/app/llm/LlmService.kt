@@ -124,7 +124,36 @@ enum class LlmError {
     INFERENCE_FAILED,
 }
 
-/** Speeds and counts for one answer. Counts are null when the runtime did not report them. */
+/** Where a figure in [LlmStats] comes from. Shown next to the figure in the Workbench. */
+enum class StatSource {
+    /** LiteRT-LM's own benchmark counters. */
+    RUNTIME,
+    /** Measured in Kotlin: wall clock, or pieces of streamed text counted as tokens. */
+    MEASURED,
+}
+
+/** Why an answer ended. */
+enum class LlmStopReason {
+    /** The model finished on its own. */
+    DONE,
+    /** It reached the request's maxTokens. */
+    MAX_TOKENS,
+    /** The caller stopped it (cancelled the collector); set by the caller, since a cancelled stream emits nothing. */
+    STOPPED,
+    /** It failed; the [LlmEvent.Error] carries the reason code. */
+    ERROR,
+}
+
+/**
+ * Speeds and counts for one answer.
+ * - [timeToFirstTokenMs], [totalMs] and [loadMs] are always MEASURED (wall clock in Kotlin).
+ * - [promptTokens] (input tokens) and [outputTokens] come from [countsFrom]; [prefillTokensPerSecond] and
+ *   [decodeTokensPerSecond] from [speedsFrom]. RUNTIME when LiteRT-LM reported them, MEASURED otherwise
+ *   (output tokens then = streamed pieces, decode speed = pieces after the first over the time after the first).
+ *   Null when neither is available (prefill speed and input tokens cannot be measured from outside).
+ * - [backend] is the backend actually used; [requestedBackend] what was asked for; [fellBackToCpu] when the
+ *   GPU could not load and the CPU was used instead.
+ */
 data class LlmStats(
     val modelId: String,
     val backend: String,
@@ -134,10 +163,46 @@ data class LlmStats(
     val decodeTokensPerSecond: Double?,
     val timeToFirstTokenMs: Long?,
     val totalMs: Long,
-    /** True if this request had to load the model first (its time is not in [totalMs]). */
+    /** True if this request had to load the model first, a cold start (its time is not in [totalMs]). */
     val loadedModel: Boolean = false,
     val loadMs: Long? = null,
-)
+    val countsFrom: StatSource = StatSource.MEASURED,
+    val speedsFrom: StatSource = StatSource.MEASURED,
+    val requestedBackend: String? = null,
+    val fellBackToCpu: Boolean = false,
+    val stopReason: LlmStopReason = LlmStopReason.DONE,
+    /** The request's maxTokens, so a reader can see why [stopReason] is MAX_TOKENS. */
+    val maxTokens: Int? = null,
+) {
+    companion object {
+        /**
+         * Builds stats from what the runtime reported ([runtime*], null or non-positive when it did not) and what
+         * Kotlin measured ([pieces] streamed, wall-clock times). Pure, so the labelling is tested on the JVM.
+         */
+        fun from(
+            modelId: String, backend: String, maxTokens: Int,
+            runtimePromptTokens: Int?, runtimeOutputTokens: Int?, runtimePrefillTps: Double?, runtimeDecodeTps: Double?,
+            pieces: Int, timeToFirstTokenMs: Long?, totalMs: Long,
+        ): LlmStats {
+            val countsRuntime = (runtimeOutputTokens ?: 0) > 0
+            val speedsRuntime = (runtimeDecodeTps ?: 0.0) > 0.0
+            val output = if (countsRuntime) runtimeOutputTokens else pieces
+            val measuredDecode = timeToFirstTokenMs?.let { t -> (totalMs - t).takeIf { it > 0 && pieces > 1 }?.let { (pieces - 1) * 1000.0 / it } }
+            return LlmStats(
+                modelId = modelId, backend = backend,
+                promptTokens = runtimePromptTokens?.takeIf { countsRuntime && it > 0 },
+                outputTokens = output,
+                prefillTokensPerSecond = runtimePrefillTps?.takeIf { speedsRuntime && it > 0.0 },
+                decodeTokensPerSecond = if (speedsRuntime) runtimeDecodeTps else measuredDecode,
+                timeToFirstTokenMs = timeToFirstTokenMs, totalMs = totalMs,
+                countsFrom = if (countsRuntime) StatSource.RUNTIME else StatSource.MEASURED,
+                speedsFrom = if (speedsRuntime) StatSource.RUNTIME else StatSource.MEASURED,
+                stopReason = if ((output ?: 0) >= maxTokens) LlmStopReason.MAX_TOKENS else LlmStopReason.DONE,
+                maxTokens = maxTokens,
+            )
+        }
+    }
+}
 
 data class LlmResult(
     val text: String,

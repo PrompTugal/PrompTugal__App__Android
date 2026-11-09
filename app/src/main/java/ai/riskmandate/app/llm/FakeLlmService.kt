@@ -60,6 +60,8 @@ class FakeLlmService(
                         modelId = MODEL_ID, backend = "fake", promptTokens = request.messages.sumOf { tokens(it.text).size },
                         outputTokens = count, prefillTokensPerSecond = null, decodeTokensPerSecond = null,
                         timeToFirstTokenMs = 0, totalMs = count * tokenDelayMs,
+                        requestedBackend = "fake", maxTokens = request.maxTokens,
+                        stopReason = if (count >= request.maxTokens) LlmStopReason.MAX_TOKENS else LlmStopReason.DONE,
                     ),
                 ),
             )
