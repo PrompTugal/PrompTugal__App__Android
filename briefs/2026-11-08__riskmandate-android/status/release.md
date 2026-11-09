@@ -102,3 +102,6 @@ Gate, secret scan (clean), node tests, actionlint pass. **Untested live:** every
 - **R-rel-4:** `scripts/verify-approval-lib.mjs` is the new `approval-lib.mjs` from origin/work/security, byte for byte (the drift test and security's 16-case selftest on the copy pass). dev did not have it yet, so I also took `docs/security/approvals/` and `scripts/secret-scan.sh` (the scanner fix 3a51b3e) from origin/work/security by path, identical content, so the tests and the scan are green on this branch; they are security's files and will merge cleanly with the conductor's merge.
 - **R-rel-5:** `docs/ci.md` says a promotion is a fast-forward or a merge commit, never squash or rebase.
 - Gate, actionlint, node tests, selftest pass; the secret scan is CLEAN (exit 0). Untested live: every workflow.
+
+## Update: security's two hardenings on the provenance check
+`play.yml`: `gh attestation verify` now also has `--source-ref refs/heads/dev` and `--deny-self-hosted-runners`. dev merged in (the approval lib is identical to the copy). `security-approval` stays on `pull_request_target` for Dinis's own PRs; promote.yml's status is only for its own pull requests. Flags untested live (gh version on the runner not checked).
