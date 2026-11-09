@@ -39,7 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -100,14 +99,16 @@ object ReleasesFeature : Feature {
     override val kicker = R.string.feature_releases_kicker
     override val summary = R.string.feature_releases_summary
 
-    /** "New" on the home button while this version's notes are unseen; read off the main thread. */
+    /**
+     * "New" on the home button while this version's notes are unseen. Read synchronously on the first
+     * composition (one SharedPreferences int and one asset-folder listing), so the badge is there when
+     * Home first draws and never resizes its card afterwards.
+     */
     @Composable
     @StringRes
     override fun homeBadge(): Int? {
         val appContext = LocalContext.current.applicationContext
-        val unseen by produceState(false) {
-            value = withContext(Dispatchers.IO) { ReleasesNotice.shouldOffer(appContext, BuildConfig.VERSION_CODE) }
-        }
+        val unseen = remember { ReleasesNotice.shouldOffer(appContext, BuildConfig.VERSION_CODE) }
         return if (unseen) R.string.feature_releases_badge else null
     }
 
