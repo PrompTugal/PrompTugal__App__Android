@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -167,6 +168,15 @@ private class LoopState {
     @Volatile var stopRequested = false
 }
 
+/**
+ * Rotation recreates the Activity: the counters of a finished loop must survive it, and a loop that was running
+ * is marked stopped because the screen was turned, keeping its counts (QA Q-loop-1). Saved as a checked string.
+ */
+private val loopSaver: Saver<LoopState, String> = Saver(
+    save = { LoopCountersCodec.encode(it.counters, if (it.running) StopReason.INTERRUPTED else it.stop) },
+    restore = { text -> LoopCountersCodec.decode(text)?.let { (c, stop) -> LoopState().also { st -> st.counters = c; st.stop = stop } } },
+)
+
 private enum class Source { NONE, LIVE, REPLAY }
 
 @Composable
@@ -184,7 +194,7 @@ private fun LabBody(
     var shown by remember(scenario.id) { mutableIntStateOf(0) }
     var typed by rememberSaveable { mutableStateOf("") }
     val st = remember(scenario.id) { LiveState() }
-    val loop = remember(scenario.id) { LoopState() }
+    val loop = rememberSaveable(scenario.id, saver = loopSaver) { LoopState() }
     DisposableEffect(st) { onDispose { st.job?.cancel() } }
     val scope = rememberCoroutineScope()
     var modeName by rememberSaveable { mutableStateOf("interactive") }
