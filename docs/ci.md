@@ -29,6 +29,26 @@ Flakiness, how it is handled:
 
 **Untested from here** (no way to run workflows, no KVM in this session): the whole `smoke` job, the `uiautomator dump` text match on a real emulator (Compose text should appear as `text="..."`), and the throwaway-signing step. `actionlint` and shellcheck (through it) pass; `scripts/smoke-test.sh` was only syntax-checked.
 
+## The website: `.github/workflows/website.yml` (GitHub Pages)
+
+The Android site (`website/`, by editor.android) is built and deployed to **https://android.app.promptugal.ai** by its own workflow. Jobs: `build` (python3 unit tests `website/test_site.py`, `website/build.py`, `website/validate.py`), `deploy` (`actions/upload-pages-artifact` v4.0.0 and `actions/deploy-pages` v4.0.5, both pinned by SHA; `pages: write` and `id-token: write` only on this job) and `verify` (polls the live `build.json` until it carries the built commit, 4 minutes, fails if not).
+
+Triggers: push to `dev` touching `website/**` or the workflow file; pull requests touching them (build and validate only, never deploy); a finished `android` run on `dev` (so the releases page refreshes; a release made with the built-in `GITHUB_TOKEN` fires no `release` event, a `workflow_run` does); a published release; manual. Runs caused by an android run or a release build the latest `dev`.
+
+Contract with `website/build.py` (editor.android, tell release.android if it differs): it writes the site to **`website/_site/`** with `index.html` at the root; the workflow then adds `CNAME` (`android.app.promptugal.ai`) and `build.json` (`{"sha", "run"}`) to the artifact itself, so the repository needs neither. The build step has `GH_TOKEN` (read-only) and `GITHUB_REPOSITORY` in its environment if the script lists releases through the API. Python is the runner's `python3`, no third-party packages.
+
+Skipped cleanly: until `website/build.py` exists the `build` job only writes a summary line and everything after is skipped. Until Pages is set to deploy from GitHub Actions (API `build_type` is `workflow`, or the repository variable `PAGES_ENABLED` is `true` as an override) the site is built and validated but not deployed; the summary says which.
+
+**What Dinis does (once):**
+1. Settings, Pages, Source: **GitHub Actions**.
+2. Settings, Pages, Custom domain: `android.app.promptugal.ai`; tick "Enforce HTTPS" once the certificate is ready.
+3. DNS at the promptugal.ai DNS host: `CNAME  android.app  ->  promptugal.github.io` (the `app` part of the name is a label under promptugal.ai: the record is `android.app.promptugal.ai`). Certificate issue takes minutes to an hour after DNS resolves.
+4. Settings, Environments, `github-pages`: its deployment-branch rule must allow `dev` (a new Pages environment allows only the default branch, `main`); add `dev`, otherwise the deploy job is refused on pushes to `dev`. (Runs started by a `workflow_run` use `main`'s version of the workflow file and the default branch as their ref, so the refresh route needs `website.yml` on `main`; push, release and manual runs work from `dev`.)
+5. Optional: set the repository variable `PAGES_ENABLED` to `true` if the Pages API cannot be read by the workflow.
+The `verify` job stays red until DNS, the certificate and the settings above are in place if the Pages URL redirects to the custom domain; that is the signal, not a bug.
+
+**Untested** (no way to run workflows or open Pages from here): all three jobs; the Pages API check; `deploy-pages` with the environment rule; the live check. The shell steps were run locally with a stub site (unit test file path form, build, marker JSON). `website/` does not exist on any branch yet, so the first real run is the first test. `actionlint` passes.
+
 ## Cost under load: what runs, what is cancelled, how long it takes
 
 **Docs-only pushes run nothing.** The `push` trigger has a `paths` filter: the workflow runs on a push to `dev` only if it changes a file under `app/`, `gradle/` or `.github/`, any `*.gradle.kts`, `gradle.properties`, `gradlew`, `gradlew.bat` or `scripts/`. A push that changes only `docs/`, `board/`, `briefs/`, `devices/`, `README.md` and the like has no run: no tests, no build, no Firebase notification, no GitHub release, and no run number used (so versions skip nothing). GitHub evaluates the filter on every commit of the push, so a push that carries one app change still builds. Pull requests and manual runs are not filtered. Consequences: the conductor sees no new run for a docs-only push (the last run stays the latest signal); `devices/` changes are not built (the APK does not contain them and its tests are not part of this workflow, run `node --test devices/test/*.test.mjs` as the gate says); a change to a path outside the list that the build reads would need adding to it.
