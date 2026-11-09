@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 30 (9 Nov 2026, about 09:30 UTC): design fb824aa PASS (the PrompTugal look: no fonts bundled, PNGs without metadata), dev.llm 9c3fbd5 PASS (bench hidden unless debug or a model file is present), release b239745 PASS (Dependabot groups). eval has no commits. Waiting for the next wake.
+> Round 31 (9 Nov 2026, about 09:40 UTC): architect c9233a0 PASS (P7: icon, kicker, summary: read-only values, no capability). Waiting for the next wake (app host lines for LiteRT-LM and the eval harness are next).
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 31: **PASS** architect c9233a0 (Feature.icon, kicker, summary).
 - Round 30: **PASS** design fb824aa, dev.llm 9c3fbd5, release b239745 (R-llm-5 has a plan: Kotlin toolchain bump in docs/ci.md; R-llm-8 done).
 - Round 29: **PASS** app 894a93b (the shell only navigates among host-built routes; no intent, no dependency) and dev.stand ebd24c7.
 - Round 28: **PASS** dev.stand ea70ed4 (idle loop refactor, behaviour unchanged) and dev.chat de07188 (comment fix; `BackupRulesTest` guards all nine backup domains; R-chat-1 closed).
