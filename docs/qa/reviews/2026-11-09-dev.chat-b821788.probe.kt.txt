@@ -1,0 +1,65 @@
+package ai.riskmandate.app.features.chat
+
+import ai.riskmandate.app.DeviceStatus
+import ai.riskmandate.app.ManagedConfig
+import ai.riskmandate.app.RiskMandateTheme
+import ai.riskmandate.app.features.FeatureContext
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.junit4.StateRestorationTester
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/** QA probes: what a rotation (activity recreation) does to the chat. Plan H-8, X-3. */
+@RunWith(AndroidJUnit4::class)
+class QaChatProbeTest {
+    @get:Rule val compose = createComposeRule()
+    private fun count(t: String) = compose.onAllNodesWithTag(t).fetchSemanticsNodes().size
+    private fun shown() = (0..3).sumOf { count(ChatTags.message(it)) }
+
+    private fun start(llm: ChatLlm, store: ChatHistoryStore): StateRestorationTester {
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent {
+            val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null))
+            CompositionLocalProvider(LocalChatStore provides store) { RiskMandateTheme { ChatContent(ctx, llm) } }
+        }
+        compose.waitForIdle()
+        return restoration
+    }
+
+    @Test fun aFinishedConversationSurvivesARotationOnScreen() {
+        val store = MemoryChatHistoryStore()
+        val restoration = start(FakeChatLlm(pieces = listOf("An ", "answer.")), store)
+        compose.onNodeWithTag(ChatTags.INPUT).performTextInput("hello there")
+        compose.onNodeWithTag(ChatTags.SEND).performClick()
+        compose.waitUntil(5_000) { count(ChatTags.STATS) == 1 }
+        println("PROBE finished: before rotation=${shown()}")
+        restoration.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+        compose.waitUntil(5_000) { count(ChatTags.INPUT) == 1 }
+        println("PROBE finished: after rotation=${shown()}, saved=${store.saved.size}")
+        assertEquals("the conversation the visitor was in is still on screen after a rotation", 2, shown())
+    }
+
+    @Test fun aQuestionAskedJustBeforeARotationIsNotLost() {
+        val store = MemoryChatHistoryStore()
+        // Slow enough that the answer is still streaming when the rotation happens.
+        val restoration = start(FakeChatLlm(pieces = List(50) { "word$it " }, delayMs = 200), store)
+        compose.onNodeWithTag(ChatTags.INPUT).performTextInput("a question in flight")
+        compose.onNodeWithTag(ChatTags.SEND).performClick()
+        compose.waitUntil(5_000) { count(ChatTags.STOP) == 1 }
+        restoration.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+        compose.waitUntil(5_000) { count(ChatTags.INPUT) == 1 }
+        val savedText = store.saved.flatMap { it.messages }.joinToString("|") { it.text.take(30) }
+        println("PROBE in flight: after rotation shown=${shown()} saved conversations=${store.saved.size} saved text='$savedText'")
+        assertEquals("the question asked before the rotation is saved somewhere the visitor can find it", true, savedText.contains("a question in flight"))
+    }
+}
