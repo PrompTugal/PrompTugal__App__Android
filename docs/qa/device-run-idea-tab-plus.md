@@ -11,7 +11,7 @@ For Dinis. Rewritten 9 Nov 2026 by qa.android@promptugal.ai for what you will ac
 - [ ] Idea Tab Plus (Dimensity 6400, 12 GB RAM, 256 GB, Android 15 per its public specs; write what your unit says): Android ______  Security patch ______
 - [ ] Charge to 80% or more, **charger plugged in** (note it), battery saver off, other apps closed, tablet cool. Room temperature if you know it ______
 - [ ] Wi-Fi you trust. Free space at least **7 GB** (Settings, Storage): the model is 2.6 GB and the app keeps a safety margin. Free now ______ GB
-- [ ] Update the app from App Tester. Home: the build line says `Build 0.1.<n>`, n = ______ (not `0.0.0-local`)
+- [ ] Update the app from App Tester to build **0.1.76 or later**. Home: the build line says `Build 0.1.<n>`, n = ______ (76 or more; never `0.0.0-local`)
 - [ ] Diagnostics, **Copy**; paste into your notes (version, Android, make and model; no serial, no e-mail)
 
 ## 1. Open Model setup
@@ -77,6 +77,8 @@ Diagnostics, **Preview**, **ABP Lab**.
 
 ## 6. What to copy back
 One text to the conductor: the device block (section 0 and the Diagnostics report), the bench table and the pasted **Copy results** (section 3), the timings and notes from sections 2, 4 and 5, pass or fail per checkbox with what you saw for each fail, and screenshots (no account pages or notifications). Never paste a key or password: nothing here needs one.
+
+**Read the device label before you paste.** The Diagnostics report includes `device_label`, a free-text value an administrator may set (it can hold a name or a place). Read that line, and delete it from what you paste if it holds anything you would not want in a message.
 
 **Where the results go:** to the conductor, in a message. If the numbers or the report are ever committed to the repository, the committed copy leaves out serial numbers, account names and e-mail addresses (the Diagnostics report and **Copy results** already carry none of them: keep it that way when you paste).
 
