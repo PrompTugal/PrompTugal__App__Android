@@ -94,11 +94,11 @@ class UiScreenshotTest {
     /** 512 x 512 px: 256 dp at xhdpi. Copy `ui-play-icon-512-square-portrait-light.png` to docs/design/brand/. */
     @Test fun playIcon() = shoot("play-icon-512", tag = "", devicesOverride = listOf(Device("square", 256, 256, "xhdpi"))) { PlayIconSample() }
 
-    /** Workbench mocks inside the shell, tablet landscape. */
+    /** Workbench mocks inside the shell, tablet landscape. The Workbench is disabled, so it is reached through Diagnostics > Preview: the sidebar shows Diagnostics selected. */
     @Test fun workbench() {
-        shoot("workbench-run", onlyTablet10 = true) { ShellSample("Workbench") { WorkbenchRunSample() } }
-        shoot("workbench-experiments", onlyTablet10 = true) { ShellSample("Workbench") { WorkbenchExperimentsSample() } }
-        shoot("workbench-tooltests", onlyTablet10 = true) { ShellSample("Workbench") { WorkbenchToolTestsSample() } }
+        shoot("workbench-run", onlyTablet10 = true) { ShellSample("Diagnostics") { WorkbenchRunSample() } }
+        shoot("workbench-experiments", onlyTablet10 = true) { ShellSample("Diagnostics") { WorkbenchExperimentsSample() } }
+        shoot("workbench-tooltests", onlyTablet10 = true) { ShellSample("Diagnostics") { WorkbenchToolTestsSample() } }
     }
 
     @Test fun brand() = shoot("brand", onlyTablet10 = true) { BrandSample() }

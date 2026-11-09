@@ -149,11 +149,13 @@ internal fun ShellSample(selected: String = "Now", content: @Composable () -> Un
         ) {
             BrandBlock("Web Summit")
             Spacer(Modifier.height(16.dp))
+            // Only enabled destinations: disabled features (the Workbench, models, the Lab, chat) are reached through
+            // Diagnostics > Preview, never the sidebar (architect's ruling, security R-app-2).
             for ((section, items) in listOf(
-                "Today" to listOf("Now" to 0, "RiskMandate" to 0, "ABP in every layer" to 0),
-                "Explore" to listOf("ABP Lab" to 0, "Chat" to 0, "What's new" to 3),
+                "Today" to listOf("Now" to 0, "RiskMandate" to 0, "What's new" to 3),
+                "Explore" to listOf("ABP in every layer" to 0),
                 "This device" to listOf("This app's mandate" to 0),
-                "Staff" to listOf("Workbench" to 0, "Models" to 1),
+                "About" to listOf("Diagnostics" to 0, "Licences" to 0),
             )) {
                 Text(section, color = c.muted, style = androidx.compose.material3.MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
                 for ((i, item) in items.withIndex()) {

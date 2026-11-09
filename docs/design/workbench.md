@@ -6,6 +6,8 @@ Owner: design.android@promptugal.ai. Written 9 Nov 2026 from `briefs/2026-11-09_
 - `docs/design/workbench/workbench-experiments-light.png`, `-dark.png`
 - `docs/design/workbench/workbench-tooltests-light.png`, `-dark.png`
 
+**Where it lives.** The Workbench is a disabled feature until Dinis has used it on the tablet, so it is **not in the sidebar**: it is reached through Diagnostics > Preview, like the other LLM screens (architect's ruling, security R-app-2). The mocks draw the shell with only the enabled destinations and Diagnostics selected, which is where a person is when they open it. When it is enabled it joins the sidebar under the section the conductor chooses; nothing in the layout changes.
+
 ## Principles
 
 - **Staff only, dense, tablet landscape first.** Designed at 1280 x 800 dp with the shell's permanent sidebar (so the content area is about 956 x 760 dp), three panes side by side. It is a screen to work at with the tablet in hand or on a stand, not a screen to read from 2 m: 14sp is the smallest text, 16sp for answers and prompts, 48 dp for anything you touch, 28 dp for static rows (stats), 40 dp for static table rows, 48 dp for clickable ones. Staff screens are hidden in stand mode by the host, so none of the 2 m sizes of B and the Lab apply.
