@@ -1,11 +1,12 @@
 # architect.android status
 
-> 9 Nov 2026, about 02:00 UTC: review round 6: app 95e7978, qa bdb73a5, site ee25896, mandate 42f7a7b and releases 61d2b70 all PASS. Trial merge of all of them: gate green (253 tests). Open: A-app-8 (pass idleHeld to StandHost, so auto-play holds work), A-app-9 (Browser.open while pinned), P6 (a generic home badge instead of the host calling into releases).
+> 9 Nov 2026, about 02:00 UTC: on-device LLM side team started. Its architecture and dependency rules are in docs/architecture/README.md ("On-device LLM"). FeatureContext gets `llm: LlmService?` once dev.llm's interface lands. No side-team commits yet. Summit open items: A-app-8, A-app-9, P6.
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- On-device LLM rules (README): one host-held `LlmHost` per process (the one sanctioned process-wide object), a serialised service, a Flow-based contract shape, tool calls proposed by the model and validated in Kotlin per feature, plain-text output, pinned downloads over HttpURLConnection with Range, and storage paths with backup exclusions. Dependencies: LiteRT-LM approved in principle; org.json for JSON; Room, WorkManager, kotlinx-serialization and ViewModel not without a reason.
 - Review round 6: app 95e7978 PASS (A-app-7 closed; A-app-8 still open; A-app-9 new: Browser.open ignores pinning); qa bdb73a5 PASS (guards precise); site ee25896 PASS (openExternal only on real main-frame taps); mandate 42f7a7b PASS (network wording true); releases 61d2b70 PASS (A-rel-1: the host must not call into the feature; proposal P6). Trial merge of all of them: green, 253 tests.
 - Deleted the transitional `FeatureContext(activity, onBack)` constructor (ffa3c6b), since app f317cf8 is on dev. Gate green.
 - Review round 5: app e914cc6 PASS (A-app-7: drop `LaunchedEffect(route) { idle.clear() }`, my own suggestion, which wipes a live hold after a rotation; A-app-8: pass idleHeld); stand 9f207e8 PASS; site 13114fd PASS (content only); abpdemo b94232d PASS (content only, adaptive layout, HoldIdleWhile); mandate 5a43197 PASS (content only, honest storage, off the main thread). README and IdleHolds.clear() doc corrected.

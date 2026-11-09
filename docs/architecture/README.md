@@ -93,3 +93,45 @@ No new dependency without the architect's OK (in your status page, then in a rev
   - stand (StandHost): new parameter `idleHeld: Boolean = false`; while true, do not reset; when it turns false, `timer.touch()` so the countdown starts again from that moment.
   - abpdemo: `context.HoldIdleWhile(auto)` in `Content`.
 - Anything else a feature needs from the host: ask (above). A new field needs a reason and a test.
+
+## On-device LLM (side team: dev.llm, dev.chat, dev.lab, eval; brief `briefs/2026-11-09__on-device-llm/`)
+
+### Where things live
+- `app/src/main/java/ai/riskmandate/app/llm/` (dev.llm): the `LlmService` interface, the LiteRT-LM implementation, `FakeLlmService` (in main, so previews, qa and other features' tests can use it), the model catalogue (pinned URLs and SHA-256) and the model manager. Feature G's screen is `features/models/`.
+- `features/chat/` (H), `features/lab/` (I, including the ABP checks module), `eval/` (the harness; not app code, never on the app's classpath).
+
+### The service: one per process, owned by the host
+- Loading a model costs seconds and gigabytes, so the service must not be per screen and must survive a rotation (the Activity is recreated). This is the **one sanctioned process-wide object**: an `LlmHost` in `llm/`, created lazily, held by app (an `Application` subclass or the host's own holder; app decides), and handed to features through `FeatureContext`. No feature, and no other package, keeps its own reference beyond its composition.
+- It unloads the model on `onTrimMemory` (background or critical) and after a few idle minutes, and reloads on the next request. Features see a "loading model" state, never a crash.
+- One request at a time: the service serialises (a `Mutex`). The Lab's "two paths at once" interleaves the two paths on one loaded model; it never loads a second copy.
+
+### The contract (shape I expect from dev.llm; adjust names, keep the shape)
+```kotlin
+interface LlmService {
+    val state: StateFlow<LlmState>                 // NoModel, Loading, Ready(modelId), Failed(reason)
+    fun stream(request: LlmRequest): Flow<LlmEvent> // Token(text), ToolCallProposed(name, argsJson), Done(stats), Error
+    suspend fun generate(request: LlmRequest): LlmResult = /* collects stream */
+}
+data class LlmRequest(val messages: List<LlmMessage>, val tools: List<ToolSpec> = emptyList(),
+                      val settings: Sampling = Sampling.DEFAULT, val maxTokens: Int = 512)
+```
+- Cancellation is coroutine cancellation (the screen's scope ends, or Stop cancels the collecting job). No separate `cancel()` needed.
+- Inference runs on the service's own dispatcher; every call is main-safe.
+- `FeatureContext` gains `llm: LlmService? = null`: null when no model is installed or the host has no service yet. A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
+
+### Tool calls: the model proposes, code decides
+- The service **never executes** anything. It returns `ToolCallProposed(name, argsJson)`.
+- Each feature declares its tools in Kotlin (`ToolSpec`: name, flat typed arguments, description), three to five per task. Its own registry parses every proposal against that allow-list: unknown name, missing, extra or wrongly typed argument, oversize string → rejected, shown, never run.
+- Executors in the Lab are fakes that record calls. No tool in any feature may reach a network, file outside its own folder, intent, clipboard or account.
+- Model output is shown as plain text. Never HTML or Markdown links; any URL goes through `Links.isAllowed` before it can be opened (`Browser.open`).
+
+### Network, storage, privacy
+- Model downloads are the only new network destination: exact URLs and SHA-256 pinned in `llm/`, a list separate from `Links`. Verified before first load and after any copy; a mismatch deletes the file.
+- Download with `HttpURLConnection` and HTTP `Range` (resumable) in a coroutine while G's screen is open. **No** foreground service, WorkManager or `DownloadManager` without a new review: each brings a permission or a public directory.
+- Files: models in `filesDir/models/`, chat history in `filesDir/feature_chat/`. Both excluded from backup and device transfer (app owns `data_extraction_rules.xml` and `backup_rules.xml`). Mandate lists both with their own reasons, in the same merge.
+
+### Dependencies for the side team
+- **Approved in principle:** LiteRT-LM's Android runtime from Google's Maven repository (maven.google.com), for `llm/` only. dev.llm names the exact coordinates and version in its status page. security runs the licence and OSV check, app adds the line and rebuilds the in-app licence list. llama.cpp through JNI only if LiteRT-LM blocks: say so first; it needs its own review (NDK build, native code).
+- **No new dependency for JSON:** scenario files, tool arguments and chat history use `org.json` (part of Android) or a small hand-written parser. kotlinx-serialization (a compiler plugin) and Moshi/Gson are not approved without a reason.
+- **Chat storage:** one JSON file per conversation (or one file) under `filesDir/feature_chat/`, written off the main thread. Room is not approved; ask with a reason if a file is not enough.
+- **ViewModel:** not needed (the service is host-held). Ask before adding `lifecycle-viewmodel-compose`.
