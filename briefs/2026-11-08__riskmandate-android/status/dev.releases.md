@@ -15,6 +15,7 @@ Gate run and push.
 - Tests: Markdown, parser, list order, pt fallback, seen-version logic (JVM); Robolectric render with image, list/reader, back, two panes, link allow-list; `ReleasesScreenshotTest` writes `releases-list-*` and `releases-reader-*` PNGs.
 
 ## Next
+- P7 (architect, work/architect c9233a0): override `icon` (material-icons-core), `kicker`, `summary` in `ReleasesFeature` once `Feature.kt` on `dev` has them. The strings `feature_releases_kicker` and `feature_releases_summary` (en, pt-PT) are already in.
 After the host hook lands: nothing, unless review asks for changes.
 
 ## Blocked
