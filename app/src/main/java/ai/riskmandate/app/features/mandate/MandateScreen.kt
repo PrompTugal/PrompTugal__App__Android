@@ -204,6 +204,10 @@ private fun reasonRes(reason: Reason): Int = when (reason) {
     Reason.MODEL_CHOICE -> R.string.mandate_reason_model_choice
     Reason.MODEL_DOWNLOAD -> R.string.mandate_reason_model_download
     Reason.WORKBENCH_LOG -> R.string.mandate_reason_workbench_log
+    Reason.CLOUD_CALL -> R.string.mandate_reason_cloud_call
+    Reason.CLOUD_KEY -> R.string.mandate_reason_cloud_key
+    Reason.CLOUD_KEY_TMP -> R.string.mandate_reason_cloud_key_tmp
+    Reason.CLOUD_SPEND -> R.string.mandate_reason_cloud_spend
 }
 
 @Composable
