@@ -80,7 +80,7 @@ class MandateScreenTest {
         compose.onNodeWithText("Everything the agent can actually access", substring = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("https://riskmandate.ai/: allowed").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("http://riskmandate.ai/: refused").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Data collected by the app: none", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Data collected by this app: none", substring = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Storage used: none", substring = true).performScrollTo().assertIsDisplayed()
     }
 
@@ -107,7 +107,7 @@ class MandateScreenTest {
         compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Alcance 5, mandato 9, lacuna 1")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Lacuna: 1. Esta app consegue alcançar coisas de que o seu mandato não precisa:")
-        compose.onNodeWithText("Dados recolhidos pela app: nenhuns", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Dados recolhidos por esta app: nenhuns", substring = true).performScrollTo().assertIsDisplayed()
     }
 
     @Test fun layoutSurvives200PercentFontScale() {

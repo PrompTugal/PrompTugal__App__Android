@@ -61,8 +61,7 @@ class MainActivity : ComponentActivity() {
                     // reset off through this. HoldIdleWhile releases when the feature leaves the screen; the
                     // host does not clear holds itself (that wiped a feature's hold after rotation, A-app-7).
                     val idle = remember { IdleHolds() }
-                    // idle.held goes to StandHost as `idleHeld` once dev.stand's StandHost (idleHeld parameter) is on this branch.
-                    StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome) {
+                    StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome, idleHeld = idle.held) {
                         if (route != Routes.HOME) BackHandler(onBack = goHome)
                         when {
                             route == Routes.LICENCES -> LicencesScreen(
@@ -84,7 +83,7 @@ class MainActivity : ComponentActivity() {
                                 onOpen = { message = open() },
                                 onLicences = { screen = Routes.LICENCES },
                                 onDiagnostics = { screen = Routes.DIAGNOSTICS },
-                                features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title) { screen = f.id } },
+                                features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title, f.homeBadge()) { screen = f.id } },
                             )
                         }
                     }

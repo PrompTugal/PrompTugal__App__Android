@@ -85,4 +85,21 @@ class BrowserTest {
     @Test fun riskmandateOpenKeepsItsAllowList() {
         assertEquals(OpenResult.REFUSED, Browser.open(app, "https://example.org/"))
     }
+
+    @Test fun openRefusesWhilePinnedAndWorksAgainAfterwards() {
+        val am = app.getSystemService(android.app.ActivityManager::class.java)
+        shadowOf(am).setLockTaskModeState(android.app.ActivityManager.LOCK_TASK_MODE_PINNED)
+        assertEquals(OpenResult.PINNED, Browser.open(app, Links.HOME))
+        assertNull("nothing may start while pinned", shadowOf(app).nextStartedActivity)
+        shadowOf(am).setLockTaskModeState(android.app.ActivityManager.LOCK_TASK_MODE_LOCKED)
+        assertEquals(OpenResult.PINNED, Browser.open(app, Links.HOME))
+        shadowOf(am).setLockTaskModeState(android.app.ActivityManager.LOCK_TASK_MODE_NONE)
+        assertEquals(OpenResult.BROWSER, Browser.open(app, Links.HOME))
+    }
+
+    @Test fun openChecksTheAllowListBeforePinned() {
+        val am = app.getSystemService(android.app.ActivityManager::class.java)
+        shadowOf(am).setLockTaskModeState(android.app.ActivityManager.LOCK_TASK_MODE_PINNED)
+        assertEquals(OpenResult.REFUSED, Browser.open(app, "https://evil.example/"))
+    }
 }

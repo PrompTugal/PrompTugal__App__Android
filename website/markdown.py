@@ -45,7 +45,10 @@ def _cells(row):
     return [c.strip() for c in re.split(r'(?<!\\)\|', row)]
 
 
-def render(text, link=lambda href: href):
+IMAGE_LINE = re.compile(r'!\[([^\]]*)\]\(([^)\s]+)\)')
+
+
+def render(text, link=lambda href: href, image=None):
     lines = text.replace('\r\n', '\n').split('\n')
     out, i, ids = [], 0, set()
     para = []
@@ -60,6 +63,10 @@ def render(text, link=lambda href: href):
         stripped = line.strip()
         if not stripped:
             flush()
+            i += 1
+        elif image and (img := IMAGE_LINE.fullmatch(stripped)):
+            flush()
+            out.append(image(img.group(1).strip(), img.group(2)))
             i += 1
         elif stripped.startswith('```'):
             flush()
@@ -90,7 +97,7 @@ def render(text, link=lambda href: href):
             while i < len(lines) and lines[i].strip().startswith('>'):
                 quote.append(lines[i].strip()[1:].strip())
                 i += 1
-            out.append(f'<blockquote>{render(chr(10).join(quote), link)}</blockquote>')
+            out.append(f'<blockquote>{render(chr(10).join(quote), link, image)}</blockquote>')
         elif stripped.startswith('|') and i + 1 < len(lines) and re.fullmatch(r'\|?[\s:|-]+\|?', lines[i + 1].strip()) and '-' in lines[i + 1]:
             flush()
             head = _cells(stripped)

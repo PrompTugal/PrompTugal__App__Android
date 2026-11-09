@@ -138,4 +138,26 @@ class FeatureLinksTest {
         for (u in refused) assertFalse("should refuse '$u'", Links.isAllowed(u))
         for (u in listOf("https://riskmandate.ai/", "https://www.riskmandate.ai/x?y=1#z")) assertTrue(Links.isAllowed(u))
     }
+
+    /**
+     * Features leave the app only through the host's `Browser` (Browser.open / Browser.openExternal), which check
+     * Links.isAllowed / Links.isExternalOk and never fire while the screen is pinned. No raw intent in a feature.
+     */
+    @Test fun featuresNeverLaunchIntentsDirectly() {
+        val raw = Regex("""\bstartActivity(?:ForResult)?\(|\bACTION_VIEW\b|CustomTabsIntent|Intent\(Intent\.""")
+        val hits = sources.filter { raw.containsMatchIn(it.readText()) }.map { it.path }
+        assertEquals("features must go through Browser, not launch intents", emptyList<String>(), hits)
+    }
+
+    /** The second gate (links a visitor taps that leave riskmandate.ai, opened by the system browser): https only, no tricks. */
+    @Test fun externalGateRefusesWhatIsNotPlainHttps() {
+        val refused = listOf(
+            "http://example.com/", "javascript:alert(1)", "intent://x#Intent;end", "file:///etc/passwd", "content://x/y", "data:text/html,x",
+            "market://details?id=x", "mailto:a@b.c", "tel:+351000000", "ws://example.com/", "ftp://example.com/", "about:blank", "",
+            "https://user@example.com/", "https://example.com@evil.example/", "https://exa mple.com/", "https://example.com\\evil/", "https://\u0000example.com/",
+            "https://:443/", "https://.example.com/", "https://exämple.com/", "https://example.com:99999999/", "https://" + "a".repeat(3000) + ".com/",
+        )
+        for (u in refused) assertFalse("isExternalOk should refuse '$u'", Links.isExternalOk(u))
+        for (u in listOf("https://github.com/x/y?z=1#a", "https://store.sgit.ai/", "HTTPS://Example.com:8443/p")) assertTrue("should accept $u", Links.isExternalOk(u))
+    }
 }

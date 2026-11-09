@@ -23,6 +23,14 @@ What changes (from the branches' code, not from a build):
 
 I recommend **asking the live form first** (Dinis, Console), because its wording decides it, and until then not claiming "No data collected" in any text. The listing line is marked TODO. The decision is Dinis's.
 
+## Update 9 November 2026: on-device model download and chat (DRAFT; not for Play yet)
+
+From `briefs/2026-11-09__on-device-llm/README.md`; features G and H are `enabled = false` placeholders on `dev` and the brief says "Not for Google Play yet", so **nothing here changes a form today**. For the day they ship in a store build:
+- **Model download.** The app's own network code (not a WebView) requests a file from Hugging Face. What leaves the device is an ordinary request: IP address and request headers, no user content. It is the same IP-address question as options A to C above, with a **third-party host** (and any content-delivery host it redirects to) instead of our own site. Google's page (read 9 November) excludes from "sharing" a transfer "based on a specific user-initiated action, where the user reasonably expects the data to be shared", so a download the user starts after an on-screen disclosure of the host fits that exception for sharing; it does not by itself settle "collect". Dinis decides together with A to C, from the live form.
+- **Chat history stored on the device only** (app-private, excluded from backup and transfer, Clear history). Not collection (data "not sent off device" need not be disclosed). Needs the policy text (drafted), and `data_extraction_rules.xml` must really exclude the chat file (app.android; check the merged file).
+- **What the user types never leaves the device** is a claim the code must keep true: no analytics on prompts, no network tools in the chat, and the Lab's tools are fakes (per the brief). Security's checklist covers it. If any later feature sends a prompt anywhere, this file and the policy change first.
+- **OpenRouter** is used by the eval harness (`eval/`, synthetic scenario data only), not by the app.
+
 ## How the answers were reached
 
 Google's definition (verified): "Collect" means transmitting data from your app off a user's device, including data sent by libraries and SDKs. Data from a webview the developer controls counts too; a page the user navigates on the open web does not. The app does none of these:

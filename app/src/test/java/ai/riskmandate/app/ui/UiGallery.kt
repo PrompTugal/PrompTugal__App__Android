@@ -61,3 +61,28 @@ internal fun CardsSample() {
         }
     }
 }
+
+/** Screen I's shape at stand size: two lanes of the same steps, counters under them. */
+@Composable
+internal fun LabSample() {
+    PreviewFrame(title = "ABP Lab", scrollable = true, maxContentWidth = androidx.compose.ui.unit.Dp.Unspecified) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = UiTokens.ScreenPadding), horizontalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
+            Column(Modifier.weight(1f)) {
+                SectionCard("Without ABP", large = true) {
+                    StepRow(1, "Read document", "Ran", ChipKind.Neutral, large = true)
+                    StepRow(2, "Proposed: share_document", "Failure: shared", ChipKind.Blocked, detail = "to=outside@example.com", large = true)
+                }
+            }
+            Column(Modifier.weight(1f)) {
+                SectionCard("Through the ABP", large = true) {
+                    StepRow(1, "Read document", "Allowed", ChipKind.Allowed, large = true)
+                    StepRow(2, "Proposed: share_document", "Blocked", ChipKind.Blocked, detail = "out of mandate", large = true)
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(UiTokens.ScreenPadding), horizontalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
+            StatTile("1 in 3", "Failed without ABP", Modifier.weight(1f), large = true)
+            StatTile("20 of 20", "Caught with ABP", Modifier.weight(1f), large = true)
+        }
+    }
+}

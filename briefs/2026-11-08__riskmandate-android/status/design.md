@@ -1,6 +1,6 @@
 # design.android status
 
-> Summit spec (A to D, plus F) and shared `ui/` components done, with Robolectric screenshot tests. Gate result below. Stopped.
+> Summit spec (A to D, plus F) and on-device LLM spec (G, H, I) and shared `ui/` components done, with Robolectric screenshot tests. Gate result below. Stopped.
 
 ## Doing
 Nothing.
@@ -37,6 +37,15 @@ The Stand mode switch row on the home screen is yours to add; spec in D. `Status
 
 ### For dev.releases (F)
 Spec: `docs/design/summit.md` F. Inside the host `FeatureFrame` use `FeatureContent(scrollable = false, maxContentWidth = Dp.Unspecified)` and build two panes with `LocalWideLayout.current`; list items are `SectionCard`s with a `StatusChip(date, ChipKind.Neutral)`; the "New in this version" banner on the home screen is a `NoticeBanner` (host, app.android). Reader text, headings and images are plain Compose with the rules in the spec.
+
+### For dev.llm (G model setup)
+Spec: `docs/design/llm-screens.md` G. `FeatureContent`; one `SectionCard` per model with a `StatusChip` (Not downloaded, Downloading, Verifying, Ready, Failed); `NoticeBanner` for the privacy line and Wi-Fi note; plain `LinearProgressIndicator`, buttons 56 dp; checksum mismatch is a Blocked chip, never skippable; adb fallback in a collapsed `SectionCard`.
+
+### For dev.chat (H chat)
+Spec: `docs/design/llm-screens.md` H. `FeatureContent(scrollable = false)` with your own list and composer; `StatusChip("On device, offline", Allowed)` plus a real "Network: on/off" chip; `SectionCard`s for the empty state and errors; tokens per second as plain text under each answer (`StatTile` only if you add a "Last answer" strip). The bubble is yours, styled from `MaterialTheme` (primaryContainer and surfaceVariant). No live region on streaming text.
+
+### For dev.lab (I ABP Lab, read from 2 m)
+Spec: `docs/design/llm-screens.md` I, with the size table. `FeatureContent`; per lane `SectionCard(large = true)` holding `StepRow(large = true)` rows (same index on the same row of both lanes); counters `StatTile(large = true)` (72sp); `StatusChip` for provenance (Live or Replay) and verdicts; `NoticeBanner` for the fakes label; `LocalWideLayout` for two lanes at 840 dp or more, tabs below; `rememberReduceMotion` for the step fade. Screenshot `ui-lab-*` in `app/build/screenshots` shows the intended shape.
 
 ### For conductor
 `ui/` and `Theme.kt` are ready to merge early: they add files and one palette in `Theme.kt`, no feature touches them yet.
