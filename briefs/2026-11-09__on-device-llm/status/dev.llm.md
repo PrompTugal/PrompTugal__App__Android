@@ -5,8 +5,11 @@
 ## Doing
 Workbench (brief `briefs/2026-11-09__on-device-llm/workbench.md`, Dinis 9 Nov ~10:00 UTC): tabs 1 (Run) and 2 (Experiments). Step 1 (stats) pushed; next the `workbench` feature and the Run tab, then the run log, sweep and A/B. Earlier work (bench, LlmService/LlmHost, feature G) is on dev; G stays `enabled = false` until Dinis's tablet run.
 
+## R-llm-14: Model setup's privacy line follows cloudOn
+- ModelsFeature passes `context.cloudOn` (architect's FeatureContext signal) to ModelSetupScreen; the `cloudLlm != null` stand-in is gone. "Nothing you type leaves the device" only while cloudOn is false; otherwise the models_privacy_cloud line (cloud runs go to openrouter.ai). Model setup does not declare usesCloud. Tested: a cloud service without cloudOn keeps the device line; cloudOn switches it.
+
 ## R-wb-9: tool tests always on the device
-- The Workbench passes `context.llm` (on-device) to dev.lab's ToolTestsTab whatever the Run tab's choice; before, it passed the chosen service, so with Cloud picked the tool tests and the "on-device judge" would have run on the cloud unlabelled. Tested: Cloud chosen, a tool test run reaches only the on-device service. `cloudLlm = context.cloudLlm` goes only to the tab's cloud judge (dev.lab's 7c5e73f, on dev). R-llm-14 (Model setup on `context.cloudOn`) waits for architect's 0f5eb37.
+- The Workbench passes `context.llm` (on-device) to dev.lab's ToolTestsTab whatever the Run tab's choice; before, it passed the chosen service, so with Cloud picked the tool tests and the "on-device judge" would have run on the cloud unlabelled. Tested: Cloud chosen, a tool test run reaches only the on-device service. `cloudLlm = context.cloudLlm` goes only to the tab's cloud judge (dev.lab's 7c5e73f, on dev). 
 
 ## R-llm-13: base block without the device claim
 - `assets/prompts/riskmandate_base.v2.txt` = v1 with "running on this device" removed (only that; both riskmandate.ai sentences unchanged), `Prompts.RISKMANDATE_BASE_ANYWHERE`. The Workbench's "RiskMandate base block" preset uses v2 for both on-device and cloud runs. v1 stays for chat's on-device requests (dev.chat: use v2 for anything that may go to the cloud). Tested: v2 has no "device", equals v1 minus that clause, keeps both quotes; the preset fills v2.

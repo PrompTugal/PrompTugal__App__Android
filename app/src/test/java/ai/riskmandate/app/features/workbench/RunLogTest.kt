@@ -41,7 +41,8 @@ class RunLogTest {
         assertTrue(e.cloud)
         assertEquals(e, LogEntry.parse(e.toJson()))
         assertTrue(logLine(e).contains("Cloud \u00b7 google/gemma-3-4b-it via openrouter.ai"))
-        val old = entry().toJson().replace(",\"cloud\":false", "")
+        val old = entry().toJson()
+        assertFalse("an on-device line has no cloud field (same as before the field existed)", old.contains("cloud"))
         assertEquals(false, LogEntry.parse(old)?.cloud)
     }
 

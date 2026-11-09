@@ -45,8 +45,8 @@ data class LogEntry(
             "temp" to temperature, "topk" to topK, "topp" to topP, "max" to maxTokens, "sys" to systemChars, "tools" to tools,
             "stop" to stop, "err" to error, "cold" to cold, "load" to loadMs, "ttft" to firstTokenMs, "total" to totalMs,
             "in" to inputTokens, "out" to outputTokens, "dec" to decodeTps, "pre" to prefillTps, "src" to sources,
-            "calls" to toolCalls, "ok" to accepted, "prompt" to prompt, "answer" to answer, "cloud" to cloud,
-        ),
+            "calls" to toolCalls, "ok" to accepted, "prompt" to prompt, "answer" to answer,
+        ).apply { if (cloud) put("cloud", true) }, // only on cloud entries: on-device lines stay as before
     )
 
     companion object {

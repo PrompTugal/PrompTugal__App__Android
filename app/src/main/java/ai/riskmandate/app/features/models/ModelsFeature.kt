@@ -54,9 +54,10 @@ internal fun ModelsContent(context: FeatureContext, io: CoroutineDispatcher = Di
         // After an install, delete or switch, the host's service rescans (and unloads a deleted model).
         onModelsChanged = { (context.llm as? LlmHost)?.refresh() },
         onBusy = { busy = it },
-        // "Nothing you type leaves the device" holds only while no cloud model is in use (M.4.3). The host passes a
-        // cloud service only to cloud features, so this is false here until the host gives every feature that signal.
-        cloudInUse = context.cloudLlm != null,
+        // "Nothing you type leaves the device" holds only while the cloud model is off (M.4.3, security R-llm-14).
+        // The host's cloudOn is the only signal (architect): never inferred from anything else. This screen stays
+        // on-device and does not declare usesCloud.
+        cloudInUse = context.cloudOn,
         io = io,
     )
 }
