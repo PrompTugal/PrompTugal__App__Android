@@ -1,0 +1,97 @@
+{
+  "_note": "Hosted models via OpenRouter. OpenRouter lists no Gemma 4 E2B or E4B (checked 9 Nov 2026), so these are the closest Google sizes, labelled as such. Precision is chosen by the provider and is not controllable here: 'quantisation' says so. Prices are USD per million tokens from OpenRouter's list on 9 Nov 2026; recorded costs come from the usage.cost the API returns. tool_mode: native where the model supports tool calling (Gemma 4 answers in its own call syntax under the text protocol), text where it does not.",
+  "defaults": {
+    "temperatures": [
+      0,
+      0.3,
+      0.7,
+      1.0
+    ],
+    "seeds": [
+      11,
+      22,
+      33
+    ],
+    "reps": 1,
+    "max_tokens": 1024,
+    "tool_mode": "text"
+  },
+  "models": [
+    {
+      "id": "google/gemma-3-4b-it",
+      "label": "Gemma 3 4B IT",
+      "closest_to": "Gemma 4 E2B / E4B (closest size OpenRouter lists; older generation, dense 4B)",
+      "backend": "openrouter",
+      "quantisation": "provider-chosen, unknown (hosted)",
+      "enabled": true,
+      "price_per_mtok": [
+        0.05,
+        0.1
+      ],
+      "tool_mode": "text",
+      "tool_mode_note": "OpenRouter lists no native tool support for this model, so the text protocol is used"
+    },
+    {
+      "id": "google/gemma-3-12b-it",
+      "label": "Gemma 3 12B IT",
+      "closest_to": "above Gemma 4 E4B (bigger reference)",
+      "backend": "openrouter",
+      "quantisation": "provider-chosen, unknown (hosted)",
+      "enabled": true,
+      "price_per_mtok": [
+        0.05,
+        0.15
+      ],
+      "tool_mode": "native"
+    },
+    {
+      "id": "google/gemma-4-26b-a4b-it",
+      "label": "Gemma 4 26B A4B IT",
+      "closest_to": "Gemma 4 family, mixture of experts with about 4B active parameters (not E2B/E4B)",
+      "backend": "openrouter",
+      "quantisation": "provider-chosen, unknown (hosted)",
+      "enabled": true,
+      "price_per_mtok": [
+        0.0675,
+        0.225
+      ],
+      "tool_mode": "native"
+    },
+    {
+      "id": "google/gemma-4-31b-it",
+      "label": "Gemma 4 31B IT",
+      "closest_to": "Gemma 4 family, largest dense (bigger reference)",
+      "backend": "openrouter",
+      "quantisation": "provider-chosen, unknown (hosted)",
+      "enabled": true,
+      "price_per_mtok": [
+        0.2,
+        0.4
+      ],
+      "tool_mode": "native"
+    },
+    {
+      "id": "google/gemini-3.1-flash-lite",
+      "label": "Gemini 3.1 Flash-Lite",
+      "closest_to": "not an on-device model: a hosted Google reference for what a stronger model does",
+      "backend": "openrouter",
+      "quantisation": "n/a (hosted API)",
+      "enabled": false,
+      "price_per_mtok": [
+        0.25,
+        1.5
+      ]
+    },
+    {
+      "id": "litert-community/gemma-4-E2B-it-litert-lm",
+      "label": "Gemma 4 E2B IT (real weights)",
+      "closest_to": "Gemma 4 E2B as built at the repo's current main (sha256 181938105e0e, 2,588,147,712 bytes); NOT the app's pinned file (7fa1d784 / ab7838cd, 2,583,085,056 bytes), so do not call these results the default on-device model until the files match",
+      "backend": "local-litert-lm",
+      "quantisation": "Gemma 4 mobile quantisation: a mix of 2, 4 and 8 bit weights (file gemma-4-E2B-it.litertlm, CPU build, 2.59 GB), LiteRT-LM on this Linux machine CPU",
+      "enabled": false,
+      "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+      "source": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm (Apache 2.0, not gated)",
+      "tool_mode": "native"
+    }
+  ]
+}

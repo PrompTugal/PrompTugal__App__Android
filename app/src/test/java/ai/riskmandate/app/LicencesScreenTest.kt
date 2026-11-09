@@ -42,15 +42,24 @@ class LicencesScreenTest {
         compose.setContent {
             MaterialTheme {
                 var open = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-                if (open.value) LicencesScreen(text = text, apacheText = apache, onBack = { open.value = false })
+                if (open.value) LicencesScreen(text = text, apacheText = apache)
                 else HomeScreen("0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {}, onLicences = { open.value = true })
             }
         }
         compose.onNodeWithTag(HomeTags.LICENCES).performScrollTo().performClick()
-        compose.onNodeWithText("Open source licences").assertIsDisplayed()
         compose.onNodeWithTag(LicenceTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(LicenceTags.APACHE).assertExists()
-        compose.onNodeWithTag(LicenceTags.BACK).performClick()
-        compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+    }
+
+    @Test fun modelFilesGroupListsTheDownloadableGemma4ModelsOnly() {
+        val lines = modelLicenceLines()
+        assertEquals(listOf("Gemma 4 E2B (Apache-2.0)", "Gemma 4 E4B (Apache-2.0)"), lines)
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        compose.setContent {
+            MaterialTheme { LicencesScreen(text = readLicences(context), apacheText = readApacheLicence(context)) }
+        }
+        compose.onNodeWithTag(LicenceTags.MODELS).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Gemma 4 E2B (Apache-2.0)", substring = true).assertExists()
+        compose.onNodeWithText("Gemma 3", substring = true).assertDoesNotExist()
     }
 }

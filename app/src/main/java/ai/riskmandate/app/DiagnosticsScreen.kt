@@ -40,7 +40,6 @@ object DiagnosticsTags {
     const val TEXT = "diagnostics_text"
     const val COPY = "diagnostics_copy"
     const val COPIED = "diagnostics_copied"
-    const val BACK = "diagnostics_back"
     const val MODEL_BENCH = "diagnostics_model_bench"
 }
 
@@ -57,7 +56,6 @@ fun copyToClipboard(context: Context, label: String, text: String): Boolean = tr
 fun DiagnosticsScreen(
     text: String,
     onCopy: () -> Boolean,
-    onBack: () -> Unit,
     /** Opens the on-device LLM bench (dev.llm, features/models). Null hides the button. */
     onModelBench: (() -> Unit)? = null,
 ) {
@@ -67,16 +65,7 @@ fun DiagnosticsScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(Modifier.widthIn(max = 720.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = onBack, modifier = Modifier.heightIn(min = 48.dp).testTag(DiagnosticsTags.BACK)) {
-                Text(stringResource(R.string.licences_back))
-            }
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    stringResource(R.string.diagnostics_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.semantics { heading() },
-                )
                 Text(
                     stringResource(R.string.diagnostics_intro),
                     style = MaterialTheme.typography.bodyMedium,

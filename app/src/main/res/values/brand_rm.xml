@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sampled from docs/design/brand/riskmandate-logo-reference.jpg (9 Nov 2026); see docs/design/brand/README-redraw.md.
+         A proposal for the app icon and brand block; nothing here is used by the shipped launcher icon. -->
+    <color name="rm_navy">#051223</color>
+    <color name="rm_green">#66B78F</color>
+    <color name="rm_green_bright">#6CC69B</color>
+    <color name="rm_green_on_paper">#177251</color>
+    <!-- The product name split for the wordmark; a name, so not translated. -->
+    <string name="brand_risk" translatable="false">Risk</string>
+    <string name="brand_mandate" translatable="false">Mandate</string>
+</resources>

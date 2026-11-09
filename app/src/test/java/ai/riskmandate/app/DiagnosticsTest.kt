@@ -86,7 +86,7 @@ class DiagnosticsTest {
     @Test fun copyButtonPutsPlainTextOnTheClipboard() {
         val text = info.toText()
         compose.setContent {
-            MaterialTheme { DiagnosticsScreen(text = text, onCopy = { copyToClipboard(context, "Diagnostics", text) }, onBack = {}) }
+            MaterialTheme { DiagnosticsScreen(text = text, onCopy = { copyToClipboard(context, "Diagnostics", text) }) }
         }
         compose.onNodeWithTag(DiagnosticsTags.TEXT).assertTextContains("Version code: 7", substring = true)
         compose.onNodeWithTag(DiagnosticsTags.COPY).performClick()
@@ -100,12 +100,22 @@ class DiagnosticsTest {
         var withBench by mutableStateOf(true)
         compose.setContent {
             MaterialTheme {
-                DiagnosticsScreen(text = "x", onCopy = { true }, onBack = {}, onModelBench = if (withBench) ({ opened++ }) else null)
+                DiagnosticsScreen(text = "x", onCopy = { true }, onModelBench = if (withBench) ({ opened++ }) else null)
             }
         }
         compose.onNodeWithTag(DiagnosticsTags.MODEL_BENCH).performScrollTo().performClick()
         assertEquals(1, opened)
         withBench = false
         compose.onNodeWithTag(DiagnosticsTags.MODEL_BENCH).assertDoesNotExist()
+    }
+}
+
+@RunWith(AndroidJUnit4::class)
+class PermissionCountTest {
+    @Test fun theCountIsReadFromTheMergedManifestAndMatchesTheTwoWeDeclare() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        // INTERNET and ACCESS_NETWORK_STATE: the only permissions the app declares itself (a new one fails this
+        // test on purpose, so the Home tile and the mandate screen are looked at together).
+        assertEquals(2, requestedPermissionCount(context))
     }
 }

@@ -11,8 +11,10 @@ For the conductor and Dinis. Written 9 November 2026 by play.android@promptugal.
 | https://huggingface.co/google/gemma-4-E2B-it | "License: apache-2.0", linking "Apache 2.0" to https://ai.google.dev/gemma/docs/gemma_4_license. No gating or acceptance step shown. No prohibited-use policy stated; asks developers to "exercise caution and implement appropriate content safety safeguards". Citation is a suggestion. |
 | https://ai.google.dev/gemma/docs/gemma_4_license | Heading "Apache License 2.0", "Version 2.0, January 2004": the standard text, **no extra terms and no prohibited-use policy**. |
 
-So the conductor's note holds on the pages I could read: **Gemma 4 E2B and E4B weights are Apache 2.0, and I saw no gate.** Caveats I cannot close from here:
-- I read the cards through a fetch tool that returns excerpts, and I did not open the repositories' file lists or `README` front matter. dev.llm should record the exact file name, size and SHA-256 from the repository itself, and re-read the licence line on the day of the build.
+So the conductor's note holds on the pages I could read: **Gemma 4 E2B and E4B weights are Apache 2.0, and I saw no gate.** **Update (G.8, from dev.llm's status page on `work/dev.llm`, which I read but did not re-check):** dev.llm pinned each file to an exact repository commit, name, size and SHA-256 in `llm/ModelCatalog.kt`, downloaded both Gemma 4 files from the pinned URLs once in its cloud session and hashed them end to end (both matched, nothing kept), and chose the generic `gemma-4-E2B-it.litertlm` (2,583,085,056 bytes) and `gemma-4-E4B-it.litertlm` (3,654,467,584 bytes) over the `-gpu` file I had been given. That closes my file-name question below; the catalogue is the source of truth for names, commits and hashes. Both entries are recorded there as `apache-2.0`, ungated; the two Gemma 3 files (270M, 1B) are **gated under the Gemma licence** and are bench-only (adb), **not offered by feature G**.
+
+Caveats I cannot close from here:
+- I read the cards through a fetch tool that returns excerpts. Re-read the licence line on the day of the build.
 - **Earlier Gemma generations are different.** The conductor's note says `gemma-3-270m-it` and `Gemma3-1B-IT` are gated under the Gemma licence with a Hugging Face login. I did not read those pages. If dev.llm offers any non-Gemma-4 model as the third (smallest) one, its licence must be read and recorded first; a Gemma-terms model carries a use policy and flow-down terms that Apache 2.0 does not, and a login-gated download cannot work with a pinned, tokenless URL.
 - LiteRT-LM and Edge Gallery are "Apache 2.0" per the brief; I did not read their repositories.
 
@@ -34,7 +36,7 @@ Language model (downloaded on first use, not part of the app)
   converted to a quantised on-device format by the litert-community (Google AI Edge) on Hugging Face.
   Licence: Apache License, Version 2.0 (https://ai.google.dev/gemma/docs/gemma_4_license).
   The file is downloaded once from huggingface.co and checked against a fixed checksum.
-- [Smallest model: TODO dev.llm, name, publisher, licence after the licence is read and recorded.]
+- Only the two models above are offered for download. [A smaller model would be added here, with its licence read and recorded, if Dinis decides; Gemma 3 files are gated under the Gemma licence and are not offered.]
 Runtime: LiteRT-LM (Google AI Edge), Apache License, Version 2.0 [TODO: version from the build].
 RiskMandate is not endorsed by Google.
 ```
@@ -47,7 +49,7 @@ Modelo de linguagem (transferido na primeira utilização, não faz parte da apl
   convertidos para um formato quantizado para o dispositivo pela litert-community (Google AI Edge) no Hugging Face.
   Licença: Apache License, Versão 2.0 (https://ai.google.dev/gemma/docs/gemma_4_license).
   O ficheiro é transferido uma só vez de huggingface.co e verificado com uma soma de controlo fixa.
-- [Modelo mais pequeno: TODO dev.llm, nome, editor, licença, depois de a licença ser lida e registada.]
+- Só os dois modelos acima são oferecidos para transferência. [Um modelo mais pequeno seria acrescentado aqui, com a licença lida e registada, se o Dinis decidir; os ficheiros Gemma 3 têm acesso restrito sob a licença Gemma e não são oferecidos.]
 Motor de execução: LiteRT-LM (Google AI Edge), Apache License, Versão 2.0 [TODO: versão da compilação].
 O RiskMandate não é apoiado pela Google.
 ```
@@ -56,7 +58,7 @@ O RiskMandate não é apoiado pela Google.
 
 ## Checklist for dev.llm, security and app.android
 
-- [ ] For each model offered: exact repository URL and file name, size, SHA-256 (from the repository), licence line re-read on the build day, gated or not.
-- [ ] Pinned download URL: Hugging Face downloads normally redirect to a content-delivery host; record every host the request touches (the brief says one pinned host per model), so the privacy text can name them.
+- [x] For each model offered: exact repository URL, file name, size and SHA-256 are pinned in `ModelCatalog` (dev.llm). Still to do: re-read the licence line on the build day.
+- [x] Download hosts: `huggingface.co` and hosts under `hf.co` (seen `us.aws.cdn.hf.co`), at most five redirects, https only (dev.llm's `DownloadPolicy`); named in the privacy draft.
 - [ ] `licences.txt` / the licences screen gets the note above (app.android) and the runtime library.
 - [ ] Privacy text and the in-app privacy screen carry the model-download and chat-history statements (`privacy-policy.md`, draft section marked for the build where G and H are on).

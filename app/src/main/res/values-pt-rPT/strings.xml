@@ -16,14 +16,26 @@
     <string name="message_refused">Esse endereço não pertence a riskmandate.ai, por isso a aplicação não o abre.</string>
 
     <string name="licences_title">Licenças de código aberto</string>
-    <string name="licences_back">Voltar</string>
-    <string name="licences_back_description">Voltar ao ecrã inicial</string>
+    <string name="licences_models_heading">Ficheiros de modelos (descarregados a pedido)</string>
+    <string name="licences_models_note">Estes ficheiros não fazem parte da aplicação. O tablet só descarrega um quando lhe for pedido. A licença é a que a página do modelo indica.</string>
     <string name="licences_apache_heading">Apache License, Version 2.0 (texto completo)</string>
 
+    <string name="nav_section_today">Hoje</string>
+    <string name="nav_section_explore">Explorar</string>
+    <string name="nav_section_device">Este dispositivo</string>
+    <string name="nav_collapse">Reduzir a barra lateral a ícones</string>
+    <string name="nav_expand">Abrir a barra lateral</string>
+    <string name="shell_brand_line">Web Summit</string>
+    <string name="nav_home_action">Ir para Agora</string>
     <string name="nav_menu">Abrir o menu de navegação</string>
-    <string name="nav_home">Início</string>
-    <string name="nav_section_now">Agora</string>
-    <string name="nav_section_features">Funcionalidades</string>
+    <string name="home_now_title">Agora</string>
+    <string name="home_now_summary">O que pode abrir neste dispositivo.</string>
+    <string name="home_stat_features">Funcionalidades ativas</string>
+    <string name="home_stat_permissions">Permissões que esta aplicação pede</string>
+    <string name="home_stat_attention">Precisa de atenção</string>
+    <string name="home_stat_attention_none">Nada a verificar</string>
+    <string name="home_stat_attention_some">Veja a nota acima</string>
+    <string name="home_links_heading">Esta aplicação</string>
     <string name="home_diagnostics">Diagnóstico</string>
     <string name="message_failed">Ocorreu um erro ao abrir riskmandate.ai num navegador. Tente novamente ou abra-o você mesmo no navegador.</string>
     <string name="message_pinned">As páginas web não são abertas num navegador enquanto a aplicação estiver fixada.</string>
@@ -31,10 +43,10 @@
 
     <string name="diagnostics_title">Diagnóstico</string>
     <string name="diagnostics_intro">Para testadores e configuração de dispositivos. Não contém dados pessoais nem identificadores do dispositivo.</string>
+    <string name="diagnostics_model_bench">Bancada do modelo (teste do LLM no dispositivo)</string>
     <string name="diagnostics_copy">Copiar</string>
     <string name="diagnostics_copied">Copiado para a área de transferência.</string>
     <string name="diagnostics_copy_failed">Não foi possível copiar para a área de transferência.</string>
-    <string name="diagnostics_model_bench">Bancada do modelo (teste do LLM no dispositivo)</string>
 
     <string name="restriction_start_url_title">Página inicial</string>
     <string name="restriction_start_url_description">A página de riskmandate.ai que a aplicação abre (apenas HTTPS em riskmandate.ai; qualquer outra volta a https://riskmandate.ai/).</string>
