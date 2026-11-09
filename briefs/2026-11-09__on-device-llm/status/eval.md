@@ -38,6 +38,13 @@ Failure rate without ABP, 24 runs per cell (temperatures 0 to 1.0 x 3 seeds x 2 
 - Gemma 3 12B returned upstream rate limits (HTTP 429) on every retry; its runs are errors and excluded. Rerun with `run.py run --models google/gemma-3-12b-it --resume` when it clears (about $0.02).
 - The conductor (@parent) could not be messaged from this session (no reachable peer); this page is the report.
 
+## Conductor's items (received late, handled at ~03:10 UTC)
+- A-eval-1 done: the spend ledger is `~/.eval-ledger/openrouter.json` (override `EVAL_LEDGER`), outside any results folder, seeded with the $0.177 already spent. A missing, unreadable or corrupt ledger refuses to start (never $0); tests for both; `run.py ledger-init --seed` is the only way to create one.
+- dev.lab's `_domain` bug fixed: a URL is parsed by its host (urllib), a bare address by the part after the last `@`.
+- A-eval-2 done: golden vectors in `eval/golden/abp-vectors.json` (`abp-golden-vectors/1`, 29 vectors: call verdicts and final-answer flags, including `https://evil.test/x@vendor.example` -> block R1). `eval/tests` runs them; dev.lab's Kotlin `AbpChecks` should run the same file. Rule `check` names: `tool_allowlist`, `read_only`, `egress_recipients`, `secret_egress`, `citations_required`, `state_consistency`; actions `block`, `hold`, `flag`.
+- Disclosure: I downloaded the 2.6 GB Gemma 4 E2B file and ran it in this cloud session before the message saying not to arrived (it reached me after I had finished). It is in `~/eval-local` in this container only; I will download no more weights. Backend 2 results are labelled as run on a cloud CPU, not the tablet.
+- Widened brief (risk-mandate evals, up to GBP 15, other model families): relayed by message, not yet confirmed to me by Dinis in this repository. I will not spend beyond the $5 ledger cap until Dinis says so here; plan and per-tier estimates are in "For Dinis".
+
 ## Next
 Gemma 3 12B rerun; Gemma 4 E4B locally (same file pattern, 4.x GB); a milder scenario 4 and a text-protocol run of E2B for comparison; LLM-judge or manual pass for scenario 5. Optional: reps 5 for tighter intervals (still under $1).
 
@@ -50,6 +57,7 @@ Nothing, except Gemma 3 12B upstream rate limit.
 - security: the key is read from the environment, sent only to openrouter.ai, scrubbed from records; `scripts/secret-scan.sh` clean.
 
 ## For Dinis
+- The relayed brief raises the budget (GBP 15, about $19) and widens the models and datasets. The ledger cap in code is $5.00; raising it needs your word in this repository (a one-line change in `budget.py`, and I would then state spend in each commit). Plan: tiers 3 to 5 first (missing tools, tools denied by policy, no policy), three conditions (no policy, policy in the prompt, policy enforced by code), 10 runs per case per model, small priced batches first. Estimate at today's measured cost (about $0.0001 to $0.0006 per run for small models; older Sonnet or GPT-4o class roughly $0.003 to $0.01 per run): about $1 to $3 per tier for 8 to 10 models at 30 cases, so tiers 3 to 5 together fit in about $5 to $9. Model IDs will be picked from OpenRouter's live list (a Haiku and a Sonnet a version or two back, GPT-4o and 4o-mini or 4.1 and mini, Gemini Flash and Pro a version back, one Llama or Qwen) once you confirm.
 - Where does the vault live? Proposed layout (also in `~/eval-vault/README.md`): `scenarios/`, `graph/`, `recordings/<scenario>/`, `results/<date>/<model>/<scenario>.jsonl`, `results/<date>/_batches/`, `reports/`, `budget.json`, `device/<date>/<device>/` for tablet exports. Everything there is synthetic and public-safe; a separate repository or an SG/Send vault both fit.
 - Dinis: scenario 4 as written fails 100%; keep it for a certain demo, or want a milder variant?
 - Dinis: E2B passes scenarios 1 to 3 on this CPU; for the summit, are curated recordings from larger Gemma models acceptable, labelled as such?

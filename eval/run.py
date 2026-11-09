@@ -21,7 +21,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from abpeval import scenario as S, runner, report, recordings  # noqa: E402
 from abpeval.backends import OpenRouter, scrub, api_key, BackendError  # noqa: E402
-from abpeval.budget import Budget, BudgetExhausted  # noqa: E402
+from abpeval.budget import Budget, BudgetExhausted, LedgerError, default_ledger, init_ledger  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,6 +37,7 @@ def cfg():
 def common(p):
     p.add_argument("--vault", default=os.environ.get("EVAL_VAULT", os.path.expanduser("~/eval-vault")))
     p.add_argument("--results", default=os.environ.get("EVAL_RESULTS", os.path.expanduser("~/eval-results")))
+    p.add_argument("--ledger", default=default_ledger(), help="spend ledger, fixed path outside any results folder")
 
 
 def cmd_validate(a):
@@ -76,7 +77,7 @@ def cmd_run(a):
     date = time.strftime("%Y-%m-%d", time.gmtime())
     batch = a.batch or time.strftime("%H%M%S", time.gmtime())
     os.makedirs(a.results, exist_ok=True)
-    budget = Budget(a.results, session_cap=a.max_cost)
+    budget = Budget(a.ledger, session_cap=a.max_cost)
     print(f"budget so far ${budget.spent():.4f} of ${budget.cap:.2f}; this invocation capped at ${a.max_cost}")
     if want == "local-litert-lm":
         from abpeval.local_backend import LiteRtLm
@@ -142,7 +143,7 @@ def cmd_report(a):
     if a.batch:
         recs = [r for r in recs if r.get("batch") == a.batch]
     rows = report.summarise(recs)
-    b = Budget(a.results).spent()
+    b = Budget(a.ledger).spent()
     md = report.markdown(rows, a.title, b)
     if a.out:
         open(a.out, "w").write(md)
@@ -177,6 +178,11 @@ def cmd_rescore(a):
     print(f"rescored {n} runs, {changed} outcomes changed")
 
 
+def cmd_ledger_init(a):
+    init_ledger(a.ledger, a.seed)
+    print(f"ledger created at {a.ledger} with ${a.seed:.4f} already spent")
+
+
 def cmd_curate(a):
     scs = {s["id"]: s for s in S.load_all(a.vault)}
     n = recordings.curate(report.load_records(jsonl_files(a.path)), scs, a.out)
@@ -204,12 +210,13 @@ def main():
     r.set_defaults(fn=cmd_run)
     q = sub.add_parser("report"); common(q); q.add_argument("path"); q.add_argument("--out"); q.add_argument("--batch"); q.add_argument("--title", default="Evidence run report"); q.set_defaults(fn=cmd_report)
     z = sub.add_parser("rescore"); common(z); z.add_argument("path"); z.set_defaults(fn=cmd_rescore)
+    li = sub.add_parser("ledger-init"); common(li); li.add_argument("--seed", type=float, required=True); li.set_defaults(fn=cmd_ledger_init)
     u = sub.add_parser("curate"); common(u); u.add_argument("path"); u.add_argument("--out", required=True); u.set_defaults(fn=cmd_curate)
     i = sub.add_parser("import-loop"); common(i); i.add_argument("file"); i.set_defaults(fn=cmd_import)
     a = p.parse_args()
     try:
         a.fn(a)
-    except (BackendError, BudgetExhausted, S.ScenarioError) as e:
+    except (BackendError, BudgetExhausted, LedgerError, S.ScenarioError) as e:
         sys.exit(f"stopped: {e}")
 
 

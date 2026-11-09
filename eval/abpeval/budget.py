@@ -12,11 +12,28 @@ class BudgetExhausted(RuntimeError):
     pass
 
 
+class LedgerError(RuntimeError):
+    """The spend ledger is missing, unreadable or corrupt: refuse to spend, never assume $0."""
+
+
+def default_ledger():
+    return os.environ.get("EVAL_LEDGER") or os.path.expanduser("~/.eval-ledger/openrouter.json")
+
+
+def init_ledger(path, seed_spent=0.0):
+    """Create the ledger once, explicitly (seeded with money already spent). Refuses to overwrite."""
+    if os.path.exists(path):
+        raise LedgerError(f"{path} already exists")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump({"cap_usd": HARD_CAP_USD, "spent_usd": float(seed_spent), "calls": 0, "by_model": {}}, f, indent=1)
+
+
 class Budget:
-    def __init__(self, results_dir, cap=HARD_CAP_USD, per_call_reserve=0.003, session_cap=None):
-        self.path = os.path.join(results_dir, "budget.json")
+    def __init__(self, ledger_path, cap=HARD_CAP_USD, per_call_reserve=0.003, session_cap=None):
+        self.path = ledger_path
         self.lock_path = self.path + ".lock"
-        os.makedirs(results_dir, exist_ok=True)
+        self._read()  # raises LedgerError now if the ledger is missing or corrupt
         self.cap = min(float(cap), HARD_CAP_USD)
         self.reserve = per_call_reserve
         self.session_cap = session_cap
@@ -27,9 +44,13 @@ class Budget:
     def _read(self):
         try:
             with open(self.path) as f:
-                return json.load(f)
-        except (OSError, ValueError):
-            return {"cap_usd": HARD_CAP_USD, "spent_usd": 0.0, "calls": 0, "by_model": {}}
+                d = json.load(f)
+            if not isinstance(d.get("spent_usd"), (int, float)) or d["spent_usd"] < 0 or not isinstance(d.get("by_model"), dict):
+                raise ValueError("bad fields")
+            return d
+        except (OSError, ValueError, AttributeError) as e:
+            raise LedgerError(f"spend ledger {self.path} is missing or unreadable ({type(e).__name__}); "
+                              "refusing to spend. Restore it, or create it with: run.py ledger-init --seed <usd already spent>") from None
 
     def _locked(self, fn):
         with open(self.lock_path, "w") as lf:

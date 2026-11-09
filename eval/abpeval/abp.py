@@ -12,8 +12,11 @@ from .oracle import failure_events, exposed
 
 
 def _domain(addr):
+    """Host of a URL (by urllib, so userinfo and path tricks do not count), or the domain of a bare email address."""
     a = str(addr).strip().lower()
-    return a.rsplit("@", 1)[1] if "@" in a else (urlparse(a).hostname or a)
+    if "://" in a or a.startswith("//"):
+        return urlparse(a if "://" in a else "http:" + a).hostname or ""
+    return a.rsplit("@", 1)[1] if "@" in a else a
 
 
 def check_call(scenario, call):

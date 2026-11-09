@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from abpeval import abp, claims, protocol, recordings, runner, report, stats  # noqa: E402
-from abpeval.budget import Budget, BudgetExhausted  # noqa: E402
+from abpeval.budget import Budget, BudgetExhausted, LedgerError, init_ledger  # noqa: E402
 
 TOOL = lambda n, e, req=(): {"name": n, "effect": e, "description": n, "parameters": {"type": "object", "properties": {k: {"type": "string"} for k in req}, "required": list(req)}}
 GRAPH = {"nodes": [{"id": "N1", "name": "Meeting Bot", "type": "agent"}, {"id": "N2", "name": "Calendar", "type": "system"}],
@@ -169,6 +169,23 @@ class Scenario5(unittest.TestCase):
         self.assertTrue(r["outcome"]["caught"])
 
 
+class Golden(unittest.TestCase):
+    def test_vectors(self):
+        d = json.load(open(os.path.join(os.path.dirname(__file__), "..", "golden", "abp-vectors.json")))
+        for v in d["vectors"]:
+            with self.subTest(v["name"]):
+                if v["kind"] == "call":
+                    scn = base(tools=[dict(t, description="", parameters={}) for t in v["tools"]], policy={"rules": v["rules"]}, secrets=v.get("secrets", []))
+                    got = abp.check_call(scn, v["call"])
+                    self.assertEqual((got["action"], got["rule"]), (v["expected"]["action"], v["expected"]["rule"]))
+                else:
+                    scn = base(policy={"rules": v["rules"]}, fake_tools={"get_neighbours": {"graph": "get_neighbours"}})
+                    rec = {"path": "abp", "final_text": v["final_text"],
+                           "steps": [{"tool_calls": [{"name": "get_neighbours", "executed": True, "valid": True, "result": v["fetched"]}]}]}
+                    got = [{"claim": f["claim"], "rule": f["rule"]} for f in abp.check_final(scn, rec)]
+                    self.assertEqual(got, v["expected_flags"])
+
+
 class Plumbing(unittest.TestCase):
     def test_wilson_and_one_in(self):
         lo, hi = stats.wilson(5, 10)
@@ -179,7 +196,8 @@ class Plumbing(unittest.TestCase):
 
     def test_budget_hard_stop_and_persistence(self):
         with tempfile.TemporaryDirectory() as d:
-            b = Budget(d, cap=99, per_call_reserve=1.0)  # cap is clamped to 5.00
+            lp = os.path.join(d, "ledger.json"); init_ledger(lp)
+            b = Budget(lp, cap=99, per_call_reserve=1.0)  # cap is clamped to 5.00
             self.assertEqual(b.cap, 5.0)
             for _ in range(4):
                 b.acquire(); b.release_and_record(1.0, "m")
@@ -187,13 +205,31 @@ class Plumbing(unittest.TestCase):
             with self.assertRaises(BudgetExhausted):
                 b.acquire()  # 4 spent + 1 in flight + 1 reserve > 5
             b.release_and_record(1.0, "m")
-            self.assertEqual(Budget(d).spent(), 5.0)  # a new process sees the total
+            self.assertEqual(Budget(lp).spent(), 5.0)  # a new process sees the total
             with self.assertRaises(BudgetExhausted):
-                Budget(d).acquire()
+                Budget(lp).acquire()
+
+    def test_ledger_missing_or_corrupt_refuses(self):
+        with tempfile.TemporaryDirectory() as d:
+            lp = os.path.join(d, "ledger.json")
+            with self.assertRaises(LedgerError):
+                Budget(lp)  # missing: never counts as $0
+            init_ledger(lp, 1.5)
+            with self.assertRaises(LedgerError):
+                init_ledger(lp)  # no silent overwrite
+            self.assertEqual(Budget(lp).spent(), 1.5)
+            for bad in ("not json", "{}", '{"spent_usd": -1, "by_model": {}}', '{"spent_usd": "x", "by_model": {}}', ""):
+                open(lp, "w").write(bad)
+                with self.assertRaises(LedgerError):
+                    Budget(lp)
+            os.remove(lp); os.mkdir(lp)  # unreadable
+            with self.assertRaises(LedgerError):
+                Budget(lp)
 
     def test_session_cap(self):
         with tempfile.TemporaryDirectory() as d:
-            b = Budget(d, per_call_reserve=0.1, session_cap=0.25)
+            lp = os.path.join(d, "l.json"); init_ledger(lp)
+            b = Budget(lp, per_call_reserve=0.1, session_cap=0.25)
             b.acquire(); b.release_and_record(0.2, "m")
             with self.assertRaises(BudgetExhausted):
                 b.acquire()
