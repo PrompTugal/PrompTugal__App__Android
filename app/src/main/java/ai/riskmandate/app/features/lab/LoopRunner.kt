@@ -19,7 +19,8 @@ object NoGuard : DeviceGuard {
     override fun hot(): Boolean = false
 }
 
-enum class StopReason { DONE, STOPPED, LOW_BATTERY, HOT, TIME_CAP, ERRORS }
+/** [INTERRUPTED]: the screen was turned (the Activity was recreated) while the loop ran; the counts so far are kept. */
+enum class StopReason { DONE, STOPPED, LOW_BATTERY, HOT, TIME_CAP, ERRORS, INTERRUPTED }
 
 /**
  * Loop mode: run one scenario N times, both lanes each time, and count. Caps (security I.5): at most

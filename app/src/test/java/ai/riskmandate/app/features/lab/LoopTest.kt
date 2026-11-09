@@ -153,4 +153,21 @@ class LoopTest {
         // The export holds the model's tool proposals and the scenario's fixed strings, and no device identifier.
         assertFalse(text.contains("android_id", ignoreCase = true))
     }
+
+    @Test fun countersSurviveTheSavedStateCodecAndHostileTextIsDropped() {
+        var c = LoopCounters(planned = 20, batteryStartPct = 80, batteryEndPct = 77)
+        c = c.withRun(RunScore(true, true, true, false, 1234), 79).withRun(RunScore(false, false, false, false, 2000), 77).withFailedRun()
+        val text = LoopCountersCodec.encode(c, StopReason.INTERRUPTED)
+        val (back, stop) = LoopCountersCodec.decode(text)!!
+        assertEquals(c, back)
+        assertEquals(StopReason.INTERRUPTED, stop)
+        assertEquals(LoopCounters(5) to null, LoopCountersCodec.decode(LoopCountersCodec.encode(LoopCounters(5), null)))
+        assertNull(LoopCountersCodec.decode(LoopCountersCodec.encode(null, null)))
+        for (bad in listOf("", "v2|5|0|-1|-1||", "v1|0|0|-1|-1||", "v1|101|0|-1|-1||", "v1|5|0|-1|-1||11:5", "v1|5|0|-1|-1||2111:5", "v1|5|0|-1|-1||1111:-5",
+            "v1|5|0|-1|-1||1111:99999999999", "v1|5|0|-1|-1|NOPE|", "v1|1|0|-1|-1||1111:5;1111:5", "v1|x|0|-1|-1||", "v1|5|0|-1|-1", "garbage", "v1|5|999|-1|-1||")) {
+            assertNull("accepted: $bad", LoopCountersCodec.decode(bad))
+        }
+        // Out-of-range battery readings are dropped rather than trusted.
+        assertNull(LoopCountersCodec.decode("v1|5|0|500|-1||")!!.first.batteryStartPct)
+    }
 }

@@ -53,3 +53,42 @@ data class LoopCounters(
         const val SMALL_SAMPLE = 10
     }
 }
+
+/**
+ * Saves loop counters across a rotation (the Activity is recreated and the composition with it). A plain
+ * string, so it fits a saved-state bundle and is checked on the way back: anything out of range is dropped
+ * and the screen starts fresh rather than trusting it. Holds the finished runs' scores, the tallies and the
+ * stop reason; not the lanes' text, and not the full run records (so an export needs a new loop).
+ */
+object LoopCountersCodec {
+    private const val V = "v1"
+
+    fun encode(c: LoopCounters?, stop: StopReason?): String {
+        if (c == null) return ""
+        val runs = c.runs.joinToString(";") { r -> "${bit(r.rawFailed)}${bit(r.attempted)}${bit(r.caught)}${bit(r.escaped)}:${r.ms}" }
+        return listOf(V, c.planned, c.notFinished, c.batteryStartPct ?: -1, c.batteryEndPct ?: -1, stop?.name ?: "", runs).joinToString("|")
+    }
+
+    fun decode(text: String): Pair<LoopCounters, StopReason?>? = try {
+        val f = text.split("|")
+        if (f.size != 7 || f[0] != V) null else {
+            val planned = f[1].toInt()
+            val notFinished = f[2].toInt()
+            val bs = f[3].toInt().takeIf { it in 0..100 }
+            val be = f[4].toInt().takeIf { it in 0..100 }
+            val stop = if (f[5].isEmpty()) null else StopReason.valueOf(f[5])
+            val runs = if (f[6].isEmpty()) emptyList() else f[6].split(";").map { part ->
+                val (flags, ms) = part.split(":").also { require(it.size == 2) }
+                require(flags.length == 4 && flags.all { it == '0' || it == '1' })
+                RunScore(flags[0] == '1', flags[1] == '1', flags[2] == '1', flags[3] == '1', ms.toLong().also { require(it in 0..MAX_MS) })
+            }
+            if (planned !in 1..LoopRunner.MAX_RUNS || runs.size > planned || notFinished !in 0..LoopRunner.MAX_RUNS) null
+            else LoopCounters(planned, runs, notFinished, bs, be) to stop
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    private const val MAX_MS = 24L * 60 * 60 * 1000
+    private fun bit(b: Boolean) = if (b) '1' else '0'
+}
