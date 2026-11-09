@@ -86,7 +86,7 @@ class FeatureStringsTest {
 
     @Test fun featureScreensHardcodeNoText() {
         val roots = listOf(File("src/main/java/ai/riskmandate/app/features"))
-        val literal = Regex("""\bText\(\s*"|contentDescription\s*=\s*"|\btitle\s*=\s*"|\blabel\s*=\s*"""")
+        val literal = Regex("""\bText\(\s*"|contentDescription\s*=\s*"|\btitle\s*=\s*"|onClick\(\s*label\s*=\s*"|onLongClick\(\s*label\s*=\s*"""")
         val offenders = roots.flatMap { r -> r.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList() }
             .filter { literal.containsMatchIn(it.readText()) }.map { it.path }
         assertEquals("hardcoded user-visible text (use string resources, with pt-PT)", emptyList<String>(), offenders)

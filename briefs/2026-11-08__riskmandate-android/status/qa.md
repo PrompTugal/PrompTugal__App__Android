@@ -14,6 +14,11 @@ Waiting for the next app branch (dev.* branches were empty at last fetch).
 - Review `docs/qa/reviews/2026-11-09-app-5afbb97.md`: **PASS** (94 tests green on work/app plus qa tests; 5 low or info findings, Q-app-1 closed by a new qa test).
 - Conductor asks (feature-id contract, translation coverage for feature_<id>.xml and for hardcoded text): covered by FeatureNavigationTest and FeatureStringsTest; app.android's LocalisationTest now overlaps and is fine.
 
+- Review `docs/qa/reviews/2026-11-09-dev.stand-94da82a.md`: **HOLD**. Q-stand-1: the 48 dp staff corner is a clickable over the content, so it swallows taps in the bottom-end corner of every screen, stand mode off too (probe fails 0 of 1 taps). 114 tests green otherwise.
+
+- Reviews, 9 Nov (all in `docs/qa/reviews/`): **work/app f317cf8 PASS** (96 tests; release manifest exports only MainActivity), **work/dev.mandate 4ff37a6 PASS** (120 tests; URL exemption for its four shown refusal samples, exact per file), **work/dev.site e6c92f0 HOLD** (does not compile on dev: `context.activity` is gone; also two Back buttons and tab reset on rotation, both probed), **work/dev.abpdemo 38dfbf8 HOLD** (red gate: hardcoded `contentDescription` template; claims traced to the live sites), **work/dev.stand 23d16f3 HOLD** (staff corner still swallows taps; probe fails).
+- Guards in `qa/` made precise after three false positives of mine on the site branch, mutation-checked again; new `shownRefusalSamples` map, positive WebView lock-down check.
+
 ## Next
 Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md` and message the conductor with each verdict. Tighten the plan with what each feature really does.
 
@@ -21,8 +26,13 @@ Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md`
 Nothing.
 
 ## For other roles
+- All three features: each draws its own Back and title inside the host FeatureFrame (site probe: two Back buttons). Conductor to decide: features draw content only, or the frame goes.
+- dev.site: merge dev, replace `context.activity`; rememberSaveable for the tab; drop own Back and title. dev.abpdemo: string resource for the layer description. dev.stand: fix the corner (probe in reviews). dev.mandate: after A and D merge, add mandate entries for the stand setting and the WebView storage, and reword "in your browser" (Q-man-1). Merge work/app first (it removes the exported ProfileInstallReceiver).
+- dev.stand: fix Q-stand-1 (see the review; the probe file shows the check), then ask for a re-review.
+- dev.mandate and play: the app now stores the stand-mode setting locally; do not claim "stores no data" (Q-stand-3).
 - Feature owners: the cross-feature tests need no change when you set `enabled = true`; they fail if a feature navigates without naming `Links`, hardcodes text, has an untranslated string, or holds a URL outside `Links.isAllowed`. Give the Site feature a `testTag` on its WebView and tabs and tell QA the tags.
 - dev.stand: StandHost needs an injectable clock for the idle test (D-4, D-5).
 
 ## For Dinis
+- Stand mode has no home-screen switch: staff long-press the bottom-end corner. OK, or do you want a visible switch on home (Q-stand-2)?
 - The 10-minute run is in the plan, section "10-minute manual run". It cannot be done until A to D exist.
