@@ -153,6 +153,28 @@ A feature with `enabled = false` is never on Home, in the sidebar, or reachable 
 - **Marked:** `FeatureFrame(preview = true)` shows a "Preview" pill next to the title.
 - **Same contract:** the same `FeatureContext` (`llm` included). Nothing in `features/` knows it is in preview, and no feature reads the route.
 
+## Workbench (feature `workbench`; brief `briefs/2026-11-09__on-device-llm/workbench.md`; ruling of 9 Nov)
+- **Feature:** id `workbench`, `enabled = false`, reached only through Diagnostics > Preview (`preview/workbench`), hidden in stand mode by the host as today. **No new `FeatureContext` capability:** `llm`, `holdIdle` (sweeps hold the idle reset), `openFeature("models")` (model choice) and `LocalView.keepScreenOn` cover it.
+- **Ownership (one owner per package):**
+  - `features/workbench/` (screens, tabs 1 Run and 2 Experiments, run log storage): **dev.llm**.
+  - `features/workbench/tooltests/` (tab 3's composable only): **dev.lab**, called from the workbench screen. A sub-package with its own owner, so the two never edit the same file.
+  - `experiments/` (new shared, non-feature package `app/src/main/java/ai/riskmandate/app/experiments/`): **dev.lab**. It holds the code both the Lab and the Workbench use:
+    - the tool-test catalogue format and parser, and the code checks (right tool, args pass `checkToolCall`, value rules, no call when none fits, no made-up tool, two-step, no secret in args, text after a result);
+    - the `ToolTestRunner` over `LlmService`, pure and JVM-tested with `FakeLlmService`;
+    - the generic loop with its caps: 100 runs, 30 minutes, 15% battery, severe thermal, 3 errors in a row. It moves out of the Lab's `LoopRunner`.
+    - `DeviceGuard`/device readings: battery, charging, thermal. It moves out of the Lab.
+    - the text tool-call protocol extractor (the generic part of the Lab's `ToolProtocol`).
+
+    The Lab keeps only what is ABP-specific: `PathRun`, `AbpChecks`, `Oracle`, `Claims`, scenarios and lanes. A feature package never imports another feature package; both import `experiments/` and `llm/`.
+- **Stats and run options live in `llm/` (dev.llm), additive only, defaults keep every caller compiling:**
+  - `LlmStats` gains `stopReason` (DONE, MAX_TOKENS, CANCELLED, ERROR), `backendUsed` and `fellBack`, and `coldLoad`, alongside the existing prompt/output tokens, TTFT, prefill and decode tokens/s, load ms and total ms. Each value says whether it is runtime-reported or measured in Kotlin.
+  - `MemoryProbe` stays in `llm/`.
+  - `LlmRequest.backend: BackendPreference = AUTO` (AUTO, GPU, CPU). The host reloads when it must, still serialised.
+  - `suspend fun unload()` on `LlmService` (default no-op in the interface) for an honest cold-load measurement. Not `LlmHost` casts.
+  - **No model parameter:** the model is chosen in G (`openFeature("models")`). The Workbench shows the active model from `Ready(modelId, backend)` and logs it per run. A model sweep is not offered for now (compare by switching in G; the log keeps both).
+- **Storage:** `noBackupFilesDir/feature_workbench/`, JSON through `llm/StrictJson`, written off the main thread, with a clear button. mandate lists it with its own reason in the same merge. No export path yet beyond "Copy run" (plain text, no identifiers). Results use the Lab's export format, so eval can read them later.
+- **Output:** plain text only; tools are fakes that record calls; nothing executes.
+
 ## Post-summit items (approved, not before the summit build)
 - **P8, feature icons as drawables** (conductor's go for after the build; design chose drawables):
   1. Add `@DrawableRes iconRes: Int? = null` to `Feature`, mark `icon: ImageVector?` `@Deprecated`; the shell uses `iconRes`, then its default icon (it ignores `icon`). Contract test.

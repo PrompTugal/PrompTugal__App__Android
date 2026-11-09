@@ -6,6 +6,7 @@
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Workbench ruling (README "Workbench"): id workbench, Preview only, no new FeatureContext capability; features/workbench (dev.llm) with tooltests/ sub-package (dev.lab); new shared experiments/ package (dev.lab: tool-test format and checks, runner, loop caps, device readings, text protocol extractor); stats and run options additive in llm/ (stopReason, backendUsed/fellBack, coldLoad, BackendPreference, unload()); no model parameter; storage noBackupFilesDir/feature_workbench.
 - Review app 4e26cca (45752f8 Preview) PASS: matches the ruling (`preview_<id>`); A-app-14: host tables iconFor/sectionOf/NAV_ORDER belong on Feature/FEATURES (offer: P7 icon as @DrawableRes). README preview section aligned with the code.
 - Ruling: preview of disabled features through a separate host route `preview/<id>` from Diagnostics only. openFeature stays refused except from a feature itself opened in preview. README section written.
 - FeatureContext.llm: LlmService? = null, with FeatureContextLlmTest (null by default; a feature reaches a FakeLlmService). Gate green, secret scan clean.
