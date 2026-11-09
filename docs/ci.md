@@ -49,13 +49,13 @@ Flakiness, how it is handled:
 | Secret | What it unlocks | Step | If missing |
 |---|---|---|---|
 | `UPLOAD_KEYSTORE_BASE64`, `UPLOAD_KEYSTORE_PASSWORD`, `UPLOAD_KEY_ALIAS`, `UPLOAD_KEY_PASSWORD` (all four) | signing with the upload key (made with `scripts/make-upload-key.sh`), and everything below | "Decode the upload key", then "Release APK and AAB" signs | builds are unsigned and named `-unsigned`; Firebase, Play and the GitHub release are all skipped. Summary: `UNSIGNED: UPLOAD_KEYSTORE_* and UPLOAD_KEY_* secrets missing` |
-| `FIREBASE_SERVICE_ACCOUNT_JSON`, `FIREBASE_APP_ID` | M1: APK to testers group `team` on Firebase App Distribution (push only) | "Firebase App Distribution" | Summary: `skipped: FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_APP_ID secret missing` |
+| none: variables `GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT` and `FIREBASE_APP_ID` (a variable or a secret) | M1: APK to testers group `team` on Firebase App Distribution (push only), authenticated keyless (below) | "Google auth (Workload Identity Federation)", then "Firebase App Distribution" | Summary: `skipped: variables GCP_WIF_PROVIDER, GCP_SERVICE_ACCOUNT or FIREBASE_APP_ID (variable or secret) missing`, or `FAILED at Google auth ...` |
 | `PLAY_SERVICE_ACCOUNT_JSON` (plus the upload key) | the signed AAB to Google Play, a draft release on the chosen track: serves M3 and the managed Play private-app route of M2 | "Google Play (draft release on the chosen track)" | Summary: `skipped: PLAY_SERVICE_ACCOUNT_JSON secret missing` |
 | none (uses the built-in `GITHUB_TOKEN`) | prerelease `v<version>` with the signed APK (push only, needs the upload key) | "GitHub release with the APK" | skipped with the key reason |
 
 Play upload details: track `internal` on push to `dev`; a manual run (Actions, android, Run workflow) offers `internal` or `alpha`. The release is created with `status: draft`, so nothing rolls out until a person completes it in the Play Console. The Play app must already exist with the first upload done by hand if the Console requires it, and the service account needs release permission on the app. The package name is read from the build.
 
-Secret files (`upload.jks`, `play.json`, `fad.json`) are written to `$RUNNER_TEMP` under `umask 077` (owner-only) and removed in an `always()` step. Secret values are never echoed.
+Secret files (`upload.jks`, `play.json`) are written to `$RUNNER_TEMP` under `umask 077` (owner-only) and removed in an `always()` step. Secret values are never echoed.
 
 ### The `release` environment (Dinis creates it)
 
@@ -63,15 +63,28 @@ The release job declares `environment: release`, so the release secrets can be g
 
 1. Settings, Environments, New environment, name it exactly `release`.
 2. Add "Required reviewers" (Dinis) if he wants a manual gate: every release run then waits for his approval before any secret is exposed. Optionally limit "Deployment branches" to `dev`.
-3. Move the secrets (`UPLOAD_KEYSTORE_*`, `UPLOAD_KEY_*`, `FIREBASE_*`, `PLAY_SERVICE_ACCOUNT_JSON`) from repository secrets into the environment's secrets, then delete the repository copies. Until the repository copies are deleted, anyone who can edit the workflow can still read them without the gate.
+3. Move the secrets (`UPLOAD_KEYSTORE_*`, `UPLOAD_KEY_*`, `PLAY_SERVICE_ACCOUNT_JSON`, and `FIREBASE_APP_ID` if it is a secret) from repository secrets into the environment's secrets, then delete the repository copies. Until the repository copies are deleted, anyone who can edit the workflow can still read them without the gate.
 
 What GitHub does while the environment does not exist yet: running a workflow that references a missing environment creates it, with no protection rules and no secrets (GitHub Docs, "Managing environments for deployment", read 8 November 2026). So the build does not break: the job runs ungated and keeps reading the repository secrets as today. Only repository admins can configure the environment afterwards. Note that anyone who can edit workflows can create environments this way, and that without required reviewers the environment gives no protection; the gate exists only once Dinis adds the reviewer and moves the secrets. Not tested live from here (no GitHub write access).
 
 The `check` job references no secret and no environment. In Settings, Actions, also set "Require approval for all outside collaborators" for fork pull requests.
 
+### Firebase auth: Workload Identity Federation (keyless)
+
+The organisation (thecyberboardroom.com) blocks service-account keys (`iam.disableServiceAccountKeyCreation`), so there is no `FIREBASE_SERVICE_ACCOUNT_JSON` any more (removed, no fallback: a key cannot be created). The release job has `permissions: id-token: write`, and `google-github-actions/auth` v2.1.13 (pinned by SHA) exchanges the job's GitHub OIDC token for short-lived Google credentials and sets `GOOGLE_APPLICATION_CREDENTIALS` for firebase-tools. The file it writes holds only the federation config, no secret, and the action deletes it in its post step.
+
+Repository (or `release` environment) **variables**, not secrets, because none of them is secret:
+- `GCP_WIF_PROVIDER`: the provider resource name, `projects/<number>/locations/global/workloadIdentityPools/<pool>/providers/<provider>`.
+- `GCP_SERVICE_ACCOUNT`: the service account's email; it needs only the role Firebase App Distribution Admin, and the pool principal needs `roles/iam.workloadIdentityUser` on it.
+- `FIREBASE_APP_ID`: the Firebase app ID, as a variable or (still supported) a secret; the variable wins if both exist.
+
+Dinis's setup (from the conductor's note, not seen or checked from here): the provider trusts only repository `PrompTugal/PrompTugal__App__Android` in environment `release`, so the job must keep `environment: release`; a workflow on another repository, branch-only job or a job without that environment gets no credentials. If the attribute condition is changed, change nothing here. The Firebase step runs only on push with the upload key and all three values present. **Untested**: no run has happened (no GitHub access from here); a wrong provider, service account or condition shows in the summary as `FAILED at Google auth`.
+
+**Follow-up, Play:** the Play upload still uses `PLAY_SERVICE_ACCOUNT_JSON`, a service-account key. The same policy blocks creating that key, so Play needs the same keyless route (the `auth` step can serve both: the Play step would take the credentials file instead of `serviceAccountJson`, if `r0adkll/upload-google-play` accepts it, or the upload moves to a small script against the Play API) or a policy exception for that project. Until then the Play step stays skipped.
+
 ### firebase-tools
 
-Firebase distribution runs `firebase-tools` 13.29.1 from `.github/firebase/package.json` and `package-lock.json` (integrity hashes for the whole tree) with `npm ci --ignore-scripts`, then `.github/firebase/node_modules/.bin/firebase`. Install scripts are skipped: three packages declare them (`fsevents`, macOS only; `protobufjs`, a version-scheme postinstall; `re2`, a native build used by functions features) and `appdistribution:distribute` runs without them (checked: `firebase --version` and `appdistribution:distribute --help` work after an `npm ci --ignore-scripts`). To bump it, change the version in `package.json` and regenerate the lock with `npm install --package-lock-only --ignore-scripts` in that folder, then review the diff. The Firebase service account should have only the role Firebase App Distribution Admin.
+Firebase distribution runs `firebase-tools` 13.29.1 from `.github/firebase/package.json` and `package-lock.json` (integrity hashes for the whole tree) with `npm ci --ignore-scripts`, then `.github/firebase/node_modules/.bin/firebase`. Install scripts are skipped: three packages declare them (`fsevents`, macOS only; `protobufjs`, a version-scheme postinstall; `re2`, a native build used by functions features) and `appdistribution:distribute` runs without them (checked: `firebase --version` and `appdistribution:distribute --help` work after an `npm ci --ignore-scripts`). To bump it, change the version in `package.json` and regenerate the lock with `npm install --package-lock-only --ignore-scripts` in that folder, then review the diff. The Firebase service account (see above) should have only the role Firebase App Distribution Admin.
 
 ### Gradle wrapper
 
@@ -101,6 +114,7 @@ All pinned by full commit SHA, tag in the comment, resolved with `git ls-remote 
 | actions/download-artifact | v4.3.0 | d3f86a106a0bac45b974a628896c90dbdf5c8093 |
 | reactivecircus/android-emulator-runner | v2.37.0 | e89f39f1abbbd05b1113a29cf4db69e7540cae5a |
 | r0adkll/upload-google-play | v1.1.3 | 935ef9c68bb393a8e6116b1575626a7f5be3a7fb |
+| google-github-actions/auth | v2.1.13 | c200f3691d83b41bf9bbd8638997a462592937ed |
 
 Newer majors exist (checkout v6, setup-java v6, upload-artifact v6, gradle/actions v6); moving to them is a follow-up to test. `firebase-tools` is pinned at 13.29.1 with a lockfile (above).
 
