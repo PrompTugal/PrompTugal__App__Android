@@ -1375,6 +1375,216 @@
    }
   },
   {
+   "name": "egress: scheme-relative host, second scheme in path",
+   "kind": "call",
+   "tools": [
+    {
+     "name": "send_message",
+     "effect": "egress"
+    }
+   ],
+   "rules": [
+    {
+     "id": "R1",
+     "check": "egress_recipients",
+     "tool": "send_message",
+     "arg": "to",
+     "allow_domains": [
+      "vendor.example"
+     ],
+     "on_violation": "block",
+     "reason": "x"
+    }
+   ],
+   "call": {
+    "name": "send_message",
+    "arguments": {
+     "to": "//evil.test/x://vendor.example",
+     "subject": "s",
+     "body": "b"
+    }
+   },
+   "expected": {
+    "action": "block",
+    "rule": "R1"
+   }
+  },
+  {
+   "name": "egress: userinfo then path with second scheme",
+   "kind": "call",
+   "tools": [
+    {
+     "name": "send_message",
+     "effect": "egress"
+    }
+   ],
+   "rules": [
+    {
+     "id": "R1",
+     "check": "egress_recipients",
+     "tool": "send_message",
+     "arg": "to",
+     "allow_domains": [
+      "vendor.example"
+     ],
+     "on_violation": "block",
+     "reason": "x"
+    }
+   ],
+   "call": {
+    "name": "send_message",
+    "arguments": {
+     "to": "evil@evil.test/x://vendor.example",
+     "subject": "s",
+     "body": "b"
+    }
+   },
+   "expected": {
+    "action": "block",
+    "rule": "R1"
+   }
+  },
+  {
+   "name": "egress: userinfo then query with second scheme",
+   "kind": "call",
+   "tools": [
+    {
+     "name": "send_message",
+     "effect": "egress"
+    }
+   ],
+   "rules": [
+    {
+     "id": "R1",
+     "check": "egress_recipients",
+     "tool": "send_message",
+     "arg": "to",
+     "allow_domains": [
+      "vendor.example"
+     ],
+     "on_violation": "block",
+     "reason": "x"
+    }
+   ],
+   "call": {
+    "name": "send_message",
+    "arguments": {
+     "to": "evil@evil.test?://vendor.example",
+     "subject": "s",
+     "body": "b"
+    }
+   },
+   "expected": {
+    "action": "block",
+    "rule": "R1"
+   }
+  },
+  {
+   "name": "egress: host then path with second scheme, no scheme",
+   "kind": "call",
+   "tools": [
+    {
+     "name": "send_message",
+     "effect": "egress"
+    }
+   ],
+   "rules": [
+    {
+     "id": "R1",
+     "check": "egress_recipients",
+     "tool": "send_message",
+     "arg": "to",
+     "allow_domains": [
+      "vendor.example"
+     ],
+     "on_violation": "block",
+     "reason": "x"
+    }
+   ],
+   "call": {
+    "name": "send_message",
+    "arguments": {
+     "to": "evil.test/x://vendor.example",
+     "subject": "s",
+     "body": "b"
+    }
+   },
+   "expected": {
+    "action": "block",
+    "rule": "R1"
+   }
+  },
+  {
+   "name": "egress: malformed bracket host raises in urllib",
+   "kind": "call",
+   "tools": [
+    {
+     "name": "send_message",
+     "effect": "egress"
+    }
+   ],
+   "rules": [
+    {
+     "id": "R1",
+     "check": "egress_recipients",
+     "tool": "send_message",
+     "arg": "to",
+     "allow_domains": [
+      "vendor.example"
+     ],
+     "on_violation": "block",
+     "reason": "x"
+    }
+   ],
+   "call": {
+    "name": "send_message",
+    "arguments": {
+     "to": "http://[::1",
+     "subject": "s",
+     "body": "b"
+    }
+   },
+   "expected": {
+    "action": "block",
+    "rule": "R1"
+   }
+  },
+  {
+   "name": "egress: unterminated bracket host in a scheme-relative URL",
+   "kind": "call",
+   "tools": [
+    {
+     "name": "send_message",
+     "effect": "egress"
+    }
+   ],
+   "rules": [
+    {
+     "id": "R1",
+     "check": "egress_recipients",
+     "tool": "send_message",
+     "arg": "to",
+     "allow_domains": [
+      "vendor.example"
+     ],
+     "on_violation": "block",
+     "reason": "x"
+    }
+   ],
+   "call": {
+    "name": "send_message",
+    "arguments": {
+     "to": "//[vendor.example",
+     "subject": "s",
+     "body": "b"
+    }
+   },
+   "expected": {
+    "action": "block",
+    "rule": "R1"
+   }
+  },
+  {
    "name": "citations: supported and cited",
    "kind": "final",
    "rules": [
