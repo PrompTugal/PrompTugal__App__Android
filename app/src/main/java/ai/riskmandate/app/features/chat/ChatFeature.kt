@@ -3,15 +3,46 @@ package ai.riskmandate.app.features.chat
 import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
+import ai.riskmandate.app.features.HoldIdleWhile
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import java.io.File
 
-/** Placeholder: the owning session replaces this file's contents (keep the object name and id). */
+object ChatTags {
+    const val BADGE = "chat_badge"
+    const val INPUT = "chat_input"
+    const val SEND = "chat_send"
+    const val STOP = "chat_stop"
+    const val NEW = "chat_new"
+    const val HISTORY = "chat_history"
+    const val CLEAR = "chat_clear"
+    const val CLEAR_CONFIRM = "chat_clear_confirm"
+    const val MESSAGES = "chat_messages"
+    const val STATS = "chat_stats"
+    const val NO_MODEL = "chat_no_model"
+    const val SAVE_ERROR = "chat_save_error"
+    fun message(index: Int) = "chat_message_$index"
+    fun preset(id: String) = "chat_preset_$id"
+    fun model(id: String) = "chat_model_$id"
+    fun conversation(index: Int) = "chat_conversation_$index"
+    fun link(index: Int) = "chat_link_$index"
+}
+
+/** The model service chat talks to. Until dev.llm's `LlmService` is wired in, this is [NoLlm] (the empty state). */
+val LocalChatLlm = compositionLocalOf<ChatLlm> { NoLlm }
+
+/** Where history is kept. Null (the default) means the app-private file; tests provide a memory store. */
+val LocalChatStore = compositionLocalOf<ChatHistoryStore?> { null }
+
+/**
+ * Feature H: chat with the on-device model. Off until it works end to end on the tablet (Dinis checks).
+ * Model output is drawn as plain text only; the one thing taken from it is riskmandate.ai links that pass
+ * `Links.isAllowed`, offered as buttons the user taps.
+ */
 object ChatFeature : Feature {
     override val id = "chat"
     override val title = R.string.feature_chat_title
@@ -19,6 +50,17 @@ object ChatFeature : Feature {
 
     @Composable
     override fun Content(context: FeatureContext) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(title)) }
+        val android = LocalContext.current
+        val llm = LocalChatLlm.current
+        val provided = LocalChatStore.current
+        val scope = rememberCoroutineScope()
+        val controller = remember(llm, provided) {
+            val store = provided ?: FileChatHistoryStore(File(android.applicationContext.filesDir, "feature_chat"))
+            ChatController(llm, store, scope)
+        }
+        LaunchedEffect(controller) { controller.start() }
+        // Generation can take a while: do not let stand mode's idle reset wipe the chat mid-answer.
+        context.HoldIdleWhile(controller.state.generating)
+        ChatScreen(controller)
     }
 }
