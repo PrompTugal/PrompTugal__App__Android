@@ -47,6 +47,26 @@ class ModelBenchScreenTest {
         assertTrue(ModelFiles.adbDir(app, 30) != null)
     }
 
+    @Test fun aModelInstalledByFeatureGOffersTheBenchOnARelease() {
+        assertFalse(ModelFiles.benchAvailable(app, debuggable = false))
+        val dir = ModelFiles.internalDir(app).apply { mkdirs() }
+        File(dir, "notes.txt").writeText("x")
+        File(dir, ModelCatalog.GEMMA4_E2B.fileName + ".part").writeBytes(ByteArray(4))
+        assertFalse("a partial download or another file does not count", ModelFiles.benchAvailable(app, debuggable = false))
+        File(dir, ModelCatalog.GEMMA4_E2B.fileName).writeBytes(ByteArray(1))
+        assertTrue(ModelFiles.benchAvailable(app, debuggable = false))
+    }
+
+    @Test fun theBenchListsAndOffersTheInternalFile() {
+        val dir = ModelFiles.internalDir(app).apply { mkdirs() }
+        File(dir, ModelCatalog.GEMMA4_E4B.fileName).writeBytes(ByteArray(16))
+        show()
+        waitFor(ModelsTags.model(ModelCatalog.GEMMA4_E4B.id))
+        compose.onNodeWithTag(ModelsTags.model(ModelCatalog.GEMMA4_E4B.id)).assertTextContains("(installed by Model setup)", substring = true)
+        compose.onNodeWithTag(ModelsTags.RUN).assertIsEnabled()
+        assertEquals(dir, ModelFiles.find(app).single().file.parentFile)
+    }
+
     @Test fun benchEntryOnlyWithAModelInTheBenchFolderOrOnADebugBuild() {
         val debuggable = app.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
         assertEquals("the plain overload follows the build's debuggable flag", debuggable, ModelFiles.benchAvailable(app))

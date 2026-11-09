@@ -54,6 +54,20 @@ class ModelFilesTest {
         assertEquals(a, found[0].file.parentFile)
     }
 
+    @Test fun verifyOnceTrustsAValidMarkerAndRehashesOtherwise() {
+        val bytes = ByteArray(2048) { 5 }
+        val spec = specFor(bytes)
+        val file = tmp.newFile("m.litertlm").apply { writeBytes(bytes) }
+        var hashed = 0
+        assertEquals(Verdict.OK, ModelFiles.verifyOnce(file, spec) { hashed++ })
+        val first = hashed
+        assertEquals(Verdict.OK, ModelFiles.verifyOnce(file, spec) { hashed++ })
+        assertEquals("a valid marker skips the hash", first, hashed)
+        ModelFiles.markerFile(file).writeText("tampered")
+        assertEquals(Verdict.OK, ModelFiles.verifyOnce(file, spec) { hashed++ })
+        assertTrue("a bad marker means a full hash", hashed > first)
+    }
+
     @Test fun adbCommandNamesTheExactFileAndFolder() = assertEquals(
         "adb push gemma-4-E2B-it.litertlm /sdcard/Android/data/ai.riskmandate.app/files/models/",
         ModelFiles.adbCommand(ModelCatalog.GEMMA4_E2B, "/sdcard/Android/data/ai.riskmandate.app/files/models"),
