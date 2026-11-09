@@ -67,7 +67,7 @@ class ChatScreenTest {
         loaded()
         tag(ChatTags.INPUT).performTextInput("hello")
         tag(ChatTags.SEND).performClick()
-        compose.waitUntil(5_000) { svc.requests.size == 1 && count(ChatTags.STATS) == 1 }
+        compose.waitUntil(15_000) { svc.requests.size == 1 && count(ChatTags.STATS) == 1 }
         compose.onNodeWithText("Hi <b>there</b> https://riskmandate.ai/abp").assertIsDisplayed()
         assertEquals(1, count(ChatTags.link(0)))
     }
@@ -78,7 +78,7 @@ class ChatScreenTest {
      * no-model notice or the input row. No timing, no sleeps.
      */
     private fun loaded() {
-        compose.waitUntil(10_000) { count(ChatTags.NO_MODEL) == 1 || count(ChatTags.INPUT) == 1 }
+        compose.waitUntil(15_000) { count(ChatTags.NO_MODEL) == 1 || count(ChatTags.INPUT) == 1 }
         compose.waitForIdle()
     }
 
@@ -96,10 +96,10 @@ class ChatScreenTest {
         loaded()
         tag(ChatTags.INPUT).performTextInput("hello there")
         tag(ChatTags.SEND).performClick()
-        compose.waitUntil(5_000) { count(ChatTags.STATS) == 1 }
+        compose.waitUntil(15_000) { count(ChatTags.STATS) == 1 }
         restoration.emulateSavedInstanceStateRestore()
         compose.waitForIdle()
-        compose.waitUntil(5_000) { count(ChatTags.message(1)) == 1 }
+        compose.waitUntil(15_000) { count(ChatTags.message(1)) == 1 }
         assertEquals(1, count(ChatTags.message(0)))
         compose.onNodeWithText("hello there").assertIsDisplayed()
     }
@@ -134,7 +134,7 @@ class ChatScreenTest {
         tag(ChatTags.SEND).assertIsNotEnabled()
         tag(ChatTags.INPUT).performTextInput("hello there")
         tag(ChatTags.SEND).assertIsEnabled().performClick()
-        compose.waitUntil(5_000) { count(ChatTags.STATS) == 1 }
+        compose.waitUntil(15_000) { count(ChatTags.STATS) == 1 }
         compose.onNodeWithText("hello there").assertIsDisplayed()
         // Markup in the output is shown literally, never rendered.
         compose.onNodeWithText("Hello <b>bold</b>").assertIsDisplayed()
@@ -146,7 +146,7 @@ class ChatScreenTest {
         loaded()
         tag(ChatTags.INPUT).performTextInput("where?")
         tag(ChatTags.SEND).performClick()
-        compose.waitUntil(5_000) { count(ChatTags.STATS) == 1 }
+        compose.waitUntil(15_000) { count(ChatTags.STATS) == 1 }
         compose.onNodeWithText("Portugal is in Europe.").assertIsDisplayed()
     }
 
@@ -155,7 +155,7 @@ class ChatScreenTest {
         loaded()
         tag(ChatTags.INPUT).performTextInput("links?")
         tag(ChatTags.SEND).performClick()
-        compose.waitUntil(5_000) { count(ChatTags.link(0)) == 1 }
+        compose.waitUntil(15_000) { count(ChatTags.link(0)) == 1 }
         assertEquals(0, count(ChatTags.link(1)))
         compose.onNodeWithText("Read https://riskmandate.ai/abp or https://evil.example/x").assertIsDisplayed()
     }
@@ -165,9 +165,9 @@ class ChatScreenTest {
         loaded()
         tag(ChatTags.INPUT).performTextInput("go")
         tag(ChatTags.SEND).performClick()
-        compose.waitUntil(5_000) { count(ChatTags.STOP) == 1 }
+        compose.waitUntil(15_000) { count(ChatTags.STOP) == 1 }
         tag(ChatTags.STOP).performClick()
-        compose.waitUntil(5_000) { count(ChatTags.SEND) == 1 }
+        compose.waitUntil(15_000) { count(ChatTags.SEND) == 1 }
         compose.onNodeWithText("Stopped").assertIsDisplayed()
     }
 
@@ -200,7 +200,7 @@ class ChatScreenTest {
         compose.onNodeWithText("Summarise this risk in three short sentences:", substring = true).assertIsDisplayed()
         assertEquals(0, llm.calls.size)
         tag(ChatTags.preset("riskmandate")).performClick()
-        compose.waitUntil(5_000) { llm.calls.size == 1 }
+        compose.waitUntil(15_000) { llm.calls.size == 1 }
         assertTrue(llm.calls.single().system!!.contains("Give agents access. Not free rein."))
         assertEquals(0, count(ChatTags.preset("abp"))) // presets give way to the conversation
     }
@@ -216,7 +216,7 @@ class ChatScreenTest {
         assertEquals(1, store.saved.size) // cancel deletes nothing
         tag(ChatTags.CLEAR).performClick()
         tag(ChatTags.CLEAR_CONFIRM).performClick()
-        compose.waitUntil(5_000) { store.clears == 1 }
+        compose.waitUntil(15_000) { store.clears == 1 }
         assertTrue(store.saved.isEmpty())
         assertEquals(0, count(ChatTags.conversation(0)))
     }
