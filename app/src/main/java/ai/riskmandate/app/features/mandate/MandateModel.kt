@@ -34,7 +34,7 @@ data class ReachItem(
 }
 
 /** Why the mandate allows an item. Mapped to a string resource in the UI, so the reasons are translated. */
-enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE }
+enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE, SITE_VIEW }
 
 data class MandateEntry(val kind: ReachKind, val id: String, val reason: Reason) {
     val key: String get() = "${kind.name.lowercase()}:$id"
@@ -69,6 +69,9 @@ data class Mandate(
                 MandateEntry(ReachKind.PERMISSION, "android.permission.ACCESS_NETWORK_STATE", Reason.OFFLINE_HINT),
                 MandateEntry(ReachKind.PERMISSION, "$packageName.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION", Reason.INTERNAL_GUARD),
                 MandateEntry(ReachKind.COMPONENT, "$packageName.MainActivity", Reason.LAUNCHER),
+                // The in-app site view (feature "site") loads riskmandate.ai itself: exactly these two hosts.
+                MandateEntry(ReachKind.NETWORK, "connects:${HOSTS[0]}", Reason.SITE_VIEW),
+                MandateEntry(ReachKind.NETWORK, "connects:${HOSTS[1]}", Reason.SITE_VIEW),
                 // Storage the summit features may keep, on this device only. None exists until the feature is used.
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/stand_mode.xml", Reason.STAND_SETTINGS),
                 MandateEntry(ReachKind.STORAGE, "app_webview", Reason.SITE_STORAGE),
@@ -81,6 +84,14 @@ data class Mandate(
         )
     }
 }
+
+/**
+ * Network the app makes itself: when the in-app site view is on, the app (not the browser) connects to the
+ * allowed riskmandate.ai hosts. Computed from which features are enabled; pages opened in the user's browser
+ * are the browser's traffic and are not counted.
+ */
+fun networkReach(enabledFeatureIds: Set<String>): List<ReachItem> =
+    if ("site" in enabledFeatureIds) Mandate.HOSTS.map { ReachItem(ReachKind.NETWORK, "connects:$it") } else emptyList()
 
 /** The comparison. [reach] and [mandate] are inputs; the gap is derived and never stored by hand. */
 data class MandateReport(val reach: List<ReachItem>, val mandate: Mandate) {

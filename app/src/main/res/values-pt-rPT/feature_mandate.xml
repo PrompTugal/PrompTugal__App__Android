@@ -37,7 +37,6 @@
     <string name="mandate_mandate_probe_heading">A lista de permitidos, testada agora em endereços de exemplo</string>
     <string name="mandate_probe_allowed">%1$s: permitido</string>
     <string name="mandate_probe_refused">%1$s: recusado</string>
-    <string name="mandate_mandate_data">Dados recolhidos: nenhuns. Nada sai do dispositivo a partir desta app (respostas de Segurança dos dados da Play, 8 de novembro de 2026).</string>
     <string name="mandate_mandate_managed">Configuração gerida que a app lê (definida por uma organização, nunca enviada para lado nenhum)</string>
     <string name="mandate_managed_value">%1$s: %2$s</string>
     <string name="mandate_managed_unset">não definido</string>
@@ -54,6 +53,11 @@
     <string name="mandate_reason_stand_settings">as duas definições do modo expositor (ligado ou desligado, minutos de inatividade), só neste dispositivo</string>
     <string name="mandate_reason_site_storage">armazenamento web da vista riskmandate.ai dentro da app, só neste dispositivo</string>
     <string name="mandate_reason_site_cache">cache da vista riskmandate.ai dentro da app; o Android pode limpá-la</string>
+
+    <string name="mandate_mandate_data">Dados recolhidos pela app: nenhuns. Não tem análises, contas nem identificadores. O único tráfego de rede é o carregamento de páginas de riskmandate.ai, no seu navegador ou na vista dentro da app.</string>
+    <string name="mandate_connects">Esta app liga-se a: %1$s (a vista do site dentro da app)</string>
+    <string name="mandate_connects_none">Esta app não se liga a nada por si própria. As páginas abrem no seu navegador, que faz a sua própria ligação.</string>
+    <string name="mandate_reason_site_view">a vista riskmandate.ai dentro da app carrega páginas deste anfitrião</string>
 
     <string name="mandate_gap_heading">Lacuna: alcance menos mandato</string>
 </resources>

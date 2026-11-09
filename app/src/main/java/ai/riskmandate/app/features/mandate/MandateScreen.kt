@@ -82,6 +82,9 @@ private fun ReachSection(state: MandateState) {
         comps.forEach { Line(componentText(it), mono = true, tag = MandateTags.reachItem(it.key)) }
 
         SubHeading(stringResource(R.string.mandate_reach_network))
+        val connects = reach.filter { it.kind == ReachKind.NETWORK && it.id.startsWith("connects:") }
+        if (connects.isEmpty()) Line(stringResource(R.string.mandate_connects_none))
+        connects.forEach { Line(stringResource(R.string.mandate_connects, it.id.removePrefix("connects:")), mono = true, tag = MandateTags.reachItem(it.key)) }
         Line(
             if (reach.any { it.key == "network:cleartext" }) stringResource(R.string.mandate_cleartext_on)
             else stringResource(R.string.mandate_cleartext_off),
@@ -147,7 +150,9 @@ private fun GapSection(report: MandateReport) {
 private fun reachText(item: ReachItem): String = when (item.kind) {
     ReachKind.PERMISSION -> permissionText(item)
     ReachKind.COMPONENT -> componentText(item)
-    ReachKind.NETWORK -> stringResource(R.string.mandate_cleartext_on)
+    ReachKind.NETWORK ->
+        if (item.id.startsWith("connects:")) stringResource(R.string.mandate_connects, item.id.removePrefix("connects:"))
+        else stringResource(R.string.mandate_cleartext_on)
     ReachKind.STORAGE -> storageText(item)
 }
 
@@ -184,6 +189,7 @@ private fun reasonRes(reason: Reason): Int = when (reason) {
     Reason.STAND_SETTINGS -> R.string.mandate_reason_stand_settings
     Reason.SITE_STORAGE -> R.string.mandate_reason_site_storage
     Reason.SITE_CACHE -> R.string.mandate_reason_site_cache
+    Reason.SITE_VIEW -> R.string.mandate_reason_site_view
 }
 
 @Composable

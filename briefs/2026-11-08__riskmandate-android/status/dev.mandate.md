@@ -24,6 +24,9 @@ Waiting for conductor review. design.android's shared components have not landed
   - A-man-7: `ManagedConfig.KEY_*` instead of literals.
   - A-man-5 not done: `Links.ALLOWED_HOSTS` is private (not my file). See "For app".
 
+- Fourth round (security R-site-1): the "nothing leaves the device" sentence is gone. Network the app makes itself is now computed: `networkReach(enabledFeatureIds)` adds `connects:riskmandate.ai` and `connects:www.riskmandate.ai` as reach exactly when the `site` feature is enabled in `FEATURES`; the mandate allows those two hosts (reason: the in-app site view) and nothing else, so a connection to any other host would show as gap (tested). With site off the screen says the app connects to nothing itself (pages open in the browser, which makes its own connection). The data line now reads "Data collected by the app: none. It has no analytics, accounts or identifiers. The only network traffic is loading riskmandate.ai pages, in your browser or in the in-app view." (en and pt-PT).
+- design's `ui/FeatureContent` is on `work/design`, not yet on `dev`; I will adopt it once it merges.
+
 ## Vocabulary (riskmandate.ai, https://riskmandate.ai/, read 9 Nov 2026)
 - Reach: "Everything the agent can actually access in this deployment, including what nobody thought to check."
 - Mandate: "The job, written down: what the business authorised it to do."

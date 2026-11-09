@@ -10,8 +10,8 @@ import java.io.File
 
 /** Reads this app's reach from the device: PackageManager, the application flags and its own storage. */
 object ReachCollector {
-    /** Never throws: on failure the reach is what could be read (an empty list if PackageManager fails). */
-    fun collect(context: Context): List<ReachItem> {
+    /** [enabledFeatureIds]: the features that are on, to know whether the app itself connects anywhere. Never throws: on failure the reach is what could be read (an empty list if PackageManager fails). */
+    fun collect(context: Context, enabledFeatureIds: Set<String> = emptySet()): List<ReachItem> {
         val pm = context.packageManager
         val info = packageInfo(pm, context.packageName) ?: return emptyList()
         return buildList {
@@ -24,6 +24,7 @@ object ReachCollector {
             if (appFlags and ApplicationInfo.FLAG_ALLOW_BACKUP != 0) {
                 add(ReachItem(ReachKind.STORAGE, "backup"))
             }
+            addAll(networkReach(enabledFeatureIds))
             addAll(storage(context))
         }
     }

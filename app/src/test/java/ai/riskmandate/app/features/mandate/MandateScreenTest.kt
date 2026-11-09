@@ -60,14 +60,14 @@ class MandateScreenTest {
 
     @Test fun noGapIsSaidPlainly() {
         show(state(cleanReach))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 4, mandate 7, gap 0")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 4, mandate 9, gap 0")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Gap: none. Everything this app can reach, its mandate needs.")
     }
 
     @Test fun aGapIsShownPlainlyWithItsItems() {
         show(state(cleanReach + dump))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 5, mandate 7, gap 1")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 5, mandate 9, gap 1")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Gap: 1. This app can reach things its mandate does not need:")
         compose.onNodeWithTag(MandateTags.gapItem(dump.key)).performScrollTo().assertIsDisplayed()
@@ -80,8 +80,20 @@ class MandateScreenTest {
         compose.onNodeWithText("Everything the agent can actually access", substring = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("https://riskmandate.ai/: allowed").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("http://riskmandate.ai/: refused").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Data collected: none", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Data collected by the app: none", substring = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Storage used: none", substring = true).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun showsWhatTheAppConnectsTo() {
+        show(state(cleanReach))
+        compose.onNodeWithText("connects to nothing itself", substring = true).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun showsTheInAppSiteViewConnectionsWhenSiteIsOn() {
+        show(state(cleanReach + networkReach(setOf("site"))))
+        compose.onNodeWithTag(MandateTags.reachItem("network:connects:riskmandate.ai")).performScrollTo().assertIsDisplayed()
+            .assertTextContains("riskmandate.ai", substring = true)
+        compose.onNodeWithTag(MandateTags.GAP_STATUS).assertTextEquals("Gap: none. Everything this app can reach, its mandate needs.")
     }
 
     @Test fun showsRefusedManagedStartUrl() {
@@ -92,10 +104,10 @@ class MandateScreenTest {
     @Test @Config(qualifiers = "pt-rPT")
     fun portugueseOnAPortugueseDevice() {
         show(state(cleanReach + dump))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Alcance 5, mandato 7, lacuna 1")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Alcance 5, mandato 9, lacuna 1")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Lacuna: 1. Esta app consegue alcançar coisas de que o seu mandato não precisa:")
-        compose.onNodeWithText("Dados recolhidos: nenhuns", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Dados recolhidos pela app: nenhuns", substring = true).performScrollTo().assertIsDisplayed()
     }
 
     @Test fun layoutSurvives200PercentFontScale() {

@@ -64,6 +64,16 @@ class MandateModelTest {
         assertEquals(listOf(stray), MandateReport(cleanReach + mandated + stray, mandate).gap)
     }
 
+    @Test fun siteViewConnectionsAreReachOnlyWhenSiteIsOn_andMandated() {
+        assertEquals(emptyList<ReachItem>(), networkReach(setOf("abpdemo", "mandate")))
+        val site = networkReach(setOf("site", "mandate"))
+        assertEquals(listOf("connects:riskmandate.ai", "connects:www.riskmandate.ai"), site.map { it.id })
+        assertTrue(MandateReport(cleanReach + site, mandate).gapIsEmpty)
+        // A connection to any other host would be gap.
+        val other = ReachItem(ReachKind.NETWORK, "connects:example.com")
+        assertEquals(listOf(other), MandateReport(cleanReach + site + other, mandate).gap)
+    }
+
     @Test fun sameIdOfAnotherKindIsNotCovered() {
         // An exported component named like a mandated permission is not covered by it.
         val lookalike = activity("android.permission.INTERNET")
@@ -81,7 +91,7 @@ class MandateModelTest {
 
     @Test fun mandateEntriesNothingUsesAreReportedAsUnused() {
         val report = MandateReport(cleanReach.take(2), mandate)
-        assertEquals(5, report.unused.size)
+        assertEquals(7, report.unused.size)
         assertTrue(report.unused.any { it.id.endsWith("MainActivity") })
     }
 
