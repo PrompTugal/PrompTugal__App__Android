@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 75 (9 Nov 2026): dev.chat 531ced4 PASS (KeystoreCipherTest on a real Keystore, to be seen passing in CI), release a4aeb01 PASS, editor 1d6108e PASS as a draft only (R-art-8, 9, 10 before it is published). Waiting for: the key screen and host wiring (checklist M), the emulator run of KeystoreCipherTest. Still open: the design-pass article, R-lab-11, R-app-2, Dinis asks for the cloud key.
+> Round 76 (9 Nov 2026): dev.chat 358bb02 PASS (R-cloud-4, 5, 6 fixed in code; the reset caller must be a confirmed staff action), dev.llm ece34c4 PASS, dev.lab b6d21de PASS, qa fa95bc7 PASS (R-qa-3: planted-violation checks). Waiting for: the key screen and host wiring (checklist M), the emulator run of KeystoreCipherTest. Still open: the design-pass article, R-lab-11, R-app-2, Dinis asks for the cloud key.
 
 ## Doing
 Nothing. Stopped until woken.
