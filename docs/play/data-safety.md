@@ -2,6 +2,25 @@
 
 Draft answers for Dinis to enter, 8 November 2026. Nothing is submitted. I could read Google's Data safety help (answer 10787469) but not the Console forms (they need sign-in), so the questions below follow the form's structure and the help's definitions, not its exact wording. Re-check each against the live form.
 
+## Update 9 November 2026 (security R-stand-2): the in-app view and local storage change this file
+
+The table below was written for the app as it was on 8 November. Two features on branches not yet on `dev` (`work/dev.stand`, `work/dev.site`) change it. **Rows "No network code" and "No storage" below are superseded by this section.** Re-run the whole file against the merged code before any submission.
+
+What changes (from the branches' code, not from a build):
+- **Local storage (stand mode's SharedPreferences file `stand_mode`: on/off and idle minutes; What's new's last-seen version, per the conductor, not found in code I can see; the web view's cookies and cache).** Google's definition (https://support.google.com/googleplay/android-developer/answer/10787469, read 9 November 2026): "Collect" is transmitting data off the device; data "processed locally on the user's device and not sent off device" does not need disclosing. **So stored-but-never-sent items are not collection and need no Data safety entry.** They do need the privacy policy sentences (done: `privacy-policy.md`, "What stays on your device").
+- **The in-app view (a WebView) makes the app itself send web requests to riskmandate.ai.** Google, same page: "Data collected from a WebView opened from your app counts as collection if your app controls the WebView's code or behavior"; users browsing the open web are exempt. Our app controls this view (host allow-list, requests to other hosts blocked, settings fixed), so the exemption does not apply. Google also says to "disclose your collection, use, and sharing of IP addresses based on how you use them."
+- **What leaves the device:** an ordinary request to riskmandate.ai (hosted on GitHub Pages, per https://riskmandate.ai/privacy, 24 September 2026): "That host sees ... your IP address" in its words about web servers, and "We have no analytics dashboard, no log access and no way to see who read what." Other hosts are blocked; the Contact page (whose form posts to another host) is not in the view. The app adds no identifier and no analytics.
+
+**What I cannot settle from Google's pages: whether "No data collected" is still the right answer.** The request metadata (IP address, user agent) is transmitted off the device, to a host we chose, by a WebView we control. Google's text does not say whether an ordinary page load's IP address counts as collected data when we do not store, use or see it (GitHub is arguably a service provider under Google's definition, which excludes sharing but not collection), and I could not read the live form.
+
+| Option | Answer | Good | Bad |
+|---|---|---|---|
+| A. Keep "No data collected" | The app collects nothing; the host's request metadata is not used by us | Matches the intent and the page's claim of nothing measured | If Google's reviewers read the WebView rule strictly, a Data safety mismatch is a policy problem (Misrepresentation) |
+| B. Declare the IP address as the live form allows, with the purpose "app functionality" and "not shared", processing ephemeral if the form offers it | The store page shows data collected | Cannot be called a mismatch | Shows a collection line for an app that stores and uses nothing; a user-facing cost |
+| C. Do not ship the in-app view in the store build (keep the Custom Tab) | "No data collected" stays true | No question to answer | Drops the feature; the offline copy and the review-risk benefit (`minimal-functionality.md`) go too |
+
+I recommend **asking the live form first** (Dinis, Console), because its wording decides it, and until then not claiming "No data collected" in any text. The listing line is marked TODO. The decision is Dinis's.
+
 ## How the answers were reached
 
 Google's definition (verified): "Collect" means transmitting data from your app off a user's device, including data sent by libraries and SDKs. Data from a webview the developer controls counts too; a page the user navigates on the open web does not. The app does none of these:
@@ -9,9 +28,9 @@ Google's definition (verified): "Collect" means transmitting data from your app 
 | Check | Evidence |
 |---|---|
 | Permissions | `app/src/main/AndroidManifest.xml` declares only `android.permission.INTERNET` and `android.permission.ACCESS_NETWORK_STATE` (both normal permissions; the second is used by `Browser.isOffline` only to read whether a network with internet capability exists, for an offline hint; nothing is sent). The `<queries>` entry (Custom Tabs service intent) is package visibility, not a permission. |
-| No network code | No `HttpURLConnection`, OkHttp, Retrofit, WebView or socket use in `app/src/main`. The only outward act is handing a URL to the browser: `Browser.kt` (`CustomTabsIntent.launchUrl`, or `Intent.ACTION_VIEW`). The app opens riskmandate.ai in the user's browser, which is the browser's traffic, not the app's. No WebView exists, so Google's webview clause does not apply. |
+| No network code (SUPERSEDED, see the update above) | No `HttpURLConnection`, OkHttp, Retrofit, WebView or socket use in `app/src/main`. The only outward act is handing a URL to the browser: `Browser.kt` (`CustomTabsIntent.launchUrl`, or `Intent.ACTION_VIEW`). The app opens riskmandate.ai in the user's browser, which is the browser's traffic, not the app's. No WebView exists, so Google's webview clause does not apply. |
 | No SDKs | `app/build.gradle.kts` dependencies: AndroidX (core, activity, lifecycle, browser), Compose and Material 3, plus test libraries. No Firebase, analytics, ads, crash reporting or Google Play services library. (Firebase App Distribution is a CI delivery step, not in the app.) |
-| No storage | Search of `app/src/main` found no SharedPreferences, DataStore, database, file writing or logging. The app reads managed configuration and device state at runtime and holds them in memory (`MainActivity.kt`). |
+| No storage (SUPERSEDED, see the update above) | Search of `app/src/main` found no SharedPreferences, DataStore, database, file writing or logging. The app reads managed configuration and device state at runtime and holds them in memory (`MainActivity.kt`). |
 | No backup | `android:allowBackup="false"` and `res/xml/data_extraction_rules.xml` exclude the app's data from cloud backup and device transfer. |
 | Encryption in transit | `network_security_config.xml` and `usesCleartextTraffic="false"`: cleartext is off; `Links.kt` accepts only `https://` on riskmandate.ai and www.riskmandate.ai. The app transmits nothing itself. |
 | Accounts | None: no sign-in code exists. |
