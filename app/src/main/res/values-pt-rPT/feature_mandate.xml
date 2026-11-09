@@ -71,6 +71,6 @@
     <string name="mandate_reason_models_adb">ficheiros de modelos de linguagem postos na pasta da própria app no armazenamento partilhado (por exemplo com adb), nunca copiados para a nuvem</string>
     <string name="mandate_reason_model_choice">que modelo de linguagem escolheu, só neste dispositivo</string>
     <string name="mandate_reason_model_download">só quando toca em Descarregar em Configurar modelo, para ir buscar um modelo aqui</string>
-    <string name="mandate_reason_workbench_log">o registo de execuções do Workbench: definições, números, os primeiros 200 caracteres de cada pedido e 300 de cada resposta, no máximo 500 execuções, só neste dispositivo, nunca copiado para a nuvem</string>
+    <string name="mandate_reason_workbench_log">o registo de execuções do Workbench: definições, números, os primeiros 200 caracteres de cada pedido e 300 de cada resposta; só neste dispositivo, nunca copiado para a nuvem; no máximo 500 execuções, e um ficheiro com mais de 4 MB é ignorado</string>
     <string name="mandate_gap_heading">Lacuna: alcance menos mandato</string>
 </resources>

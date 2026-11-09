@@ -1,6 +1,7 @@
 package ai.riskmandate.app.features.mandate
 
 import ai.riskmandate.app.llm.DownloadPolicy
+import ai.riskmandate.app.features.workbench.RunLogStore
 import ai.riskmandate.app.llm.ModelCatalog
 
 /**
@@ -105,7 +106,7 @@ data class Mandate(
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", Reason.RELEASES_SEEN),
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/feature_models.xml", Reason.MODEL_CHOICE),
                 MandateEntry(ReachKind.STORAGE, "no_backup/feature_chat", Reason.CHAT_HISTORY),
-                MandateEntry(ReachKind.STORAGE, "no_backup/feature_workbench", Reason.WORKBENCH_LOG),
+                MandateEntry(ReachKind.STORAGE, "no_backup/${RunLogStore.DIR}/${RunLogStore.FILE}", Reason.WORKBENCH_LOG),
             ) + modelFileEntries(),
             hosts = HOSTS,
             port = 443,
