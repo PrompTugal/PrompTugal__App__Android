@@ -4,6 +4,19 @@
  "synthetic": true,
  "kind": "made_up_tool",
  "title": "Does not invent a tool",
+ "judges": [
+  {
+   "layer": "code"
+  },
+  {
+   "layer": "local",
+   "prompt_ref": "tool-output"
+  },
+  {
+   "layer": "cloud",
+   "prompt_ref": "tool-output"
+  }
+ ],
  "cases": [
   {
    "id": "made-up-email",

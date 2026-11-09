@@ -17,6 +17,7 @@ The text protocol sentence the runner appends in `text` mode: the tools, one per
 
 ```
 { "format": "abp-tooltest/1", "version": "1", "synthetic": true, "kind": "right_tool", "title": "Picks the right tool",
+  "judges"?: [ { "layer": "code" }, { "layer": "local", "prompt_ref": "tool-output" }, { "layer": "cloud", "model"?: "<id>", "prompt_ref": "tool-output" } ],
   "cases": [ { "id", "tests", "system"?, "messages", "tools", "fake_tools", "checks", "max_steps"?, "reference"?, "wrong"?, "judges"? } ] }
 ```
 
@@ -27,7 +28,8 @@ The text protocol sentence the runner appends in `text` mode: the tools, one per
 - `fake_tools`: exactly one entry per offered tool, `{"returns": <any JSON>}` or `{"by": "<arg>", "table": {...}, "default": ...}`. A fake returns canned data. Its result goes back to the model as text (a string as it is, anything else as compact JSON), cut at 2,000 characters.
 - `max_steps` (default 3, at most 6): model turns allowed. A run ends when the model answers without calling a tool, or at the limit.
 - `reference` / `wrong`: scripted runs, `{"steps": [{"text": "...", "calls": [{"name", "arguments"}]}, ...]}`. The reference **must pass every check** and the wrong one **must fail at least one**. They are fixtures for testing an implementation of the checker: run both through yours.
-- `judges` (optional, for the judge layers): `{"ask": "<one question for a model judge about the output>", "expect": "pass" | "fail"}`, the verdict a correct judge gives for the reference run. The code checks stay the verdict; judges are recorded beside them and every disagreement is data.
+- File-level `judges[]` (optional): the layers the file's cases are judged by, at most one each of `code`, `local`, `cloud`. `code` takes no `model` and no `prompt_ref` (it is the checks, and it is authoritative); `local` and `cloud` need a `prompt_ref` (an id such as `tool-output`, or a path such as `prompts/judges/tool-output.json`) and may name a `model`. It is a declaration for any app that reads the file; this app judges with the bundled prompt of that id, and a layer only runs when the person turns it on.
+- Case-level `judges` (optional, for the judge layers): `{"ask": "<one question for a model judge about the output>", "expect": "pass" | "fail"}`, the verdict a correct judge gives for the reference run. The code checks stay the verdict; judges are recorded beside them and every disagreement is data.
 
 ## The checks
 
