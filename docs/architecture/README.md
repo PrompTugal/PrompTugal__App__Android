@@ -110,15 +110,17 @@ No new dependency without the architect's OK (in your status page, then in a rev
 ```kotlin
 interface LlmService {
     val state: StateFlow<LlmState>                 // NoModel, Loading, Ready(modelId), Failed(reason)
+    val installed: StateFlow<List<InstalledModel>> // id, displayName (chat's model picker)
     fun stream(request: LlmRequest): Flow<LlmEvent> // Token(text), ToolCallProposed(name, argsJson), Done(stats), Error
     suspend fun generate(request: LlmRequest): LlmResult = /* collects stream */
 }
-data class LlmRequest(val messages: List<LlmMessage>, val tools: List<ToolSpec> = emptyList(),
+data class LlmRequest(val modelId: String? = null /* null: the current model */, val system: String? = null,
+                      val messages: List<LlmMessage>, val tools: List<ToolSpec> = emptyList(),
                       val settings: Sampling = Sampling.DEFAULT, val maxTokens: Int = 512)
 ```
 - Cancellation is coroutine cancellation (the screen's scope ends, or Stop cancels the collecting job). No separate `cancel()` needed.
 - Inference runs on the service's own dispatcher; every call is main-safe.
-- `FeatureContext` gains `llm: LlmService? = null`: null when no model is installed or the host has no service yet. A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
+- `FeatureContext` gains `llm: LlmService? = null` (no feature-owned CompositionLocal for the model; the host must not import a feature package to provide one): null when no model is installed or the host has no service yet. A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
 
 ### Tool calls: the model proposes, code decides
 - The service **never executes** anything. It returns `ToolCallProposed(name, argsJson)`.
@@ -129,10 +131,10 @@ data class LlmRequest(val messages: List<LlmMessage>, val tools: List<ToolSpec> 
 ### Network, storage, privacy
 - Model downloads are the only new network destination: exact URLs and SHA-256 pinned in `llm/`, a list separate from `Links`. Verified before first load and after any copy; a mismatch deletes the file.
 - Download with `HttpURLConnection` and HTTP `Range` (resumable) in a coroutine while G's screen is open. **No** foreground service, WorkManager or `DownloadManager` without a new review: each brings a permission or a public directory.
-- Files: models in `filesDir/models/`, chat history in `filesDir/feature_chat/`. Both excluded from backup and device transfer (app owns `data_extraction_rules.xml` and `backup_rules.xml`). Mandate lists both with their own reasons, in the same merge.
+- Files: models in `noBackupFilesDir/models/`, chat history in `noBackupFilesDir/feature_chat/` (never backed up by construction). Both excluded from backup and device transfer (app owns `data_extraction_rules.xml` and `backup_rules.xml`). Mandate lists both with their own reasons, in the same merge.
 
 ### Dependencies for the side team
-- **Approved in principle:** LiteRT-LM's Android runtime from Google's Maven repository (maven.google.com), for `llm/` only. dev.llm names the exact coordinates and version in its status page. security runs the licence and OSV check, app adds the line and rebuilds the in-app licence list. llama.cpp through JNI only if LiteRT-LM blocks: say so first; it needs its own review (NDK build, native code).
+- **Approved:** `com.google.ai.edge.litertlm:litertlm-android:0.18.1` (Google Maven only, Apache 2.0), for `llm/` only. `-Xskip-metadata-version-check` is accepted for the summit only (dev.llm review A-llm-2: bump Kotlin, the Compose plugin and AGP afterwards and drop it); LiteRT-LM calls stay in `llm/`. dev.llm names the exact coordinates and version in its status page. security runs the licence and OSV check, app adds the line and rebuilds the in-app licence list. llama.cpp through JNI only if LiteRT-LM blocks: say so first; it needs its own review (NDK build, native code).
 - **No new dependency for JSON:** scenario files, tool arguments and chat history use `org.json` (part of Android) or a small hand-written parser. kotlinx-serialization (a compiler plugin) and Moshi/Gson are not approved without a reason.
 - **Chat storage:** one JSON file per conversation (or one file) under `filesDir/feature_chat/`, written off the main thread. Room is not approved; ask with a reason if a file is not enough.
 - **ViewModel:** not needed (the service is host-held). Ask before adding `lifecycle-viewmodel-compose`.
