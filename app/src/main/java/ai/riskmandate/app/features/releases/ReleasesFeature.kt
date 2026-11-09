@@ -7,6 +7,7 @@ import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -91,6 +93,17 @@ object ReleasesFeature : Feature {
     override val id = "releases"
     override val title = R.string.feature_releases_title
     override val enabled = true
+
+    /** "New" on the home button while this version's notes are unseen; read off the main thread. */
+    @Composable
+    @StringRes
+    override fun homeBadge(): Int? {
+        val appContext = LocalContext.current.applicationContext
+        val unseen by produceState(false) {
+            value = withContext(Dispatchers.IO) { ReleasesNotice.shouldOffer(appContext, BuildConfig.VERSION_CODE) }
+        }
+        return if (unseen) R.string.feature_releases_badge else null
+    }
 
     @Composable
     override fun Content(context: FeatureContext) {
