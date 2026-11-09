@@ -47,4 +47,5 @@
     <string name="chat_failed_no_model">Não há nenhum modelo instalado. Configure um em Modelos.</string>
     <string name="chat_failed_load">Não foi possível carregar o modelo. Tente de novo ou escolha um modelo mais pequeno em Modelos.</string>
     <string name="chat_failed_too_long">Esta conversa é demasiado longa para o modelo. Comece uma nova conversa.</string>
+    <string name="chat_badge_cloud">Nuvem: openrouter.ai</string>
 </resources>

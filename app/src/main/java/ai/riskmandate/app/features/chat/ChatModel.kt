@@ -121,16 +121,6 @@ object ChatPresets {
         Preset("triplets", R.string.chat_preset_triplets_title, R.string.chat_preset_triplets_prompt, PresetMode.SEND, null, false, R.string.chat_preset_triplets_note),
     )
 
-    /**
-     * On every request that has no preset text: who we are, in the page's own words, so "risk mandate" means the
-     * product and not the finance term. Small on purpose (prefill is slow on this chip). The two quoted sentences
-     * are verbatim from riskmandate.ai (a test checks them against the bundled text).
-     */
-    const val BASE_SYSTEM = "This is the RiskMandate app, running on this device. RiskMandate means the product at riskmandate.ai, " +
-        "not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" " +
-        "\"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, " +
-        "what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
-
     /** The instruction block for a grounded preset. Plain English: it is for the model, not shown. */
     fun system(groundingText: String): String =
         "Answer only from the text between the markers. If the text does not say, reply that you do not know. " +
