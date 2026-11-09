@@ -50,6 +50,8 @@ class ChatScreenshotTest {
                     }
                 }
             }
+            // start() loads on a real IO thread: wait for the loaded state, not just for idle.
+            compose.waitUntil(10_000) { compose.onAllNodesWithTag(ChatTags.NO_MODEL).fetchSemanticsNodes().size == 1 || compose.onAllNodesWithTag(ChatTags.INPUT).fetchSemanticsNodes().size == 1 }
             compose.waitForIdle()
             interact()
             compose.waitForIdle()

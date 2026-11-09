@@ -49,7 +49,7 @@ class ChatScreenTest {
 
     @Test fun nullServiceShowsTheNoModelStateWithOpenModels() {
         showWithService(null)
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.NO_MODEL).assertIsDisplayed()
         tag(ChatTags.OPEN_MODELS).performClick()
         assertEquals(listOf("models"), opened)
@@ -57,19 +57,29 @@ class ChatScreenTest {
 
     @Test fun noModelStateFromTheServiceShowsTheSameState() {
         showWithService(FakeLlmService(initial = LlmState.NoModel))
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.NO_MODEL).assertIsDisplayed()
     }
 
     @Test fun chatTalksToTheHostServiceAndShowsMarkupAsText() {
         val svc = FakeLlmService(reply = { FakeReply("Hi <b>there</b> https://riskmandate.ai/abp") })
         showWithService(svc)
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.INPUT).performTextInput("hello")
         tag(ChatTags.SEND).performClick()
         compose.waitUntil(5_000) { svc.requests.size == 1 && count(ChatTags.STATS) == 1 }
         compose.onNodeWithText("Hi <b>there</b> https://riskmandate.ai/abp").assertIsDisplayed()
         assertEquals(1, count(ChatTags.link(0)))
+    }
+
+    /**
+     * start() reads history on a real IO thread, which the compose test clock cannot see, so waitForIdle alone can
+     * return while the screen still says "looking for models". Wait for the loaded state itself: either the
+     * no-model notice or the input row. No timing, no sleeps.
+     */
+    private fun loaded() {
+        compose.waitUntil(10_000) { count(ChatTags.NO_MODEL) == 1 || count(ChatTags.INPUT) == 1 }
+        compose.waitForIdle()
     }
 
     private fun tag(t: String) = compose.onNodeWithTag(t)
@@ -83,7 +93,7 @@ class ChatScreenTest {
             val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null))
             CompositionLocalProvider(LocalChatStore provides store) { RiskMandateTheme { ChatContent(ctx, FakeChatLlm(pieces = listOf("An ", "answer."))) } }
         }
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.INPUT).performTextInput("hello there")
         tag(ChatTags.SEND).performClick()
         compose.waitUntil(5_000) { count(ChatTags.STATS) == 1 }
@@ -101,7 +111,7 @@ class ChatScreenTest {
 
     @Test fun showsTheOnDeviceBadgeAndNoModelState() {
         show(NoLlm)
-        compose.waitForIdle()
+        loaded()
         assertEquals(0, count(ChatTags.BADGE)) // "on device" is not claimed with no model installed
         tag(ChatTags.NETWORK).assertIsDisplayed()
         tag(ChatTags.NO_MODEL).assertIsDisplayed()
@@ -112,7 +122,7 @@ class ChatScreenTest {
 
     @Test fun badgeAndNetworkChipShowWithAModel() {
         show(FakeChatLlm())
-        compose.waitForIdle()
+        loaded()
         compose.onNodeWithText("Runs on this device").assertIsDisplayed() // never "offline" next to "Network: on"
         tag(ChatTags.BADGE).assertIsDisplayed()
         tag(ChatTags.NETWORK).assertIsDisplayed()
@@ -120,7 +130,7 @@ class ChatScreenTest {
 
     @Test fun typingSendingAndStreamingShowsPlainTextWithStats() {
         show(FakeChatLlm(pieces = listOf("Hel", "lo ", "<b>bold</b>")))
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.SEND).assertIsNotEnabled()
         tag(ChatTags.INPUT).performTextInput("hello there")
         tag(ChatTags.SEND).assertIsEnabled().performClick()
@@ -133,7 +143,7 @@ class ChatScreenTest {
 
     @Test fun boldMarkersAreNotShown() {
         show(FakeChatLlm(pieces = listOf("**Portugal** is in ", "__Europe__.")))
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.INPUT).performTextInput("where?")
         tag(ChatTags.SEND).performClick()
         compose.waitUntil(5_000) { count(ChatTags.STATS) == 1 }
@@ -142,7 +152,7 @@ class ChatScreenTest {
 
     @Test fun allowedLinksBecomeButtonsOthersStayText() {
         show(FakeChatLlm(pieces = listOf("Read https://riskmandate.ai/abp or https://evil.example/x")))
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.INPUT).performTextInput("links?")
         tag(ChatTags.SEND).performClick()
         compose.waitUntil(5_000) { count(ChatTags.link(0)) == 1 }
@@ -152,7 +162,7 @@ class ChatScreenTest {
 
     @Test fun stopButtonShowsWhileAnsweringAndEndsIt() {
         show(FakeChatLlm(pieces = List(1000) { "t" }, delayMs = 50))
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.INPUT).performTextInput("go")
         tag(ChatTags.SEND).performClick()
         compose.waitUntil(5_000) { count(ChatTags.STOP) == 1 }
@@ -163,19 +173,19 @@ class ChatScreenTest {
 
     @Test fun oneModelShowsAReadOnlyLabel() {
         show(FakeChatLlm())
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.MODEL_LABEL).assertIsDisplayed()
     }
 
     @Test fun modelPickerOnlyWithMoreThanOneModel() {
         show(FakeChatLlm(models = listOf(ChatModelInfo("only", "Only"))))
-        compose.waitForIdle()
+        loaded()
         assertEquals(0, count(ChatTags.model("only")))
     }
 
     @Test fun modelPickerShowsEveryInstalledModel() {
         show(FakeChatLlm(models = listOf(ChatModelInfo("a", "Model A"), ChatModelInfo("b", "Model B"))))
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.model("a")).assertIsDisplayed()
         tag(ChatTags.model("b")).assertIsDisplayed().performClick()
     }
@@ -183,7 +193,7 @@ class ChatScreenTest {
     @Test fun presetsGroundedFillAndDisabled() {
         val llm = FakeChatLlm()
         show(llm)
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.preset("triplets")).assertIsNotEnabled() // graph tools are not built yet
         // "Summarise a risk" fills the box and waits for the user's text.
         tag(ChatTags.preset("risk")).performClick()
@@ -198,7 +208,7 @@ class ChatScreenTest {
     @Test fun clearHistoryAsksFirstThenDeletes() {
         val store = MemoryChatHistoryStore(listOf(Conversation("old", listOf(ChatMessage(ChatRole.USER, "old chat")))))
         show(FakeChatLlm(), store)
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.HISTORY).performClick()
         tag(ChatTags.conversation(0)).assertIsDisplayed()
         tag(ChatTags.CLEAR).performClick()
@@ -214,13 +224,13 @@ class ChatScreenTest {
     @Test @Config(qualifiers = "pt-rPT")
     fun portugueseBadge() {
         show(FakeChatLlm())
-        compose.waitForIdle()
+        loaded()
         compose.onNodeWithText("Funciona neste dispositivo").assertIsDisplayed()
     }
 
     @Test fun largeFontStillReachesTheControls() {
         show(FakeChatLlm())
-        compose.waitForIdle()
+        loaded()
         tag(ChatTags.NEW).assertIsDisplayed()
         tag(ChatTags.INPUT).assertIsDisplayed()
     }
