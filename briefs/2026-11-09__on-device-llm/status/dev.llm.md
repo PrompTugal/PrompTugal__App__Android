@@ -3,7 +3,14 @@
 > Step 1 (bench) pushed: the bench in features/models, plus one separate commit with the host lines for app.android's review (LiteRT-LM 0.18.1, one compiler flag, an R8 keep rule, one manifest line, a Diagnostics "Model bench" button). Gate green. Next: Dinis runs it on the Idea Tab Plus. Third model: every small Google model is gated, Dinis's call (the conductor is asking him).
 
 ## Doing
-Waiting for Dinis's bench numbers from the tablet (Diagnostics > Model bench). Starting step 2 (`LlmService`, `LlmHost`) to architect's contract meanwhile.
+Step 2: the contract, `ToolSpec` and `FakeLlmService` are pushed (dev.chat and dev.lab can build on them now); next the LiteRT-LM implementation and `LlmHost`. Waiting for Dinis's bench numbers from the tablet.
+
+## Step 2: the LLM contract (for dev.chat, dev.lab, qa, architect)
+All in `app/src/main/java/ai/riskmandate/app/llm/`:
+- `LlmService.kt`: `interface LlmService { val state: StateFlow<LlmState>; fun stream(LlmRequest): Flow<LlmEvent>; suspend fun generate(LlmRequest): LlmResult }`. States `NoModel`, `Idle(modelId)` (installed, not in memory), `Loading`, `Ready(modelId, backend)`, `Failed`. Events `Token(text)`, `ToolCallProposed(name, argsJson)`, `Done(LlmStats)`, `Error(LlmError, message)`; every stream ends with exactly one Done or Error. `LlmRequest(messages, tools, settings = Sampling.DEFAULT, maxTokens = 512)`; messages `LlmMessage.system/user/assistant/toolResult`. Stateless: send the whole conversation each time. Cancel = stop collecting. Main-safe, one request at a time.
+- `ToolSpec.kt`: a tool declared in Kotlin (`ToolSpec(name, description, params)`, flat `ToolParam`s: string with max length and optional allowed values, integer, number, boolean). `checkToolCall(tools, proposal)` matches the name exactly against the feature's own list and checks arguments with `StrictJson` (flat object only; repeated keys, single quotes, unquoted words, nesting, trailing commas, text after the object, over 4096 characters: all rejected). Result `ToolCheck.Accepted(tool, typedArgs)` or `ToolCheck.Rejected(tool, reason)`; reasons never echo values. The service never runs a tool.
+- `FakeLlmService.kt` (in main, for previews and tests): scripted replies (`FakeReply(text, toolCalls, error)`), optional per-token delay (to test Stop), records requests, same one-at-a-time and cancellation rules.
+- Tests: `ToolSpecTest`, `FakeLlmServiceTest`.
 
 ## Done
 - **Runtime found**: `com.google.ai.edge.litertlm:litertlm-android` on maven.google.com (Apache-2.0). Chose **0.18.1**, the version Google AI Edge Gallery ships today with the same Gemma 4 files (latest is 0.19.1). Kotlin API: `Engine(EngineConfig(modelPath, Backend.GPU()/CPU(), maxNumTokens, cacheDir))`, `engine.initialize()`, `engine.createConversation(ConversationConfig(samplerConfig))`, `conversation.sendMessageAsync(text, maxOutputToken)` (a Flow of messages), `cancelProcess()`, `getBenchmarkInfo()` (prefill and decode tokens and tok/s, behind `ExperimentalFlags.enableBenchmark`). Tool calling exists too (`OpenApiTool`: a JSON schema string plus `execute`), which step 2 will use.
@@ -54,6 +61,7 @@ Carried on this branch, as conductor agreed, in one separate commit for your rev
 6. Size: the release APK goes from about 0.9 MB to **50 MB**, all of it `liblitertlm_jni.so` stored uncompressed for arm64-v8a (22 MB) and x86_64 (26 MB). AAB 24.8 MB; Play would split per ABI. `ndk { abiFilters += "arm64-v8a" }` would halve the APK, but release's x86_64 emulator smoke test could no longer install it. app and release decide.
 
 ## For architect
+- Step 2 contract pushed (above). Please add `llm: LlmService? = null` to `FeatureContext`; `LlmHost` (process-wide, lazy, unload on `onTrimMemory` and after idle, one request at a time) comes next, for app to hold and pass in. Small differences from your sketch: an extra `Idle(modelId)` state (installed but unloaded, so features can say "will load on first use"), and `LlmError` reasons on `Error`. Tool proposals are checked with a strict parser of mine, not org.json (org.json on Android is lenient: repeated keys overwrite, single quotes pass).
 - Review the dependency and `-Xskip-metadata-version-check` (above).
 - Storage: your page says `filesDir/models/`, security's G.3 says `noBackupFilesDir`. I used `noBackupFilesDir/models/` (never backed up, still app-private). Say if you want `filesDir/models/` instead.
 - Step 2 follows your contract (`LlmHost`, `state: StateFlow<LlmState>`, `stream(LlmRequest): Flow<LlmEvent>`, cancellation by coroutine, the service never executes tools).
