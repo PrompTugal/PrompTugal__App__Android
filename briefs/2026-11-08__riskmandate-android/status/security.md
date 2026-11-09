@@ -1,11 +1,12 @@
 # security.android status
 
-> Urgent review 9 Nov 2026 (about 01:50 UTC): release f0ee176 PASS (licence job, paths filter, per-job concurrency). work/editor appeared, no commits. Waiting for the next wake.
+> Round 11 (9 Nov 2026, about 02:10 UTC): dev.stand 0aa99c8 HOLD (PIN fast hash and in-memory lockout, privacy statements, backup rules); qa a2a49c6 PASS; release ab61ce0 PASS (Pages workflow); app 5afbb97 PASS. Waiting for the dev.stand fix and the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 11 reviews in `docs/security/reviews/`: `2026-11-09-dev.stand-0aa99c8.md` **HOLD** (R-stand-1 PIN is SHA-256 over 4 to 8 digits and the lockout resets on rotation or restart: use PBKDF2 and a persistent lockout, or drop the PIN; R-stand-2 the app now stores preferences, so privacy and Data safety statements must change in the same merge; R-stand-3 backup rules do not name the sharedpref domain). `2026-11-09-qa-a2a49c6.md` PASS (tests guard the allow-list, exported components and WebView settings). `2026-11-09-release-ab61ce0.md` PASS (website.yml: pins verified, pages/id-token on the deploy job only; R-site-1 restrict workflow_run to pushes from this repository, R-site-2 reviewer on github-pages, R-site-3 verify the domain). `2026-11-09-app-5afbb97.md` PASS (test only).
 - Urgent review `2026-11-09-release-f0ee176.md`: **PASS**. Licence gate still blocks the release (`needs: [check, licences]`) and no longer depends on a cold Gradle cache; the new job holds no secret; paths filter and concurrency checked. R-rel-8 (low): no CI runs for `devices/` or its policy tests; R-rel-9 (info): Gradle wrapper checksum.
 - Reviews `2026-11-09-app-2bbc37b.md` (PASS: host routing, FeatureFrame; stale saved routes now resolve to Home; no manifest or permission change) and `2026-11-09-architect-8ab334d.md` (PASS: docs; its WebView rules agree with my checklist; R-arch-1 restrict the asset loader to /feature_site/, R-arch-2 add SSL-cancel, no DownloadListener, safe browsing, cookie clearing).
 - Review `2026-11-09-play-fb617fd.md`: **PASS** (docs; R-play-7 info: a keyless Play route should use its own service account and condition).
@@ -32,6 +33,10 @@ At each wake: `git fetch origin`, review `origin/dev..origin/work/<role>` for ea
 Nothing.
 
 ## For other roles
+- dev.stand: R-stand-1 (PBKDF2, persistent lockout, or drop the PIN), then ask for a re-review.
+- play: R-stand-2, change the privacy policy, privacy.html, data-safety.md, listing.md (the app stores stand-mode settings and a salted PIN hash on the device only), merged with dev.stand.
+- app: R-stand-3 / R-app-1, exclude all backup domains explicitly in data_extraction_rules.xml.
+- release: R-site-1, restrict the workflow_run build to pushes from this repository.
 - release: R-rel-8, add a `devices` job (`node --test devices/test/*.test.mjs`, read-only, no secrets) on `devices/**` and pull requests.
 - dev.site, dev.stand, dev.mandate, dev.abpdemo, app: read `docs/security/summit-checklist.md` before pushing; a WebView JS bridge, file access, a PIN in the source or a new permission without the docs changed is a HOLD.
 - release: R-rel-6 (info), match the licence URL against known licence URLs instead of a substring.
@@ -47,6 +52,8 @@ Nothing.
 - conductor: `scripts/osv-check.sh` needs network to api.osv.dev; run it after `scripts/licences.sh` in the gate if wanted.
 
 ## For Dinis
+- Before the website goes live: verify promptugal.ai in GitHub for Pages, consider a required reviewer on the `github-pages` environment, allow `dev` in its deployment branches (R-site-2, R-site-3).
+- Stand mode: the staff PIN is a deterrent, not a security boundary (Android's own unpin gesture also exits). Decide if you want it at all for the summit.
 - WIF provider condition: use `assertion.repository_id`, `assertion.repository_owner_id`, `assertion.environment=='release'` and `assertion.ref=='refs/heads/dev'`; bind workloadIdentityUser to that one principalSet; give the service account only Firebase App Distribution Admin (R-wif-2 to R-wif-4). Set the `release` environment reviewer and deployment branch `dev` (A-2).
 - Work through `docs/security/github-settings.md`, above all section 3 (Environment `release` with you as required reviewer, secrets moved into it) and section 4 (secret scanning and push protection). Finding A-2 stays open until then.
 - Decisions in `docs/security/threat-model-m2.md`: screen lock, FRP, factory reset, a dedicated owner account with a security key for the enterprise.
