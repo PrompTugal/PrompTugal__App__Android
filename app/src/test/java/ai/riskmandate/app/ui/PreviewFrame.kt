@@ -26,7 +26,7 @@ internal fun PreviewFrame(
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(24.dp, 12.dp))
-            FeatureContent(Modifier.weight(1f), scrollable, maxContentWidth, content)
+            FeatureContent(Modifier.weight(1f), scrollable, maxContentWidth, content = content)
         }
     }
 }
