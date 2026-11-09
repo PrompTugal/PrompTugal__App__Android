@@ -8,6 +8,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.provider.Settings
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -95,18 +96,23 @@ class DiagnosticsTest {
         compose.onNodeWithTag(DiagnosticsTags.COPIED).assertTextContains("Copied", substring = true)
     }
 
-    @Test fun modelBenchButtonOpensTheBenchAndIsHiddenWithoutIt() {
-        var opened = 0
-        var withBench by mutableStateOf(true)
-        compose.setContent {
-            MaterialTheme {
-                DiagnosticsScreen(text = "x", onCopy = { true }, onModelBench = if (withBench) ({ opened++ }) else null)
-            }
-        }
+    @Test fun previewGroupListsEveryItemAndOpensTheRightOne() {
+        val opened = mutableListOf<String>()
+        var items by mutableStateOf(
+            listOf(
+                PreviewItem("models", R.string.home_licences) { opened += "models" },
+                PreviewItem("chat", R.string.home_diagnostics) { opened += "chat" },
+                PreviewItem("modelbench", R.string.diagnostics_model_bench) { opened += "bench" },
+            ),
+        )
+        compose.setContent { MaterialTheme { DiagnosticsScreen(text = "x", onCopy = { true }, preview = items) } }
+        compose.onNodeWithTag(DiagnosticsTags.PREVIEW).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(DiagnosticsTags.previewItem("models")).performScrollTo().performClick()
+        compose.onNodeWithTag(DiagnosticsTags.previewItem("chat")).performScrollTo().performClick()
         compose.onNodeWithTag(DiagnosticsTags.MODEL_BENCH).performScrollTo().performClick()
-        assertEquals(1, opened)
-        withBench = false
-        compose.onNodeWithTag(DiagnosticsTags.MODEL_BENCH).assertDoesNotExist()
+        assertEquals(listOf("models", "chat", "bench"), opened)
+        items = emptyList()
+        compose.onNodeWithTag(DiagnosticsTags.PREVIEW).assertDoesNotExist()
     }
 }
 
