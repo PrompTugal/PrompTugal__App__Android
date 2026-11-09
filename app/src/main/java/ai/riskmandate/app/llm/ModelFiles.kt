@@ -75,6 +75,26 @@ object ModelFiles {
         return Verdict.WRONG_HASH
     }
 
+    /**
+     * A marker beside a verified file, bound to its size, modification time and pinned hash (security G.3: never
+     * to the name alone). Any change to the file, or a new pin, invalidates it.
+     */
+    fun markerFile(file: File): File = File(file.parentFile, ".${file.name}.verified")
+
+    private fun markerText(file: File, spec: ModelSpec) = "${file.length()}:${file.lastModified()}:${spec.sha256}"
+
+    fun markVerified(file: File, spec: ModelSpec) = markerFile(file).writeText(markerText(file, spec))
+
+    fun isMarkedVerified(file: File, spec: ModelSpec): Boolean =
+        file.length() == spec.sizeBytes && markerFile(file).let { it.isFile && it.readText() == markerText(file, spec) }
+
+    /** [verify], skipped when a valid marker says this exact file was verified; writes the marker on success. */
+    fun verifyOnce(file: File, spec: ModelSpec, onProgress: (Int) -> Unit = {}): Verdict {
+        if (isMarkedVerified(file, spec)) return Verdict.OK
+        markerFile(file).delete()
+        return verify(file, spec, onProgress).also { if (it == Verdict.OK) markVerified(file, spec) }
+    }
+
     /** Lowercase hex SHA-256 of [input]. [total] (bytes expected) is only used for progress. */
     fun sha256(input: InputStream, total: Long = 0, onProgress: (Int) -> Unit = {}): String {
         val digest = MessageDigest.getInstance("SHA-256")
