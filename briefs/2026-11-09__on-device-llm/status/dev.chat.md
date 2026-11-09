@@ -25,6 +25,9 @@
 - Tests: QA's probe is now `ChatScreenTest.rotationKeepsTheOpenConversationOnScreen`; controller tests for reopen, save-before-answer and save-on-scope-cancel.
 - Q-chat-2 (wipe on a shared stand) is still Dinis's call: `ChatPolicy.WIPE_ON_LEAVE` stays false.
 
+## Q-chat-4 and Q-chat-5 (grounding texts verbatim)
+`res/raw/feature_chat_riskmandate.txt` and `feature_chat_abp.txt` now contain only the pages' own sentences (checked by script against the bundled offline copy, v1.40.3: every sentence found, table cells joined with " | "). Removed my line "Only a boundary is a control." and my paraphrases of the barrier kinds and the inventory/finding passage, which are now the page's wording in full.
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 
