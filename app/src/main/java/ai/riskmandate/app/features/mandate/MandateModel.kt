@@ -58,7 +58,7 @@ data class Mandate(
         val HOSTS = listOf("riskmandate.ai", "www.riskmandate.ai")
 
         /**
-         * The current mandate for [packageName]. The app opens riskmandate.ai in the user's browser (INTERNET),
+         * The current mandate for [packageName]. The app loads riskmandate.ai pages in its in-app view and opens them in the user's browser (INTERNET),
          * says plainly when it is offline (ACCESS_NETWORK_STATE), has one launcher screen, holds the one
          * signature-level permission AndroidX adds to guard the app's own dynamic receivers, and may keep stand
          * mode's two settings and the in-app view's own web storage and cache. Nothing else.
