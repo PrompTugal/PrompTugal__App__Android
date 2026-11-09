@@ -4,8 +4,6 @@ import ai.riskmandate.app.Browser
 import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -16,7 +14,7 @@ object SiteFeature : Feature {
     override val id = "site"
     override val title = R.string.feature_site_title
     override val enabled = true
-    override val icon = Icons.Filled.Info
+    // No icon: design's ruling (docs/design/android-theme.md, Icons), the host's id-based line icon applies.
     override val kicker = R.string.feature_site_kicker
     override val summary = R.string.feature_site_summary
 

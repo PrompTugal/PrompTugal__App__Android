@@ -18,7 +18,7 @@ Waiting for the conductor's merge and for design.android's `ui/` components.
 - 31 tests under `app/src/test/.../features/site/`: URL decision (in-app vs external, 40 cases), sub-resource block, offline page lookup, the offline switch, a Robolectric render of the screen (online, offline banner, try online, back), the client's navigation and intercept behaviour, WebView settings, no hardcoded text.
 - Gate `./gradlew testDebugUnitTest lintDebug assembleRelease bundleRelease`: green (195 tests, 0 failures, 0 lint errors; APK 1.1 MB unsigned, AAB 2.4 MB). `scripts/secret-scan.sh`: clean.
 
-- P7 (Home card and sidebar): `icon` = `Icons.Filled.Info` (material-icons-core; `Public` is in extended, not allowed), `kicker` "riskmandate.ai", `summary` one line, en and pt-PT, no em-dashes, no claim beyond what the feature does.
+- P7 (Home card and sidebar): `icon` left null (design's ruling, docs/design/android-theme.md "Icons": the host's id-based line icon applies), `kicker` "riskmandate.ai", `summary` one line, en and pt-PT, no em-dashes, no claim beyond what the feature does.
 
 ## Next
 - Swap the plain chrome for design.android's components when they land.

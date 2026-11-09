@@ -70,6 +70,6 @@
     <string name="mandate_reason_models">language model files kept inside the app, on this device only, never backed up</string>
     <string name="mandate_reason_models_adb">language model files put in the app\'s own folder on shared storage (for example with adb), never backed up</string>
     <string name="mandate_reason_model_choice">which language model you chose, on this device only</string>
-    <string name="mandate_reason_model_download">the model setup\'s Download button fetches a model from here, only when you tap it</string>
+    <string name="mandate_reason_model_download">only when you tap Download in Model setup, to fetch a model from here</string>
     <string name="mandate_gap_heading">Gap: reach minus mandate</string>
 </resources>

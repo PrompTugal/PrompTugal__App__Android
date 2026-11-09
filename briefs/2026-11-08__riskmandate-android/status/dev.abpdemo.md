@@ -15,7 +15,8 @@ Nothing; pushed, waiting for the conductor.
 - After conductor's note: merged origin/dev (fa5dfc4, FeatureContext v2); removed the last hardcoded text (a row content description and an animation label) from `AbpDemoFeature.kt`, now `abpdemo_layer_cd` in both languages. Full gate green with qa's `FeatureStringsTest` and `LocalisationTest`. The screen uses only `context.onBack`, no Activity.
 - Architect HOLD A-abp-1 and the medium finding: merged dev b535782 (FeatureFrame); removed my Home button and heading (content only). Layout adapts: two panes only on a landscape window at least 720dp wide and font scale up to 1.3; otherwise one scrolling column with stacked controls. Tests added for portrait phone and 200% font (everything reachable by scrolling). Gate green.
 - Merged work/architect b2da9cd (FeatureContext v3, not yet on dev: drops out of my branch's diff once dev has it). Auto-play now calls `context.HoldIdleWhile(auto)`; test checks the hold is taken when auto-play starts and released when it stops. The host must pass `holdIdle` (app.android) for it to have an effect; the default is a no-op.
-- P7 (merged dev 1202040): `AbpDemoFeature` overrides `icon` (Icons.Filled.Lock, material-icons-core), `kicker` ("Demonstration") and `summary`, en and pt-PT; gate green.
+- P7 (merged dev 1202040): `AbpDemoFeature` overrides `kicker` ("Demonstration") and `summary`, en and pt-PT; gate green.
+- Icon: per design.android's ruling (docs/design/android-theme.md, "Icons"), `Feature.icon` stays null so the host's id-based line icon applies; my `Icons.Filled.Lock` override is removed. This differs from the conductor's earlier "fill these"; conductor to confirm. If I need my own icon, ask app.android ("For app"): id `abpdemo`, a shield or stack of six layers.
 - Sources read 9 Nov 2026: https://riskmandate.ai (v1.40.3) and https://sharness.ai (v0.6.35).
 - `enabled = true` is set in `AbpDemoFeature`. Reasoning: the screen works end to end under test; the conductor can revert if the gate or reviews say otherwise.
 
@@ -43,6 +44,7 @@ Nothing; pushed, waiting for the conductor.
 Nothing.
 
 ## For other roles
+- app (optional): a host line icon for id `abpdemo`: six stacked layers with a shield on top. Only if design's id-based default does not already suit.
 - conductor: `Features.kt` already lists `AbpDemoFeature`; nothing to change.
 - design: if the layer-row component lands, tell me its name and signature.
 - qa: screenshots are not produced by this feature; if you want PNGs for the stand, ask and I will add a screenshot test under `features/abpdemo/`.

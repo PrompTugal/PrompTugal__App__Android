@@ -1,11 +1,20 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.llm.LlmEvent
+import ai.riskmandate.app.llm.ParamType
+import ai.riskmandate.app.llm.StrictJson
+import ai.riskmandate.app.llm.ToolCheck
+import ai.riskmandate.app.llm.ToolParam
+import ai.riskmandate.app.llm.checkToolCall
+import ai.riskmandate.app.llm.ToolSpec as LlmToolSpec
+
 /**
  * Reading a model's tool calls: strict, bounded, never trusted. The model replies with one JSON object per
- * call, {"tool": "name", "arguments": {...}} (or Gemma's own call syntax); every call is parsed with
- * [StrictJson], matched by name to the scenario's fixed tool list, its arguments type-checked and
- * length-capped, and refused otherwise. An unparseable or unknown call is a recorded refusal, never run.
- * A port of eval's protocol.py plus the caps security asked for (R-lab-1).
+ * call, {"tool": "name", "arguments": {...}} (or Gemma's own call syntax). This reader (a port of eval's
+ * protocol.py) finds the calls in the text under the Lab's own caps (text scanned, calls parsed, calls per
+ * turn); each call is then checked by the app's shared [checkToolCall] against the scenario's tools (architect
+ * A-lab-7: missing, extra, wrongly typed and oversize arguments are refused there, once), and only then by
+ * [AbpChecks]. A call refused anywhere is a recorded refusal and never runs.
  */
 object ToolProtocol {
     /** Longest model text scanned for calls. */
@@ -22,7 +31,6 @@ object ToolProtocol {
 
     data class RawCall(val name: String, val arguments: Any?)
 
-    private val NAME = Regex("[A-Za-z_][A-Za-z0-9_]*")
     private val GEMMA_CALL = Regex("<\\|tool_call>\\s*call:\\s*([A-Za-z_]\\w*)\\s*\\((.*?)\\)\\s*<tool_call\\|>", RegexOption.DOT_MATCHES_ALL)
     private val KV = Regex("([A-Za-z_]\\w*)\\s*=\\s*(?:\"((?:[^\"\\\\]|\\\\.)*)\"|<\\|\"\\|>(.*?)<\\|\"\\|>|([^,\\s)]+))", RegexOption.DOT_MATCHES_ALL)
 
@@ -56,30 +64,27 @@ object ToolProtocol {
         return calls
     }
 
-    /** Null if the call is valid, else a short reason. [index] is its position in this turn. */
-    fun validate(call: RawCall, tools: List<ToolSpec>, index: Int): String? {
-        if (index >= MAX_CALLS_PER_TURN) return "too many calls in one turn (limit $MAX_CALLS_PER_TURN)"
-        if (call.name.length > MAX_NAME_CHARS || !NAME.matches(call.name)) return "tool name is not valid"
-        val spec = tools.firstOrNull { it.name == call.name } ?: return "unknown tool '${call.name}'"
-        val args = call.arguments as? Map<*, *> ?: return "arguments must be an object"
-        if (args.size > MAX_ARGS) return "too many arguments (limit $MAX_ARGS)"
-        for (p in spec.params) if (p.required && p.name !in args) return "missing argument '${p.name}'"
-        for ((k, v) in args) {
-            val p = spec.params.firstOrNull { it.name == k } ?: return "unexpected argument '$k'"
-            val typed = when (p.type) {
-                "string" -> v is String
-                "integer" -> v is Long
-                "number" -> v is Long || v is Double
-                "boolean" -> v is Boolean
-                else -> false
+    /** The scenario's tools as the shared contract's [LlmToolSpec]s (string arguments capped at [MAX_ARG_CHARS]). */
+    fun llmTools(tools: List<ToolSpec>): List<LlmToolSpec> = tools.map { t ->
+        LlmToolSpec(t.name, t.description, t.params.map { p ->
+            val type = when (p.type) {
+                "string" -> ParamType.STRING
+                "integer" -> ParamType.INTEGER
+                "number" -> ParamType.NUMBER
+                "boolean" -> ParamType.BOOLEAN
+                else -> throw IllegalArgumentException("parameter '${p.name}' of ${t.name}: type must be string, integer, number or boolean")
             }
-            if (!typed) return "argument '$k' must be ${p.type}"
-            if (v is String && v.length > MAX_ARG_CHARS) return "argument '$k' is longer than $MAX_ARG_CHARS characters"
-        }
-        return null
+            ToolParam(p.name, type, p.name, p.required, maxLength = MAX_ARG_CHARS)
+        })
     }
 
-    /** Valid raw arguments as the flat strings the checks read. Call only after [validate] returned null. */
-    fun toCall(call: RawCall): ToolCall =
-        ToolCall(call.name, (call.arguments as Map<*, *>).entries.associate { it.key.toString() to it.value.toString() })
+    /** Checks one found call: this turn's call cap first, then the shared [checkToolCall]. [index] is its place in the turn. */
+    fun check(call: RawCall, index: Int, tools: List<LlmToolSpec>): ToolCheck {
+        if (index >= MAX_CALLS_PER_TURN) return ToolCheck.Rejected(call.name.take(MAX_NAME_CHARS), "too many calls in one turn (limit $MAX_CALLS_PER_TURN)")
+        return checkToolCall(tools, LlmEvent.ToolCallProposed(call.name, StrictJson.render(call.arguments)))
+    }
+
+    /** An accepted call as the flat strings the ABP checks read. */
+    fun toCall(accepted: ToolCheck.Accepted): ToolCall =
+        ToolCall(accepted.tool, accepted.args.mapValues { it.value.toString() })
 }

@@ -105,7 +105,7 @@ class SiteScreenTest {
     }
 
     @Test fun theFeatureDescribesItselfForTheHomeCard() {
-        assertNotNull(SiteFeature.icon)
+        assertNull("design ruling: the host's icon applies", SiteFeature.icon)
         assertEquals("riskmandate.ai", app.getString(SiteFeature.kicker!!))
         assertTrue(app.getString(SiteFeature.summary!!).isNotBlank())
         assertFalse("no em-dash", app.getString(SiteFeature.summary!!).contains('\u2014'))
