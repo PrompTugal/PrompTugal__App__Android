@@ -23,6 +23,21 @@ What changes (from the branches' code, not from a build):
 
 I recommend **asking the live form first** (Dinis, Console), because its wording decides it, and until then not claiming "No data collected" in any text. The listing line is marked TODO. The decision is Dinis's.
 
+## Update 9 November 2026 (security R-shell-1): everything the app now stores on the device
+
+All of it is local and never transmitted, so none of it is "collected" (Google: data "not sent off device" need not be disclosed) and none of it changes the form. It must all appear in the privacy policy (done, `privacy-policy.md`, "What stays on your device") and the Data safety row "No storage" above stays superseded:
+
+| Item | Where | Content | On `dev`? |
+|---|---|---|---|
+| Shell | SharedPreferences `shell`, key `sidebar_collapsed` | yes or no (UI preference) | `work/app` only, for now |
+| What's new | SharedPreferences `feature_releases`, key `last_seen_version_code` | an integer | yes |
+| Stand mode | SharedPreferences `stand_mode` | on/off, idle minutes | `work/dev.stand` |
+| In-app view | WebView cookies and cache | deleted when the view closes | `work/dev.site` |
+| Chat history (G/H, DRAFT) | `noBackupFilesDir/feature_chat/`, one JSON file | conversations | yes (feature flag state not checked) |
+| Model files (G, DRAFT) | `noBackupFilesDir/models/`; adb copy in `getExternalFilesDir("models")` on API 30+ | model weights | `work/app` |
+
+`data_extraction_rules.xml` excludes every cloud-backup and device-transfer domain by name, `noBackupFilesDir` is never backed up by the platform, and `allowBackup` is false.
+
 ## Update 9 November 2026: on-device model download and chat (DRAFT; not for Play yet)
 
 From `briefs/2026-11-09__on-device-llm/README.md`; features G and H are `enabled = false` placeholders on `dev` and the brief says "Not for Google Play yet", so **nothing here changes a form today**. For the day they ship in a store build:
