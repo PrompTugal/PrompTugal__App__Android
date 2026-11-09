@@ -41,8 +41,8 @@ Generated PNGs are **not committed**; CI renders them from the commit it builds 
   Blank lines and `#` comments are allowed; a listed source that does not exist fails CI.
 - CI copies each target into `<folder>/screenshots/` before `assembleRelease` and `bundleRelease`.
 - A local build without those copies is fine: a missing image is simply not drawn (the caption stays), and the list shows no thumbnail.
-- Exception: the sample article's `sample-home.png` is committed (a downscaled home screenshot) because the render test needs
-  an image that is always there. Real articles list theirs in `screenshots.txt` instead.
+- Tests do not depend on bundled articles: `Fixture` (test code + `src/test/resources/releases-fixture/`) provides an article
+  and an image source (`ArticleImages`). One test checks that every bundled article parses.
 
 ## Show once after an update (host hook)
 `ReleasesNotice.shouldOffer(context, BuildConfig.VERSION_CODE)`: true when the versionCode is newer than the last one
