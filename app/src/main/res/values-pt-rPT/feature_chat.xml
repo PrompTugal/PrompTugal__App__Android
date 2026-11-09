@@ -25,7 +25,7 @@
     <string name="chat_open_link">Abrir %1$s</string>
     <string name="chat_empty_hint">Pergunte alguma coisa ao modelo, ou experimente uma sugestão. Tudo fica neste dispositivo.</string>
     <string name="chat_no_model_title">Nenhum modelo instalado</string>
-    <string name="chat_no_model_body">Instale primeiro um modelo e volte depois. A conversa precisa de um modelo neste dispositivo.</string>
+    <string name="chat_no_model_body">Configure um modelo em Modelos (na barra lateral) e volte depois. A conversa precisa de um modelo neste dispositivo.</string>
     <string name="chat_loading">A procurar modelos instalados…</string>
     <string name="chat_save_failed">Não foi possível guardar esta conversa no tablet. Continua no ecrã.</string>
     <string name="chat_presets">Sugestões</string>

@@ -29,6 +29,14 @@ class LlmServiceChatTest {
         assertTrue(req.tools.isEmpty()) // chat offers no tools
     }
 
+    @Test fun doneEventReportsRealCountsAndSpeed() = runBlocking {
+        val svc = FakeLlmService(reply = { FakeReply("alpha beta") })
+        var got: ChatAnswerStats? = null
+        LlmServiceChat(svc).stream("m", null, turns.take(1)) { got = it }.toList()
+        assertTrue("Done must report stats", got != null)
+        assertEquals(got!!.outputTokens != null, true)
+    }
+
     @Test fun noSystemBlockMeansNoSystemMessage() = runBlocking {
         val svc = FakeLlmService()
         LlmServiceChat(svc).stream("m", null, turns.take(1)).toList()

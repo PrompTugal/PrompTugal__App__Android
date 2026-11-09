@@ -13,6 +13,9 @@ enum class ChatRole { USER, ASSISTANT }
 /** One turn handed to the model. */
 data class ChatTurn(val role: ChatRole, val text: String)
 
+/** What the service reports when an answer ends. Null where the runtime did not say; chat then counts pieces and times it itself. */
+data class ChatAnswerStats(val outputTokens: Int?, val tokensPerSecond: Double?, val totalMs: Long?)
+
 /**
  * What chat needs from the shared LLM service (dev.llm's `LlmService`). This is a stand-in inside the
  * chat package until that interface lands on `dev`; then a thin adapter replaces it and nothing else
@@ -26,13 +29,13 @@ interface ChatLlm {
     suspend fun installedModels(): List<ChatModelInfo>
 
     /** [system] is an instruction block, or null; [turns] ends with the user's last message. */
-    fun stream(modelId: String, system: String?, turns: List<ChatTurn>): Flow<String>
+    fun stream(modelId: String, system: String?, turns: List<ChatTurn>, onStats: (ChatAnswerStats) -> Unit = {}): Flow<String>
 }
 
 /** Used until the shared service is wired: no model, so the chat shows its empty state. */
 object NoLlm : ChatLlm {
     override suspend fun installedModels(): List<ChatModelInfo> = emptyList()
-    override fun stream(modelId: String, system: String?, turns: List<ChatTurn>): Flow<String> = flowOf()
+    override fun stream(modelId: String, system: String?, turns: List<ChatTurn>, onStats: (ChatAnswerStats) -> Unit): Flow<String> = flowOf()
 }
 
 /** Test double: replays [pieces] with an optional [delayMs] between them, and records what it was asked. */
@@ -47,9 +50,12 @@ class FakeChatLlm(
     val calls = mutableListOf<Call>()
     var cancelled = 0
 
+    /** If set, reported when an answer ends, as the real service's Done event does. */
+    var reportedStats: ChatAnswerStats? = null
+
     override suspend fun installedModels() = models
 
-    override fun stream(modelId: String, system: String?, turns: List<ChatTurn>): Flow<String> = flow {
+    override fun stream(modelId: String, system: String?, turns: List<ChatTurn>, onStats: (ChatAnswerStats) -> Unit): Flow<String> = flow {
         calls += Call(modelId, system, turns)
         try {
             pieces.forEachIndexed { i, p ->
@@ -57,6 +63,7 @@ class FakeChatLlm(
                 if (delayMs > 0) delay(delayMs)
                 emit(p)
             }
+            reportedStats?.let(onStats)
         } catch (e: kotlinx.coroutines.CancellationException) {
             cancelled++
             throw e

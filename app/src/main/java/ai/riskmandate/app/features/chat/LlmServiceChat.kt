@@ -20,7 +20,7 @@ class ChatLlmException(message: String) : Exception(message)
  *   with its current model.
  * - The system block goes in as [LlmMessage.system], then the turns; the whole conversation every time (the
  *   service keeps nothing between requests).
- * - Tool proposals are ignored: chat offers no tools. Done ends the answer; an Error becomes an exception.
+ * - Tool proposals are ignored: chat offers no tools. Done ends the answer and reports the real counts and speed ([ChatAnswerStats]); an Error becomes an exception.
  * - Stopping is cancelling the collector: the service cancels the native call.
  */
 class LlmServiceChat(private val service: LlmService, private val maxTokens: Int = DEFAULT_MAX_TOKENS) : ChatLlm {
@@ -32,7 +32,7 @@ class LlmServiceChat(private val service: LlmService, private val maxTokens: Int
         is LlmState.Failed -> s.modelId?.let { listOf(info(it)) }.orEmpty()
     }
 
-    override fun stream(modelId: String, system: String?, turns: List<ChatTurn>): Flow<String> = flow {
+    override fun stream(modelId: String, system: String?, turns: List<ChatTurn>, onStats: (ChatAnswerStats) -> Unit): Flow<String> = flow {
         val messages = buildList {
             if (system != null) add(LlmMessage.system(system))
             for (t in turns) add(if (t.role == ChatRole.USER) LlmMessage.user(t.text) else LlmMessage.assistant(t.text))
@@ -41,7 +41,8 @@ class LlmServiceChat(private val service: LlmService, private val maxTokens: Int
             when (e) {
                 is LlmEvent.Token -> emit(e.text)
                 is LlmEvent.Error -> throw ChatLlmException(e.reason.name)
-                is LlmEvent.Done, is LlmEvent.ToolCallProposed -> Unit
+                is LlmEvent.Done -> onStats(ChatAnswerStats(e.stats.outputTokens, e.stats.decodeTokensPerSecond, e.stats.totalMs))
+                is LlmEvent.ToolCallProposed -> Unit
             }
         }
     }
