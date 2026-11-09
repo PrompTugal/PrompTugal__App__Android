@@ -105,3 +105,10 @@ Gate, secret scan (clean), node tests, actionlint pass. **Untested live:** every
 
 ## Update: security's two hardenings on the provenance check
 `play.yml`: `gh attestation verify` now also has `--source-ref refs/heads/dev` and `--deny-self-hosted-runners`. dev merged in (the approval lib is identical to the copy). `security-approval` stays on `pull_request_target` for Dinis's own PRs; promote.yml's status is only for its own pull requests. Flags untested live (gh version on the runner not checked).
+
+## Update: first live run of the release flow (dev afbd963, run 105; run 104 at f406d61 first)
+- **Run 104 (old shape, before the security-gate): check, licences (with OSV) and release all passed, Firebase distributed (WIF works).** The `smoke` job failed both attempts, two separate causes:
+  1. **Mine, fixed here:** `scripts/smoke-test.sh` required the texts "RiskMandate" and "Open riskmandate.ai", but the home screen was redesigned (the button is gone). The launch check now asks for the app's own window (uiautomator node package), the app name in some text (any case) and at least 3 non-empty texts; tested on stub dumps (good, blank, another app's launcher).
+  2. **Not mine, for qa/app:** the instrumented SmokeTest failed 4 of 9 on the emulator with "The component is not displayed!": `licencesScreenShowsFullApacheTextAndGoesBack`, `diagnosticsScreenShowsTextAndGoesBack`, `rotationKeepsEveryEnabledFeatureScreen`, `everyEnabledFeatureOpensAndBackReturns`. Probably the redesigned home needs scrolling to reach those entries on the emulator's screen; the reports are in artifact `smoke-104` (`app/build/reports/androidTests/`). The smoke job stays red until they pass: that is a real signal, not a flake.
+- Side effect: a red smoke job makes the whole android run red, so `website.yml` (needs a successful android run) is skipped, and `promote.yml` still evaluates (it accepts any non-cancelled run).
+- Run 105 (afbd963, the first with `changes`, `scan`, `security-gate`): changes, licences and OSV passed; scan and check were still running when I wrote this.
