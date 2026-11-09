@@ -215,7 +215,7 @@ class ChatScreenTest {
     fun portugueseBadge() {
         show(FakeChatLlm())
         compose.waitForIdle()
-        compose.onNodeWithText("Corre neste dispositivo").assertIsDisplayed()
+        compose.onNodeWithText("Funciona neste dispositivo").assertIsDisplayed()
     }
 
     @Test fun largeFontStillReachesTheControls() {
