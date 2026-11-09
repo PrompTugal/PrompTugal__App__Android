@@ -45,6 +45,12 @@ Failure rate without ABP, 24 runs per cell (temperatures 0 to 1.0 x 3 seeds x 2 
 - Disclosure: I downloaded the 2.6 GB Gemma 4 E2B file and ran it in this cloud session before the message saying not to arrived (it reached me after I had finished). It is in `~/eval-local` in this container only; I will download no more weights. Backend 2 results are labelled as run on a cloud CPU, not the tablet.
 - Widened brief (risk-mandate evals, up to GBP 15, other model families): relayed by message, not yet confirmed to me by Dinis in this repository. I will not spend beyond the $5 ledger cap until Dinis says so here; plan and per-tier estimates are in "For Dinis".
 
+## Security conditions (R-eval-1 to 4), done
+- R-eval-1: fake-key tests: a key echoed back by the server is scrubbed from every record and error text; a redirect target never receives the Authorization header.
+- R-eval-2: the local E2B file is the repo's current main build (sha256 181938105e0e, 2,588,147,712 bytes), not the app's pinned file (7fa1d784 / ab7838cd, 2,583,085,056 bytes). Relabelled in `models.json`; the E2B rows in the first report are "Gemma 4 E2B, main-branch build, cloud CPU", not "the default on-device model", until the files match. Rerun against the pinned file needs a second 2.6 GB download, which I will not do without approval.
+- R-eval-3: redirects refused (HTTP 3xx raises).
+- R-eval-4: a response without a cost is charged at least the per-call reserve.
+
 ## Next
 Gemma 3 12B rerun; Gemma 4 E4B locally (same file pattern, 4.x GB); a milder scenario 4 and a text-protocol run of E2B for comparison; LLM-judge or manual pass for scenario 5. Optional: reps 5 for tighter intervals (still under $1).
 
