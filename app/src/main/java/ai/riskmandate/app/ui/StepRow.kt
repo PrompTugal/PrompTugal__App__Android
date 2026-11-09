@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
  *
  * The left and right lanes of the Lab use the same row, so a step lines up with its twin. With [large]
  * the title is 28sp bold and the chip 22sp (2 m); the detail stays 18sp for people at the tablet.
- * TalkBack reads "<n>. <title>, <verdict>. <detail>".
+ * With [dense] (staff screens such as the Workbench) the title is 16sp and the detail 14sp. TalkBack reads "<n>. <title>, <verdict>. <detail>".
  */
 @Composable
 fun StepRow(
@@ -36,29 +36,30 @@ fun StepRow(
     modifier: Modifier = Modifier,
     detail: String? = null,
     large: Boolean = false,
+    dense: Boolean = false,
 ) {
     val scheme = MaterialTheme.colorScheme
     Row(
-        modifier = modifier.fillMaxWidth().padding(vertical = 6.dp).semantics(mergeDescendants = true) {},
+        modifier = modifier.fillMaxWidth().padding(vertical = if (dense) 4.dp else 6.dp).semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
             stringResource(R.string.ui_step_number, index),
-            fontSize = if (large) 28.sp else 18.sp,
+            fontSize = if (large) 28.sp else if (dense) 14.sp else 18.sp,
             fontWeight = FontWeight.Bold,
             color = scheme.onSurfaceVariant,
         )
         Column(Modifier.weight(1f)) {
             Text(
                 title,
-                fontSize = if (large) 28.sp else 18.sp,
-                lineHeight = if (large) 34.sp else 24.sp,
+                fontSize = if (large) 28.sp else if (dense) 16.sp else 18.sp,
+                lineHeight = if (large) 34.sp else if (dense) 22.sp else 24.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = scheme.onSurface,
             )
             if (detail != null) {
-                Text(detail, fontSize = 18.sp, fontFamily = FontFamily.Monospace, color = scheme.onSurfaceVariant)
+                Text(detail, fontSize = if (dense) 14.sp else 18.sp, fontFamily = FontFamily.Monospace, color = scheme.onSurfaceVariant)
             }
         }
         StatusChip(verdict, kind, large = large)
