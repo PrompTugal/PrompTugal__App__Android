@@ -102,6 +102,9 @@ class PtType {
     /** Numbers: sans, semibold, tabular digits (the iOS rounded design has no Android equivalent). */
     val number = TextStyle(fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")
 
+    /** Figures in tables and stat panels: 14sp semibold with tabular digits, so columns line up and values do not jitter. */
+    val tabular = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")
+
     /** Tool calls, arguments, model output: monospace. */
     val data = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 14.sp, lineHeight = 20.sp)
 }

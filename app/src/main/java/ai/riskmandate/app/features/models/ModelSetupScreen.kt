@@ -125,20 +125,20 @@ fun ModelSetupScreen(
 
     fun start(spec: ModelSpec) {
         messages = messages - spec.id
-        job = scope.launch {
+        launchTracked(scope, { job }, { job = it }) {
             busy = Busy.Downloading(spec.id, installer.partialBytes(spec), spec.sizeBytes, false)
             val result = installer.download(spec) { done, total, checking -> busy = Busy.Downloading(spec.id, done, total, checking) }
             finish(spec, result)
-        }.also { j -> j.invokeOnCompletion { job = null; if (busy?.id == spec.id) { busy = null; refresh++ } } }
+        }.also { j -> j.invokeOnCompletion { if (busy?.id == spec.id) { busy = null; refresh++ } } }
     }
 
     fun import(spec: ModelSpec, file: File) {
         messages = messages - spec.id
-        job = scope.launch {
+        launchTracked(scope, { job }, { job = it }) {
             busy = Busy.Copying(spec.id, 0, spec.sizeBytes, false)
             val result = installer.importFrom(file, spec) { done, total, checking -> busy = Busy.Copying(spec.id, done, total, checking) }
             finish(spec, result)
-        }.also { j -> j.invokeOnCompletion { job = null; if (busy?.id == spec.id) { busy = null; refresh++ } } }
+        }.also { j -> j.invokeOnCompletion { if (busy?.id == spec.id) { busy = null; refresh++ } } }
     }
 
     FeatureContent {
@@ -287,3 +287,14 @@ private fun gigabytes(bytes: Long) = String.format(Locale.ROOT, "%.2f GB", bytes
 
 /** The default installer and adb folder for this app. */
 internal fun defaultInstaller(context: Context) = ModelInstaller(ModelFiles.internalDir(context))
+
+/**
+ * Launches [block] and keeps [get]/[set] pointing at it while it runs, then null. Safe when the job finishes
+ * at once (the handler runs after the assignment, and only clears the job it belongs to).
+ */
+internal fun launchTracked(scope: kotlinx.coroutines.CoroutineScope, get: () -> Job?, set: (Job?) -> Unit, block: suspend kotlinx.coroutines.CoroutineScope.() -> Unit): Job {
+    val j = scope.launch(block = block)
+    set(j)
+    j.invokeOnCompletion { if (get() === j) set(null) }
+    return j
+}
