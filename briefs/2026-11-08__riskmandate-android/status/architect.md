@@ -1,11 +1,12 @@
 # architect.android status
 
-> 9 Nov 2026, about 02:45 UTC: design fb824aa PASS (A-des-4: the host draws ScreenHeader from P7, features don't). dev.llm 9c3fbd5 PASS, but it conflicts with app's shell on the host files: app re-does the host lines (A-llm-3). Trial merge of dev + architect + design + app: green, 350 tests.
+> 9 Nov 2026, about 03:00 UTC: dev.llm step 2 (31a87ac) PASS: the contract is accepted, with Idle and LlmError. FeatureContext.llm is written and verified on a trial (gate green). It is pushed once llm/LlmService.kt is on dev, because it cannot compile before. dev.llm's host lines still conflict with app's shell (A-llm-3).
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Review dev.llm 31a87ac PASS (contract accepted with Idle and LlmError; ToolSpec, StrictJson and checkToolCall are the one validator; LlmHost per the README; A-llm-12 installed list for chat; A-llm-13 TOO_LONG mapping; A-llm-3 still open). README contract section updated to what was built. FeatureContext.llm patch verified on a trial and waiting for LlmService on dev.
 - Reviews: design fb824aa PASS (A-des-4 ScreenHeader belongs to the host frame; A-des-5 breakpoints written down); dev.llm 9c3fbd5 PASS (A-llm-4/5 closed; A-llm-3: conflicts with app's shell, app re-does the host lines). README: one title per screen.
 - P7: `icon`, `kicker`, `summary` on `Feature` (null defaults) plus `FeaturePresentationTest`. Gate green.
 - Review: app 894a93b shell step 1 PASS (A-app-11 double header on phones and Back next to the sidebar; A-app-12 use P7; A-app-13 unused import).

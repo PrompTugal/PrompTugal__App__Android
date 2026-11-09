@@ -107,18 +107,12 @@ No new dependency without the architect's OK (in your status page, then in a rev
 - It unloads the model on `onTrimMemory` (background or critical) and after a few idle minutes, and reloads on the next request. Features see a "loading model" state, never a crash.
 - One request at a time: the service serialises (a `Mutex`). The Lab's "two paths at once" interleaves the two paths on one loaded model; it never loads a second copy.
 
-### The contract (shape I expect from dev.llm; adjust names, keep the shape)
-```kotlin
-interface LlmService {
-    val state: StateFlow<LlmState>                 // NoModel, Loading, Ready(modelId), Failed(reason)
-    val installed: StateFlow<List<InstalledModel>> // id, displayName (chat's model picker)
-    fun stream(request: LlmRequest): Flow<LlmEvent> // Token(text), ToolCallProposed(name, argsJson), Done(stats), Error
-    suspend fun generate(request: LlmRequest): LlmResult = /* collects stream */
-}
-data class LlmRequest(val modelId: String? = null /* null: the current model */, val system: String? = null,
-                      val messages: List<LlmMessage>, val tools: List<ToolSpec> = emptyList(),
-                      val settings: Sampling = Sampling.DEFAULT, val maxTokens: Int = 512)
-```
+### The contract (as built by dev.llm, step 2; `llm/LlmService.kt`)
+- `state: StateFlow<LlmState>`: NoModel, Idle(modelId), Loading(modelId), Ready(modelId, backend), Failed(modelId?, reason).
+- `stream(LlmRequest): Flow<LlmEvent>`, cold, ending with exactly one Done(stats) or Error(LlmError, message); `generate(request)` collects it. Events: Token(text), ToolCallProposed(name, argsJson), Done, Error.
+- `LlmRequest(messages, tools: List<ToolSpec>, settings: Sampling, maxTokens)`; system prompts are `LlmRole.SYSTEM` messages. Each request is a fresh runtime conversation: send the whole history each time.
+- Tool proposals are checked with `checkToolCall(tools, call)` / `ToolSpec.check(argsJson)` (strict flat JSON through `StrictJson`): use these, do not write another validator.
+- A model picker outside G needs `installed` on the interface first (dev.llm review A-llm-12).
 - Cancellation is coroutine cancellation (the screen's scope ends, or Stop cancels the collecting job). No separate `cancel()` needed.
 - Inference runs on the service's own dispatcher; every call is main-safe.
 - `FeatureContext` gains `llm: LlmService? = null` (no feature-owned CompositionLocal for the model; the host must not import a feature package to provide one): null when no model is installed or the host has no service yet. A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
