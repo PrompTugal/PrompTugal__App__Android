@@ -2,6 +2,8 @@ package ai.riskmandate.app.features.chat
 
 import ai.riskmandate.app.Links
 import ai.riskmandate.app.R
+import ai.riskmandate.app.llm.prompts.PromptId
+import ai.riskmandate.app.llm.prompts.Prompts
 import androidx.annotation.RawRes
 import androidx.annotation.StringRes
 
@@ -83,6 +85,14 @@ object ChatSampling {
     const val TEMPERATURE = 0.4
     const val TOP_K = 64
     const val TOP_P = 0.9
+}
+
+/**
+ * Which shared base block chat sends: v1 says "running on this device", which is true only for a local service, so a
+ * service that runs elsewhere gets v2 (the same words without that claim).
+ */
+object ChatBasePrompt {
+    fun idFor(local: Boolean): PromptId = if (local) Prompts.RISKMANDATE_BASE else Prompts.RISKMANDATE_BASE_ANYWHERE
 }
 
 /**

@@ -75,7 +75,7 @@ internal fun ChatContent(context: FeatureContext, llm: ChatLlm) {
     val scope = rememberCoroutineScope()
     val controller = remember(llm, provided) {
         val store = provided ?: FileChatHistoryStore(File(android.applicationContext.noBackupFilesDir, "feature_chat"))
-        ChatController(llm, store, scope, baseSystem = { Prompts.load(android.assets, Prompts.RISKMANDATE_BASE) })
+        ChatController(llm, store, scope, baseSystem = { Prompts.load(android.assets, ChatBasePrompt.idFor(llm.isLocal)) })
     }
     // The open chat survives a rotation (the Activity is recreated): its id is saved, small, and reselected after loading.
     var openId by rememberSaveable { mutableStateOf<String?>(null) }
