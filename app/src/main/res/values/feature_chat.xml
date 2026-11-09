@@ -43,4 +43,5 @@
     <string name="chat_network_off">Network: off</string>
     <string name="chat_kicker">On device</string>
     <string name="chat_summary">Talk to a language model that runs on this tablet. Nothing you type leaves the device.</string>
+    <string name="chat_model_active">Model: %1$s</string>
 </resources>

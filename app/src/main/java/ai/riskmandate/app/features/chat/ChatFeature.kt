@@ -19,6 +19,7 @@ import java.io.File
 object ChatTags {
     const val BADGE = "chat_badge"
     const val NETWORK = "chat_network"
+    const val MODEL_LABEL = "chat_model_label"
     const val INPUT = "chat_input"
     const val SEND = "chat_send"
     const val STOP = "chat_stop"

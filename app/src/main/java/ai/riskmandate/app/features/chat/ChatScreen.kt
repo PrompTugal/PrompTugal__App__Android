@@ -100,6 +100,10 @@ fun ChatScreen(controller: ChatController) {
                 Text(stringResource(R.string.chat_clear))
             }
         }
+        // One model (the one chosen in Models): a read-only label. A picker only if a service ever lists several.
+        state.models.singleOrNull()?.let {
+            Text(stringResource(R.string.chat_model_active, it.name), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp).testTag(ChatTags.MODEL_LABEL))
+        }
         if (state.models.size > 1) {
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
                 Text(stringResource(R.string.chat_model_label), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(end = 4.dp))

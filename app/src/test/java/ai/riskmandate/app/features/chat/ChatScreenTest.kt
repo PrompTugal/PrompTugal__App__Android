@@ -93,6 +93,12 @@ class ChatScreenTest {
         compose.onNodeWithText("Stopped").assertIsDisplayed()
     }
 
+    @Test fun oneModelShowsAReadOnlyLabel() {
+        show(FakeChatLlm())
+        compose.waitForIdle()
+        tag(ChatTags.MODEL_LABEL).assertIsDisplayed()
+    }
+
     @Test fun modelPickerOnlyWithMoreThanOneModel() {
         show(FakeChatLlm(models = listOf(ChatModelInfo("only", "Only"))))
         compose.waitForIdle()
