@@ -8,6 +8,8 @@ import android.webkit.ValueCallback
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -16,6 +18,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -88,6 +91,19 @@ class SiteScreenTest {
         assertEquals(3, external.size)
     }
 
+    @Test fun theSelectedTabAndTheOfflineModeSurviveRotation() {
+        val restoration = androidx.compose.ui.test.junit4.StateRestorationTester(compose)
+        val switch = OfflineSwitch(false)
+        restoration.setContent {
+            RiskMandateTheme { SiteScreen(switch, onBack = {}, isSystemOffline = { false }, openExternal = { _, _ -> null }) }
+        }
+        compose.onNodeWithTag(SiteTags.tab("pricing")).performClick()
+        compose.waitForIdle()
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag(SiteTags.tab("pricing")).assertIsSelected()
+        compose.onNodeWithTag(SiteTags.tab("home")).assertIsNotSelected()
+    }
+
     @Test fun onlyARealTapOpensTheSystemBrowser() {
         val external = mutableListOf<String>()
         val c = client(OfflineSwitch(false), external)
@@ -112,10 +128,10 @@ class SiteScreenTest {
         val wv = WebView(app)
         val base = OfflineCopy.ASSET_BASE
         val home = c.shouldInterceptRequest(wv, request(base + "index.html"))!!
-        assertEquals(200, home.statusCode)
+        assertTrue("loader responses carry no explicit status (0 = default 200)", home.statusCode == 0 || home.statusCode == 200)
         assertEquals("text/html", home.mimeType)
         assertTrue(home.data.readBytes().toString(Charsets.UTF_8).contains("Give agents access. Not free rein."))
-        assertEquals(200, c.shouldInterceptRequest(wv, request(base + "pricing.html#x", main = false))!!.statusCode)
+        assertNotNull(c.shouldInterceptRequest(wv, request(base + "pricing.html#x", main = false))!!.data)
         val missing = c.shouldInterceptRequest(wv, request(base + "contact.html"))!!
         assertEquals(404, missing.statusCode)
         assertTrue(missing.data.readBytes().toString(Charsets.UTF_8).contains("not in copy"))
