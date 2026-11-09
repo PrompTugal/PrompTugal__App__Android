@@ -7,6 +7,7 @@ import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -69,6 +71,9 @@ import kotlinx.coroutines.withContext
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
+/** The image source for the screen below it; the app's assets unless a test provides a fixture. */
+internal val LocalArticleImages = androidx.compose.runtime.staticCompositionLocalOf<ArticleImages?> { null }
+
 /** Test tags (architecture rule: `<id>_<thing>`). */
 object ReleasesTags {
     const val LIST = "releases_list"
@@ -89,9 +94,23 @@ object ReleasesFeature : Feature {
     override val title = R.string.feature_releases_title
     override val enabled = true
 
+    /** "New" on the home button while this version's notes are unseen; read off the main thread. */
+    @Composable
+    @StringRes
+    override fun homeBadge(): Int? {
+        val appContext = LocalContext.current.applicationContext
+        val unseen by produceState(false) {
+            value = withContext(Dispatchers.IO) { ReleasesNotice.shouldOffer(appContext, BuildConfig.VERSION_CODE) }
+        }
+        return if (unseen) R.string.feature_releases_badge else null
+    }
+
     @Composable
     override fun Content(context: FeatureContext) {
-        val appContext = LocalContext.current.applicationContext
+        // The composition's own context (the Activity) opens links, so a Custom Tab belongs to the app's task;
+        // the application context only for assets and prefs.
+        val hostContext = LocalContext.current
+        val appContext = hostContext.applicationContext
         val language = LocalConfiguration.current.locales[0].language
         var articles by remember { mutableStateOf<List<Article>?>(null) }
         LaunchedEffect(language) { articles = withContext(Dispatchers.IO) { ReleaseStore.load(appContext, language) } }
@@ -102,7 +121,7 @@ object ReleasesFeature : Feature {
             articles = articles,
             selectedDir = selected,
             onSelect = { selected = it },
-            onLink = { url -> Browser.open(appContext, url) },
+            onLink = { url -> Browser.open(hostContext, url) },
         )
     }
 }
@@ -124,6 +143,21 @@ fun ReleasesScreen(
     onSelect: (String?) -> Unit,
     onLink: (String) -> Unit,
     modifier: Modifier = Modifier,
+    images: ArticleImages? = null,
+) {
+    val assetImages = AssetArticleImages(LocalContext.current.applicationContext.assets)
+    androidx.compose.runtime.CompositionLocalProvider(LocalArticleImages provides (images ?: assetImages)) {
+        ReleasesScreenBody(articles, selectedDir, onSelect, onLink, modifier)
+    }
+}
+
+@Composable
+private fun ReleasesScreenBody(
+    articles: List<Article>?,
+    selectedDir: String?,
+    onSelect: (String?) -> Unit,
+    onLink: (String) -> Unit,
+    modifier: Modifier,
 ) {
     if (articles == null) return
     if (articles.isEmpty()) {
@@ -305,10 +339,10 @@ private fun styled(spans: List<Span>, onLink: (String) -> Unit): AnnotatedString
 /** An image from the article's folder, decoded off the main thread and scaled. Nothing is drawn if it is missing. */
 @Composable
 private fun ArticleImage(dir: String, path: String, thumbnail: Boolean, contentDescription: String?, modifier: Modifier) {
-    val assets = LocalContext.current.applicationContext.assets
+    val images = LocalArticleImages.current
     var bitmap by remember(dir, path, thumbnail) { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(dir, path, thumbnail) {
-        bitmap = withContext(Dispatchers.IO) { ReleaseStore.image(assets, dir, path, if (thumbnail) 240 else 1400)?.asImageBitmap() }
+        bitmap = withContext(Dispatchers.IO) { images?.let { ReleaseStore.image(it, dir, path, if (thumbnail) 240 else 1400)?.asImageBitmap() } }
     }
     val bmp = bitmap ?: return
     Image(

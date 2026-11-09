@@ -11,6 +11,7 @@
      Public URL: TODO (suggested https://android.app.promptugal.ai/privacy or a page on https://riskmandate.ai/).
   3. Put the same URL in Play Console (App content, Privacy policy) and in the store listing.
   Source of truth for the wording: docs/play/privacy-policy.md. Keep the two in step.
+  The block with class draft describes the on-device model and chat: REMOVE IT from any public copy unless the submitted build has both on (docs/play/model-licences.md).
   Self-contained: no scripts, no external fonts, images or trackers.
 -->
 <style>
@@ -28,6 +29,7 @@
   p, li { max-width: 65ch; }
   a { color: var(--link); text-decoration: underline; }
   a:focus-visible { outline: 3px solid currentColor; outline-offset: 2px; }
+  .draft { border: 2px dashed var(--muted); padding: 0 1rem; margin: 1.5rem 0; }
   .meta { color: var(--muted); }
   .todo { background: var(--todo-bg); color: var(--todo-fg); padding: 0 .25em; border-radius: 3px; font-weight: 600; }
   footer { border-top: 1px solid var(--rule); margin-top: 2.5rem; padding-top: 1rem; color: var(--muted); font-size: .9rem; }
@@ -65,6 +67,12 @@
 
   <h2>Diagnostics screen</h2>
   <p>A Diagnostics screen shows the app's version, the Android version, the make and model of the device, whether and how the device is managed, the managed configuration as received (<code>start_url</code> and <code>device_label</code>, and whether the start page was refused), and which app installed this app (for example Google Play or Firebase App Distribution). These values are shown on the screen and are put on your clipboard only when you tap Copy. The app never sends them anywhere. The screen shows no serial number, IMEI, Android ID, account or network address.</p>
+
+  <div class="draft" role="note">
+  <h2>Downloaded language model and chat <span class="todo">[DRAFT: include only in the build where the model setup and chat are enabled]</span></h2>
+  <p>On first use, the app can download a language model file once. The file comes from Hugging Face (huggingface.co, where Google AI Edge's litert-community publishes the Gemma models) <span class="todo">[TODO dev.llm and security: name every host the download touches, including any content-delivery host Hugging Face redirects to]</span>. The app checks the file against a fixed SHA-256 checksum before it uses it, and deletes it if it does not match. Downloading the file is an ordinary web request: Hugging Face sees your IP address and what it needs to serve the file, and its own privacy policy applies to that request. You start the download yourself, after the app tells you which host it will contact. The app sends no account, no message and nothing you typed with it.</p>
+  <p>After the download the model runs on your device and works offline. <strong>Nothing you type into the chat leaves the device.</strong> The chat history is kept on your device only, in the app's private storage, excluded from Android's cloud backup and device-to-device transfer. The app never exports or publishes it. A Clear history button deletes it; so does clearing the app's data or uninstalling the app. A Delete model button removes the model file.</p>
+  </div>
 
   <h2>The in-app view of riskmandate.ai</h2>
   <p>Where the in-app view is used, the app shows riskmandate.ai pages in a web view inside the app. Loading a page sends an ordinary web request to riskmandate.ai. That site is hosted on GitHub Pages: its privacy page says GitHub's servers see &ldquo;the ordinary request information any web server sees, including your IP address&rdquo;, and that &ldquo;We have no analytics dashboard, no log access and no way to see who read what&rdquo; (<a href="https://riskmandate.ai/privacy">https://riskmandate.ai/privacy</a>, page dated 24 September 2026). The app loads riskmandate.ai's pages in the view and nothing else: it adds no identifier, runs no analytics and blocks requests from the view to any other website. Only https pages on riskmandate.ai and www.riskmandate.ai load in the view. If you tap a link in the view that leads to another website, the app hands that https address to your device's own browser, which opens it outside the app; the app never loads it inside the app and does not open it while the screen is pinned (stand mode). The app sends nothing: the browser, under its own privacy policy, loads that other website, and the app does not see what it loads. Only https addresses are handed over; others (such as http, intent or file addresses) are refused. The site's Contact page, whose form posts to another host, is not part of the in-app view. When you are offline, the app shows a copy of the main pages bundled in the app, and sends nothing.</p>

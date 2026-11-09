@@ -16,15 +16,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * A titled block of content: screen C's "Reach", "Mandate" and "Gap", the notes under B's diagram.
- * The title is a heading for TalkBack. Outlined, not elevated, so it reads the same in light and dark.
+ * [large] makes the title 36sp bold, for a lane header read from 2 m (the Lab). The title is a heading for TalkBack. Outlined, not elevated, so it reads the same in light and dark.
  */
 @Composable
 fun SectionCard(
     title: String,
     modifier: Modifier = Modifier,
+    large: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     OutlinedCard(
@@ -37,6 +39,8 @@ fun SectionCard(
             Text(
                 title,
                 style = MaterialTheme.typography.titleLarge,
+                fontSize = if (large) 36.sp else androidx.compose.ui.unit.TextUnit.Unspecified,
+                fontWeight = if (large) androidx.compose.ui.text.font.FontWeight.Bold else null,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.semantics { heading() },
             )

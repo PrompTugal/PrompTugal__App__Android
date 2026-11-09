@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
                                 onOpen = { message = open() },
                                 onLicences = { screen = Routes.LICENCES },
                                 onDiagnostics = { screen = Routes.DIAGNOSTICS },
-                                features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title) { screen = f.id } },
+                                features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title, f.homeBadge()) { screen = f.id } },
                             )
                         }
                     }

@@ -3,15 +3,12 @@ package ai.riskmandate.app.features.lab
 import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 
-/** Placeholder: the owning session replaces this file's contents (keep the object name and id). */
+/**
+ * ABP Lab (feature I): the same model input down two paths, raw and through the ABP. Replay on samples for
+ * now; live runs and loop mode follow. Off until the screen works end to end on the tablet.
+ */
 object LabFeature : Feature {
     override val id = "lab"
     override val title = R.string.feature_lab_title
@@ -19,6 +16,6 @@ object LabFeature : Feature {
 
     @Composable
     override fun Content(context: FeatureContext) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(title)) }
+        LabScreen()
     }
 }

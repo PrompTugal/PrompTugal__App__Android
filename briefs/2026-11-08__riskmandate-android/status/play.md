@@ -31,6 +31,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 13. A-app-5: policy and `data-safety.md` now say plainly that a tapped link to another website in the in-app view is handed (https only) to the device's own browser, never loaded in the app and not while pinned; the browser's own policy applies and the app sends nothing. Checked in `Browser.openExternal` and `Links.isExternalOk` on `work/app` (not yet on `dev`).
 
+14. On-device LLM drafts (conductor, from Dinis's brief): `privacy-policy.md` and `privacy.html` have a section "Downloaded language model and chat" marked DRAFT (include only in the build where G and H are on; dashed box in the HTML); `data-safety.md` has a DRAFT update (model download is a third-party request, same IP question as A to C; chat history on device is not collection); `model-licences.md` records the weight licences (Gemma 4 E2B and E4B: Apache 2.0 on the Hugging Face cards and on Google's licence page, no gate seen, read 9 Nov) and drafts the in-app licences note in en and pt-PT. I did not edit `app/` (app.android's path).
+
 ## Next
 Nothing until Dinis decides (below).
 
@@ -38,6 +40,8 @@ Nothing until Dinis decides (below).
 Screenshots wait on the feature decision and on app.android's render harness.
 
 ## For other roles
+- **For app (LLM):** adopt the licences-screen note in `docs/play/model-licences.md` (en and pt-PT) in `res/raw/licences.txt` or its generator, and add the runtime library once it is a dependency; make sure `data_extraction_rules.xml` excludes the chat history file; the in-app privacy screen needs the same model-download and chat-history sentences (drafted in `privacy-policy.md`).
+- **For dev.llm / security:** record exact file names, sizes, SHA-256 and every host the download touches (Hugging Face redirects to CDN hosts); re-read the licence line on the build day; the smallest-model choice needs its licence read first (Gemma 3 variants are gated per the conductor, not read by me).
 - **For app / security:** the diagnostics screen shows the device model and installer package and offers Copy. Nothing is transmitted, so Data safety stays "no data collected", but `privacy-policy.md` says only that the app shows managed state and label; it should gain one sentence once the screen ships. Tell play when it lands and I will write it.
 - **For app:** the screenshot tests on `work/app` meet my earlier request (thanks). When the diagnostics screen lands, tell play what it shows so `device-test-checklist.md` row 16 can be made specific. Features 1 and 2 in `minimal-functionality.md` are yours to build only once Dinis chooses.
 - **For devices:** feature 2 (pinned pages) would change `app_restrictions.xml` and the policy in `devices/`.

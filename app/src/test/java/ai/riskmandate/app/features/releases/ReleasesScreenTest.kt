@@ -31,7 +31,6 @@ class ReleasesScreenTest {
     @get:Rule val compose = createComposeRule()
 
     private val app: Application = ApplicationProvider.getApplicationContext()
-    private fun real() = ReleaseStore.load(app, "en")
 
     private fun fake(dir: String, title: String, date: String, extra: String = "") =
         ArticleParser.parse(dir, "---\ntitle: $title\ndate: $date\nsummary: About $title\n---\n\n# $title\n\nBody of $title. $extra")!!
@@ -39,22 +38,23 @@ class ReleasesScreenTest {
     private fun show(articles: List<Article>?, links: MutableList<String> = mutableListOf(), selected: String? = null) {
         compose.setContent {
             var sel by mutableStateOf(selected)
-            RiskMandateTheme { ReleasesScreen(articles, sel, onSelect = { sel = it }, onLink = { links += it }) }
+            RiskMandateTheme { ReleasesScreen(articles, sel, onSelect = { sel = it }, onLink = { links += it }, images = Fixture.images) }
         }
     }
 
     private fun waitForImage() = compose.waitUntil(10_000) { compose.onAllNodesWithTag(ReleasesTags.IMAGE, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
 
-    @Test fun sampleArticleIsBundledAndMarkedAsSample() {
-        val articles = real()
-        assertTrue("assets/releases has at least the sample", articles.isNotEmpty())
-        val sample = articles.first { it.dir.endsWith("-sample") }
-        assertTrue(sample.sample)
-        assertTrue("the sample has a screenshot to render", sample.firstImage != null)
+    @Test fun everyBundledArticleParsesInBothLanguages() {
+        // Whatever editor bundles must parse: a broken article would silently vanish from the list.
+        val source = AssetArticleSource(app.assets)
+        for (dir in source.dirs()) {
+            assertTrue("$dir/article.md must parse", source.read(dir, ReleaseStore.ARTICLE)?.let { ArticleParser.parse(dir, it) } != null)
+            source.read(dir, ReleaseStore.ARTICLE_PT)?.let { assertTrue("$dir/article.pt-PT.md must parse", ArticleParser.parse(dir, it) != null) }
+        }
     }
 
     @Test fun listShowsTitleSummaryAndOpensTheReaderWithAnImage() {
-        val sample = real().first { it.dir.endsWith("-sample") }
+        val sample = Fixture.sample
         show(listOf(sample))
         compose.onNodeWithText(sample.title).assertIsDisplayed()
         compose.onNodeWithText(sample.summary).assertIsDisplayed()
@@ -67,7 +67,7 @@ class ReleasesScreenTest {
 
     @Test @Config(qualifiers = "w360dp-h2400dp-port")
     fun readerRendersTheImageOfTheArticle() {
-        val sample = real().first { it.dir.endsWith("-sample") }
+        val sample = Fixture.sample
         show(listOf(sample), selected = sample.dir)
         waitForImage()
         compose.onAllNodesWithTag(ReleasesTags.IMAGE)[0].assertIsDisplayed()
@@ -123,6 +123,14 @@ class ReleasesScreenTest {
             .config[androidx.compose.ui.semantics.SemanticsProperties.Text].first()
         assertEquals(listOf("https://riskmandate.ai/x"), text.getLinkAnnotations(0, text.length).map { (it.item as androidx.compose.ui.text.LinkAnnotation.Clickable).tag })
         assertTrue(links.isEmpty())
+    }
+
+    @Test fun imageDecodesScaledAndMissingImageIsNull() {
+        val full = ReleaseStore.image(Fixture.images, Fixture.IMAGE_DIR, "screenshots/fixture-home.png", 2048)!!
+        val small = ReleaseStore.image(Fixture.images, Fixture.IMAGE_DIR, "screenshots/fixture-home.png", 240)!!
+        assertTrue(small.width < full.width)
+        assertEquals(null, ReleaseStore.image({ _, _ -> null }, Fixture.IMAGE_DIR, "screenshots/x.png", 240))
+        assertEquals(null, ReleaseStore.image(Fixture.images, Fixture.IMAGE_DIR, "../x.png", 240))
     }
 
     @Test fun dateIsFormatted() {

@@ -74,4 +74,6 @@ class UiScreenshotTest {
     }
 
     @Test fun cards() = shoot("cards") { CardsSample() }
+
+    @Test fun lab() = shoot("lab") { LabSample() }
 }

@@ -58,6 +58,12 @@ The button called RiskMandate opens riskmandate.ai's pages inside the app, with 
 
 For a stand with bad Wi-Fi the app holds an offline copy of the pages, read on 9 November 2026. It shows a banner saying so, with a Try online button. A page that is not in the copy says so and asks for a connection. The screen also tells you that riskmandate.ai has its own privacy policy and may set its own cookies, while this app collects nothing.
 
+The screenshots below show the app's frame around the page: the tabs, the offline banner and the privacy line. They do not show the page itself.
+
+![The RiskMandate screen on a phone: tabs, offline banner and privacy line, without the page.](screenshots/site-phone.png)
+
+![The same screen on a ten-inch tablet turned sideways.](screenshots/site-tablet.png)
+
 The words and prices on those pages are riskmandate.ai's, not this app's. The app adds nothing to what the site says. If the site has changed since 9 November, the offline copy is out of date until the next build.
 
 ## Stand mode
@@ -65,7 +71,7 @@ The words and prices on those pages are riskmandate.ai's, not this app's. The ap
 Stand mode is for a tablet left running on a stand. It is **off by default** and has no button. When it is on:
 
 - the screen stays on;
-- the screen is pinned, if Android allows it, so a visitor cannot leave the app;
+- the screen is pinned, if Android allows it, which makes it harder for a visitor to leave the app. It deters; it does not lock the tablet, because Android's own unpin gesture still works (below);
 - after a set number of idle minutes the app goes back to the home screen. The default is 3 minutes, and you can set 1 to 30.
 
 **To switch it on or off:** on the home screen, **press and hold the bottom-right corner** (a square of about 48 density-independent pixels, inside the safe area). The settings panel opens. Use the "Stand mode on" switch, and Less and More for the idle minutes. When it is on, a faint dot sits in that corner.
@@ -73,6 +79,8 @@ Stand mode is for a tablet left running on a stand. It is **off by default** and
 Android asks once whether to pin the screen. If you refuse, or screen pinning is off in Settings, Security, the panel says "The screen is not pinned", and keep-awake and the idle reset still work. To unpin with Android's own gesture: with three-button navigation hold Back and Overview together; with gesture navigation swipe up and hold. If asked, enter the lock-screen PIN. Plan how you will get a tablet out of pinning before the day.
 
 The settings are kept on the device only: stand mode on or off, and the idle minutes.
+
+While the screen is pinned, the Open riskmandate.ai button on the home screen opens no browser. It shows the message "Web pages are not opened in a browser while the app is pinned." The RiskMandate button, which keeps riskmandate.ai inside the app, still works; links in it that leave riskmandate.ai are not opened while the screen is pinned.
 
 ## What's new
 
