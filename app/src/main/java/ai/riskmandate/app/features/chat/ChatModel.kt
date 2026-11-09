@@ -34,7 +34,7 @@ object ChatLimits {
     const val MAX_CONVERSATIONS = 30
     const val MAX_MESSAGES = 200
     const val MAX_MESSAGE_CHARS = 20_000
-    const val MAX_INPUT_CHARS = 4_000
+    const val MAX_INPUT_CHARS = 2_000
 
     /** About 3K tokens of history (4 characters a token): the brief aims for 4K to 8K per request, with room for the answer. */
     const val PROMPT_BUDGET_CHARS = 12_000
@@ -108,4 +108,13 @@ object ChatStats {
         val ms = endAt - firstPieceAt
         return if (tokens < 2 || ms <= 0) 0.0 else (tokens - 1) * 1000.0 / ms
     }
+}
+
+/**
+ * Decisions that wait for Dinis. Constants, not state.
+ * [WIPE_ON_LEAVE]: security H.3, a shared stand tablet. When true, saved history is deleted whenever the chat
+ * leaves the screen (Back, or stand mode's idle reset: the feature cannot tell them apart). Off until he decides.
+ */
+object ChatPolicy {
+    const val WIPE_ON_LEAVE = false
 }

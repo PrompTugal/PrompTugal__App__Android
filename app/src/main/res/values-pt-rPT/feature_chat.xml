@@ -38,4 +38,6 @@
     <string name="chat_preset_triplets_title">Explicar triplos do grafo</string>
     <string name="chat_preset_triplets_prompt">Leia alguns triplos do grafo e explique-os.</string>
     <string name="chat_preset_triplets_note">Precisa das ferramentas do grafo, que ainda não existem.</string>
+    <string name="chat_network_on">Rede: ligada</string>
+    <string name="chat_network_off">Rede: desligada</string>
 </resources>

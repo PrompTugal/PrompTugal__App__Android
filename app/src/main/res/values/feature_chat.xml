@@ -39,4 +39,6 @@
     <string name="chat_preset_triplets_title">Explain graph triplets</string>
     <string name="chat_preset_triplets_prompt">Read a few triplets from the graph and explain them.</string>
     <string name="chat_preset_triplets_note">Needs the graph tools, which are not built yet.</string>
+    <string name="chat_network_on">Network: on</string>
+    <string name="chat_network_off">Network: off</string>
 </resources>

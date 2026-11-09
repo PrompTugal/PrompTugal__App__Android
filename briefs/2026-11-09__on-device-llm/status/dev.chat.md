@@ -18,6 +18,13 @@ Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an ad
 - Tests (34): `ChatControllerTest` (streaming, stats on a fake clock, stop, failure, no model, busy, history saved and reloaded, empty chats not saved, new chat, clear history, model picker, grounding, prompt budget, links), `ChatStoreTest` (round trip, atomic replace, damaged file, clear, limits, backup rules), `ChatScreenTest` (badge, no-model state, typing and sending, markup shown literally, links, stop, picker, presets, clear with confirmation, pt-PT).
 - Gate `./gradlew testDebugUnitTest lintDebug assembleRelease bundleRelease`: green.
 
+## After the conductor's inputs (architect e2675d4, design llm-screens.md, security H)
+- Storage moved to `noBackupFilesDir/feature_chat/history.json` (security H.3; stricter than the architect's `filesDir/feature_chat/`, and still app-private). **For mandate/app:** list this path, not `filesDir`.
+- "On device, offline" badge now shows only while a model is installed; a separate network chip ("Network: on/off", real state via `Browser.isOffline`, re-read after each answer) tells the truth beside it (design).
+- Input capped at 2,000 characters (design). No logging anywhere in the package (a test scans for `Log.`, `println`, `printStackTrace`).
+- Stand tablet (security H.3): leaving the chat already drops the on-screen conversation, and it opens on an empty chat. Wiping the saved history on leave is `ChatPolicy.WIPE_ON_LEAVE`, **off** until Dinis decides (it cannot tell Back from stand's idle reset; if he wants only the idle reset to wipe, stand/app must give features a signal). Also pending Dinis: `FLAG_SECURE` on the chat screen (blocks demo screenshots), so not done.
+- Not yet done, waiting for the real `LlmService` (dev.llm has not pushed): the adapter from `LlmService.stream(LlmRequest): Flow<LlmEvent>` and `context.llm` (null = "set up a model" with a way to G through the host), generation cap through `maxTokens`, "loading model" state from `LlmState`, "Jump to latest", the design's empty-state preset cards and selectable text.
+
 ## For architect (FeatureContext)
 `FeatureContext` has no `LlmService` yet. Until it does, chat reads it from `LocalChatLlm` (a `CompositionLocal` in the chat package, default `NoLlm`). When the architect adds it to the contract, chat reads `context.llm` instead: one line in `ChatFeature.Content` plus an adapter from `LlmService` to `ChatLlm`.
 

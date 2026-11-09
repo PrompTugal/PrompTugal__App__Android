@@ -168,6 +168,22 @@ class ChatControllerTest {
         assertTrue(store.saved.none { it.messages.any { m -> m.text == "q" } })
     }
 
+    @Test fun wipeNowDeletesSavedHistoryWithoutNeedingTheScope() {
+        val store = MemoryChatHistoryStore()
+        val c = started(FakeChatLlm(), store)
+        c.send("visitor text")
+        c.wipeNow()
+        assertTrue(store.saved.isEmpty())
+    }
+
+    @Test fun neverLogsContentAndKeepsTheStandWipeOffUntilDinisDecides() {
+        assertFalse(ChatPolicy.WIPE_ON_LEAVE)
+        val bad = Regex("""\bLog\.|println\(|printStackTrace|Timber""")
+        val offenders = java.io.File("src/main/java/ai/riskmandate/app/features/chat").listFiles().orEmpty()
+            .filter { it.extension == "kt" && bad.containsMatchIn(it.readText()) }.map { it.name }
+        assertEquals("chat must not log (prompts, answers, history)", emptyList<String>(), offenders)
+    }
+
     @Test fun modelPickerChoosesWhichModelIsAsked() {
         val llm = FakeChatLlm(models = listOf(ChatModelInfo("a", "A"), ChatModelInfo("b", "B")))
         val c = started(llm)

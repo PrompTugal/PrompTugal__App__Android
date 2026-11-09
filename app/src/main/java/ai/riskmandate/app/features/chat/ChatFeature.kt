@@ -5,6 +5,7 @@ import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -14,6 +15,7 @@ import java.io.File
 
 object ChatTags {
     const val BADGE = "chat_badge"
+    const val NETWORK = "chat_network"
     const val INPUT = "chat_input"
     const val SEND = "chat_send"
     const val STOP = "chat_stop"
@@ -55,10 +57,11 @@ object ChatFeature : Feature {
         val provided = LocalChatStore.current
         val scope = rememberCoroutineScope()
         val controller = remember(llm, provided) {
-            val store = provided ?: FileChatHistoryStore(File(android.applicationContext.filesDir, "feature_chat"))
+            val store = provided ?: FileChatHistoryStore(File(android.applicationContext.noBackupFilesDir, "feature_chat"))
             ChatController(llm, store, scope)
         }
         LaunchedEffect(controller) { controller.start() }
+        if (ChatPolicy.WIPE_ON_LEAVE) DisposableEffect(controller) { onDispose { controller.wipeNow() } }
         // Generation can take a while: do not let stand mode's idle reset wipe the chat mid-answer.
         context.HoldIdleWhile(controller.state.generating)
         ChatScreen(controller)

@@ -46,9 +46,17 @@ class ChatScreenTest {
     @Test fun showsTheOnDeviceBadgeAndNoModelState() {
         show(NoLlm)
         compose.waitForIdle()
-        tag(ChatTags.BADGE).assertIsDisplayed()
+        assertEquals(0, count(ChatTags.BADGE)) // "on device" is not claimed with no model installed
+        tag(ChatTags.NETWORK).assertIsDisplayed()
         tag(ChatTags.NO_MODEL).assertIsDisplayed()
         assertEquals(0, count(ChatTags.INPUT))
+    }
+
+    @Test fun badgeAndNetworkChipShowWithAModel() {
+        show(FakeChatLlm())
+        compose.waitForIdle()
+        tag(ChatTags.BADGE).assertIsDisplayed()
+        tag(ChatTags.NETWORK).assertIsDisplayed()
     }
 
     @Test fun typingSendingAndStreamingShowsPlainTextWithStats() {

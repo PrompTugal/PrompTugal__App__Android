@@ -93,6 +93,12 @@ class ChatController(
         scope.launch(io) { saveLock.withLock { try { store.clear() } catch (e: Exception) { /* nothing left to do */ } } }
     }
 
+    /** Deletes saved history right now, on the calling thread, for use when the screen is leaving (the scope is ending). */
+    fun wipeNow() {
+        job?.cancel()
+        try { store.clear() } catch (e: Exception) { /* nothing left to do */ }
+    }
+
     /** Sends [text] (optionally grounded in [groundingText]). Ignored when blank, busy or no model is installed. */
     fun send(text: String, groundingText: String? = null) {
         val model = state.modelId
