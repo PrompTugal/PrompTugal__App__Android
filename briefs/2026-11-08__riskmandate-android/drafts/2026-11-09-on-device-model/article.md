@@ -18,20 +18,20 @@ These screens are a **preview**. They are switched off for everyone and are mean
 The first step is a one-off setup screen. You choose a model from a short list, see its size, download it once and the app checks it.
 
 - **Models:** Gemma 4 E2B is the default (about 2.6 GB). Gemma 4 E4B is the optional larger one (about 3.7 GB). The weight licence of each is recorded in the source as the model card states it, and for both it reads Apache 2.0.
-- **One host, checked files:** the download comes from huggingface.co, from a list of exact addresses fixed in the code. The app follows a few redirects, only to https addresses on Hugging Face's own hosts. Each file's size and SHA-256 hash are fixed in the code, and a file that does not match is deleted and never opened.
+- **One source, checked files:** the download comes from huggingface.co and its download servers (hf.co), from a list of exact addresses fixed in the code. The app follows a few redirects, only to https addresses on Hugging Face's own hosts. Each file's size and SHA-256 hash are fixed in the code, and a file that does not match is deleted and never opened.
 - **Resumable:** a partly downloaded file is kept and the download resumes. There is a progress bar, a check of free storage first, and a Delete model button.
 - **A fallback for bad Wi-Fi:** the same file can be put in the app's folder by hand with a computer (adb), and gets the same checks.
-- **What the app says:** "Downloads a model file once from huggingface.co. Nothing you type leaves the device."
+- **What the app says:** "Downloads a model file once from huggingface.co (and its download servers, hf.co). Nothing you type leaves the device."
 
-The download is the one time the app contacts Hugging Face, and only when you tap Download. After it, the model runs on the device and works offline.
+The download is the one time the app contacts Hugging Face and its download servers, and only when you tap Download. After it, the model runs on the device and works offline.
 
 ## Chat
 
-A chat with the local model, to show it is a real language model: streamed answers, a stop button, a new chat, a badge saying the model is on the device and offline, and the speed of each answer.
+A chat with the local model, to show it is a real language model: streamed answers, a stop button, a new chat, a badge that reads "Runs on this device", and the speed of each answer.
 
 - **First run, build 0.1.78 on a Lenovo Idea Tab Plus (12 GB):** Gemma 4 E2B downloaded on the tablet and Chat answered on the device at about 5.4 to 5.5 tokens per second: 68 tokens in 13.6 seconds, and 140 tokens in 26.5 seconds. That is one run on one tablet, from the project's notes; the device bench will give better numbers.
 - **What that means:** a short answer takes several seconds and a long one about half a minute. It is usable for a demonstration, and it is slow.
-- **Rough edges:** the first run turned up things to fix: a short fixed line from riskmandate.ai to put at the start of every request, the wording of the on-device badge, stray formatting marks in answers, and a check of the sampling settings. Treat the chat as unfinished.
+- **Still a preview:** the first run turned up a few things to fix, and they have been fixed since. The chat may still have rough edges.
 
 The three pictures below are drawn by the screenshot tests with a **fake model that returns canned text**, so they show the screen and not the model.
 
@@ -43,7 +43,7 @@ The three pictures below are drawn by the screenshot tests with a **fake model t
 
 ## The runtime
 
-The model runs through LiteRT-LM, Google AI Edge's runtime for on-device models (Apache 2.0), version 0.18.1. That is the version Google's own AI Edge Gallery app ships with the same Gemma 4 files. The plan is to use the GPU where there is one and fall back to the CPU, and the Workbench can vary the backend.
+The model runs through LiteRT-LM, Google AI Edge's runtime for on-device models (Apache 2.0), version 0.18.1. The model files are the ones that Google AI Edge Gallery's allow-list (version 1.0.23) offers. The plan is to use the GPU where there is one and fall back to the CPU, and the Workbench can vary the backend.
 
 ## ABP Lab
 
