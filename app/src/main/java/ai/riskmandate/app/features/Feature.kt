@@ -2,6 +2,7 @@ package ai.riskmandate.app.features
 
 import ai.riskmandate.app.DeviceStatus
 import ai.riskmandate.app.ManagedConfig
+import ai.riskmandate.app.llm.LlmService
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -78,6 +79,13 @@ class FeatureContext(
      * A feature names another feature only by its id string, never by importing its package. Default: no-op.
      */
     val openFeature: (id: String) -> Unit = {},
+    /**
+     * The on-device model, or null when the host has no service. Features never load a model themselves.
+     * Watch [LlmService.state] (NoModel, Idle, Loading, Ready, Failed); on NoModel offer model setup with
+     * `openFeature("models")`. The service never runs a tool: check every proposal with the feature's own
+     * `ToolSpec` list (`checkToolCall`) before acting on it. Show model output as plain text.
+     */
+    val llm: LlmService? = null,
 )
 
 /**
