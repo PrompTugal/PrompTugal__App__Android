@@ -12,7 +12,7 @@ import java.io.File
  * a network call and is guarded separately.
  */
 class LlmSandboxTest {
-    private val roots = listOf("chat", "lab").map { File("src/main/java/ai/riskmandate/app/features/$it") }
+    private val roots = listOf("chat", "lab", "workbench").map { File("src/main/java/ai/riskmandate/app/features/$it") }
 
     private val forbidden = Regex(
         """\bjava\.net\b|\bHttpURLConnection\b|\bHttpsURLConnection\b|\bokhttp3\b|\bjava\.net\.URL\b|\bURL\(|\bSocket\(|\bServerSocket\b|""" +
