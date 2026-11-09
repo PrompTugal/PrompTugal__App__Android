@@ -316,6 +316,13 @@ class SiteTest(unittest.TestCase):
     def test_banned_word_is_refused(self):
         self.assertRefused(self.broken('index.html', lambda t: t.replace('<main id="main">', '<main id="main"><p>A seamless app.</p>')), 'banned word')
 
+    def test_absolute_data_claims_are_refused(self):
+        for claim in ('The app collects nothing.', 'The app keeps no data.', 'It stores nothing.', 'The app sends nothing.', 'No data is kept.', 'So nothing is lost.'):
+            problems = self.broken('index.html', lambda t, c=claim: t.replace('<main id="main">', f'<main id="main"><p>{c}</p>'))
+            self.assertRefused(problems, 'absolute data claim')
+        # the policy's own wording is allowed
+        self.assertEqual(self.broken('index.html', lambda t: t.replace('<main id="main">', '<main id="main"><p>It sends nothing to its makers and collects no personal data.</p>')), [])
+
     def test_em_dash_is_refused(self):
         self.assertRefused(self.broken('index.html', lambda t: t.replace('<main id="main">', '<main id="main"><p>One — two.</p>')), 'em-dash')
 
