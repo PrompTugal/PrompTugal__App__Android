@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 34 (9 Nov 2026): P7 fills PASS (dev.releases c70ff8d, dev.abpdemo 6644a48, dev.site e3f06dd, dev.mandate cfa572a, dev.chat afe84e7, dev.lab f7cb744 with R-lab-3 and R-lab-4 closed, dev.llm 8c1ea0c); app 77ec632 PASS with R-shell-1 (new `shell` preferences file missing from policy texts and the mandate view) and R-shell-2. Waiting for the next wake (design e2b96aa with accent A, qa 680c53d, eval harness).
+> Round 35 (9 Nov 2026): design 64b0e5b (with e2b96aa) PASS. Waiting for the next wake (qa 680c53d, eval harness, work/app after design lands).
 
 ## Doing
 Nothing. Stopped until woken.
