@@ -27,7 +27,8 @@
       "name": "devices.android@promptugal.ai.dinis",
       "model": "Sonnet",
       "branch": "work/devices",
-      "session": "session_018yvwtM4VMbzGS28k1PsAeB"
+      "session": "session_018yvwtM4VMbzGS28k1PsAeB",
+      "state": "archived 2026-11-09T14:20Z (Dinis: archive idle agents)"
     },
     {
       "role": "play",
@@ -69,14 +70,16 @@
       "name": "dev.site.android@promptugal.ai.dinis",
       "model": "Sonnet",
       "branch": "work/dev.site",
-      "session": "session_018yvwtNT6RUqiLApfu3skSs"
+      "session": "session_018yvwtNT6RUqiLApfu3skSs",
+      "state": "archived 2026-11-09T14:20Z (Dinis: archive idle agents)"
     },
     {
       "role": "dev.abpdemo",
       "name": "dev.abpdemo.android@promptugal.ai.dinis",
       "model": "Sonnet",
       "branch": "work/dev.abpdemo",
-      "session": "session_018yvwtNCP9pqhd42J3S9E8Y"
+      "session": "session_018yvwtNCP9pqhd42J3S9E8Y",
+      "state": "archived 2026-11-09T14:20Z (Dinis: archive idle agents)"
     },
     {
       "role": "dev.mandate",
@@ -90,7 +93,8 @@
       "name": "dev.stand.android@promptugal.ai.dinis",
       "model": "Sonnet",
       "branch": "work/dev.stand",
-      "session": "session_018yvwtQFeezHPsT8mXzd2Jx"
+      "session": "session_018yvwtQFeezHPsT8mXzd2Jx",
+      "state": "archived 2026-11-09T14:20Z (Dinis: archive idle agents)"
     },
     {
       "role": "editor",
@@ -104,7 +108,8 @@
       "name": "dev.releases.android@promptugal.ai.dinis",
       "model": "Sonnet",
       "branch": "work/dev.releases",
-      "session": "session_018yvwtQBKD8yLu9WUCZjuUT"
+      "session": "session_018yvwtQBKD8yLu9WUCZjuUT",
+      "state": "archived 2026-11-09T14:20Z (Dinis: archive idle agents)"
     },
     {
       "role": "dev.llm",
