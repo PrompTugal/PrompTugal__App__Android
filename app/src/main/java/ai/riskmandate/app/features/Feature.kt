@@ -24,6 +24,17 @@ interface Feature {
     /** False hides the button (a feature still being built). */
     val enabled: Boolean get() = true
 
+    /**
+     * An optional short badge on this feature's home-screen button (a string resource such as "New"),
+     * or null for none. The home screen calls it for every enabled feature without knowing which one it
+     * is, so the host never imports a feature's package. Read from the composition: keep it cheap, and do
+     * any disk read off the main thread (for example `produceState` with `Dispatchers.IO`). It is called
+     * again each time the home screen shows, so it can disappear once the feature has been opened.
+     */
+    @Composable
+    @StringRes
+    fun homeBadge(): Int? = null
+
     @Composable
     fun Content(context: FeatureContext)
 }

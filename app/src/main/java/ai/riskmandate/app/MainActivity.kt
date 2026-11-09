@@ -22,7 +22,9 @@ import androidx.core.content.ContextCompat
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.IdleHolds
+import ai.riskmandate.app.features.releases.ReleasesNotice
 import ai.riskmandate.app.features.stand.StandHost
+import ai.riskmandate.app.features.stand.StandSettings
 
 /** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
 object Routes {
@@ -30,6 +32,8 @@ object Routes {
     const val LICENCES = "licences"
     const val DIAGNOSTICS = "diagnostics"
 }
+
+private const val WHATS_NEW_ROUTE = "releases"
 
 private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS)
 
@@ -61,6 +65,11 @@ class MainActivity : ComponentActivity() {
                     // reset off through this. HoldIdleWhile releases when the feature leaves the screen; the
                     // host does not clear holds itself (that wiped a feature's hold after rotation, A-app-7).
                     val idle = remember { IdleHolds() }
+                    // "New in this version", once per versionCode (features/releases). Not in stand mode: the
+                    // banner would block the idle reset there (design spec F); the What's new feature button stays.
+                    var offerWhatsNew by rememberSaveable {
+                        mutableStateOf(ReleasesNotice.shouldOffer(this@MainActivity, BuildConfig.VERSION_CODE))
+                    }
                     StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome, idleHeld = idle.held) {
                         if (route != Routes.HOME) BackHandler(onBack = goHome)
                         when {
@@ -84,6 +93,19 @@ class MainActivity : ComponentActivity() {
                                 onLicences = { screen = Routes.LICENCES },
                                 onDiagnostics = { screen = Routes.DIAGNOSTICS },
                                 features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title) { screen = f.id } },
+                                whatsNew = if (offerWhatsNew && FEATURES.any { it.id == WHATS_NEW_ROUTE && it.enabled } &&
+                                    !StandSettings.of(this@MainActivity).enabled
+                                ) {
+                                    WhatsNewOffer(
+                                        onOpen = { offerWhatsNew = false; screen = WHATS_NEW_ROUTE },
+                                        onLater = {
+                                            ReleasesNotice.markSeen(this@MainActivity, BuildConfig.VERSION_CODE)
+                                            offerWhatsNew = false
+                                        },
+                                    )
+                                } else {
+                                    null
+                                },
                             )
                         }
                     }

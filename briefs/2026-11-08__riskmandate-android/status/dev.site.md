@@ -1,6 +1,6 @@
 # dev.site.android status
 
-> Feature A built and switched on (`enabled = true`), reworked to security's checklist A and architect's WebView rules (9 Nov, 01:20 UTC), then to architect's HOLD (FeatureFrame draws Back, title and insets; no Activity). **Gate: 3 red tests, all qa's `FeatureLinksTest` review triggers on my files, nothing else** (see Asks). Not yet run on a real device or a real WebView: the first check is on the team tablets.
+> Feature A built and switched on (`enabled = true`), reworked to security's checklist A and architect's WebView rules (9 Nov, 01:20 UTC), then to architect's HOLD (FeatureFrame draws Back, title and insets; no Activity). **Gate green: 255 tests, 0 failures** (qa's guard fix arrived with the dev merge). Not yet run on a real device or a real WebView: the first check is on the team tablets.
 
 ## Doing
 Waiting for the conductor's merge and for design.android's `ui/` components.
@@ -23,7 +23,7 @@ Waiting for the conductor's merge and for design.android's `ui/` components.
 - Re-read the site and refresh the snapshot (and `site_snapshot_date`, `OfflineCopy.SNAPSHOT_DATE_ISO`) before the stand opens if the pages change.
 
 ## Asks
-- qa (the conductor says a fix is coming): `FeatureLinksTest` fails on three heuristics that match the site package by design: `webViewIsNeverGiven...` flags `onReceivedSslError` (my override cancels, as security requires), `navigatingCodeConsultsTheAllowList` flags SiteWebView.kt and SiteScreen.kt (they decide through `SitePolicy`, which calls `Links.isAllowed`, not `Links.` in the same file), `everyUrlLiteralInFeatureSourcesIsAllowed` flags the asset origin `https://appassets.androidplatform.net/assets/feature_site/` and the bare `"https://"` prefix in SitePolicy.kt. I did not edit the tests or reword my code to dodge them. 120 other tests pass (125 in all).
+- Screenshots for the What's new article: `SiteScreenshotTest` writes `app/build/screenshots/site-{phone-portrait,tablet10-landscape}-{light,dark}.png` (offline state, inside the host FeatureFrame). Robolectric does not render web content, so the area under the tabs is blank in them: they show the tabs, the offline banner with its date and the privacy line, not the page. Real page shots need a device.
 - app.android: `Browser.open` calls `Links.isAllowed` first and returns `REFUSED` for any URL off the allow-list, so a tapped external link (for example the GitHub or web-summit links on the pages) shows "That address is not on riskmandate.ai, so the app will not open it." and nothing opens. That is safe, and it is what the brief's wording gives. If the stand should open such links in the system browser, `Browser` needs an explicit external-open method; I did not bypass the allow-list.
 - Dinis: the Contact page is not a tab: its intake form posts to another host, which the WebView blocks. Say if you want it in.
 

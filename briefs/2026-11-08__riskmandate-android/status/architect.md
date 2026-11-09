@@ -1,11 +1,15 @@
 # architect.android status
 
-> 9 Nov 2026, about 01:55 UTC: review round 5: everything PASS (app e914cc6, stand 9f207e8, site 13114fd, abpdemo b94232d, mandate 5a43197). Trial merge of all heads: only qa's 3 static checks on site fail (A-qa-6 to A-qa-9). Transitional FeatureContext constructor deleted (ffa3c6b). Open: A-app-7 (remove the idle.clear() I suggested) and A-app-8 (wire idleHeld).
+> 9 Nov 2026, about 02:10 UTC: P6 pushed (73b2c16, Feature.homeBadge). site 747b521 PASS (WebViewAssetLoader, rotation). app 62a5ee6 HOLD: A-app-8 is closed, but its What's new card imports feature packages into the host; rework onto P6. A-app-9 is approved and open. LLM side team: no commits yet.
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Reviews: site 747b521 PASS; app 62a5ee6 HOLD (A-app-10: the What's new card imports ReleasesNotice and StandSettings and reads disk in composition; rework onto homeBadge). A-app-8 closed.
+- P6 pushed: `Feature.homeBadge()` (default null) plus `FeatureBadgeTest` (default, override, every listed feature answers). Gate green. README: the host must not import feature packages except `StandHost`.
+- On-device LLM rules (README): one host-held `LlmHost` per process (the one sanctioned process-wide object), a serialised service, a Flow-based contract shape, tool calls proposed by the model and validated in Kotlin per feature, plain-text output, pinned downloads over HttpURLConnection with Range, and storage paths with backup exclusions. Dependencies: LiteRT-LM approved in principle; org.json for JSON; Room, WorkManager, kotlinx-serialization and ViewModel not without a reason.
+- Review round 6: app 95e7978 PASS (A-app-7 closed; A-app-8 still open; A-app-9 new: Browser.open ignores pinning); qa bdb73a5 PASS (guards precise); site ee25896 PASS (openExternal only on real main-frame taps); mandate 42f7a7b PASS (network wording true); releases 61d2b70 PASS (A-rel-1: the host must not call into the feature; proposal P6). Trial merge of all of them: green, 253 tests.
 - Deleted the transitional `FeatureContext(activity, onBack)` constructor (ffa3c6b), since app f317cf8 is on dev. Gate green.
 - Review round 5: app e914cc6 PASS (A-app-7: drop `LaunchedEffect(route) { idle.clear() }`, my own suggestion, which wipes a live hold after a rotation; A-app-8: pass idleHeld); stand 9f207e8 PASS; site 13114fd PASS (content only); abpdemo b94232d PASS (content only, adaptive layout, HoldIdleWhile); mandate 5a43197 PASS (content only, honest storage, off the main thread). README and IdleHolds.clear() doc corrected.
 - Review round 4: app b2ad8aa PASS (Browser.openExternal is the right shape; A-app-5: the privacy wording must change, for security and play); design b61b5d1 PASS (FeatureContent, content only); dev.stand b9c9af3 PASS (corner gesture consumes nothing and is on Home only; A-stand-7: wire idleHeld); dev.site ba979fc HOLD (only A-site-2, its own frame; renderer, asset origin and v2 all fixed); dev.abpdemo 9bbfe59 HOLD (only A-abp-1; wire HoldIdleWhile); dev.mandate 5a35d4c HOLD (only A-man-1; A-man-4 medium); qa note A-qa-6 to A-qa-9 for site, A-qa-1 withdrawn.
@@ -29,6 +33,7 @@ Nothing.
 - Open, P4: stand's home-screen on/off switch (`StandController` hoisted by MainActivity, passed to StandHost and HomeScreen), app and stand to agree.
 
 ## For other roles
+- conductor: **P6 proposal**, `@Composable fun homeBadge(): Int? = null` on `Feature`, so the home screen can show "New" for releases (or any feature) without importing a feature package. Say yes and I push it with a contract test; app then shows it on the feature button.
 - conductor: FeatureContext narrowing. I kept it to onBack, config and device: Context, LifecycleOwner and View already come from Compose (`LocalContext`, `LocalLifecycleOwner`, `LocalView`), and copying them into the context adds nothing. LockTask and window control stay in StandHost (stand only), which already gets the Activity.
 - dev.stand + dev.abpdemo: agree whether auto-play may hold off the idle reset (A-stand-3, A-abp-4). If yes, I propose a FeatureContext signal.
 - qa / app: `LocalisationTest.everyStringIsTranslated` checks only `strings.xml`, and `noScreenHardcodesText` lists only the top-level package (not `features/**`, not `ui/`). Extend both to `features.xml`, `feature_*.xml` and all sources recursively, or feature strings can ship untranslated.

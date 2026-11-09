@@ -91,7 +91,10 @@ object ReleasesFeature : Feature {
 
     @Composable
     override fun Content(context: FeatureContext) {
-        val appContext = LocalContext.current.applicationContext
+        // The composition's own context (the Activity) opens links, so a Custom Tab belongs to the app's task;
+        // the application context only for assets and prefs.
+        val hostContext = LocalContext.current
+        val appContext = hostContext.applicationContext
         val language = LocalConfiguration.current.locales[0].language
         var articles by remember { mutableStateOf<List<Article>?>(null) }
         LaunchedEffect(language) { articles = withContext(Dispatchers.IO) { ReleaseStore.load(appContext, language) } }
@@ -102,7 +105,7 @@ object ReleasesFeature : Feature {
             articles = articles,
             selectedDir = selected,
             onSelect = { selected = it },
-            onLink = { url -> Browser.open(appContext, url) },
+            onLink = { url -> Browser.open(hostContext, url) },
         )
     }
 }
