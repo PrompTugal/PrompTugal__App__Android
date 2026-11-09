@@ -8,6 +8,7 @@ import ai.riskmandate.app.llm.DeviceProbe
 import ai.riskmandate.app.llm.DeviceSample
 import ai.riskmandate.app.llm.RunRecord
 import ai.riskmandate.app.llm.LlmState
+import ai.riskmandate.app.llm.prompts.Prompts
 import ai.riskmandate.app.llm.LlmRunner
 import ai.riskmandate.app.ui.FeatureContent
 import androidx.compose.foundation.layout.Arrangement
@@ -59,7 +60,7 @@ object WorkbenchTags {
     fun tab(i: Int) = "workbench_tab_$i"
 }
 
-/** The system-prompt presets. The chat's RiskMandate block is dev.chat's and joins when it is shared in llm/. */
+/** The fixed system-prompt presets; the RiskMandate base block is added from llm/prompts when it has loaded. */
 val WORKBENCH_PRESETS = listOf(
     SystemPreset(R.string.workbench_system_none, ""),
     SystemPreset(R.string.workbench_system_brief, "You are a helpful assistant. Answer briefly and plainly."),
@@ -91,6 +92,12 @@ internal fun WorkbenchContent(
         is LlmState.Failed -> s.modelId
         LlmState.NoModel -> null
     }
+    var presets by remember { mutableStateOf(WORKBENCH_PRESETS) }
+    LaunchedEffect(Unit) {
+        runCatching { Prompts.load(app.assets, Prompts.RISKMANDATE_BASE) }.getOrNull()?.let { base ->
+            presets = WORKBENCH_PRESETS.take(1) + SystemPreset(R.string.workbench_system_riskmandate, base) + WORKBENCH_PRESETS.drop(1)
+        }
+    }
     val store = remember { RunLogStore(File(app.noBackupFilesDir, RunLogStore.DIR)) }
     var log by remember { mutableStateOf<List<LogEntry>>(emptyList()) }
     LaunchedEffect(Unit) { log = withContext(io) { store.load() } }
@@ -110,8 +117,10 @@ internal fun WorkbenchContent(
     context.HoldIdleWhile(running)
     val view = LocalView.current
     DisposableEffect(running) {
+        // Restore what was there before, not false: another screen may hold it on (security R-wb-7).
+        val previous = view.keepScreenOn
         if (running) view.keepScreenOn = true
-        onDispose { if (running) view.keepScreenOn = false }
+        onDispose { if (running) view.keepScreenOn = previous }
     }
 
     FeatureContent {
@@ -125,7 +134,7 @@ internal fun WorkbenchContent(
             when (tab) {
                 0 -> RunTab(
                     runner = runner, activeModel = activeModel, onOpenModels = { context.openFeature("models") },
-                    presets = WORKBENCH_PRESETS, toolSets = emptyList(),
+                    presets = presets, toolSets = emptyList(),
                     form = form, onForm = { savedForm = RunForm.save(it) }, last = last, onLast = { last = it },
                     onRunning = { running = it }, onRecord = { record("run", it) },
                 )

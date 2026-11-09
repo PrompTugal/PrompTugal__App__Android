@@ -49,6 +49,7 @@
     <string name="workbench_system">Instrução de sistema</string>
     <string name="workbench_system_label">Instrução de sistema (editável)</string>
     <string name="workbench_system_none">Nenhuma</string>
+    <string name="workbench_system_riskmandate">Bloco base RiskMandate</string>
     <string name="workbench_system_brief">Assistente breve</string>
     <string name="workbench_system_tools">Usa ferramentas</string>
     <string name="workbench_prompt">Pedido</string>

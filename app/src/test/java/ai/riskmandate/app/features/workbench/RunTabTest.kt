@@ -159,5 +159,8 @@ class RunTabTest {
         }
         compose.onNodeWithTag(WorkbenchTags.tab(0)).assertIsEnabled()
         compose.onNodeWithTag(RunTags.PROMPT).performScrollTo()
+        // The RiskMandate base block comes from llm/prompts once it has loaded.
+        waitFor(RunTags.systemPreset(3))
+        compose.onNodeWithTag(RunTags.systemPreset(1)).assertTextContains("RiskMandate base block")
     }
 }

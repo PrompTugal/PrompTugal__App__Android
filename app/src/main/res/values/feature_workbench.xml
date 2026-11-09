@@ -49,6 +49,7 @@
     <string name="workbench_system">System prompt</string>
     <string name="workbench_system_label">System prompt (editable)</string>
     <string name="workbench_system_none">None</string>
+    <string name="workbench_system_riskmandate">RiskMandate base block</string>
     <string name="workbench_system_brief">Brief assistant</string>
     <string name="workbench_system_tools">Uses tools</string>
     <string name="workbench_prompt">Prompt</string>

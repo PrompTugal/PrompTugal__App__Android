@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.StateFlow
 interface LlmService {
     val state: StateFlow<LlmState>
 
+    /** Where answers are computed. Every "on this device" badge reads this (architect, cloud ruling). */
+    val location: LlmLocation get() = LlmLocation.LOCAL
+
     /** Streams one answer. Cold: nothing runs until collected. Ends with exactly one [LlmEvent.Done] or [LlmEvent.Error]. */
     fun stream(request: LlmRequest): Flow<LlmEvent>
 
@@ -43,6 +46,9 @@ interface LlmService {
      */
     suspend fun unload() {}
 }
+
+/** Where a service runs the model. llm/ never imports the cloud package; a cloud service says CLOUD itself. */
+enum class LlmLocation { LOCAL, CLOUD }
 
 /** Which backend a request wants (architect: on the request, not a host setting). */
 enum class BackendPreference {
@@ -191,6 +197,8 @@ data class LlmStats(
     val stopReason: LlmStopReason = LlmStopReason.DONE,
     /** The request's maxTokens, so a reader can see why [stopReason] is MAX_TOKENS. */
     val maxTokens: Int? = null,
+    /** Where this answer was computed. */
+    val location: LlmLocation = LlmLocation.LOCAL,
 ) {
     /** Architect's names for the same values. */
     val backendUsed: String get() = backend

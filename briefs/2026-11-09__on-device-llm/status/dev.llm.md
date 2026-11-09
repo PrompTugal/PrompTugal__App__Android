@@ -5,6 +5,12 @@
 ## Doing
 Workbench (brief `briefs/2026-11-09__on-device-llm/workbench.md`, Dinis 9 Nov ~10:00 UTC): tabs 1 (Run) and 2 (Experiments). Step 1 (stats) pushed; next the `workbench` feature and the Run tab, then the run log, sweep and A/B. Earlier work (bench, LlmService/LlmHost, feature G) is on dev; G stays `enabled = false` until Dinis's tablet run.
 
+## Workbench step 5: location, shared prompts, R-wb-6/7
+- `LlmLocation` (LOCAL, CLOUD): `LlmService.location` (default LOCAL in the interface) and `LlmStats.location` (default LOCAL); "Copy run" says where it ran. llm/ imports nothing from cloud/.
+- `llm/prompts/Prompts`: versioned bundled texts `assets/prompts/<name>.v<N>.txt`, read off the main thread and cached, names checked as safe file names, empty or over 8,000 characters refused. First file `riskmandate_base.v1.txt`: chat's `BASE_SYSTEM`, copied verbatim (dev.chat switches to `Prompts.load(assets, Prompts.RISKMANDATE_BASE)` and drops its constant). The Workbench offers it as the "RiskMandate base block" preset.
+- R-wb-6: the log note already said what each entry keeps (step 4). R-wb-7: keep-screen-on restores the previous value on dispose.
+- Tests: `PromptsTest` (4), a location contract test, the preset in `RunTabTest`.
+
 ## Workbench step 4: rulings from architect, security, QA and design (they reached me after steps 1 to 3)
 - Architect: `LlmStopReason.CANCELLED` (was STOPPED); `LlmStats.backendUsed`, `fellBack`, `coldLoad` (names for backend, fellBackToCpu, loadedModel); `LlmRequest.backend: BackendPreference = AUTO` (AUTO, GPU, CPU), the host reloads only when the loaded model is not on the backend asked for (AUTO or GPU reuse a GPU model, or a CPU one that fell back; CPU reuses only CPU), and `fellBack` is true only after a real GPU failure; `suspend fun unload()` on `LlmService` (default no-op; the host's unloads), used by the Workbench's "Cold start (unload first)" option only (security R-wb-1). Removed `LlmHost.select` and `preferredBackend`: no casts to LlmHost in the Workbench, and no model parameter: the Run tab shows the active model from the service's state with "Change in Model setup" (`openFeature("models")`); no model sweep.
 - Fixed: cold or warm was decided before loading, so a request that replaced the loaded model (another backend) was reported warm; now decided after, by identity (tested).
@@ -105,6 +111,10 @@ Carried on this branch, as conductor agreed, in one separate commit for your rev
 ## For app
 - Licence screen (security G.7): list the models G offers with their weight licences: "Gemma 4 E2B and Gemma 4 E4B (LiteRT-LM builds by litert-community on Hugging Face): Apache-2.0". Source of truth: `ModelCatalog` (downloadable entries).
 - Hold one `LlmHost.create(applicationContext)` for the process (Application subclass or the host's holder; your call per architect), pass it as `FeatureContext.llm` once architect adds the field, and forward `onTrimMemory(level)` to it. The bench (Diagnostics) loads its own engine: call `host.unload()` before opening it if a feature has a model in memory, or two copies fill memory. A one-line `LaunchedEffect` in the bench route would do.
+
+## For dev.chat
+- `Prompts.load(context.assets, Prompts.RISKMANDATE_BASE)` returns your `BASE_SYSTEM` text, byte for byte (`assets/prompts/riskmandate_base.v1.txt`). Switch to it and delete the constant; your verbatim check against riskmandate.ai can run on the asset. A new wording is a new file (`riskmandate_base.v2.txt`), never an edit of v1.
+- `CloudLlmService` overrides `location = LlmLocation.CLOUD` and sets `LlmStats.location = CLOUD` on its Done events.
 
 ## For dev.lab
 - A-lab-7: `ai.riskmandate.app.llm.StrictJson` has your parser's exact API and behaviour (`parse(text, maxChars)`, `parseAt`, `render`, `canonical`, `hash16`, `MAX_DEPTH`, `MAX_CHARS`, `JsonException`). Once my branch is on dev: change your imports, delete `features/lab/StrictJson.kt` and `StrictJsonTest.kt` (the tests live on in `llm/StrictJsonTest`). For tool calls you can also use `checkToolCall(tools, proposal)`.
