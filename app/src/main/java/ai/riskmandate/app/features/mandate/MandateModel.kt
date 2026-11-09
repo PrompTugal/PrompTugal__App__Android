@@ -34,7 +34,7 @@ data class ReachItem(
 }
 
 /** Why the mandate allows an item. Mapped to a string resource in the UI, so the reasons are translated. */
-enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE, SITE_VIEW }
+enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE, SITE_VIEW, SHELL_UI, RELEASES_SEEN, CHAT_HISTORY, MODELS, MODELS_ADB, MODEL_CHOICE, MODEL_DOWNLOAD }
 
 data class MandateEntry(val kind: ReachKind, val id: String, val reason: Reason) {
     val key: String get() = "${kind.name.lowercase()}:$id"
@@ -60,8 +60,9 @@ data class Mandate(
         /**
          * The current mandate for [packageName]. The app loads riskmandate.ai pages in its in-app view and opens them in the user's browser (INTERNET),
          * says plainly when it is offline (ACCESS_NETWORK_STATE), has one launcher screen, holds the one
-         * signature-level permission AndroidX adds to guard the app's own dynamic receivers, and may keep stand
-         * mode's two settings and the in-app view's own web storage and cache. Nothing else.
+         * signature-level permission AndroidX adds to guard the app's own dynamic receivers, and may keep the settings,
+         * chat history and model files of its features, and the in-app view's own web storage and cache, all on this
+         * device. Nothing else.
          */
         fun current(packageName: String, managedKeys: List<String>): Mandate = Mandate(
             entries = listOf(
@@ -72,10 +73,21 @@ data class Mandate(
                 // The in-app site view (feature "site") loads riskmandate.ai itself: exactly these two hosts.
                 MandateEntry(ReachKind.NETWORK, "connects:${HOSTS[0]}", Reason.SITE_VIEW),
                 MandateEntry(ReachKind.NETWORK, "connects:${HOSTS[1]}", Reason.SITE_VIEW),
+                // Model setup: the Download button fetches a model from Hugging Face, only when tapped (dev.llm's
+                // DownloadPolicy: https, port 443, huggingface.co, hf.co and hosts under hf.co).
+                MandateEntry(ReachKind.NETWORK, "connects:huggingface.co", Reason.MODEL_DOWNLOAD),
+                MandateEntry(ReachKind.NETWORK, "connects:hf.co", Reason.MODEL_DOWNLOAD),
+                MandateEntry(ReachKind.NETWORK, "connects:*.hf.co", Reason.MODEL_DOWNLOAD),
                 // Storage the summit features may keep, on this device only. None exists until the feature is used.
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/stand_mode.xml", Reason.STAND_SETTINGS),
                 MandateEntry(ReachKind.STORAGE, "app_webview", Reason.SITE_STORAGE),
                 MandateEntry(ReachKind.STORAGE, "cache", Reason.SITE_CACHE),
+                MandateEntry(ReachKind.STORAGE, "shared_prefs/shell.xml", Reason.SHELL_UI),
+                MandateEntry(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", Reason.RELEASES_SEEN),
+                MandateEntry(ReachKind.STORAGE, "shared_prefs/feature_models.xml", Reason.MODEL_CHOICE),
+                MandateEntry(ReachKind.STORAGE, "no_backup/feature_chat", Reason.CHAT_HISTORY),
+                MandateEntry(ReachKind.STORAGE, "no_backup/models", Reason.MODELS),
+                MandateEntry(ReachKind.STORAGE, "external/models", Reason.MODELS_ADB),
             ),
             hosts = HOSTS,
             port = 443,
@@ -87,11 +99,15 @@ data class Mandate(
 
 /**
  * Network the app makes itself: when the in-app site view is on, the app (not the browser) connects to the
- * allowed riskmandate.ai hosts. Computed from which features are enabled; pages opened in the user's browser
+ * allowed riskmandate.ai hosts; when the model setup is on, it may connect to Hugging Face, only when Download is tapped. Computed from which features are enabled; pages opened in the user's browser
  * are the browser's traffic and are not counted.
  */
 fun networkReach(enabledFeatureIds: Set<String>): List<ReachItem> =
-    if ("site" in enabledFeatureIds) Mandate.HOSTS.map { ReachItem(ReachKind.NETWORK, "connects:$it") } else emptyList()
+    (if ("site" in enabledFeatureIds) Mandate.HOSTS.map { ReachItem(ReachKind.NETWORK, "connects:$it") } else emptyList()) +
+        (if ("models" in enabledFeatureIds) MODEL_HOSTS.map { ReachItem(ReachKind.NETWORK, "connects:$it") } else emptyList())
+
+/** Where the model setup's Download button may connect, when tapped: the hosts its download policy accepts. */
+val MODEL_HOSTS = listOf("huggingface.co", "hf.co", "*.hf.co")
 
 /** The comparison. [reach] and [mandate] are inputs; the gap is derived and never stored by hand. */
 data class MandateReport(val reach: List<ReachItem>, val mandate: Mandate) {

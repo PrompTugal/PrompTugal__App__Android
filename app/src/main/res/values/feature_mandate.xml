@@ -27,7 +27,7 @@
     <string name="mandate_cleartext_off">Cleartext (http) traffic: off</string>
     <string name="mandate_cleartext_on">Cleartext (http) traffic: allowed</string>
     <string name="mandate_reach_storage">Storage</string>
-    <string name="mandate_storage_none">Storage used: none. No files, databases or preferences, and no cloud backup.</string>
+    <string name="mandate_storage_none">Storage used: none. No files, databases, preferences or models, and no cloud backup.</string>
     <string name="mandate_backup_on">Cloud backup of the app\'s data: allowed</string>
     <string name="mandate_reach_device">Device management</string>
     <string name="mandate_reach_none">none</string>
@@ -56,7 +56,7 @@
 
     <string name="mandate_mandate_data">Data collected by this app: none. The in-app view loads riskmandate.ai pages over HTTPS, like a browser. This app adds no identifier.</string>
     <string name="mandate_site_quote">The site\'s own words: \"There is no analytics, no tag manager, no advertising pixel and no cookie set by this site.\" (riskmandate.ai/privacy, read on 9 November 2026)</string>
-    <string name="mandate_connects">This app connects to: %1$s (the in-app site view)</string>
+    <string name="mandate_connects">This app connects to: %1$s</string>
     <string name="mandate_connects_none">This app connects to nothing itself. Pages open in your browser, which makes its own connection.</string>
     <string name="mandate_reason_site_view">the in-app riskmandate.ai view loads pages from this host</string>
 
@@ -64,5 +64,12 @@
     <string name="mandate_chip_some">Gap: %1$d</string>
     <string name="mandate_card_kicker">Live on this device</string>
     <string name="mandate_card_summary">This app\'s own reach, mandate and gap, read from the device as you open it.</string>
+    <string name="mandate_reason_shell_ui">the app frame\'s one display preference (sidebar collapsed or not), on this device only</string>
+    <string name="mandate_reason_releases_seen">the number of the last update note you were shown, on this device only</string>
+    <string name="mandate_reason_chat_history">your conversations in the Chat feature, on this device only, never backed up</string>
+    <string name="mandate_reason_models">language model files kept inside the app, on this device only, never backed up</string>
+    <string name="mandate_reason_models_adb">language model files put in the app\'s own folder on shared storage (for example with adb), never backed up</string>
+    <string name="mandate_reason_model_choice">which language model you chose, on this device only</string>
+    <string name="mandate_reason_model_download">the model setup\'s Download button fetches a model from here, only when you tap it</string>
     <string name="mandate_gap_heading">Gap: reach minus mandate</string>
 </resources>
