@@ -81,6 +81,7 @@ Third-party libraries (all Apache License, Version 2.0):
 - androidx.startup:startup-runtime:1.1.1 (The Apache Software License, Version 2.0)
 - androidx.tracing:tracing:1.2.0 (The Apache Software License, Version 2.0)
 - androidx.versionedparcelable:versionedparcelable:1.1.1 (The Apache Software License, Version 2.0)
+- androidx.webkit:webkit:1.12.1 (The Apache Software License, Version 2.0)
 - com.google.guava:listenablefuture:1.0 (The Apache Software License, Version 2.0)
 - org.jetbrains:annotations:23.0.0 (The Apache Software License, Version 2.0)
 - org.jetbrains.kotlin:kotlin-stdlib:2.0.21 (The Apache License, Version 2.0)
