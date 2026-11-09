@@ -16,10 +16,27 @@ class RouteTest {
         assertEquals(Routes.HOME, resolveRoute("site", standOn = false, featureEnabled = false))
     }
 
-    @Test fun aRestoredModelBenchRouteGoesHomeWhenTheBenchIsNotAvailable() {
-        assertEquals(Routes.HOME, resolveRoute(Routes.MODEL_BENCH, standOn = false, featureEnabled = false, benchAvailable = false))
-        assertEquals(Routes.MODEL_BENCH, resolveRoute(Routes.MODEL_BENCH, standOn = false, featureEnabled = false, benchAvailable = true))
-        assertEquals(Routes.DIAGNOSTICS, resolveRoute(Routes.DIAGNOSTICS, standOn = false, featureEnabled = false, benchAvailable = false))
+    @Test fun previewRoutesOpenOnlyForSwitchedOffFeaturesAndNeverInStandMode() {
+        val off = setOf("models", "chat", "lab")
+        assertEquals(Routes.preview("models"), resolveRoute(Routes.preview("models"), standOn = false, featureEnabled = false, previewIds = off))
+        assertEquals("a feature that is now on has no preview", Routes.HOME, resolveRoute(Routes.preview("site"), standOn = false, featureEnabled = false, previewIds = off))
+        assertEquals("a restored preview route without any switched-off feature", Routes.HOME, resolveRoute(Routes.preview("models"), standOn = false, featureEnabled = false))
+        assertEquals(Routes.HOME, resolveRoute(Routes.preview("models"), standOn = true, featureEnabled = false, previewIds = off))
+    }
+
+    @Test fun routeAndIdRoundTrip() {
+        assertEquals("models", Routes.previewId(Routes.preview("models")))
+        assertEquals(null, Routes.previewId("models"))
+        assertEquals(null, Routes.previewId(Routes.DIAGNOSTICS))
+    }
+
+    @Test fun aSwitchedOffFeatureOpensFromAPreviewScreenOnly() {
+        val enabled = setOf("site")
+        val off = setOf("models")
+        assertEquals(Routes.preview("models"), resolveOpenFeature("models", standOn = false, enabledIds = enabled, previewIds = off))
+        assertEquals(null, resolveOpenFeature("models", standOn = false, enabledIds = enabled)) // not from an enabled screen
+        assertEquals(null, resolveOpenFeature("models", standOn = true, enabledIds = enabled, previewIds = off))
+        assertEquals("site", resolveOpenFeature("site", standOn = false, enabledIds = enabled, previewIds = off))
     }
 
     @Test fun staffScreensAreUnreachableInStandModeButLicencesStay() {

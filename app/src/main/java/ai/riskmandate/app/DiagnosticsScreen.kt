@@ -3,6 +3,7 @@ package ai.riskmandate.app
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +42,8 @@ object DiagnosticsTags {
     const val COPY = "diagnostics_copy"
     const val COPIED = "diagnostics_copied"
     const val MODEL_BENCH = "diagnostics_model_bench"
+    const val PREVIEW = "diagnostics_preview"
+    fun previewItem(id: String) = "diagnostics_preview_$id"
 }
 
 /** Puts [text] on the clipboard as plain text. Returns false if the system refuses. */
@@ -52,12 +55,15 @@ fun copyToClipboard(context: Context, label: String, text: String): Boolean = tr
     false
 }
 
+/** One screen in the Preview group: a feature that is not switched on yet, or the model bench. */
+data class PreviewItem(val id: String, @StringRes val title: Int, val onOpen: () -> Unit)
+
 @Composable
 fun DiagnosticsScreen(
     text: String,
     onCopy: () -> Boolean,
-    /** Opens the on-device LLM bench (dev.llm, features/models). Null hides the button. */
-    onModelBench: (() -> Unit)? = null,
+    /** The Preview group: screens being tested on this device. Empty hides the group. */
+    preview: List<PreviewItem> = emptyList(),
 ) {
     var copied by rememberSaveable { mutableStateOf<Boolean?>(null) }
     Column(
@@ -92,11 +98,25 @@ fun DiagnosticsScreen(
                         modifier = Modifier.testTag(DiagnosticsTags.COPIED).semantics { liveRegion = LiveRegionMode.Polite },
                     )
                 }
-                onModelBench?.let { open ->
-                    OutlinedButton(
-                        onClick = open,
-                        modifier = Modifier.heightIn(min = 48.dp).testTag(DiagnosticsTags.MODEL_BENCH),
-                    ) { Text(stringResource(R.string.diagnostics_model_bench)) }
+                if (preview.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.diagnostics_preview_heading),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(top = 8.dp).semantics { heading() }.testTag(DiagnosticsTags.PREVIEW),
+                    )
+                    Text(
+                        stringResource(R.string.diagnostics_preview_note),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    for (item in preview) {
+                        OutlinedButton(
+                            onClick = item.onOpen,
+                            modifier = Modifier.heightIn(min = 48.dp)
+                                .testTag(if (item.id == "modelbench") DiagnosticsTags.MODEL_BENCH else DiagnosticsTags.previewItem(item.id)),
+                        ) { Text(stringResource(item.title)) }
+                    }
                 }
             }
         }
