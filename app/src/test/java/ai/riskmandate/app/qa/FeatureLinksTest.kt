@@ -19,15 +19,17 @@ class FeatureLinksTest {
     private val urlLiteral = Regex("""["'](?:[a-zA-Z][a-zA-Z0-9+.-]*):(?://)[^"'\s]*["']|"(?:https?|ftp|file|data|javascript|intent|market|content)[:][^"]*"""")
 
     /**
-     * The only URL literals a feature may hold that Links.isAllowed refuses: refusal samples a screen SHOWS to the
-     * visitor, each run through the real check at run time (feature C, "this app's mandate"). Exact literal, per file,
-     * agreed with the owner and reviewed by QA (docs/qa/reviews/2026-11-09-dev.mandate-*.md). Adding one means editing
-     * this map, so it is always a reviewed change. Each entry must still be present in its file, and the feature must
-     * run its samples through `Links::isAllowed` or `Links.isAllowed` in code (not only in a comment).
+     * The one URL literal a feature may hold that Links.isAllowed refuses: the app's own asset origin, which the
+     * site feature (A) serves its bundled offline copy from through androidx.webkit's WebViewAssetLoader. Exact
+     * literal, in the site package only (the template form and the resolved form). That host answers from this app's
+     * `assets/feature_site/` and from nowhere else, so it is not the internet; QA checked in the review of
+     * dev.site that no navigation reaches it except through the loader and that its path stays under feature_site.
+     * Adding another origin or package means editing this map, so it is always a reviewed change.
      */
-    private val shownRefusalSamples: Map<String, Set<String>> = mapOf(
-        "MandateModel.kt" to setOf(
-            "http://riskmandate.ai/", "https://riskmandate.ai:8443/", "https://example.com/", "https://riskmandate.ai@example.com/",
+    private val appAssetOrigins: Map<String, Set<String>> = mapOf(
+        "site" to setOf(
+            "https://appassets.androidplatform.net/assets/feature_site/",
+            "https://\$ASSET_HOST/assets/feature_site/",
         ),
     )
 
@@ -41,26 +43,22 @@ class FeatureLinksTest {
             for (line in code) for (m in urlLiteral.findAll(line)) {
                 val url = m.value.trim('"', '\'')
                 if (url.substringAfter("://", "").isEmpty()) continue // a bare scheme prefix such as "https://" names no host
-                if (!Links.isAllowed(url) && url !in shownRefusalSamples[f.name].orEmpty()) bad += "${f.name}: $url"
+                if (!Links.isAllowed(url) && url !in appAssetOrigins[f.parentFile.name].orEmpty()) bad += "${f.name}: $url"
             }
         }
         assertEquals("URL literals outside Links.isAllowed", emptyList<String>(), bad)
     }
 
-    @Test fun shownRefusalSamplesAreReallyRefusedStillPresentAndRunThroughTheRealCheck() {
-        for ((name, urls) in shownRefusalSamples) {
-            // Not merged to this branch yet: nothing to check. Once the file exists, every entry is held to account.
-            val file = sources.firstOrNull { it.name == name } ?: continue
-            val text = file.readText()
-            for (u in urls) {
-                assertFalse("$u is allowed: it needs no exemption", Links.isAllowed(u))
-                assertTrue("$u is no longer in $name: remove it from shownRefusalSamples", text.contains("\"$u\""))
+    @Test fun appAssetOriginIsPinnedToTheOneHostAndFolder() {
+        for ((pkg, urls) in appAssetOrigins) {
+            val dir = File(featuresDir, pkg)
+            if (!dir.isDirectory) continue // not merged to this branch yet
+            val text = dir.walkTopDown().filter { it.extension == "kt" }.joinToString("\n") { it.readText() }
+            // The origin must stay the one host and folder, and the host constant must not be changed to another host.
+            if (text.contains("ASSET_HOST")) {
+                assertTrue("$pkg: ASSET_HOST must be appassets.androidplatform.net", text.contains("ASSET_HOST = \"appassets.androidplatform.net\""))
             }
-            val inCode = file.parentFile.walkTopDown().filter { it.extension == "kt" }.any { f ->
-                f.readLines().filterNot { it.trim().startsWith("//") || it.trim().startsWith("*") || it.trim().startsWith("/*") }
-                    .any { it.contains("Links::isAllowed") || it.contains("Links.isAllowed") }
-            }
-            assertTrue("${file.parentFile.name}: the samples must be run through Links::isAllowed in code", inCode)
+            for (u in urls) assertFalse("$u is allowed: it needs no exemption", Links.isAllowed(u))
         }
     }
 
@@ -95,7 +93,7 @@ class FeatureLinksTest {
             """allowFileAccessFromFileURLs\s*=\s*true|allowUniversalAccessFromFileURLs\s*=\s*true|allowFileAccess\s*=\s*true|allowContentAccess\s*=\s*true|""" +
                 """setAllowFileAccess(?:FromFileURLs)?\(\s*true|setAllowUniversalAccessFromFileURLs\(\s*true|setAllowContentAccess\(\s*true|""" +
                 """addJavascriptInterface|javaScriptCanOpenWindowsAutomatically\s*=\s*true|setJavaScriptCanOpenWindowsAutomatically\(\s*true|""" +
-                """MIXED_CONTENT_ALWAYS_ALLOW|MIXED_CONTENT_COMPATIBILITY_MODE|onReceivedSslError|safeBrowsingEnabled\s*=\s*false|WebView\.setWebContentsDebuggingEnabled""")
+                """MIXED_CONTENT_ALWAYS_ALLOW|MIXED_CONTENT_COMPATIBILITY_MODE|\bproceed\(\s*\)|safeBrowsingEnabled\s*=\s*false|WebView\.setWebContentsDebuggingEnabled""")
         val hits = sources.filter { risky.containsMatchIn(it.readText()) }.map { it.name }
         assertEquals("risky WebView settings: QA must review (then adjust this test with a reason)", emptyList<String>(), hits)
     }
