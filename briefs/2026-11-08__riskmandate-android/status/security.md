@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 57 (9 Nov 2026): dev.lab 0097158 PASS (loop counters survive rotation as a validated string). Still open: R-lab-13 (Kotlin fix and four vectors), R-eval-7, the design-pass article, the Lab export share path. Waiting for the next wake.
+> Round 58 (9 Nov 2026): qa a57ccad PASS (device guide matches the pinned URLs and hashes; test-only code). eval 9bcd670 is held by the conductor until the Kotlin R-lab-13 fix lands; I will review them together. Still open: R-lab-13, the design-pass article, the Lab export share path. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
