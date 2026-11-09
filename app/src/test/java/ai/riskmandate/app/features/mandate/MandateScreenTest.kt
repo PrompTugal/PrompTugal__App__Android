@@ -155,12 +155,15 @@ class MandateScreenTest {
     @Test fun featureIsEnabledAndRendersEndToEnd() {
         assertTrue(MandateFeature.enabled)
         assertEquals("mandate", MandateFeature.id)
-        val activity = org.robolectric.Robolectric.buildActivity(androidx.activity.ComponentActivity::class.java).setup().get()
-        compose.setContent { RiskMandateTheme { MandateFeature.Content(FeatureContext(activity, onBack = {})) } }
+        val config = ManagedConfig.fromMap(mapOf("device_label" to "Stand 1"))
+        val context = FeatureContext(onBack = {}, config = config, device = DeviceStatus.from(false, false, config.deviceLabel))
+        compose.setContent { RiskMandateTheme { MandateFeature.Content(context) } }
         compose.onNodeWithTag(MandateTags.SUMMARY).assertIsDisplayed()
         compose.onNodeWithTag(MandateTags.GAP_STATUS).assertIsDisplayed()
         compose.onNodeWithTag(MandateTags.REACH).performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag(MandateTags.MANDATE).performScrollTo().assertIsDisplayed()
+        // The managed value comes from the context, not from a second read.
+        compose.onNodeWithText("device_label: Stand 1").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun everyMandateStringIsTranslated() {

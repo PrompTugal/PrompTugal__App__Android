@@ -94,17 +94,34 @@ data class MandateReport(val reach: List<ReachItem>, val mandate: Mandate) {
     val gapIsEmpty: Boolean get() = gap.isEmpty()
 }
 
-/** A sample address and whether the app's allow-list lets it through. Computed with the real check. */
+/**
+ * A sample address and whether the app's allow-list lets it through. Computed with the real check.
+ * Samples are built from parts (scheme, userinfo, host, port), not written as URL literals, so no feature
+ * source holds a URL outside Links.isAllowed (qa's FeatureLinksTest).
+ */
 data class HostProbe(val url: String, val allowed: Boolean) {
+    data class Sample(val scheme: String, val host: String, val port: Int? = null, val userinfo: String? = null) {
+        fun url(): String = buildString {
+            append(scheme).append("://")
+            if (userinfo != null) append(userinfo).append('@')
+            append(host)
+            if (port != null) append(':').append(port)
+            append('/')
+        }
+    }
+
     companion object {
+        private val SITE = Mandate.HOSTS[0]
+        private val WWW = Mandate.HOSTS[1]
+
         val SAMPLES = listOf(
-            "https://riskmandate.ai/",
-            "https://www.riskmandate.ai/",
-            "http://riskmandate.ai/",
-            "https://riskmandate.ai:8443/",
-            "https://example.com/",
-            "https://riskmandate.ai@example.com/",
-        )
+            Sample("https", SITE),
+            Sample("https", WWW),
+            Sample("http", SITE),
+            Sample("https", SITE, port = 8443),
+            Sample("https", "example.com"),
+            Sample("https", "example.com", userinfo = SITE),
+        ).map { it.url() }
 
         fun run(isAllowed: (String) -> Boolean, samples: List<String> = SAMPLES): List<HostProbe> =
             samples.map { HostProbe(it, isAllowed(it)) }

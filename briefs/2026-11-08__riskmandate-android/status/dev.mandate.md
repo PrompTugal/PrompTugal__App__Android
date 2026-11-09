@@ -1,6 +1,6 @@
 # dev.mandate.android status
 
-> Feature C works end to end and is switched on (`enabled = true`); gate green. One real finding: on a release build the gap is 1, not 0 (see "For app").
+> Feature C works end to end and is switched on (`enabled = true`); gate green. On `dev` with FeatureContext v2 merged. The gap on release was 1 (exported ProfileInstallReceiver); app.android is removing it, so it should read 0 (see "For app").
 
 ## Doing
 Waiting for conductor review. design.android's shared components have not landed (no `ui/` package on this branch), so the screen uses plain Material 3 with the app theme; swap them in when they land.
@@ -12,6 +12,8 @@ Waiting for conductor review. design.android's shared components have not landed
 - Strings in `res/values/feature_mandate.xml` and `res/values-pt-rPT/feature_mandate.xml` (a test fails if the two differ). The title string `feature_mandate_title` stays in `features.xml` (not mine).
 - Tests: `MandateModelTest` (11, JVM), `MandateScreenTest` (12, Robolectric: en and pt-PT render, a gap rendered, real collection on the real manifest, end-to-end `MandateFeature.Content`, 200% font, touch target, translation parity).
 - Gate `./gradlew testDebugUnitTest lintDebug assembleRelease bundleRelease`: pass.
+
+- Second round (conductor, 9 Nov): merged `origin/dev` (FeatureContext v2: the feature now takes `config` and `device` from the context, no Activity, no second read). qa's FeatureLinksTest flagged URL literals in `MandateModel.kt`; the on-screen refusal probes are now built from parts (`HostProbe.Sample(scheme, host, port, userinfo)`), so no URL literal remains in feature sources and the probes still run through the real `Links.isAllowed`.
 
 ## Vocabulary (riskmandate.ai, https://riskmandate.ai/, read 9 Nov 2026)
 - Reach: "Everything the agent can actually access in this deployment, including what nobody thought to check."

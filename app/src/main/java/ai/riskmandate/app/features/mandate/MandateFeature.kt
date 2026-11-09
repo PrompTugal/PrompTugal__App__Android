@@ -19,9 +19,10 @@ object MandateFeature : Feature {
     @Composable
     override fun Content(context: FeatureContext) {
         val app = LocalContext.current
-        // Read once per time the screen is opened, so it reflects the device as it is now.
-        val state = remember {
-            val config = ManagedConfig.read(app)
+        // Reach is read when the screen opens and again if the host's config or device state changes.
+        val config = context.config
+        val device = context.device
+        val state = remember(config, device) {
             MandateState(
                 report = MandateReport(
                     reach = ReachCollector.collect(app),
@@ -32,7 +33,7 @@ object MandateFeature : Feature {
                 ),
                 probes = HostProbe.run(Links::isAllowed),
                 config = config,
-                device = DeviceStatus.detect(app, config.deviceLabel),
+                device = device,
             )
         }
         MandateScreen(state = state, onBack = context.onBack)
