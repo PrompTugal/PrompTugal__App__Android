@@ -2,15 +2,16 @@ package ai.riskmandate.app.cloud
 
 /**
  * Every limit of the cloud client in one place, none of them settable from a screen. The money numbers are
- * placeholders (security's proposal, checklist M.5.1) until Dinis sets them; change them here, in one commit.
+ * set by Dinis (spoken, 9 Nov 2026 about 13:25 UTC, relayed by the conductor: US$5 per tablet; US$1 a session follows from it)
+ * until accountant's budget numbers arrive; change them here, in one commit.
  * Amounts are micro-dollars (1,000,000 = US$1).
  */
 object CloudLimits {
     /** Most that may be spent in one app session (a process lifetime). */
-    const val SESSION_CAP_MICROS = 500_000L
+    const val SESSION_CAP_MICROS = 1_000_000L
 
     /** Most that may be spent on one tablet in all, across restarts (the ledger). */
-    const val TOTAL_CAP_MICROS = 2_000_000L
+    const val TOTAL_CAP_MICROS = 5_000_000L
 
     /** Charged for an answer even when OpenRouter reports no cost (a floor under the estimate). */
     const val RESERVE_MICROS = 10_000L

@@ -26,6 +26,12 @@ class CloudSpendTest {
         assertTrue(CloudSpend::class.java.declaredMethods.none { it.name.startsWith("setCap") }) // there is no setter
     }
 
+    @Test fun theCapsAreWhatDinisSet() {
+        assertEquals("US$1 a session", 1_000_000L, CloudLimits.SESSION_CAP_MICROS)
+        assertEquals("US$5 a tablet", 5_000_000L, CloudLimits.TOTAL_CAP_MICROS)
+        assertTrue("the session cap never exceeds the tablet total", CloudLimits.SESSION_CAP_MICROS <= CloudLimits.TOTAL_CAP_MICROS)
+    }
+
     @Test fun aMissingLedgerRefusesToSpendAndNeverAssumesZero() {
         val s = spend()
         assertFalse(s.snapshot().ledgerOk)
