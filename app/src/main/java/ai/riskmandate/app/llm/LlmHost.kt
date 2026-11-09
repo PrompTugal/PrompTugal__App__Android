@@ -57,6 +57,24 @@ class LlmHost(
     /** The model to use when more than one is installed (feature G's choice). Null: the first in catalogue order. */
     @Volatile var preferredModelId: String? = null
 
+    /** The backend to load on (the Workbench's choice). Null: GPU first, CPU if the GPU load fails. */
+    @Volatile var preferredBackend: BenchBackend? = null
+
+    /**
+     * Chooses the model and backend for the next requests (the Workbench). Unloads now if the loaded model or
+     * backend differs, so the next request loads what was chosen (a cold start, reported as such).
+     */
+    suspend fun select(modelId: String?, backend: BenchBackend?) = withContext(dispatcher) {
+        lock.withLock {
+            preferredModelId = modelId
+            preferredBackend = backend
+            val wantBackend = backend
+            val current = loaded
+            if (current != null && (installed()?.spec?.id != loadedId || (wantBackend != null && current.backend != wantBackend))) unloadLocked()
+            if (loaded == null) _state.value = installed()?.let { LlmState.Idle(it.spec.id) } ?: LlmState.NoModel
+        }
+    }
+
     /** Rescans installed models and updates [state]. Call after feature G installs or deletes a file. */
     suspend fun refresh() = withContext(dispatcher) {
         lock.withLock {
@@ -87,7 +105,18 @@ class LlmHost(
                 val loadMs = if (wasLoaded) null else (System.nanoTime() - loadStart) / 1_000_000
                 try {
                     model.stream(request, id).collect { e ->
-                        emit(if (e is LlmEvent.Done) LlmEvent.Done(e.stats.copy(loadedModel = loadMs != null, loadMs = loadMs)) else e)
+                        emit(
+                            if (e is LlmEvent.Done) {
+                                val requested = (preferredBackend ?: BenchBackend.GPU).name
+                                LlmEvent.Done(
+                                    e.stats.copy(
+                                        loadedModel = loadMs != null, loadMs = loadMs,
+                                        requestedBackend = requested,
+                                        fellBackToCpu = requested == BenchBackend.GPU.name && model.backend == BenchBackend.CPU,
+                                    ),
+                                )
+                            } else e,
+                        )
                     }
                 } catch (e: CancellationException) {
                     throw e
@@ -146,7 +175,8 @@ class LlmHost(
         }
         _state.value = LlmState.Loading(pick.spec.id)
         var lastError: Throwable? = null
-        for (backend in listOf(BenchBackend.GPU, BenchBackend.CPU)) {
+        val order = if (preferredBackend == BenchBackend.CPU) listOf(BenchBackend.CPU) else listOf(BenchBackend.GPU, BenchBackend.CPU)
+        for (backend in order) {
             try {
                 val m = runtime.load(pick.file, backend, maxTokens)
                 loaded = m
