@@ -5,6 +5,11 @@
 ## Doing
 Workbench (brief `briefs/2026-11-09__on-device-llm/workbench.md`, Dinis 9 Nov ~10:00 UTC): tabs 1 (Run) and 2 (Experiments). Step 1 (stats) pushed; next the `workbench` feature and the Run tab, then the run log, sweep and A/B. Earlier work (bench, LlmService/LlmHost, feature G) is on dev; G stays `enabled = false` until Dinis's tablet run.
 
+## R-wb-8 and R-wb-10 (low): cloud sweeps and the cloud choice
+- R-wb-8: on the cloud, Experiments shows "these N runs cost at most US$x" before Start (sum of CloudLlmService.worstCaseMicros per run; "cannot be estimated" if any run cannot be priced). A run ending with CAP_REACHED ends the sweep at once as "Stopped: the cloud spending cap was reached" (ExperimentStop.CLOUD_CAP), not as three failures.
+- R-wb-10: the cloud choice is never saved or restored (RunForm.save writes false, restore ignores it) and resets whenever the cloud service changes or goes away, so every cloud run follows a fresh choice.
+- Tested: cost line shown only on the cloud, with the right total; the cap stop after the run that hit it; restore never gives cloud; the choice resets when the cloud service goes and returns.
+
 ## R-llm-14: Model setup's privacy line follows cloudOn
 - ModelsFeature passes `context.cloudOn` (architect's FeatureContext signal) to ModelSetupScreen; the `cloudLlm != null` stand-in is gone. "Nothing you type leaves the device" only while cloudOn is false; otherwise the models_privacy_cloud line (cloud runs go to openrouter.ai). Model setup does not declare usesCloud. Tested: a cloud service without cloudOn keeps the device line; cloudOn switches it.
 
