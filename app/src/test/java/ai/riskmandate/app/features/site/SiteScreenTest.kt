@@ -27,11 +27,11 @@ class SiteScreenTest {
     @get:Rule val compose = createComposeRule()
     private val app: Application = ApplicationProvider.getApplicationContext()
 
-    private fun request(url: String, main: Boolean = true, method: String = "GET") = object : WebResourceRequest {
+    private fun request(url: String, main: Boolean = true, method: String = "GET", gesture: Boolean = true, redirect: Boolean = false) = object : WebResourceRequest {
         override fun getUrl(): Uri = Uri.parse(url)
         override fun isForMainFrame() = main
-        override fun isRedirect() = false
-        override fun hasGesture() = true
+        override fun isRedirect() = redirect
+        override fun hasGesture() = gesture
         override fun getMethod() = method
         override fun getRequestHeaders(): Map<String, String> = emptyMap()
     }
@@ -86,6 +86,18 @@ class SiteScreenTest {
         // A frame inside a page never takes the visitor out.
         assertTrue(c.shouldOverrideUrlLoading(wv, request("https://evil.example/frame", main = false)))
         assertEquals(3, external.size)
+    }
+
+    @Test fun onlyARealTapOpensTheSystemBrowser() {
+        val external = mutableListOf<String>()
+        val c = client(OfflineSwitch(false), external)
+        val wv = WebView(app)
+        assertTrue(c.shouldOverrideUrlLoading(wv, request("https://github.com/x", gesture = false)))
+        assertTrue(c.shouldOverrideUrlLoading(wv, request("https://github.com/x", redirect = true)))
+        assertTrue(c.shouldOverrideUrlLoading(wv, request("https://github.com/x", main = false)))
+        assertTrue("script- or redirect-initiated: nothing opened", external.isEmpty())
+        assertTrue(c.shouldOverrideUrlLoading(wv, request("https://github.com/x")))
+        assertEquals(listOf("https://github.com/x"), external)
     }
 
     @Test fun onlineRequestsPassThroughAndForeignSubresourcesAreBlocked() {

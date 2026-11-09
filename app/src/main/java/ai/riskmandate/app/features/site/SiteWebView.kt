@@ -48,9 +48,10 @@ class SiteWebViewClient(
                     copy != null
                 }
             }
-            // A frame inside a page must not take the visitor away; only a main-frame navigation opens the browser.
+            // A frame inside a page must not take the visitor away.
             Decision.EXTERNAL -> {
-                if (request.isForMainFrame) onExternal(url)
+                // Only a real tap opens the system browser: never a script, a redirect or a frame (security R-ext-1).
+                if (request.isForMainFrame && request.hasGesture() && !request.isRedirect) onExternal(url)
                 true
             }
         }

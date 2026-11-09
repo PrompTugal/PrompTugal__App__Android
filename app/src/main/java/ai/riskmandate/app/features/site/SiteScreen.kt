@@ -52,7 +52,7 @@ fun SiteScreen(
     switch: OfflineSwitch,
     onBack: () -> Unit,
     isSystemOffline: (Context) -> Boolean = Browser::isOffline,
-    openExternal: (Context, String) -> Int? = { c, url -> Browser.message(Browser.open(c, url)) },
+    openExternal: (Context, String) -> Int? = { c, url -> Browser.message(Browser.openExternal(c, url)) },
 ) {
     val context = LocalContext.current
     var tabIndex by remember { mutableIntStateOf(0) }
