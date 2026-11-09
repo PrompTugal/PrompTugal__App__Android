@@ -8,6 +8,9 @@ import ai.riskmandate.app.llm.StrictJson
  * another runtime can implement the same rules.
  */
 internal object AnswerChecks {
+    /** The most text the grounded check reads. The runner already cuts a model's text at 16,000; a longer one fails the check, so an unread tail can never pass as grounded (security R-lab-18). */
+    const val MAX_SCAN_CHARS = 20_000
+
     private val NUMBER = Regex("[0-9]+(?:[.,][0-9]+)*")
     private val WORD = Regex("[\\p{L}][\\p{L}'’-]*")
 
@@ -43,6 +46,7 @@ internal object AnswerChecks {
                 res(hit != null, if (hit != null) "the answer gives a number in range" else if (numbers.isEmpty()) "the answer has no number" else "the numbers were ${numbers.take(5).joinToString { StrictJson.render(it) }}, outside $min to $max")
             }
             "answer_grounded" -> {
+                if (t.length > MAX_SCAN_CHARS) return res(false, "the answer is longer than the $MAX_SCAN_CHARS characters this check reads, so it was not accepted as grounded")
                 val allow = (p["allow"] as? List<*>).orEmpty().map { (it as String).lowercase() }.toSet()
                 val source = grounding.lowercase()
                 val loose = ungrounded(t, source, allow)
