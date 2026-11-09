@@ -115,6 +115,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model search the notes for the Wi-Fi note instead of listing every note?",
+    "expect": "pass"
    }
   },
   {
@@ -227,6 +231,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model list every note instead of searching?",
+    "expect": "pass"
    }
   }
  ]

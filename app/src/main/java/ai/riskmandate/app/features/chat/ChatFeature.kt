@@ -4,6 +4,7 @@ import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
+import ai.riskmandate.app.llm.prompts.Prompts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
@@ -19,6 +20,7 @@ import java.io.File
 
 object ChatTags {
     const val BADGE = "chat_badge"
+    const val BADGE_CLOUD = "chat_badge_cloud"
     const val NETWORK = "chat_network"
     const val OPEN_MODELS = "chat_open_models"
     const val MODEL_LABEL = "chat_model_label"
@@ -73,7 +75,7 @@ internal fun ChatContent(context: FeatureContext, llm: ChatLlm) {
     val scope = rememberCoroutineScope()
     val controller = remember(llm, provided) {
         val store = provided ?: FileChatHistoryStore(File(android.applicationContext.noBackupFilesDir, "feature_chat"))
-        ChatController(llm, store, scope)
+        ChatController(llm, store, scope, baseSystem = { Prompts.load(android.assets, Prompts.RISKMANDATE_BASE) })
     }
     // The open chat survives a rotation (the Activity is recreated): its id is saved, small, and reselected after loading.
     var openId by rememberSaveable { mutableStateOf<String?>(null) }

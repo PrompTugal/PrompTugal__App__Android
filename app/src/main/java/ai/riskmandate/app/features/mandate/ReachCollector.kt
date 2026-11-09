@@ -75,7 +75,7 @@ object ReachCollector {
      * shared_prefs/, no_backup/ (noBackupFilesDir), app_webview/ and cache/; "external/..." relative to the app's
      * folder on shared storage (getExternalFilesDir). Files in files/, databases/ and shared_prefs/ are listed one
      * by one; each top-level folder in no_backup/ and external/ is listed as a directory with its file count (a
-     * loose file there is listed by path, and the models/ and feature_workbench/ folders file by file); app_webview/ and cache/ are directories, each only when it holds a file.
+     * loose file there is listed by path, and the models/, feature_workbench/ and feature_cloud/ folders file by file); app_webview/ and cache/ are directories, each only when it holds a file.
      * Never throws.
      */
     fun storage(context: Context): List<ReachItem> = try {
@@ -105,7 +105,7 @@ object ReachCollector {
             when {
                 child.isFile -> listOf(ReachItem(ReachKind.STORAGE, id, count = 1))
                 // These folders are listed file by file, so each model file and the run log are named.
-                child.name == ModelFiles.DIR || child.name == RunLogStore.DIR -> child.walkTopDown().filter { it.isFile }.take(MAX_FILES).toList()
+                child.name == ModelFiles.DIR || child.name == RunLogStore.DIR || child.name == CLOUD_DIR -> child.walkTopDown().filter { it.isFile }.take(MAX_FILES).toList()
                     .map { ReachItem(ReachKind.STORAGE, prefix + it.relativeTo(base).invariantSeparatorsPath, count = 1) }
                 else -> listOfNotNull(dirItem(child, id))
             }

@@ -46,6 +46,18 @@ class LlmServiceChatTest {
         assertEquals(64, s.topK)
     }
 
+    @Test fun theAdapterReadsWhereTheServiceRuns() {
+        val local = FakeLlmService()
+        assertTrue(LlmServiceChat(local).isLocal)
+        val cloud = object : ai.riskmandate.app.llm.LlmService by FakeLlmService() {
+            override val location = ai.riskmandate.app.llm.LlmLocation.CLOUD
+        }
+        assertFalse(LlmServiceChat(cloud).isLocal)
+        val c = ChatController(LlmServiceChat(cloud), MemoryChatHistoryStore(), CoroutineScope(Dispatchers.Unconfined), { null }, Dispatchers.Unconfined)
+        runBlocking { c.start() }
+        assertFalse(c.state.local)
+    }
+
     @Test fun noSystemBlockMeansNoSystemMessage() = runBlocking {
         val svc = FakeLlmService()
         LlmServiceChat(svc).stream("m", null, turns.take(1)).toList()
@@ -66,7 +78,7 @@ class LlmServiceChatTest {
 
     @Test fun controllerKeepsTheFailureReasonAndStoreRoundTripsIt() {
         val svc = FakeLlmService(reply = { FakeReply("", error = LlmEvent.Error(LlmError.TOO_LONG, "x")) })
-        val c = ChatController(LlmServiceChat(svc), MemoryChatHistoryStore(), CoroutineScope(Dispatchers.Unconfined), Dispatchers.Unconfined)
+        val c = ChatController(LlmServiceChat(svc), MemoryChatHistoryStore(), CoroutineScope(Dispatchers.Unconfined), { null }, Dispatchers.Unconfined)
         runBlocking { c.start() }
         c.send("hello")
         val m = c.state.current.messages.last()
@@ -90,7 +102,7 @@ class LlmServiceChatTest {
 
     @Test fun controllerWorksEndToEndOnTheFakeService() {
         val svc = FakeLlmService(reply = { FakeReply("one two three") })
-        val c = ChatController(LlmServiceChat(svc), MemoryChatHistoryStore(), CoroutineScope(Dispatchers.Unconfined), Dispatchers.Unconfined)
+        val c = ChatController(LlmServiceChat(svc), MemoryChatHistoryStore(), CoroutineScope(Dispatchers.Unconfined), { null }, Dispatchers.Unconfined)
         runBlocking { c.start() }
         c.send("hello")
         assertEquals("one two three", c.state.current.messages.last().text)

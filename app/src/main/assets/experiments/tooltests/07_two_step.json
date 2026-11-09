@@ -145,6 +145,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model look up the order id first and then use that id to get the tracking?",
+    "expect": "pass"
    }
   },
   {
@@ -297,6 +301,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model find the city id first and then use that id to get the forecast?",
+    "expect": "pass"
    }
   }
  ]

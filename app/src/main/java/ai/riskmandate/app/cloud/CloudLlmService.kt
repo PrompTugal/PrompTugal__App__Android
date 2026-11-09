@@ -1,6 +1,7 @@
 package ai.riskmandate.app.cloud
 
 import ai.riskmandate.app.llm.LlmError
+import ai.riskmandate.app.llm.LlmLocation
 import ai.riskmandate.app.llm.LlmEvent
 import ai.riskmandate.app.llm.LlmMessage
 import ai.riskmandate.app.llm.LlmRequest
@@ -64,6 +65,9 @@ class CloudLlmService(
     init {
         require(CloudModels.byId(model.id) == model) { "model is not in the pinned list" }
     }
+
+    /** Every answer from this service is computed by a third party: screens must show a "Cloud" badge, never "on this device". */
+    override val location: LlmLocation = LlmLocation.CLOUD
 
     private val _state = MutableStateFlow<LlmState>(LlmState.NoModel)
     override val state: StateFlow<LlmState> = _state.asStateFlow()
@@ -211,6 +215,7 @@ class CloudLlmService(
             modelId = model.id, backend = BACKEND, promptTokens = promptTokens, outputTokens = outputTokens,
             prefillTokensPerSecond = null, decodeTokensPerSecond = null,
             timeToFirstTokenMs = if (firstAt > 0) firstAt - started else null, totalMs = ended - started,
+            location = LlmLocation.CLOUD,
         )))
     }
 

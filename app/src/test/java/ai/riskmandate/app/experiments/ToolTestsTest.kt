@@ -440,13 +440,17 @@ class ToolTestsTest {
         assertNull(runBlocking { ToolTestRunner.runCase(silent, c, ToolMode.NATIVE) }.promptTokens)
     }
 
-    @Test fun aCaseMayCarryAJudgesBlockAndItIsChecked() {
-        val withJudges = file("\"max_steps\": 3," to "\"max_steps\": 3, \"judges\": {\"ask\": \"Did it call the weather tool for Lisbon?\", \"expect\": \"pass\"},")
-        val parsed = ToolTestFormats.parse(withJudges).second.first()
-        assertEquals(JudgeSpec("Did it call the weather tool for Lisbon?", "pass"), parsed.judges)
-        assertNull(cat.cases.first().judges.takeIf { false })
-        rejected(file("\"max_steps\": 3," to "\"max_steps\": 3, \"judges\": {\"ask\": \"\", \"expect\": \"pass\"},"))
-        rejected(file("\"max_steps\": 3," to "\"max_steps\": 3, \"judges\": {\"ask\": \"x\", \"expect\": \"maybe\"},"))
+    @Test fun everyCaseCarriesAJudgesBlockAndItIsChecked() {
+        assertEquals(JudgeSpec("Did the model call get_weather for Lisbon, with valid arguments?", "pass"), cat.case("right-tool-weather")!!.judges)
+        assertTrue(cat.cases.all { it.judges != null && it.judges!!.expect == "pass" && it.judges!!.ask.isNotBlank() })
+        rejected(file("\"expect\": \"pass\"" to "\"expect\": \"maybe\""))
+        rejected(file("\"ask\": \"Did the model call get_weather for Lisbon, with valid arguments?\"" to "\"ask\": \"\""))
+        // The block is optional: a case without it still parses.
+        @Suppress("UNCHECKED_CAST")
+        val doc = StrictJson.parse(file()) as Map<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val without = doc + ("cases" to (doc["cases"] as List<Map<String, Any?>>).map { it - "judges" })
+        assertNull(ToolTestFormats.parse(StrictJson.render(without)).second.first().judges)
     }
 
     @Test fun theToolSuiteIsCappedLikeEveryOtherRunOfMany() {

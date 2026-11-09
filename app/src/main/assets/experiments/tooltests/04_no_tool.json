@@ -116,6 +116,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model answer that the capital is Lisbon, without calling any tool?",
+    "expect": "pass"
    }
   },
   {
@@ -234,6 +238,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model ask how long the timer should run instead of starting one?",
+    "expect": "pass"
    }
   }
  ]

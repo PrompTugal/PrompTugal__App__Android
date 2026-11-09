@@ -55,6 +55,11 @@ Built, not wired: nothing in the host calls it yet, so no request can leave the 
 - **For app (API):** `CloudKey(File(noBackupFilesDir, "feature_cloud"), KeystoreCipher())`, `CloudSpend(sameFolder)`, `CloudSwitch(standMode = { ... })`; on saving a key call `key.save(pasted)` then `spend.initialise()`; Remove calls `key.clear()`; `key.check(pasted)` for the field's error text; `key.isSet()`; `spend.snapshot()` for a counter; `spend.reset(confirmed = true)` for staff, only from a confirmed action on the key screen.
 - **For security:** `KeystoreCipher` is not covered on the JVM (no Keystore in Robolectric): one on-device check. `ChatFeature`'s lines "Nothing you type leaves the device" stay true because chat only takes `context.llm` (on-device); a test for the "no on-device line beside a cloud answer" belongs to the screens that show cloud answers.
 
+## After dev.llm's location and prompts landed (dev 5346235 and later)
+- `CloudLlmService.location = CLOUD` (also on every `Done` stats). `LlmServiceChat.isLocal` reads the service's `location`; chat's badge is "Runs on this device" only for a local service, else "Cloud: openrouter.ai" (pt-PT "Nuvem: openrouter.ai"), and never both. Chat itself still gets only `context.llm` (on-device).
+- Chat reads the RiskMandate base block from `Prompts.load(assets, Prompts.RISKMANDATE_BASE)` (the controller takes a `baseSystem` loader; null if unreadable); `ChatPresets.BASE_SYSTEM` is deleted. The verbatim-quote test now reads `assets/prompts/riskmandate_base.v1.txt`.
+- R-cloud-9: `CloudSpend.reset(confirmed = true)` is the only reset and throws otherwise; **app must show the amount** (`spend.snapshot()`: total and session spent) in the confirmation, on the staff-only key screen only. R-cloud-10 (one shared gate across services) is `CloudSpend.gate`, tested with two services in parallel.
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 
