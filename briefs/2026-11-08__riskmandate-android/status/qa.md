@@ -36,6 +36,8 @@ Waiting for the next app branch (dev.* branches were empty at last fetch).
 
 - Round 9, 9 Nov: **dev.lab 0097158 PASS, Q-loop-1 LIFT** (575 tests; my rotation probes pass 3 of 3: finished-loop counters survive, a running loop ends with "Stopped: the screen was turned ... The counts so far are kept"). Q-lab-1 and Q-lab-2 are on screen ("What this check sees", checked). **Q-g-4 fixed on dev**: `ModelSetupScreenTest` 10 of 10 isolated runs (it failed 2 of 5 before). **Chat grounding texts vs the live pages: PASS**, two low findings (Q-chat-4 "Only a boundary is a control." is the app's wording, not a sentence on the page; Q-chat-5 the inventory passage is compressed). Guide updated for the loop rotation behaviour and the "What this check sees" lines. Still open: Q-chat-2 (Dinis: history on a shared stand tablet).
 
+- Guide corrections (conductor, security R-qa-1): export marked off in this build; results go to the conductor in a message and any committed copy omits serial numbers and accounts; the loop-rotation step already checks the 0097158 behaviour.
+
 ## Next
 Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md` and message the conductor with each verdict. Tighten the plan with what each feature really does.
 

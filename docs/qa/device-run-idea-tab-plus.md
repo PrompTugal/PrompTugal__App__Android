@@ -73,10 +73,12 @@ Diagnostics, **Preview**, **ABP Lab**.
 - [ ] **Rotate the tablet during a loop** (once, in the second loop): the loop ends with the line "Stopped: the screen was turned, so the loop ended. The counts so far are kept." and the counters stay. Write what you saw ______ After a finished loop, rotate: the counters and the headline stay. ______
 - [ ] Each scenario shows a line "What this check sees: ..." (the leakage check matches the exact planted secret only; claims are seen only as `subject | predicate | object | Txx` lines; the tool rule is fixed): read it once and say if it is clear ______
 - [ ] **Settings** (the settings button): temperature, top-p, seed; the recorded-settings button restores the recorded values, and a changed setting is flagged against the recording. ______
-- [ ] **Export results** after a loop: a share sheet or message appears (staff only, on your tap). Keep the JSON it makes (`abp-lab-loop-export/1`): scenario, settings, counts, verdicts, timings; no account, no device serial. ______
+- [ ] **Export results**: **Export is switched off in this build** (there is no share path for the summit). The button, if shown, says "Export is not available in this build yet." Nothing to do here: copy the numbers from the counters by hand (step 6). Write what the button says ______
 
 ## 6. What to copy back
 One text to the conductor: the device block (section 0 and the Diagnostics report), the bench table and the pasted **Copy results** (section 3), the timings and notes from sections 2, 4 and 5, pass or fail per checkbox with what you saw for each fail, and screenshots (no account pages or notifications). Never paste a key or password: nothing here needs one.
+
+**Where the results go:** to the conductor, in a message. If the numbers or the report are ever committed to the repository, the committed copy leaves out serial numbers, account names and e-mail addresses (the Diagnostics report and **Copy results** already carry none of them: keep it that way when you paste).
 
 ## Stop at once if
 The tablet is too hot to hold, the battery drops fast, Android shows a permission prompt the app never showed before, or anything asks for a login or key. Note it, stop, tell the conductor.
