@@ -3,6 +3,9 @@ package ai.riskmandate.app.features.lab
 import ai.riskmandate.app.RiskMandateTheme
 import android.app.Application
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -131,5 +134,93 @@ class LabScreenTest {
         compose.onNodeWithTag(LabTags.LIVE_RUN).performClick()
         compose.waitUntil(15_000) { count(LabTags.RUN_ERROR) > 0 }
         assertEquals(0, count(LabTags.SUMMARY_ABP))
+    }
+
+    private fun click(tag: String) { compose.onNodeWithTag(tag).performScrollTo().performClick() }
+
+    private fun liveScreen(llm: FakeLlmService, d: LabData = data, onBusy: (Boolean) -> Unit = {}, onExport: ((String) -> Unit)? = null) =
+        compose.setContent {
+            RiskMandateTheme {
+                LabScreen(data = d, initialScenario = "sample-planted", network = NetworkState(true, Transport.WIFI), llm = llm, onBusy = onBusy, onExport = onExport)
+            }
+        }
+
+    @Test fun loopModeCountsRunsAndShowsTheHeadline() {
+        val llm = FakeLlmService(tokenDelayMs = 100, reply = ::obedient)
+        val busy = mutableListOf<Boolean>()
+        liveScreen(llm, onBusy = { busy += it })
+        click(LabTags.MODE_LOOP)
+        compose.onNodeWithTag(LabTags.LOOP_RUNS).assertTextContains("20", substring = true)
+        repeat(3) { click(LabTags.LOOP_MINUS) }
+        compose.onNodeWithTag(LabTags.LOOP_RUNS).assertTextContains("5", substring = true)
+        click(LabTags.LOOP_RUN)
+        compose.waitUntil(30_000) { count(LabTags.STAT_HEADLINE) > 0 && count(LabTags.LOOP_RUN) > 0 }
+        compose.onNodeWithTag(LabTags.STAT_FAILED).assertTextContains("5 of 5", substring = true)
+        compose.onNodeWithTag(LabTags.STAT_CAUGHT).assertTextContains("5 of 5", substring = true)
+        compose.onNodeWithTag(LabTags.STAT_HEADLINE).assertTextContains("1 in 1", substring = true)
+        compose.onNodeWithTag(LabTags.SMALL_SAMPLE).assertExists()
+        assertEquals(0, count(LabTags.SUMMARY_ABP))
+        assertEquals(30, llm.requests.size)
+        // The screen told the host it was busy while the loop ran, and not busy after.
+        assertTrue(busy.contains(true)); assertEquals(false, busy.last())
+    }
+
+    @Test fun settingsReachTheModelAndAChangedSettingIsFlaggedAgainstTheRecording() {
+        val rec = data.recordings.map { if (it.scenarioId == "sample-planted") it.copy(settings = mapOf("temperature" to 0.3, "top_p" to 0.95, "seed" to 7L)) else it }
+        val llm = FakeLlmService(reply = ::obedient)
+        liveScreen(llm, data.copy(recordings = rec))
+        compose.onNodeWithTag(LabTags.NOT_RECORDED).assertExists() // the defaults differ from the recorded 0.3 / 0.95 / 7
+        click(LabTags.SETTINGS_BUTTON)
+        click(LabTags.RECORDED)
+        assertEquals(0, count(LabTags.NOT_RECORDED))
+        click(LabTags.TEMPERATURE + "_plus")
+        compose.onNodeWithTag(LabTags.NOT_RECORDED).assertExists()
+        click(LabTags.RECORDED)
+        assertEquals(0, count(LabTags.NOT_RECORDED))
+        click(LabTags.LIVE_RUN)
+        compose.waitUntil(15_000) { count(LabTags.SUMMARY_ABP) > 0 }
+        val first = llm.requests.first().settings
+        assertEquals(0.3, first.temperature, 1e-9); assertEquals(0.95, first.topP, 1e-9); assertEquals(7, first.seed)
+    }
+
+    @Test fun aTypedSeedIsDigitsOnlyAndUsed() {
+        val llm = FakeLlmService(reply = ::obedient)
+        liveScreen(llm)
+        click(LabTags.SETTINGS_BUTTON)
+        compose.onNodeWithTag(LabTags.SEED).performScrollTo().performTextInput("4a2")
+        click(LabTags.LIVE_RUN)
+        compose.waitUntil(15_000) { count(LabTags.SUMMARY_ABP) > 0 }
+        assertEquals(42, llm.requests.first().settings.seed)
+    }
+
+    @Test fun exportIsOffWithoutAHostPathAndOffUntilALoopHasRun() {
+        liveScreen(FakeLlmService(reply = ::obedient))
+        click(LabTags.SETTINGS_BUTTON)
+        compose.onNodeWithTag(LabTags.EXPORT).assertIsNotEnabled()
+    }
+
+    @Test fun exportHandsTheLoopResultsToTheHostOnlyWhenTapped() {
+        var exported: String? = null
+        liveScreen(FakeLlmService(reply = ::obedient), onExport = { exported = it })
+        click(LabTags.SETTINGS_BUTTON)
+        compose.onNodeWithTag(LabTags.EXPORT).assertIsNotEnabled()
+        click(LabTags.MODE_LOOP)
+        repeat(3) { click(LabTags.LOOP_MINUS) }
+        click(LabTags.LOOP_RUN)
+        compose.waitUntil(30_000) { count(LabTags.STAT_HEADLINE) > 0 && count(LabTags.LOOP_RUN) > 0 }
+        assertEquals(null, exported)
+        compose.onNodeWithTag(LabTags.EXPORT).performScrollTo().assertIsEnabled().performClick()
+        val text = exported!!
+        @Suppress("UNCHECKED_CAST")
+        val doc = ai.riskmandate.app.llm.StrictJson.parse(text) as Map<String, Any?>
+        assertEquals("abp-lab-loop-export/1", doc["format"])
+        assertEquals(10, (doc["runs"] as List<*>).size)
+    }
+
+    @Test fun loopModeIsOnlyOfferedWithAModel() {
+        compose.setContent { RiskMandateTheme { LabScreen(data = data, initialScenario = "sample-planted", network = NetworkState(true, Transport.WIFI), llm = null) } }
+        assertEquals(0, count(LabTags.MODE_LOOP))
+        assertEquals(0, count(LabTags.LOOP_RUN))
+        compose.onNodeWithTag(LabTags.SETTINGS_BUTTON).assertIsDisplayed()
     }
 }

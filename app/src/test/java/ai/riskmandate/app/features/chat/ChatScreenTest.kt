@@ -75,6 +75,25 @@ class ChatScreenTest {
     private fun tag(t: String) = compose.onNodeWithTag(t)
     private fun count(t: String) = compose.onAllNodesWithTag(t).fetchSemanticsNodes().size
 
+    /** QA's probe (Q-chat-1) as a test: a rotation (saved state restored, a new composition) keeps the open chat on screen. */
+    @Test fun rotationKeepsTheOpenConversationOnScreen() {
+        val store = MemoryChatHistoryStore()
+        val restoration = androidx.compose.ui.test.junit4.StateRestorationTester(compose)
+        restoration.setContent {
+            val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null))
+            CompositionLocalProvider(LocalChatStore provides store) { RiskMandateTheme { ChatContent(ctx, FakeChatLlm(pieces = listOf("An ", "answer."))) } }
+        }
+        compose.waitForIdle()
+        tag(ChatTags.INPUT).performTextInput("hello there")
+        tag(ChatTags.SEND).performClick()
+        compose.waitUntil(5_000) { count(ChatTags.STATS) == 1 }
+        restoration.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+        compose.waitUntil(5_000) { count(ChatTags.message(1)) == 1 }
+        assertEquals(1, count(ChatTags.message(0)))
+        compose.onNodeWithText("hello there").assertIsDisplayed()
+    }
+
     @Test fun featureStaysOffUntilItWorksOnTheTablet() {
         assertFalse(ChatFeature.enabled)
         assertTrue(FEATURES.any { it === ChatFeature })
