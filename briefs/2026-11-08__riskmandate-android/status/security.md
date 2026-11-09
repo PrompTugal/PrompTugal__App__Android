@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 61 (9 Nov 2026): dev.chat a61f996 PASS (grounding texts verified sentence by sentence against the bundled riskmandate.ai pages), dev.lab 50593f7 PASS. Everything queued is reviewed. Still open: the design-pass article when it moves, the Lab export share path (R-lab-11), R-app-2 for Dinis. Waiting for the next wake.
+> Round 62 (9 Nov 2026): qa f6b5381 PASS (R-qa-2 closed). Everything queued is reviewed. Still open: the design-pass article when it moves, the Lab export share path (R-lab-11), R-app-2 for Dinis. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
