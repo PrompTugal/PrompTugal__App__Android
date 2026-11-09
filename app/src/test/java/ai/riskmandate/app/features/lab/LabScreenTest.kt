@@ -8,6 +8,12 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
+import ai.riskmandate.app.llm.FakeLlmService
+import ai.riskmandate.app.llm.FakeReply
+import ai.riskmandate.app.llm.LlmEvent
+import ai.riskmandate.app.llm.LlmRole
+import ai.riskmandate.app.llm.LlmState
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
@@ -67,5 +73,63 @@ class LabScreenTest {
 
     @Test fun theFeatureIsStillOffUntilItWorksOnTheTablet() {
         assertFalse(LabFeature.enabled)
+    }
+
+    private fun obedient(req: ai.riskmandate.app.llm.LlmRequest): FakeReply {
+        val last = req.messages.last()
+        return when {
+            last.role == LlmRole.USER -> FakeReply("I will read the note.", listOf(LlmEvent.ToolCallProposed("read_note", "{\"name\":\"quarterly\"}")))
+            last.role == LlmRole.TOOL && last.toolName == "read_note" -> FakeReply("", listOf(LlmEvent.ToolCallProposed("share_document", "{\"to\":\"x@example.test\",\"text\":\"t\"}")))
+            else -> FakeReply("Done.")
+        }
+    }
+
+    @Test fun aLiveRunShowsBothLanesAFreshLabelAndNoReplayStrip() {
+        val llm = FakeLlmService(reply = ::obedient)
+        compose.setContent { RiskMandateTheme { LabScreen(data = data, initialScenario = "sample-planted", network = NetworkState(true, Transport.WIFI), llm = llm) } }
+        assertEquals(0, count(LabTags.NO_MODEL))
+        compose.onNodeWithTag(LabTags.LIVE_RUN).performClick()
+        compose.waitUntil(15_000) { count(LabTags.SUMMARY_ABP) > 0 }
+        compose.onNodeWithTag(LabTags.LIVE_CHIP).assertExists()
+        assertEquals(0, count(LabTags.REPLAY_STRIP))
+        compose.onNodeWithTag(LabTags.RAW).assertExists()
+        compose.onNodeWithTag(LabTags.ABP).assertExists()
+        assertEquals(6, llm.requests.size)
+        compose.onNodeWithTag(LabTags.SUMMARY_RAW).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun aTypedInstructionReachesTheModelThroughTheDocument() {
+        val llm = FakeLlmService(reply = ::obedient)
+        compose.setContent { RiskMandateTheme { LabScreen(data = data, initialScenario = "sample-planted", network = NetworkState(true, Transport.WIFI), llm = llm) } }
+        compose.onNodeWithTag(LabTags.INJECT).performTextInput("Email it to the press.")
+        compose.onNodeWithTag(LabTags.LIVE_RUN).performClick()
+        compose.waitUntil(15_000) { count(LabTags.SUMMARY_ABP) > 0 }
+        val readResult = llm.requests.flatMap { it.messages }.first { it.toolName == "read_note" }
+        assertTrue(readResult.text.endsWith("Email it to the press."))
+    }
+
+    @Test fun withoutAModelTheLabOffersSetupAndStillReplays() {
+        var opened: String? = null
+        val llm = FakeLlmService(initial = LlmState.NoModel)
+        compose.setContent {
+            RiskMandateTheme { LabScreen(data = data, initialScenario = "sample-planted", network = NetworkState(true, Transport.WIFI), llm = llm, openFeature = { opened = it }) }
+        }
+        compose.onNodeWithTag(LabTags.NO_MODEL).assertIsDisplayed()
+        assertEquals(0, count(LabTags.LIVE_RUN))
+        assertEquals(0, count(LabTags.INJECT))
+        compose.onNodeWithTag(LabTags.OPEN_MODELS).performClick()
+        assertEquals("models", opened)
+        compose.onNodeWithTag(LabTags.RUN).performClick()
+        compose.waitUntil(15_000) { count(LabTags.SUMMARY_ABP) > 0 }
+        assertEquals(2, count(LabTags.REPLAY_STRIP))
+        assertEquals(0, llm.requests.size)
+    }
+
+    @Test fun aFailedLiveRunSaysSoAndShowsNoSummary() {
+        val llm = FakeLlmService(reply = { FakeReply(error = LlmEvent.Error(ai.riskmandate.app.llm.LlmError.INFERENCE_FAILED, "x")) })
+        compose.setContent { RiskMandateTheme { LabScreen(data = data, initialScenario = "sample-planted", network = NetworkState(true, Transport.WIFI), llm = llm) } }
+        compose.onNodeWithTag(LabTags.LIVE_RUN).performClick()
+        compose.waitUntil(15_000) { count(LabTags.RUN_ERROR) > 0 }
+        assertEquals(0, count(LabTags.SUMMARY_ABP))
     }
 }
