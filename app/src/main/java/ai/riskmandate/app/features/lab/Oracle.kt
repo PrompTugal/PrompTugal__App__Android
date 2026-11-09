@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.llm.StrictJson
+
 /** What happened to one proposed call, for scoring. [result] is the text the fake returned (or the refusal). */
 data class CallTrace(
     val name: String,

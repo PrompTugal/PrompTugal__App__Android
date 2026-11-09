@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.llm.StrictJson
+
 /**
  * Reads eval's three file formats with [StrictJson] (no JSON library): scenarios `abp-eval-scenario/1`,
  * the demo graph `abp-eval-graph/1` and replay recordings `abp-lab-recording/1` (eval/FORMATS.md).
@@ -54,6 +56,8 @@ object LabFormats {
                 props.entries.map { (k, v) -> Param(k, v.asObj("parameter").optStr("type") ?: "string", k in required) },
             )
         }
+        for (t in tools) if (t.params.size > ToolProtocol.MAX_ARGS) fail("$id: tool ${t.name} has more than ${ToolProtocol.MAX_ARGS} parameters")
+        try { ToolProtocol.llmTools(tools) } catch (e: IllegalArgumentException) { fail("$id: ${e.message}") }
         val names = tools.map { it.name }
         if (names.size != names.toSet().size) fail("$id: duplicate tool")
         val fakesRaw = m.obj("fake_tools")

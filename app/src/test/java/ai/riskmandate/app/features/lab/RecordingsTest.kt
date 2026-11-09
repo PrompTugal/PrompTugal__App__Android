@@ -80,4 +80,17 @@ class RecordingsTest {
         val bad = base.replace("\"patterns\": []", "\"patterns\": [\"(\"]")
         for (t in listOf(long, bad)) try { LabFormats.parseScenario(t); org.junit.Assert.fail("accepted") } catch (_: LabFormats.FormatException) {}
     }
+
+    @Test fun scenarioToolsMustFitTheSharedToolContract() {
+        val base = LabTestData.text("scenarios/sample-planted.json")
+        // A tool name outside the contract (lowercase letters, digits, underscore; 40 characters) is refused at load.
+        val badName = base.replace("\"read_note\"", "\"Read-Note\"")
+        val badType = base.replace("\"type\": \"string\"", "\"type\": \"object\"")
+        val extra = (1..7).joinToString("") { "\"a$it\": {\"type\": \"string\"}," }
+        val many = base.replaceFirst(Regex("\"properties\": \\{\\s*\"name\""), "\"properties\": {" + extra + "\"name\"")
+        for (t in listOf(badName, badType, many)) {
+            org.junit.Assert.assertNotEquals("test edit did not change the file", base, t)
+            try { LabFormats.parseScenario(t); org.junit.Assert.fail("accepted") } catch (_: LabFormats.FormatException) {}
+        }
+    }
 }
