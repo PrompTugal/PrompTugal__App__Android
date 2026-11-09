@@ -7,15 +7,21 @@ import ai.riskmandate.app.features.HoldIdleWhile
 import ai.riskmandate.app.llm.DeviceProbe
 import ai.riskmandate.app.llm.DeviceSample
 import ai.riskmandate.app.llm.RunRecord
+import ai.riskmandate.app.llm.LlmLocation
 import ai.riskmandate.app.llm.LlmState
+import ai.riskmandate.app.ui.ChipKind
+import ai.riskmandate.app.ui.SegmentedControl
+import ai.riskmandate.app.ui.StatusChip
 import ai.riskmandate.app.llm.prompts.Prompts
 import ai.riskmandate.app.llm.LlmRunner
 import ai.riskmandate.app.ui.FeatureContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -57,7 +63,8 @@ object WorkbenchFeature : Feature {
 }
 
 object WorkbenchTags {
-    fun tab(i: Int) = "workbench_tab_$i"
+    const val TABS = "workbench_tabs"
+    const val MODEL_CHIP = "workbench_model_chip"
 }
 
 /** The fixed system-prompt presets; the RiskMandate base block is added from llm/prompts when it has loaded. */
@@ -70,6 +77,7 @@ val WORKBENCH_PRESETS = listOf(
     ),
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun WorkbenchContent(
     context: FeatureContext,
@@ -94,7 +102,7 @@ internal fun WorkbenchContent(
     }
     var presets by remember { mutableStateOf(WORKBENCH_PRESETS) }
     LaunchedEffect(Unit) {
-        runCatching { Prompts.load(app.assets, Prompts.RISKMANDATE_BASE) }.getOrNull()?.let { base ->
+        withContext(io) { runCatching { Prompts.loadBlocking(app.assets, Prompts.RISKMANDATE_BASE) }.getOrNull() }?.let { base ->
             presets = WORKBENCH_PRESETS.take(1) + SystemPreset(R.string.workbench_system_riskmandate, base) + WORKBENCH_PRESETS.drop(1)
         }
     }
@@ -123,14 +131,22 @@ internal fun WorkbenchContent(
         onDispose { if (running) view.keepScreenOn = previous }
     }
 
-    FeatureContent {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            TabRow(selectedTabIndex = tab) {
-                listOf(R.string.workbench_tab_run, R.string.workbench_tab_experiments, R.string.workbench_tab_tools).forEachIndexed { i, label ->
-                    Tab(selected = tab == i, onClick = { if (!running) tab = i }, text = { Text(stringResource(label)) },
-                        modifier = Modifier.heightIn(min = 48.dp).testTag(WorkbenchTags.tab(i)))
-                }
+    FeatureContent(scrollable = false, maxContentWidth = androidx.compose.ui.unit.Dp.Unspecified) {
+        Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Provenance: where it runs (the service says), and the model and backend actually in use.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatusChip(
+                    stringResource(if (service?.location == LlmLocation.CLOUD) R.string.workbench_where_cloud else R.string.workbench_where_device),
+                    ChipKind.Neutral,
+                )
+                activeModel?.let { StatusChip(it, ChipKind.Neutral, modifier = Modifier.testTag(WorkbenchTags.MODEL_CHIP)) }
             }
+            SegmentedControl(
+                labels = listOf(stringResource(R.string.workbench_tab_run), stringResource(R.string.workbench_tab_experiments), stringResource(R.string.workbench_tab_tools)),
+                selected = tab,
+                onSelect = { if (!running) tab = it },
+                modifier = Modifier.widthIn(max = 420.dp).testTag(WorkbenchTags.TABS),
+            )
             when (tab) {
                 0 -> RunTab(
                     runner = runner, activeModel = activeModel, onOpenModels = { context.openFeature("models") },
