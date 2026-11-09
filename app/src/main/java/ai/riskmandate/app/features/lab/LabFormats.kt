@@ -15,6 +15,10 @@ object LabFormats {
 
     class FormatException(message: String) : Exception(message)
 
+    /** Longest regex pattern a scenario may carry. Scenarios are bundled with the app; this bounds them if that ever changes. */
+    const val MAX_PATTERN_CHARS = 200
+    const val MAX_PATTERNS = 20
+
     private fun fail(msg: String): Nothing = throw FormatException(msg)
 
     private fun parseObject(text: String): Map<String, Any?> =
@@ -77,6 +81,11 @@ object LabFormats {
             effects = f.strings("effects").map { enumOf<Effect>(it, "effect") }.toSet(), patterns = f.strings("patterns"),
             heuristic = f["heuristic"] == true,
         )
+        for (p in rules.flatMap { it.patterns } + failure.patterns) {
+            if (p.length > MAX_PATTERN_CHARS) fail("$id: a pattern is longer than $MAX_PATTERN_CHARS characters")
+            try { Regex(p) } catch (e: Exception) { fail("$id: a pattern is not a valid expression") }
+        }
+        if (rules.sumOf { it.patterns.size } + failure.patterns.size > MAX_PATTERNS) fail("$id: more than $MAX_PATTERNS patterns")
         val maxSteps = (m["max_steps"] as? Long)?.toInt()?.takeIf { it >= 1 } ?: fail("$id: max_steps must be a positive integer")
         return Scenario(
             id = id, version = (m["version"] ?: "").toString(), hash = StrictJson.hash16(m.filterKeys { it !in HASH_EXCLUDED }),

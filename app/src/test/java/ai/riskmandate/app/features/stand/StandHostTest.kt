@@ -73,11 +73,12 @@ class StandHostTest {
         lifecycle.currentState = Lifecycle.State.RESUMED
     }
 
+    private val enabledCalls = mutableListOf<Boolean>()
     private var held by androidx.compose.runtime.mutableStateOf(false)
 
     private fun show(lock: ScreenLock, atHome: Boolean = true) {
         compose.setContent {
-            StandHostContent(settings, lock, lifecycle, { now }, atHome, { homeCalls++ }, held) {
+            StandHostContent(settings, lock, lifecycle, { now }, atHome, { homeCalls++ }, held, { enabledCalls.add(it) }) {
                 val v = androidx.compose.ui.platform.LocalView.current
                 hostView = v
                 Text("app")
@@ -128,7 +129,7 @@ class StandHostTest {
     }
 
     private fun showWithButtonInCorner(atHome: Boolean, onTap: () -> Unit) = compose.setContent {
-        StandHostContent(settings, FakeLock(), lifecycle, { now }, atHome, { homeCalls++ }, false) {
+        StandHostContent(settings, FakeLock(), lifecycle, { now }, atHome, { homeCalls++ }, false, {}) {
             androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
                 androidx.compose.foundation.layout.Box(
                     androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
@@ -267,6 +268,25 @@ class StandHostTest {
         advanceClock(3 * 60_000 + 1_000)
         tick(2)
         assertEquals(1, homeCalls)
+    }
+
+    @Test fun onEnabledChangeGetsTheStartValueThenEachChange() {
+        show(FakeLock())
+        compose.waitForIdle()
+        assertEquals(listOf(false), enabledCalls)
+        openSettings()
+        compose.onNodeWithTag(StandTags.SWITCH).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(StandTags.SWITCH).performClick()
+        compose.waitForIdle()
+        assertEquals(listOf(false, true, false), enabledCalls)
+    }
+
+    @Test fun onEnabledChangeStartsWithTheSavedValue() {
+        settings.enabled = true
+        show(FakeLock())
+        compose.waitForIdle()
+        assertEquals(listOf(true), enabledCalls)
     }
 
     @Test fun noResetWhileStandModeIsOff() {

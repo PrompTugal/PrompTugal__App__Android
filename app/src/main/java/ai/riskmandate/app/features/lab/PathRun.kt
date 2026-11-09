@@ -19,8 +19,10 @@ class PathRun(private val scenario: Scenario, private val abp: Boolean) {
      * Feeds one model turn at [tMs]. Returns the text to give back to the model as tool results, or null
      * when the model answered (this turn is the final answer) or the step limit was reached.
      */
-    fun step(text: String, tMs: Long): String? {
+    fun step(text0: String, tMs: Long): String? {
         check(!done) { "run already finished" }
+        // Model output is capped before anything reads it (events, call extraction, the final answer, scoring).
+        val text = if (text0.length > ToolProtocol.MAX_TEXT_CHARS) text0.substring(0, ToolProtocol.MAX_TEXT_CHARS) else text0
         steps++
         if (text.isNotBlank()) events += LabEvent.ModelText(tMs, text)
         val raws = ToolProtocol.extractCalls(text)

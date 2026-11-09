@@ -40,4 +40,6 @@
     <string name="chat_preset_triplets_note">Precisa das ferramentas do grafo, que ainda não existem.</string>
     <string name="chat_network_on">Rede: ligada</string>
     <string name="chat_network_off">Rede: desligada</string>
+    <string name="chat_kicker">No dispositivo</string>
+    <string name="chat_summary">Converse com um modelo de linguagem que corre neste tablet. Nada do que escrever sai do dispositivo.</string>
 </resources>
