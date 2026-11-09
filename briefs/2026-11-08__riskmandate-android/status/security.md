@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 60 (9 Nov 2026): qa ea2ec14 PASS (R-qa-1 closed; R-qa-2 info on device_label). Everything queued is reviewed. Still open: the design-pass article when it moves, the Lab export share path (R-lab-11), R-app-2 for Dinis. Waiting for the next wake.
+> Round 61 (9 Nov 2026): dev.chat a61f996 PASS (grounding texts verified sentence by sentence against the bundled riskmandate.ai pages), dev.lab 50593f7 PASS. Everything queued is reviewed. Still open: the design-pass article when it moves, the Lab export share path (R-lab-11), R-app-2 for Dinis. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
