@@ -56,6 +56,8 @@ class AbpChecksTest {
         // The address after an "@" in a URL's path is not its host.
         assertEquals("evil.test", AbpChecks.domain("https://evil.test/x@example.test"))
         assertEquals("evil.test", AbpChecks.domain("https://example.test@evil.test/"))
+        assertEquals("evil.test", AbpChecks.domain("//evil.test/x@example.test"))
+        assertEquals("evil.test", AbpChecks.domain("evil.test/x@example.test"))
     }
 
     @Test fun citationsAreCheckedAgainstWhatWasFetched() {

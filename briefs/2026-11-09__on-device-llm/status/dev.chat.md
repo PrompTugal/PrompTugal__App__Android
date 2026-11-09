@@ -16,6 +16,9 @@
 - `ChatFeature.Content` now uses `LlmServiceChat(context.llm)`; null (or `LlmState.NoModel`) shows the no-model state with **Open Models** (`context.openFeature("models")`). `LocalChatLlm` is gone (`LocalChatStore` stays, tests only). Tests cover the production path with `FakeLlmService` (null, NoModel, streaming, markup shown as text, an allowed link as a button).
 - Still true: `enabled = false` until Dinis checks it on the tablet with a real model.
 
+## Screenshots (for Dinis)
+`ChatScreenshotTest` writes `app/build/screenshots/chat-{no-model,empty,answer}-tablet-light.png` (1280x800 dp landscape, light). The model in them is `FakeLlmService`: scripted words, and the speed line ("5000 tokens per second") is the fake's, not a device measurement.
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 
