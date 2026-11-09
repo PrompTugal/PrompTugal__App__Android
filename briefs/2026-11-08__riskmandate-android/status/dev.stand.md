@@ -17,7 +17,7 @@ Waiting for review (architect, QA, security) and Dinis's word on the open questi
 - Tests (`app/src/test/.../features/stand/`): `IdleTimerTest` (pure JVM, fake clock), `StandSettingsTest` and `StandHostTest` (Robolectric/Compose: long-press, on/off, idle reset, refusal, throwing lock, pt-PT), `StandLocalisationTest`. English and pt-PT in `feature_stand.xml`.
 
 ## Next
-Nothing outstanding. `StandHost(..., idleHeld = false)` holds off the idle reset while true and restarts the countdown when released (test with fake clock); app.android wires it in MainActivity.
+Nothing outstanding. `StandHost(..., idleHeld = false)` holds off the idle reset while true and restarts the countdown when released. The idle loop runs in the effect's own coroutine (not repeatOnLifecycle), which made the host tests deterministic.
 Fixes from reviews. Not tested on a real tablet: the screen-pinning prompt itself needs a device (QA: first run per tablet, accept the prompt once; if "Screen pinning" is off in Settings, Security, turn it on).
 
 ## Asks
