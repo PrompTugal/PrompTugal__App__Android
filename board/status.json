@@ -1,7 +1,7 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-09T00:50Z",
-  "state": "M1 DONE (9 Nov 2026 ~00:50 UTC): 0.1.27 installed on Dinis's tablet as a one-tap update through Firebase App Tester, built and signed by CI on push to dev. Stopped to show Dinis, per the brief. M2 waits on his decisions.",
+  "updated": "2026-11-09T01:00Z",
+  "state": "M1 done; M2 to M4 parked until after the summit. Next: summit features for the RiskMandate app, options A to E put to Dinis.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
@@ -14,8 +14,7 @@
     "M1 DONE: 0.1.27 delivered by Firebase App Distribution and installed as an update over 0.1.26 through App Tester on Dinis's tablet (agent@riskmandate.ai), no cable."
   ],
   "next": [
-    "M2, once Dinis decides: the route (AMAPI test enterprise, Cloud Identity Premium or an EMM), the private build's package ID, the Play Console account; then a factory-fresh tablet enrolled by QR with the app force-installed (devices/REHEARSAL.md)",
-    "M3 needs the Play Console account (internal testing) or works today through Firebase for anyone added to 'team'"
+    "Dinis picks the summit features (A RiskMandate inside the app, B ABP-in-every-layer demo screen, C this app's own mandate live, D stand mode, E demo videos); the sessions build them and each merge reaches the tablets through the M1 pipeline"
   ],
   "asks": [
     "Dinis: the Play Console account (organisation, which company) and its D-U-N-S check: on the critical path for M2.",
@@ -38,6 +37,7 @@
     "Open source and for sale (Dinis, 8 Nov 2026 ~21:45 UTC): all these apps are open source (Apache 2.0, the repo's LICENSE) and will be put for sale eventually.",
     "Five sessions started at Dinis's word (8 Nov 2026 ~23:07 UTC): app, release, devices, play, security, on Sonnet; board/sessions.json.",
     "Google Cloud and Firebase project 'riskmandate-android' (ID riskmandate-android), created by Dinis as agent@riskmandate.ai under the thecyberboardroom.com Google Cloud organisation, which holds the riskmandate.ai Workspace (Dinis, 8 Nov 2026 ~23:45 UTC). Test tablet: Dinis's, signed in as agent@riskmandate.ai (M1 device via Firebase; already set up, so not fully managed without a factory reset).",
-    "Upload key disposable during the experiment phase (Dinis, 9 Nov 2026 ~00:40 UTC): the local copy is deleted; if the repository moves, the setup is done again. Make a fresh upload key, and keep it, before the first Google Play upload."
+    "Upload key disposable during the experiment phase (Dinis, 9 Nov 2026 ~00:40 UTC): the local copy is deleted; if the repository moves, the setup is done again. Make a fresh upload key, and keep it, before the first Google Play upload.",
+    "M2, M3 and M4 parked until after Web Summit (Dinis, 9 Nov 2026 ~00:55 UTC): the M1 flow (Firebase App Tester, one-tap updates) is what runs on the team's own tablets at the summit. More testers (the team's agent accounts on riskmandate.ai) are added in Firebase by Dinis; no tester address is kept in this repository."
   ]
 }

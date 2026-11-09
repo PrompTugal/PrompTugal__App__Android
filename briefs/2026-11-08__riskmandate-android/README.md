@@ -6,8 +6,8 @@
 
 ## Milestones (stop and show Dinis at each)
 - **M1, CI to a device: DONE (9 Nov 2026, ~00:50 UTC).** 0.1.27 installed on Dinis's tablet as a one-tap update through Firebase App Tester, built and signed by CI on push to `dev`.
-- **M2, installed by itself on agent-owned devices:** a factory-fresh tablet scans a QR code, enrols fully managed, and gets the app force-installed and updated. Tooling in `devices/`; waits on the route (AMAPI or Workspace) and the private build's package ID.
-- **M3, devices not owned by the agent:** install from a link (Play internal testing or Firebase).
+- **PARKED until after Web Summit (Dinis, 9 Nov).** **M2, installed by itself on agent-owned devices:** a factory-fresh tablet scans a QR code, enrols fully managed, and gets the app force-installed and updated. Tooling in `devices/`; waits on the route (AMAPI or Workspace) and the private build's package ID.
+- **PARKED until after Web Summit.** **M3, devices not owned by the agent:** install from a link (Play internal testing or Firebase).
 - **Not before M1 to M3:** the vault, kiosk, local model, calendar, the other apps.
 
 ## Sessions
