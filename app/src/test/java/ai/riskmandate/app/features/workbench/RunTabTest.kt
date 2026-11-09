@@ -212,6 +212,8 @@ class RunTabTest {
         compose.onNodeWithTag(RunTags.CLOUD).performScrollTo().performClick()
         compose.onNodeWithText("Tool tests").performClick()
         waitFor(ai.riskmandate.app.features.workbench.tooltests.ToolTestTags.RUN)
+        // The cloud service reaches the tab only as the opt-in cloud judge (off by default).
+        assertTrue(compose.onAllNodes(hasTestTag(ai.riskmandate.app.features.workbench.tooltests.ToolTestTags.JUDGE_CLOUD)).fetchSemanticsNodes().isNotEmpty())
         compose.onNodeWithTag(ai.riskmandate.app.features.workbench.tooltests.ToolTestTags.RUN).performScrollTo().performClick()
         val end = System.currentTimeMillis() + 10_000
         while (local.requests.isEmpty() && System.currentTimeMillis() < end) {

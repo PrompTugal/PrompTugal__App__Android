@@ -194,11 +194,11 @@ internal fun WorkbenchContent(
                 else -> {
                     // dev.lab's tab (features/workbench/tooltests): a plain column; the Workbench owns scrolling.
                     // Always the on-device model, whatever the Run tab's choice (security R-wb-9): tool tests and the
-                    // on-device judge must not reach the cloud unlabelled.
+                    // on-device judge must not reach the cloud unlabelled. The cloud service goes only to the cloud judge.
                     val s = form.settings(emptyList())
                     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                         ToolTestsTab(
-                            llm = local, openFeature = context.openFeature, onBusy = { running = it },
+                            llm = local, cloudLlm = cloud, openFeature = context.openFeature, onBusy = { running = it },
                             settings = if (s == null) ToolRunSettings() else ToolRunSettings(sampling = s.sampling, maxTokens = s.maxTokens),
                         )
                     }
