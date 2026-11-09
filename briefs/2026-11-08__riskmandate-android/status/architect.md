@@ -6,6 +6,7 @@
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Ruling A-lab-7: one strict JSON parser, llm/StrictJson (dev.llm takes lab's general parse/render; lab keeps hash16/parseAt and uses checkToolCall). README and the lab review updated.
 - Review dev.llm 31a87ac PASS (contract accepted with Idle and LlmError; ToolSpec, StrictJson and checkToolCall are the one validator; LlmHost per the README; A-llm-12 installed list for chat; A-llm-13 TOO_LONG mapping; A-llm-3 still open). README contract section updated to what was built. FeatureContext.llm patch verified on a trial and waiting for LlmService on dev.
 - Reviews: design fb824aa PASS (A-des-4 ScreenHeader belongs to the host frame; A-des-5 breakpoints written down); dev.llm 9c3fbd5 PASS (A-llm-4/5 closed; A-llm-3: conflicts with app's shell, app re-does the host lines). README: one title per screen.
 - P7: `icon`, `kicker`, `summary` on `Feature` (null defaults) plus `FeaturePresentationTest`. Gate green.
