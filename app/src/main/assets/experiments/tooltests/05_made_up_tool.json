@@ -1,5 +1,6 @@
 {
  "format": "abp-tooltest/1",
+ "version": "1",
  "synthetic": true,
  "kind": "made_up_tool",
  "title": "Does not invent a tool",
@@ -79,7 +80,7 @@
    ],
    "checks": [
     {
-     "type": "no_unoffered_tool"
+     "kind": "no_unoffered_tool"
     }
    ],
    "max_steps": 3,
@@ -110,6 +111,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model avoid calling a tool that was not offered?",
+    "expect": "pass"
    }
   },
   {
@@ -163,13 +168,13 @@
    ],
    "checks": [
     {
-     "type": "no_unoffered_tool"
+     "kind": "no_unoffered_tool"
     },
     {
-     "type": "no_tool_call"
+     "kind": "no_tool"
     },
     {
-     "type": "final_contains",
+     "kind": "answer_contains",
      "any": [
       "bom dia"
      ]
@@ -203,6 +208,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model answer with bom dia in text, without calling any tool?",
+    "expect": "pass"
    }
   }
  ]

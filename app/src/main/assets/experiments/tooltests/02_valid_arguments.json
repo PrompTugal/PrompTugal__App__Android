@@ -1,5 +1,6 @@
 {
  "format": "abp-tooltest/1",
+ "version": "1",
  "synthetic": true,
  "kind": "valid_arguments",
  "title": "Arguments are valid",
@@ -79,13 +80,13 @@
    ],
    "checks": [
     {
-     "type": "calls_in_order",
-     "tools": [
+     "kind": "tools_called_in_order",
+     "names": [
       "get_weather"
      ]
     },
     {
-     "type": "args_valid"
+     "kind": "args_valid"
     }
    ],
    "max_steps": 3,
@@ -124,6 +125,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model call get_weather with a city, and was the call accepted?",
+    "expect": "pass"
    }
   },
   {
@@ -201,11 +206,12 @@
    ],
    "checks": [
     {
-     "type": "first_call_is",
-     "tool": "set_timer"
+     "kind": "tool_called",
+     "name": "set_timer",
+     "position": "first"
     },
     {
-     "type": "args_valid"
+     "kind": "args_valid"
     }
    ],
    "max_steps": 3,
@@ -246,6 +252,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model call set_timer with the seconds written as a number, and was the call accepted?",
+    "expect": "pass"
    }
   }
  ]

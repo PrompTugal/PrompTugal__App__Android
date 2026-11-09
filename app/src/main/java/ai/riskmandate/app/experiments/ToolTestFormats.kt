@@ -3,7 +3,7 @@ package ai.riskmandate.app.experiments
 import ai.riskmandate.app.llm.StrictJson
 
 /**
- * Reads tool-test files (`abp-tooltest/1`): one file per kind, {format, kind, title, synthetic, cases[]}.
+ * Reads tool-test files (`abp-tooltest/1`): one file per kind, {format, version, kind, title, synthetic, cases[]}.
  * A case: {id, tests, system?, messages[], tools[] (2 to 5), fake_tools{}, checks[], max_steps?, reference?, wrong?}.
  * Tools and fake tools use the same shapes as scenarios (see [LabFormats]); `effect` may be left out. Strict:
  * anything that does not fit is a [FormatException] and the file is skipped and counted.
@@ -29,6 +29,7 @@ object ToolTestFormats {
         val m = ToolFormats.parseObject(text)
         if (m["format"] != FORMAT) fail("format must be $FORMAT")
         if (m["synthetic"] != true) fail("tool-test data must be marked synthetic: true")
+        if ((m["version"] as? String).isNullOrBlank()) fail("'version' is the file's content version, as text")
         val kind = m.str("kind")
         if (!Regex("[a-z][a-z0-9_]{0,39}").matches(kind)) fail("kind '$kind' is not a short lowercase name")
         val title = m.str("title")
@@ -62,6 +63,7 @@ object ToolTestFormats {
             id, kind, tests, c["system"] as? String ?: "", messages, tools, fakes, checks, maxSteps,
             (c["reference"] as? Map<*, *>)?.let { steps(it.obj("reference"), id) },
             (c["wrong"] as? Map<*, *>)?.let { steps(it.obj("wrong"), id) },
+            (c["judges"] as? Map<*, *>)?.let { judges(it.obj("judges"), id) },
         )
     }
 
@@ -82,12 +84,20 @@ object ToolTestFormats {
         return list.map { s -> s.obj("step").let { RefStep(it["text"] as? String ?: "", (it["calls"] as? List<*>).orEmpty().map { c -> call(c.obj("call")) }) } }
     }
 
+    private fun judges(o: Map<String, Any?>, id: String): JudgeSpec {
+        val ask = o["ask"] as? String
+        if (ask.isNullOrBlank() || ask.length > 400) fail("$id: judges.ask is one question of at most 400 characters")
+        val expect = o["expect"] as? String
+        if (expect !in setOf("pass", "fail")) fail("$id: judges.expect is pass or fail")
+        return JudgeSpec(ask, expect!!)
+    }
+
     private fun check(o: Map<String, Any?>, tools: List<ToolSpec>, id: String): CaseCheck {
-        val type = o.str("type")
-        if (type !in ToolChecks.TYPES) fail("$id: unknown check '$type'")
-        val params = o.filterKeys { it != "type" && it != "label" }
-        ToolChecks.validateParams(type, params, tools)?.let { fail("$id: check $type: $it") }
-        return CaseCheck(type, params, o["label"] as? String ?: ToolChecks.defaultLabel(type, params))
+        val kind = o.str("kind")
+        if (kind !in ToolChecks.KINDS) fail("$id: unknown check '$kind'")
+        val params = o.filterKeys { it != "kind" && it != "label" }
+        ToolChecks.validateParams(kind, params, tools)?.let { fail("$id: check $kind: $it") }
+        return CaseCheck(kind, params, o["label"] as? String ?: ToolChecks.defaultLabel(kind, params))
     }
 
     /** Hash of the catalogue's content, as the Lab hashes a scenario, so a result names the exact cases it ran. */

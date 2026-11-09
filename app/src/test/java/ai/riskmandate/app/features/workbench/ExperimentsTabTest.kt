@@ -12,10 +12,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -39,10 +42,10 @@ class ExperimentsTabTest {
     private fun show(fake: FakeLlmService, base: RunSettings? = this.base, cleared: () -> Unit = {}, logged: MutableList<String> = mutableListOf()) =
         compose.setContent {
             RiskMandateTheme {
-                FeatureContent {
+                FeatureContent(scrollable = false) {
                     var log by remember { mutableStateOf(listOf<LogEntry>()) }
                     ExperimentsTab(
-                        runner = LlmRunner(fake), base = base, probe = { null }, log = log,
+                        runner = LlmRunner(fake), base = base, probe = { null }, guard = ai.riskmandate.app.experiments.NoGuard, log = log,
                         onRecord = { l, r: RunRecord -> logged += l; log = listOf(LogEntry.of(l, r)) + log },
                         onClearLog = { log = emptyList(); cleared() },
                     )
@@ -79,8 +82,10 @@ class ExperimentsTabTest {
         compose.onNodeWithTag(ExperimentTags.START).performScrollTo().assertTextContains("4 runs", substring = true).performClick()
         waitFor(ExperimentTags.COPY)
         assertEquals(listOf("0.1", "0.9", "0.1", "0.9"), logged)
-        compose.onNodeWithTag(ExperimentTags.RESULTS).assertTextContains("0.9 | 2 | 0 |", substring = true)
-        compose.onNodeWithTag(ExperimentTags.LOG).performScrollTo().assertTextContains("0.9 | fake", substring = true)
+        compose.onNode(hasContentDescription("Temperature: 0.9, Runs: 2,", substring = true)).assertExists()
+        compose.onNodeWithTag(ExperimentTags.VIEW).performScrollTo()
+        compose.onNodeWithText("Run log (4)").performScrollTo().performClick()
+        compose.onAllNodes(hasContentDescription("Run and settings: 0.9 | fake", substring = true)).assertCountEquals(2)
     }
 
     @Test fun anABRunsBothValuesAlternately() {
@@ -105,8 +110,8 @@ class ExperimentsTabTest {
         val fake = FakeLlmService { FakeReply("a b") }
         restorer.setContent {
             RiskMandateTheme {
-                FeatureContent {
-                    ExperimentsTab(runner = LlmRunner(fake), base = base, probe = { null }, log = emptyList(), onRecord = { _, _ -> }, onClearLog = {})
+                FeatureContent(scrollable = false) {
+                    ExperimentsTab(runner = LlmRunner(fake), base = base, probe = { null }, guard = ai.riskmandate.app.experiments.NoGuard, log = emptyList(), onRecord = { _, _ -> }, onClearLog = {})
                 }
             }
         }
@@ -115,7 +120,29 @@ class ExperimentsTabTest {
         compose.onNodeWithTag(ExperimentTags.START).performScrollTo().performClick()
         waitFor(ExperimentTags.COPY)
         restorer.emulateSavedInstanceStateRestore()
-        compose.onNodeWithTag(ExperimentTags.RESULTS).performScrollTo().assertTextContains("0.7 | 1 | 0 |", substring = true)
+        compose.onNode(hasContentDescription("Temperature: 0.7, Runs: 1,", substring = true)).assertExists()
+    }
+
+    @Test fun aCapStopShowsTheBanner() {
+        var n = 0
+        compose.setContent {
+            RiskMandateTheme {
+                FeatureContent(scrollable = false) {
+                    ExperimentsTab(
+                        runner = LlmRunner(FakeLlmService { FakeReply("x") }), base = base, log = emptyList(), onRecord = { _, _ -> }, onClearLog = {},
+                        probe = { null },
+                        guard = object : ai.riskmandate.app.experiments.DeviceGuard {
+                            override fun batteryPct() = if (++n > 3) 10 else 80
+                            override fun charging() = false
+                            override fun hot() = false
+                        },
+                    )
+                }
+            }
+        }
+        compose.onNodeWithTag(ExperimentTags.START).performScrollTo().performClick()
+        waitFor(ExperimentTags.CAP_BANNER)
+        compose.onNodeWithTag(ExperimentTags.CAP_BANNER).assertTextContains("battery", substring = true)
     }
 
     @Test fun theSummaryCodecRefusesAnythingOutOfRange() {
@@ -133,6 +160,8 @@ class ExperimentsTabTest {
         compose.onNodeWithTag(ExperimentTags.REPEATS).performScrollTo().performTextClearance()
         compose.onNodeWithTag(ExperimentTags.REPEATS).performTextInput("1")
         compose.onNodeWithTag(ExperimentTags.START).performScrollTo().assertIsEnabled().performClick()
+        waitFor(ExperimentTags.COPY)
+        compose.onNodeWithText("Run log", substring = true).performScrollTo().performClick()
         waitFor(ExperimentTags.CLEAR)
         compose.onNodeWithTag(ExperimentTags.CLEAR).performScrollTo().performClick()
         compose.onNodeWithTag(ExperimentTags.CONFIRM_CLEAR).performClick()

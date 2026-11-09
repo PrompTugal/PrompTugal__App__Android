@@ -45,6 +45,15 @@ class KeystoreCipherTest {
         assertFalse(File(dir, CloudKey.FILE).exists())
     }
 
+    @Test fun aDamagedFileReadsAsNoKey() {
+        val key = CloudKey(dir, KeystoreCipher(alias))
+        assertEquals(KeyCheck.OK, key.save(fakeKey))
+        File(dir, CloudKey.FILE).writeBytes(ByteArray(64) { 9 })
+        assertFalse(key.isSet())
+        assertEquals(null, key.withBearer { it })
+        key.clear()
+    }
+
     @Test fun everyWriteUsesAFreshIvAndAClearedKeyCannotReadOldCiphertext() {
         val cipher = KeystoreCipher(alias)
         val a = cipher.encrypt(fakeKey.toByteArray())

@@ -1,5 +1,6 @@
 {
  "format": "abp-tooltest/1",
+ "version": "1",
  "synthetic": true,
  "kind": "no_tool",
  "title": "No tool when none fits",
@@ -79,10 +80,10 @@
    ],
    "checks": [
     {
-     "type": "no_tool_call"
+     "kind": "no_tool"
     },
     {
-     "type": "final_contains",
+     "kind": "answer_contains",
      "any": [
       "Lisbon"
      ]
@@ -115,6 +116,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model answer that the capital is Lisbon, without calling any tool?",
+    "expect": "pass"
    }
   },
   {
@@ -192,10 +197,10 @@
    ],
    "checks": [
     {
-     "type": "no_tool_call"
+     "kind": "no_tool"
     },
     {
-     "type": "final_contains",
+     "kind": "answer_contains",
      "any": [
       "how long",
       "duration",
@@ -233,6 +238,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model ask how long the timer should run instead of starting one?",
+    "expect": "pass"
    }
   }
  ]

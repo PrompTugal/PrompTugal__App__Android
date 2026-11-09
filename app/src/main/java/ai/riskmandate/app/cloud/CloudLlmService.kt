@@ -1,6 +1,7 @@
 package ai.riskmandate.app.cloud
 
 import ai.riskmandate.app.llm.LlmError
+import ai.riskmandate.app.llm.LlmLocation
 import ai.riskmandate.app.llm.LlmEvent
 import ai.riskmandate.app.llm.LlmMessage
 import ai.riskmandate.app.llm.LlmRequest
@@ -21,7 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 import org.json.JSONException
@@ -66,13 +66,15 @@ class CloudLlmService(
         require(CloudModels.byId(model.id) == model) { "model is not in the pinned list" }
     }
 
+    /** Every answer from this service is computed by a third party: screens must show a "Cloud" badge, never "on this device". */
+    override val location: LlmLocation = LlmLocation.CLOUD
+
     private val _state = MutableStateFlow<LlmState>(LlmState.NoModel)
     override val state: StateFlow<LlmState> = _state.asStateFlow()
 
     private val _lastRun = MutableStateFlow<CloudRunInfo?>(null)
     val lastRun: StateFlow<CloudRunInfo?> = _lastRun.asStateFlow()
 
-    private val lock = Mutex()
     @Volatile private var lastEndedAt = 0L
 
     /** The most [request] could cost, for the cap check and for a sweep to show before it starts. Very large when it cannot be sent at all. */
@@ -88,7 +90,7 @@ class CloudLlmService(
     }
 
     override fun stream(request: LlmRequest): Flow<LlmEvent> = flow {
-        lock.withLock { runOne(request) { emit(it) } }
+        spend.gate.withLock { runOne(request) { emit(it) } }
     }.flowOn(io)
 
     private suspend fun runOne(request: LlmRequest, emit: suspend (LlmEvent) -> Unit) {
@@ -213,6 +215,7 @@ class CloudLlmService(
             modelId = model.id, backend = BACKEND, promptTokens = promptTokens, outputTokens = outputTokens,
             prefillTokensPerSecond = null, decodeTokensPerSecond = null,
             timeToFirstTokenMs = if (firstAt > 0) firstAt - started else null, totalMs = ended - started,
+            location = LlmLocation.CLOUD,
         )))
     }
 
@@ -288,7 +291,8 @@ class CloudLlmService(
 
     companion object {
         const val BACKEND = "openrouter.ai (cloud)"
-        const val MAX_PROMPT_CHARS = 200_000 // the body is also held to CloudLimits.MAX_REQUEST_BYTES
+        /** A prompt of more characters than the request may hold in bytes cannot fit, so it is refused before the body is built. */
+        const val MAX_PROMPT_CHARS = CloudLimits.MAX_REQUEST_BYTES
         const val MAX_TOOL_CALLS = 8
     }
 }

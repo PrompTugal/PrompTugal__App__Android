@@ -4,18 +4,30 @@ import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
+import ai.riskmandate.app.experiments.AndroidDeviceGuard
+import ai.riskmandate.app.experiments.DeviceGuard
+import ai.riskmandate.app.experiments.RunSettings as ToolRunSettings
+import ai.riskmandate.app.features.workbench.tooltests.ToolTestsTab
 import ai.riskmandate.app.llm.DeviceProbe
 import ai.riskmandate.app.llm.DeviceSample
 import ai.riskmandate.app.llm.RunRecord
+import ai.riskmandate.app.llm.LlmLocation
 import ai.riskmandate.app.llm.LlmState
+import ai.riskmandate.app.ui.ChipKind
+import ai.riskmandate.app.ui.SegmentedControl
+import ai.riskmandate.app.ui.StatusChip
 import ai.riskmandate.app.llm.prompts.Prompts
 import ai.riskmandate.app.llm.LlmRunner
 import ai.riskmandate.app.ui.FeatureContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -57,7 +69,8 @@ object WorkbenchFeature : Feature {
 }
 
 object WorkbenchTags {
-    fun tab(i: Int) = "workbench_tab_$i"
+    const val TABS = "workbench_tabs"
+    const val MODEL_CHIP = "workbench_model_chip"
 }
 
 /** The fixed system-prompt presets; the RiskMandate base block is added from llm/prompts when it has loaded. */
@@ -70,12 +83,14 @@ val WORKBENCH_PRESETS = listOf(
     ),
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun WorkbenchContent(
     context: FeatureContext,
     io: CoroutineDispatcher = Dispatchers.IO,
     /** Device readings and the clock, injectable for tests (QA); the app reads the real ones. */
     probe: (() -> DeviceSample?)? = null,
+    guard: DeviceGuard? = null,
     clock: () -> Long = { System.nanoTime() / 1_000_000 },
     wallClock: () -> Long = { System.currentTimeMillis() },
 ) {
@@ -83,6 +98,8 @@ internal fun WorkbenchContent(
     val scope = rememberCoroutineScope()
     val service = context.llm
     val read: () -> DeviceSample? = remember(probe) { probe ?: { DeviceProbe.sample(app) } }
+    // The caps decide on experiments/'s guard (shared with the Lab and the tool tests); the probe records readings.
+    val capsGuard: DeviceGuard = remember(guard) { guard ?: AndroidDeviceGuard(app) }
     val runner = remember(service) { service?.let { LlmRunner(it, probe = read, clock = clock, wallClock = wallClock) } }
     val state by (service?.state ?: remember { MutableStateFlow<LlmState>(LlmState.NoModel) }).collectAsState()
     val activeModel = when (val s = state) {
@@ -94,7 +111,7 @@ internal fun WorkbenchContent(
     }
     var presets by remember { mutableStateOf(WORKBENCH_PRESETS) }
     LaunchedEffect(Unit) {
-        runCatching { Prompts.load(app.assets, Prompts.RISKMANDATE_BASE) }.getOrNull()?.let { base ->
+        withContext(io) { runCatching { Prompts.loadBlocking(app.assets, Prompts.RISKMANDATE_BASE) }.getOrNull() }?.let { base ->
             presets = WORKBENCH_PRESETS.take(1) + SystemPreset(R.string.workbench_system_riskmandate, base) + WORKBENCH_PRESETS.drop(1)
         }
     }
@@ -123,14 +140,22 @@ internal fun WorkbenchContent(
         onDispose { if (running) view.keepScreenOn = previous }
     }
 
-    FeatureContent {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            TabRow(selectedTabIndex = tab) {
-                listOf(R.string.workbench_tab_run, R.string.workbench_tab_experiments, R.string.workbench_tab_tools).forEachIndexed { i, label ->
-                    Tab(selected = tab == i, onClick = { if (!running) tab = i }, text = { Text(stringResource(label)) },
-                        modifier = Modifier.heightIn(min = 48.dp).testTag(WorkbenchTags.tab(i)))
-                }
+    FeatureContent(scrollable = false, maxContentWidth = androidx.compose.ui.unit.Dp.Unspecified) {
+        Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Provenance: where it runs (the service says), and the model and backend actually in use.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatusChip(
+                    stringResource(if (service?.location == LlmLocation.CLOUD) R.string.workbench_where_cloud else R.string.workbench_where_device),
+                    ChipKind.Neutral,
+                )
+                activeModel?.let { StatusChip(it, ChipKind.Neutral, modifier = Modifier.testTag(WorkbenchTags.MODEL_CHIP)) }
             }
+            SegmentedControl(
+                labels = listOf(stringResource(R.string.workbench_tab_run), stringResource(R.string.workbench_tab_experiments), stringResource(R.string.workbench_tab_tools)),
+                selected = tab,
+                onSelect = { if (!running) tab = it },
+                modifier = Modifier.widthIn(max = 420.dp).testTag(WorkbenchTags.TABS),
+            )
             when (tab) {
                 0 -> RunTab(
                     runner = runner, activeModel = activeModel, onOpenModels = { context.openFeature("models") },
@@ -139,12 +164,21 @@ internal fun WorkbenchContent(
                     onRunning = { running = it }, onRecord = { record("run", it) },
                 )
                 1 -> ExperimentsTab(
-                    runner = runner, base = form.settings(emptyList()), probe = read, log = log,
+                    runner = runner, base = form.settings(emptyList()), probe = read, guard = capsGuard, log = log,
                     onRecord = ::record,
                     onClearLog = { log = emptyList(); last = null; scope.launch { withContext(io) { store.clear() } } },
                     onRunning = { running = it }, clock = clock,
                 )
-                else -> Text(stringResource(R.string.workbench_tools_soon))
+                else -> {
+                    // dev.lab's tab (features/workbench/tooltests): a plain column; the Workbench owns scrolling.
+                    val s = form.settings(emptyList())
+                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        ToolTestsTab(
+                            llm = service, openFeature = context.openFeature, onBusy = { running = it },
+                            settings = if (s == null) ToolRunSettings() else ToolRunSettings(sampling = s.sampling, maxTokens = s.maxTokens),
+                        )
+                    }
+                }
             }
         }
     }

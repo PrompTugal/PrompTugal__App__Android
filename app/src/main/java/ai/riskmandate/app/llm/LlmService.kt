@@ -146,6 +146,8 @@ enum class LlmError {
     TOO_LONG,
     /** The runtime failed while answering. */
     INFERENCE_FAILED,
+    /** A spending cap or the spending ledger stopped the call (cloud service only); the message says which. */
+    CAP_REACHED,
 }
 
 /** Where a figure in [LlmStats] comes from. Shown next to the figure in the Workbench. */
@@ -199,6 +201,8 @@ data class LlmStats(
     val maxTokens: Int? = null,
     /** Where this answer was computed. */
     val location: LlmLocation = LlmLocation.LOCAL,
+    /** What the answer cost in US dollars (cloud: the provider's reported cost or an estimate); null on the device. */
+    val costUsd: Double? = null,
 ) {
     /** Architect's names for the same values. */
     val backendUsed: String get() = backend

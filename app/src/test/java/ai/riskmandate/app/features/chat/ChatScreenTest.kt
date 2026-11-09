@@ -15,6 +15,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -118,6 +119,15 @@ class ChatScreenTest {
         assertEquals(0, count(ChatTags.INPUT))
         tag(ChatTags.OPEN_MODELS).performClick()
         assertEquals(listOf("models"), opened) // by id only, through the host
+    }
+
+    @Test fun aCloudServiceGetsTheCloudBadgeAndNeverRunsOnThisDevice() {
+        show(FakeChatLlm(local = false))
+        loaded()
+        tag(ChatTags.BADGE_CLOUD).assertIsDisplayed()
+        compose.onNodeWithText("Cloud: openrouter.ai").assertIsDisplayed()
+        assertEquals(0, count(ChatTags.BADGE))
+        assertEquals(0, compose.onAllNodesWithText("Runs on this device").fetchSemanticsNodes().size)
     }
 
     @Test fun badgeAndNetworkChipShowWithAModel() {

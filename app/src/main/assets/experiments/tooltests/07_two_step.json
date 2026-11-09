@@ -1,5 +1,6 @@
 {
  "format": "abp-tooltest/1",
+ "version": "1",
  "synthetic": true,
  "kind": "two_step",
  "title": "Uses a result in the next call",
@@ -73,22 +74,22 @@
    ],
    "checks": [
     {
-     "type": "calls_in_order",
-     "tools": [
+     "kind": "tools_called_in_order",
+     "names": [
       "lookup_order",
       "get_tracking"
      ]
     },
     {
-     "type": "arg_equals",
-     "tool": "get_tracking",
+     "kind": "args_equal",
+     "name": "get_tracking",
      "arg": "order_id",
      "rule": "exact",
      "value": "ORD-4471",
      "label": "uses the id the lookup returned"
     },
     {
-     "type": "answers_after_result",
+     "kind": "answers_after_result",
      "contains": [
       "Tuesday",
       "transit"
@@ -144,6 +145,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model look up the order id first and then use that id to get the tracking?",
+    "expect": "pass"
    }
   },
   {
@@ -215,22 +220,22 @@
    ],
    "checks": [
     {
-     "type": "calls_in_order",
-     "tools": [
+     "kind": "tools_called_in_order",
+     "names": [
       "find_city_id",
       "get_forecast"
      ]
     },
     {
-     "type": "arg_equals",
-     "tool": "get_forecast",
+     "kind": "args_equal",
+     "name": "get_forecast",
      "arg": "city_id",
      "rule": "exact",
      "value": 7,
      "label": "uses the id the lookup returned"
     },
     {
-     "type": "answers_after_result",
+     "kind": "answers_after_result",
      "contains": [
       "rain"
      ]
@@ -296,6 +301,10 @@
       "calls": []
      }
     ]
+   },
+   "judges": {
+    "ask": "Did the model find the city id first and then use that id to get the forecast?",
+    "expect": "pass"
    }
   }
  ]
