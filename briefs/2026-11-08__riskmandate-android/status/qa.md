@@ -32,6 +32,8 @@ Waiting for the next app branch (dev.* branches were empty at last fetch).
 
 - Round 7, 9 Nov: **dev.chat acd3e5f PASS, Q-chat-1 LIFT** (531 tests; my two probes pass 8 of 8; the open chat survives a rotation, a question asked mid-answer is saved). **dev.lab loop head 1799c03 HOLD for enabling** (544 tests green): Q-loop-1, a rotation wipes a finished loop's counters and cancels a loop in progress (two probes); the arithmetic is right (my `QaLoopCountersTest`, 9 tests, mutation-checked, parked as `reviews/...loopcounters.test.kt.txt` until the loop code is on dev). Device guide updated to work/app 093bdc4's Preview (Diagnostics > Preview > Model setup, Chat, ABP Lab, Model bench; hidden in stand mode) and to loop mode; [confirm] marks removed, to be re-checked against a built APK.
 
+- Round 8, 9 Nov, on dev fda3225: device guide final against the real strings (every label matched, one fixed: the bench item is "Model bench (on-device LLM test)"; the way in is covered by app's HostPreviewTest); Q-chat-1 LIFT confirmed on dev (my probes pass); Q-bench-1 fixed (my `BenchGateTest` adopted into qa/); `LoopCountersTest` adopted into qa/ (the loop code is on dev); Q-loop-1 still present on dev (both probes fail), so the guide still says not to rotate during a loop; Q-g-4 (`ModelSetupScreenTest.deletingThrough...`) still flaky on dev: it stopped 1 of 2 full gates here, and the second run with `--continue` was green, 569 tests.
+
 ## Next
 Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md` and message the conductor with each verdict. Tighten the plan with what each feature really does.
 

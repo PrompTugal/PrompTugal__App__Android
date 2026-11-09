@@ -1,9 +1,9 @@
 # Device run: the on-device model on the Lenovo Idea Tab Plus
 
-For Dinis. Rewritten 9 Nov 2026 by qa.android@promptugal.ai for what you will actually have: **a Firebase release build, the tablet, Wi-Fi. No computer and no adb.** The model is downloaded on the tablet. Short checklist; blanks are for numbers. **Not run by anyone yet.**
+For Dinis. Rewritten 9 Nov 2026 by qa.android@promptugal.ai for what you will actually have: **a Firebase release build, the tablet, Wi-Fi. No computer and no adb.** The model is downloaded on the tablet. Short checklist; blanks are for numbers. **Not run on a tablet by anyone yet.**
 
 ## What this is written against
-`work/app` 093bdc4 (Diagnostics > **Preview**, route `preview/<id>`, a "Preview" label in each screen's header) and dev.llm's `benchAvailable` fix, both waiting for security and the merge. Until they are on `dev` and in the build you install, the Preview group may not be there: if Diagnostics has no **Preview** heading, stop and tell the conductor. (QA's list: Preview, the bench gate Q-bench-1, and the chat rotation Q-chat-1, which dev.chat has fixed on its branch; the wording below is checked against these branches, not yet against a built APK.)
+`dev` fda3225, checked screen by screen: every label in this guide was matched against the app's string resources, and the way in (Diagnostics > **Preview**) is covered by `HostPreviewTest` (lists every switched-off feature and the bench; each item opens its own screen; hidden in stand mode). What QA has **not** done is run it on a built APK on the tablet: that is this run. If a label differs on the tablet, write what you saw.
 
 **Stand mode hides Diagnostics, and so Preview and everything behind it.** If the tablet is in stand mode, switch it off first (Home: hold a finger still on the bottom-right corner, switch Stand mode off).
 
@@ -15,7 +15,7 @@ For Dinis. Rewritten 9 Nov 2026 by qa.android@promptugal.ai for what you will ac
 - [ ] Diagnostics, **Copy**; paste into your notes (version, Android, make and model; no serial, no e-mail)
 
 ## 1. Open Model setup
-- [ ] Diagnostics: scroll to the **Preview** heading. Its note says "These screens are being tested on this device. They are not switched on for everyone and may not work yet." The list has **Model setup**, **Chat**, **ABP Lab** and **Model bench**.
+- [ ] Diagnostics: scroll to the **Preview** heading. Its note says "These screens are being tested on this device. They are not switched on for everyone and may not work yet." The list has **Model setup**, **Chat**, **ABP Lab** and **Model bench (on-device LLM test)**.
 - [ ] Tap **Model setup**. Its header carries a **Preview** label.
 - [ ] The Models screen says "Downloads a model file once from huggingface.co (and its download servers, hf.co). Nothing you type leaves the device." and offers Gemma 4 E2B and E4B with sizes and licence (apache-2.0). Gemma 4 E2B is the one to use.
 - [ ] If you are not on Wi-Fi it says so and recommends Wi-Fi.
@@ -30,7 +30,7 @@ The download runs **only while this screen is open**: leaving the screen stops i
 - [ ] The state line reads "Installed, checked and in use". (**Use this model** if it does not.)
 
 ## 3. The model bench (speed and memory)
-Diagnostics, **Preview**, **Model bench**. **Refresh**: Gemma 4 E2B is listed. For each run: pick the model, pick **Runs on** GPU or CPU, tap **Run**, stay on the screen (leaving cancels). It shows: *Checking the file's SHA-256* (first time only), *Loading the model*, *Answering: N pieces so far*, *Done*. Numbers appear under **Results**.
+Diagnostics, **Preview**, **Model bench (on-device LLM test)**. **Refresh**: Gemma 4 E2B is listed. For each run: pick the model, pick **Runs on** GPU or CPU, tap **Run**, stay on the screen (leaving cancels). It shows: *Checking the file's SHA-256* (first time only), *Loading the model*, *Answering: N pieces so far*, *Done*. Numbers appear under **Results**.
 
 | # | Model | Runs on | Load time (s) | Time to first token (s) | Prefill (tokens/s) | Decode (tokens/s) | Memory after load (MB) | GPU or fell back to CPU? | Warm? |
 |---|---|---|---|---|---|---|---|---|---|

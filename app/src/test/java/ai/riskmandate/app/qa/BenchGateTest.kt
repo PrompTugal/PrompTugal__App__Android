@@ -1,0 +1,25 @@
+package ai.riskmandate.app.qa
+
+import ai.riskmandate.app.llm.ModelCatalog
+import ai.riskmandate.app.llm.ModelFiles
+import android.app.Application
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.io.File
+
+@RunWith(AndroidJUnit4::class)
+class BenchGateTest {
+    private val app: Application = ApplicationProvider.getApplicationContext()
+
+    /** A model downloaded in the app (internal folder) on a release build: is the bench offered? */
+    @Test fun aModelInstalledInTheAppUnhidesTheBenchOnAReleaseBuild() {
+        val dir = ModelFiles.internalDir(app).apply { mkdirs() }
+        File(dir, ModelCatalog.GEMMA4_E2B.fileName).writeBytes(ByteArray(8))
+        val offered = ModelFiles.benchAvailable(app, debuggable = false)
+        println("PROBE bench offered on a release build with the model in the internal folder: $offered")
+        assertTrue("a model downloaded in the app should unhide the bench on a release build", offered)
+    }
+}
