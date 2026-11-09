@@ -17,8 +17,6 @@ MANIFEST = ROOT / 'app' / 'src' / 'main' / 'AndroidManifest.xml'
 LOCALES = ROOT / 'app' / 'src' / 'main' / 'res' / 'xml' / 'locales_config.xml'
 FEATURES_KT = ROOT / 'app' / 'src' / 'main' / 'java' / 'ai' / 'riskmandate' / 'app' / 'features' / 'Features.kt'
 FEATURES_DIR = FEATURES_KT.parent
-ICON_FOREGROUND = ROOT / 'app' / 'src' / 'main' / 'res' / 'drawable' / 'ic_launcher_foreground.xml'
-COLORS = ROOT / 'app' / 'src' / 'main' / 'res' / 'values' / 'colors.xml'
 RELEASES_DIR = ROOT / 'app' / 'src' / 'main' / 'assets' / 'releases'
 LICENCES = ROOT / 'docs' / 'security' / 'licences.md'
 PRIVACY = ROOT / 'docs' / 'play' / 'privacy.html'
@@ -155,13 +153,62 @@ def release_articles():
     return found
 
 
-def icon_svg():
-    """The launcher mark as an SVG: the vector drawable's path on the launcher background colour."""
-    path = re.search(r'android:pathData="([^"]+)"', ICON_FOREGROUND.read_text()).group(1)
-    background = re.search(r'name="ic_launcher_background">(#\w+)<', COLORS.read_text()).group(1)
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" width="72" height="72">'
-            f'<rect x="18" y="18" width="72" height="72" rx="16" fill="{background}"/>'
-            f'<path d="{path}" fill="#ffffff"/></svg>\n')
+def _res_name(ref):
+    """`@drawable/foo` or `@mipmap/foo` -> ('drawable', 'foo')."""
+    kind, _, name = ref.lstrip('@').partition('/')
+    return kind, name
+
+
+def _color(res, name):
+    for f in sorted((res / 'values').glob('*.xml')):
+        match = re.search(rf'<color name="{re.escape(name)}">(#[0-9A-Fa-f]{{6,8}})</color>', f.read_text())
+        if match:
+            return match.group(1)
+    raise SystemExit(f'build: colour {name} not found in {res / "values"}')
+
+
+def icon_svg(manifest=None, res=None):
+    """The launcher icon as an SVG, read from what the manifest says it is.
+
+    Follows android:icon to the adaptive icon, takes its background colour and its foreground vector drawable,
+    and draws the drawable's <group> transform and every path with its own fill (and evenOdd fill type) on the
+    background, in the 72 dp the launcher shows through its mask. A plain one-path drawable works too."""
+    from xml.etree import ElementTree as ET
+    manifest = manifest or MANIFEST
+    res = res or MANIFEST.parent / 'res'
+    ns = '{http://schemas.android.com/apk/res/android}'
+    icon = re.search(r'android:icon="(@\w+/\w+)"', manifest.read_text())
+    if not icon:
+        raise SystemExit('build: no android:icon in the manifest')
+    kind, name = _res_name(icon.group(1))
+    adaptive = ET.parse(res / kind / f'{name}.xml').getroot()
+    background = adaptive.find('background').get(ns + 'drawable')
+    foreground = adaptive.find('foreground').get(ns + 'drawable')
+    bkind, bname = _res_name(background)
+    fill = _color(res, bname) if bkind == 'color' else '#1B2A41'
+    fkind, fname = _res_name(foreground)
+    vector = ET.parse(res / fkind / f'{fname}.xml').getroot()
+    width = float(vector.get(ns + 'viewportWidth', '108'))
+    height = float(vector.get(ns + 'viewportHeight', '108'))
+
+    def path(node):
+        colour = node.get(ns + 'fillColor', '#FFFFFF')
+        rule = ' fill-rule="evenodd"' if node.get(ns + 'fillType') == 'evenOdd' else ''
+        return f'<path d="{node.get(ns + "pathData")}" fill="{colour}"{rule}/>'
+
+    body = ''
+    for node in vector:
+        if node.tag == 'path':
+            body += path(node)
+        elif node.tag == 'group':
+            tx, ty = node.get(ns + 'translateX', '0'), node.get(ns + 'translateY', '0')
+            sx, sy = node.get(ns + 'scaleX', '1'), node.get(ns + 'scaleY', '1')
+            body += f'<g transform="translate({tx} {ty}) scale({sx} {sy})">' + ''.join(path(p) for p in node if p.tag == 'path') + '</g>'
+    if not body:
+        raise SystemExit(f'build: no paths in {fname}.xml')
+    x, y = (width - 72) / 2, (height - 72) / 2
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x:g} {y:g} 72 72" width="72" height="72">'
+            f'<rect x="{x:g}" y="{y:g}" width="72" height="72" rx="16" fill="{fill}"/>{body}</svg>\n')
 
 
 def all_facts():
