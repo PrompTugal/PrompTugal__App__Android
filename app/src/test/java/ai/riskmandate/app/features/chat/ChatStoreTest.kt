@@ -19,7 +19,7 @@ class ChatStoreTest {
 
     private val convs = listOf(
         Conversation("a", listOf(ChatMessage(ChatRole.USER, "hi \"quoted\" <b>x</b>\nline2 é中"), ChatMessage(ChatRole.ASSISTANT, "yo", 2, 1500, 3.5, stopped = true))),
-        Conversation("b", listOf(ChatMessage(ChatRole.USER, "q"), ChatMessage(ChatRole.ASSISTANT, "bad", failed = true))),
+        Conversation("b", listOf(ChatMessage(ChatRole.USER, "q"), ChatMessage(ChatRole.ASSISTANT, "bad", failed = true, failure = "LOAD_FAILED"))),
     )
 
     @Test fun roundTrip() {
