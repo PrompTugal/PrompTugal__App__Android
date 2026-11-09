@@ -60,6 +60,8 @@ expect('a candidate that swaps board/keys.json cannot approve itself (trust path
 h = fresh('t14'); put('.github/workflows/promote.yml', 'name: x\n'); const wf = commit('workflow'); tip = append([line(wf)]);
 expect('a head that changes a workflow is refused for automatic promotion', run(tip), false, 'trust paths');
 expect('... and goes through when a person promotes it (allowTrustPathChange)', run(tip, { allowTrustPathChange: true }), true);
+h = fresh('t16'); put('scripts/promote-select.sh', '#!/bin/sh\n'); const ps = commit('selector'); tip = append([line(ps)]);
+expect('a head that changes the promotion selector is refused for automatic promotion', run(tip), false, 'trust paths');
 // An approvals file on the candidate that is not an append to the one on main (a line removed or rewritten).
 g('checkout', '-q', '-B', 'main2', main); const lm = line(main); put(APPROVALS, JSON.stringify(lm) + '\n'); const main2 = commit('main with one line');
 g('checkout', '-q', '-B', 't15', main2); put('app.txt', 'c'); const c15 = commit('code'); put(APPROVALS, ''); const tip15 = commit('rewrite the approvals file');
