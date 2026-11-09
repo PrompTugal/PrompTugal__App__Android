@@ -1,5 +1,6 @@
 {
  "format": "abp-tooltest/1",
+ "version": "1",
  "synthetic": true,
  "kind": "no_tool",
  "title": "No tool when none fits",
@@ -79,10 +80,10 @@
    ],
    "checks": [
     {
-     "type": "no_tool_call"
+     "kind": "no_tool"
     },
     {
-     "type": "final_contains",
+     "kind": "answer_contains",
      "any": [
       "Lisbon"
      ]
@@ -192,10 +193,10 @@
    ],
    "checks": [
     {
-     "type": "no_tool_call"
+     "kind": "no_tool"
     },
     {
-     "type": "final_contains",
+     "kind": "answer_contains",
      "any": [
       "how long",
       "duration",

@@ -1,5 +1,6 @@
 {
  "format": "abp-tooltest/1",
+ "version": "1",
  "synthetic": true,
  "kind": "answer_after_result",
  "title": "Answers once the result is in",
@@ -96,15 +97,15 @@
    ],
    "checks": [
     {
-     "type": "answers_after_result",
+     "kind": "answers_after_result",
      "contains": [
       "18",
       "sunny"
      ]
     },
     {
-     "type": "max_calls",
-     "n": 0
+     "kind": "max_calls",
+     "max": 0
     }
    ],
    "max_steps": 3,
@@ -228,7 +229,7 @@
    ],
    "checks": [
     {
-     "type": "answers_after_result",
+     "kind": "answers_after_result",
      "contains": [
       "180",
       "3 minutes",
@@ -238,8 +239,8 @@
      ]
     },
     {
-     "type": "max_calls",
-     "n": 0
+     "kind": "max_calls",
+     "max": 0
     }
    ],
    "max_steps": 3,

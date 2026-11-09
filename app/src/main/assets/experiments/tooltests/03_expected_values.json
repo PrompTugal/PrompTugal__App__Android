@@ -1,5 +1,6 @@
 {
  "format": "abp-tooltest/1",
+ "version": "1",
  "synthetic": true,
  "kind": "expected_values",
  "title": "Argument values are right",
@@ -79,8 +80,8 @@
    ],
    "checks": [
     {
-     "type": "arg_equals",
-     "tool": "get_weather",
+     "kind": "args_equal",
+     "name": "get_weather",
      "arg": "city",
      "rule": "ci",
      "value": "Lisbon",
@@ -202,8 +203,8 @@
    ],
    "checks": [
     {
-     "type": "arg_equals",
-     "tool": "set_timer",
+     "kind": "args_equal",
+     "name": "set_timer",
      "arg": "seconds",
      "rule": "range",
      "min": 115,
@@ -326,8 +327,8 @@
    ],
    "checks": [
     {
-     "type": "arg_equals",
-     "tool": "add_note",
+     "kind": "args_equal",
+     "name": "add_note",
      "arg": "text",
      "rule": "contains",
      "value": "spare cables",

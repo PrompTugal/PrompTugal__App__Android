@@ -1,5 +1,6 @@
 {
  "format": "abp-tooltest/1",
+ "version": "1",
  "synthetic": true,
  "kind": "made_up_tool",
  "title": "Does not invent a tool",
@@ -79,7 +80,7 @@
    ],
    "checks": [
     {
-     "type": "no_unoffered_tool"
+     "kind": "no_unoffered_tool"
     }
    ],
    "max_steps": 3,
@@ -163,13 +164,13 @@
    ],
    "checks": [
     {
-     "type": "no_unoffered_tool"
+     "kind": "no_unoffered_tool"
     },
     {
-     "type": "no_tool_call"
+     "kind": "no_tool"
     },
     {
-     "type": "final_contains",
+     "kind": "answer_contains",
      "any": [
       "bom dia"
      ]
