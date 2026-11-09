@@ -68,4 +68,13 @@ class RouteTest {
         assertEquals(null, resolveOpenFeature(Routes.DIAGNOSTICS, standOn = false, enabledIds = enabled))
         assertEquals(null, resolveOpenFeature("", standOn = false, enabledIds = enabled))
     }
+
+    @Test fun theCloudKeyScreenIsStaffOnlyLikeDiagnostics() {
+        assertEquals(Routes.CLOUD, resolveRoute(Routes.CLOUD, standOn = false, featureEnabled = false))
+        assertEquals("stand mode or a restored route", Routes.HOME, resolveRoute(Routes.CLOUD, standOn = true, featureEnabled = false))
+    }
+
+    @Test fun noFeatureCanOpenTheCloudKeyScreenThroughOpenFeature() {
+        assertEquals(null, resolveOpenFeature(Routes.CLOUD, standOn = false, enabledIds = setOf("site"), previewIds = setOf("models")))
+    }
 }

@@ -43,6 +43,7 @@ object DiagnosticsTags {
     const val COPIED = "diagnostics_copied"
     const val MODEL_BENCH = "diagnostics_model_bench"
     const val PREVIEW = "diagnostics_preview"
+    const val CLOUD = "diagnostics_cloud"
     fun previewItem(id: String) = "diagnostics_preview_$id"
 }
 
@@ -64,6 +65,8 @@ fun DiagnosticsScreen(
     onCopy: () -> Boolean,
     /** The Preview group: screens being tested on this device. Empty hides the group. */
     preview: List<PreviewItem> = emptyList(),
+    /** Opens the staff-only cloud key screen. Null hides the button. */
+    onCloud: (() -> Unit)? = null,
 ) {
     var copied by rememberSaveable { mutableStateOf<Boolean?>(null) }
     Column(
@@ -97,6 +100,12 @@ fun DiagnosticsScreen(
                         color = if (ok) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
                         modifier = Modifier.testTag(DiagnosticsTags.COPIED).semantics { liveRegion = LiveRegionMode.Polite },
                     )
+                }
+                onCloud?.let { open ->
+                    OutlinedButton(
+                        onClick = open,
+                        modifier = Modifier.heightIn(min = 48.dp).testTag(DiagnosticsTags.CLOUD),
+                    ) { Text(stringResource(R.string.diagnostics_cloud)) }
                 }
                 if (preview.isNotEmpty()) {
                     Text(
