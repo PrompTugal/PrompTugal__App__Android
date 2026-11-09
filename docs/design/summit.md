@@ -20,7 +20,7 @@ Owner: design.android@promptugal.ai. Written 9 Nov 2026 for Web Summit (9 to 12 
 
 **Language.** English and pt-PT for every string (tests enforce it). No em-dashes in prose.
 
-**Frame.** Every screen sits in `FeatureScaffold`: a labelled Back button on the left (the host's `onBack`), the feature title as heading, content below. One title bar, no second app bar.
+**Frame.** The host's `FeatureFrame` (app.android) draws the labelled Back button, the feature title as heading and the window insets. Features draw only their content, inside `FeatureContent` (scroll, centred max width, `LocalWideLayout`). `FeatureScaffold` (its own title bar) is for previews and tests only: two title bars would be wrong. Style of the frame (type, colours, 48 dp Back, label not icon) comes from `Theme.kt`; any change to `FeatureFrame` goes to app.android via the status page.
 
 ## A. RiskMandate inside the app (`features/site/`)
 
@@ -71,15 +71,29 @@ Purpose: the tablet stays on the stand, on the app, awake, and comes back to the
 - **Dark and accessibility.** The chip and banner use the shared components; the long press has an explicit action in the semantics (`onLongClick(label = "Leave stand mode")`) so TalkBack users and staff with switch access can do it without the gesture.
 - **Not covered.** Kiosk lock-down beyond screen pinning (fully managed lock task mode is M2, parked). Screen pinning does not block the notification shade on all vendors; staff turn on Do Not Disturb on each tablet (listed for QA).
 
+## F. What's new (`features/releases/`, owner dev.releases.android)
+
+Purpose: release articles, in the app, with screenshots, so the team and visitors see what changed. Added at Dinis's request, relayed by the conductor.
+
+- **Content.** Each article: a title, a date, a one-line summary, then a body of headings, paragraphs and full-width screenshots with captions. Articles are bundled with the app (no network), English and pt-PT, newest first. Screenshots come from the app's own screenshot tests; every screenshot has a caption and a text alternative (the caption is the `contentDescription`, never "image").
+- **Wide tablet (`LocalWideLayout`, landscape).** Side by side: left 35% the list (one `SectionCard` per article: date as a `StatusChip(…, Neutral)`, title 24sp, summary two lines max, whole card is the 56 dp+ touch target with `Role.Button`), right 65% the reader for the selected article (first one by default), each pane scrolls on its own. A selected card has a 3 dp primary border and `selected` semantics.
+- **Phone and portrait.** The list fills the screen; opening an article replaces it with the reader. The host's Back returns to the list first (the feature handles back inside itself; from the list, Back leaves the feature).
+- **Reader.** Max 720 dp line length, centred in its pane; body 18sp with 1.5 line height (24sp on the stand if the dev wants it read standing); headings use `heading()`; screenshots fill the pane width with an 8 dp corner radius and a 1 dp outline so a light screenshot has an edge on a light page; the caption is 14sp or more, under the image, `onSurfaceVariant`. A screenshot is never the only place information appears: say it in the text.
+- **Shown once after an update.** On the first launch of a new `versionCode`, the host opens F once on the newest article, behind no dialog: the home screen shows a `NoticeBanner` "New in this version: <title>" with an "Open" text button (56 dp) and a "Later" button, so a visitor on a stand tablet is never trapped. Opening or "Later" records the versionCode seen (app-private preference, not shown anywhere, no identifiers). In stand mode the banner never shows (it would block the idle reset) and F is reached from its home button only. The "once" logic belongs to the host (app.android) with dev.releases; this spec fixes how it looks.
+- **States.** No articles: a `SectionCard` "Nothing new yet." Never an error state (nothing loads).
+- **Accessibility.** List cards read as "<date>, <title>, <summary>"; reader reading order is title, date, body; images with captions are one item each; works at 200% (the list becomes one column below 840 dp whatever the orientation); light and dark use the theme, screenshots are shown as taken (a note in the caption says which theme).
+- **Claims.** Article text may describe the app; claims about RiskMandate come only from riskmandate.ai.
+
 ## Shared component map
 
 | Need | Component (`ai.riskmandate.app.ui`) | Screens |
 |---|---|---|
-| Frame, title bar, Back | `FeatureScaffold` | A, B, C |
-| Titled block | `SectionCard` | B (scene), C |
+| Content area (scroll, width, wide flag) | `FeatureContent` | A to C, F |
+| Own title bar (previews and tests only) | `FeatureScaffold` | none |
+| Titled block | `SectionCard` | B (scene), C, F (article cards) |
 | Status word + glyph | `StatusChip`, `ChipKind` | A (offline), B, C, D |
 | One layer of the diagram | `LayerRow`, `LayerState` | B |
 | Always-visible note | `NoticeBanner` | B (label), D (idle) |
-| Wide layout flag | `LocalWideLayout` | B, C |
+| Wide layout flag | `LocalWideLayout` | B, C, F |
 | Animation off | `rememberReduceMotion` | B |
 | Sizes, tags | `UiTokens`, `UiTags` | all |

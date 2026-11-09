@@ -2,7 +2,6 @@ package ai.riskmandate.app.ui
 
 import ai.riskmandate.app.R
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -39,18 +38,40 @@ import androidx.compose.ui.unit.dp
 val LocalWideLayout = staticCompositionLocalOf { false }
 
 /**
- * The frame of every feature screen: a title bar (labelled Back button on the left, the feature's title
- * as the heading, optional [actions] on the right) and the content below.
+ * The content area of a feature screen, for use inside the host's `FeatureFrame` (which draws Back, the
+ * title heading and the window insets, so this does not).
  *
- * - [title] is the feature's own title string (`Feature.title`).
- * - [scrollable] false for content that scrolls itself (a WebView); the content then gets the remaining
- *   height via `Modifier.weight(1f)`. True (default) wraps the content in a vertical scroll, so 200% font
+ * - [scrollable] false for content that scrolls itself (a WebView, a list); the content then gets the
+ *   remaining height via `Modifier.weight(1f)`. True (default) wraps it in a vertical scroll, so 200% font
  *   scale never cuts anything off.
- * - [maxContentWidth] caps line length; use [Dp.Unspecified] for full-bleed content (a WebView).
- * - Inside [content], `LocalWideLayout.current` is true on a landscape tablet (840dp or wider).
- *
- * The Back button is a text button with a visible label, not an icon: a stand visitor and a member of
- * staff both find it without guessing. It calls [onBack] (`FeatureContext.onBack`).
+ * - [maxContentWidth] caps line length and centres the column; [Dp.Unspecified] for full-bleed content.
+ * - Padding is 24dp, 40dp on a landscape tablet. Inside [content], `LocalWideLayout.current` is true at
+ *   840dp wide or more (landscape tablets): use it to go to two columns.
+ */
+@Composable
+fun FeatureContent(
+    modifier: Modifier = Modifier,
+    scrollable: Boolean = true,
+    maxContentWidth: Dp = UiTokens.TextMaxWidth,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        val wide = maxWidth >= UiTokens.WideMinWidth
+        val pad = if (wide) UiTokens.ScreenPaddingWide else UiTokens.ScreenPadding
+        val capped = maxContentWidth != Dp.Unspecified
+        CompositionLocalProvider(LocalWideLayout provides wide) {
+            var column = Modifier.fillMaxHeight()
+            column = if (capped) column.widthIn(max = maxContentWidth).fillMaxWidth() else column.fillMaxWidth()
+            if (scrollable) column = column.verticalScroll(rememberScrollState())
+            Column(column.padding(if (capped) pad else 0.dp), content = content)
+        }
+    }
+}
+
+/**
+ * A full screen with its own title bar, for previews, tests and anything shown outside the host's
+ * `FeatureFrame`. Features inside the frame use [FeatureContent] instead (two title bars would be wrong).
+ * The Back button is a text button with a visible label, not an icon.
  */
 @Composable
 fun FeatureScaffold(
@@ -63,39 +84,27 @@ fun FeatureScaffold(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
-            val wide = maxWidth >= UiTokens.WideMinWidth
-            val pad = if (wide) UiTokens.ScreenPaddingWide else UiTokens.ScreenPadding
-            Column(Modifier.fillMaxSize()) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = pad / 2, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    TextButton(onClick = onBack, modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(UiTags.BACK)) {
-                        Text(stringResource(R.string.ui_back), style = MaterialTheme.typography.titleMedium)
-                    }
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f).testTag(UiTags.TITLE).semantics { heading() },
-                    )
-                    actions()
+        Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                TextButton(onClick = onBack, modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(UiTags.BACK)) {
+                    Text(stringResource(R.string.ui_back), style = MaterialTheme.typography.titleMedium)
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                CompositionLocalProvider(LocalWideLayout provides wide) {
-                    val capped = maxContentWidth != Dp.Unspecified
-                    Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.TopCenter) {
-                        var column = Modifier.fillMaxHeight()
-                        column = if (capped) column.widthIn(max = maxContentWidth).fillMaxWidth() else column.fillMaxWidth()
-                        if (scrollable) column = column.verticalScroll(rememberScrollState())
-                        Column(column.padding(if (capped) pad else 0.dp), content = content)
-                    }
-                }
+                Text(
+                    title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).testTag(UiTags.TITLE).semantics { heading() },
+                )
+                actions()
             }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            FeatureContent(Modifier.weight(1f), scrollable, maxContentWidth, content)
         }
     }
 }

@@ -6,7 +6,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -80,5 +82,18 @@ class UiComponentsTest {
         }
         compose.onNodeWithTag(UiTags.BANNER).assertIsDisplayed()
         compose.onNodeWithTag(UiTags.layer(6)).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun featureContentDrawsNoTitleBarAndFlagsWideLayout() {
+        var wide: Boolean? = null
+        compose.setContent {
+            RiskMandateTheme {
+                FeatureContent { wide = LocalWideLayout.current; androidx.compose.material3.Text("body") }
+            }
+        }
+        compose.onNodeWithText("body").assertIsDisplayed()
+        compose.onAllNodesWithTag(UiTags.BACK).assertCountEquals(0)
+        compose.onAllNodesWithTag(UiTags.TITLE).assertCountEquals(0)
+        assertEquals(false, wide) // the default Robolectric screen is a phone
     }
 }

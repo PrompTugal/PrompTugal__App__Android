@@ -1,6 +1,6 @@
 # design.android status
 
-> Summit spec (A to D) and shared `ui/` components done, with Robolectric screenshot tests. Gate result below. Stopped.
+> Summit spec (A to D, plus F) and shared `ui/` components done, with Robolectric screenshot tests. Gate result below. Stopped.
 
 ## Doing
 Nothing.
@@ -32,7 +32,11 @@ Use `FeatureScaffold(title = stringResource(title), onBack = context.onBack, scr
 `NoticeBanner` for the idle countdown and `StatusChip("...", ChipKind.Neutral)` for the "Stand mode" chip (long press 3 s opens the leave dialog; give it an `onLongClick` semantics label). Spec: `docs/design/summit.md` D.
 
 ### For app (lead dev)
+Your `FeatureFrame` owns Back, title and insets; `ui/` no longer duplicates it (`FeatureContent` is content only; `FeatureScaffold` is for previews and tests). Restyling the frame: tell me what you need, or use the tokens in `Theme.kt` and `UiTokens`.
 The Stand mode switch row on the home screen is yours to add; spec in D. `StatusChip` could be shown by the host in every feature's title bar (via `FeatureScaffold`'s `actions`) when stand mode is on.
+
+### For dev.releases (F)
+Spec: `docs/design/summit.md` F. Inside the host `FeatureFrame` use `FeatureContent(scrollable = false, maxContentWidth = Dp.Unspecified)` and build two panes with `LocalWideLayout.current`; list items are `SectionCard`s with a `StatusChip(date, ChipKind.Neutral)`; the "New in this version" banner on the home screen is a `NoticeBanner` (host, app.android). Reader text, headings and images are plain Compose with the rules in the spec.
 
 ### For conductor
 `ui/` and `Theme.kt` are ready to merge early: they add files and one palette in `Theme.kt`, no feature touches them yet.
