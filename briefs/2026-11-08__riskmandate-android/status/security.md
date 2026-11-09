@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 76 (9 Nov 2026): dev.chat 358bb02 PASS (R-cloud-4, 5, 6 fixed in code; the reset caller must be a confirmed staff action), dev.llm ece34c4 PASS, dev.lab b6d21de PASS, qa fa95bc7 PASS (R-qa-3: planted-violation checks). Waiting for: the key screen and host wiring (checklist M), the emulator run of KeystoreCipherTest. Still open: the design-pass article, R-lab-11, R-app-2, Dinis asks for the cloud key.
+> Round 77 (9 Nov 2026): HOLD work/app fe6db6f (the key screen follows checklist M; fix the compile break after merge R-app-3, the crash path R-app-4 and the false sentence R-app-5). PASS dev.mandate f53e3d7, dev.chat abcf5b4 (R-llm-13 before the first usesCloud), dev.llm d8ed625, dev.lab 8c7a6dc (judge layer), editor a34a546 (draft only; R-art-10). Waiting for: the app fixes, conditional on-device lines, the emulator run of KeystoreCipherTest. Still open: the design-pass article, R-lab-11, R-app-2, Dinis asks for the cloud key.
 
 ## Doing
 Nothing. Stopped until woken.
