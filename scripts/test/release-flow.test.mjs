@@ -89,3 +89,23 @@ test('find-release-tag: the newest tag with no build change since; none when the
     assert.equal(bash(r.dir, 'find-release-tag.sh', [head]).out.trim(), 'v0.1.12');
   } finally { r.done(); }
 });
+
+test('find-release-tag: tests-only and CI-only changes keep the build; shipped changes (even app tests, which make the screenshots) do not', () => {
+  const r = repo(); try {
+    r.commit('app/src/main/A.kt', 'app'); r.g('tag', 'v0.1.20');
+    r.commit('app/src/androidTest/SmokeTest.kt', 'instrumented test'); r.commit('scripts/smoke-test.sh', 'ci script'); r.commit('.github/workflows/android.yml', 'workflow');
+    let head = r.g('rev-parse', 'HEAD');
+    assert.equal(bash(r.dir, 'find-release-tag.sh', [head]).out.trim(), 'v0.1.20', 'androidTest, scripts and workflows are not shipped');
+    // the wide rule (does CI build?) still sees them
+    assert.equal(bash(r.dir, 'changed-build-paths.sh', ['v0.1.20', head]).code, 0);
+    assert.equal(bash(r.dir, 'changed-build-paths.sh', ['--shipped', 'v0.1.20', head]).code, 1);
+    for (const f of ['app/src/main/B.kt', 'app/src/test/ScreenshotTest.kt', 'scripts/release-screenshots.sh', 'app/build.gradle.kts', 'gradle/libs.versions.toml', 'gradle.properties']) {
+      const before = r.g('rev-parse', 'HEAD'); r.commit(f, 'shipped: ' + f);
+      assert.equal(bash(r.dir, 'changed-build-paths.sh', ['--shipped', before, 'HEAD']).code, 0, f);
+      assert.equal(bash(r.dir, 'find-release-tag.sh', ['HEAD']).code, 1, f + ' needs its own release');
+      r.g('reset', '-q', '--hard', before);
+    }
+    head = r.g('rev-parse', 'HEAD');
+    assert.equal(bash(r.dir, 'find-release-tag.sh', [head]).out.trim(), 'v0.1.20');
+  } finally { r.done(); }
+});
