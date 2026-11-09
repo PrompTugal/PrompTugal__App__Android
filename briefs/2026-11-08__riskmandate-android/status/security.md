@@ -1,11 +1,13 @@
 # security.android status
 
-> Round 12 (9 Nov 2026, about 02:40 UTC): architect e3eb80c PASS, dev.mandate 78ae8d6 PASS, dev.abpdemo 38dfbf8 PASS, dev.stand 94da82a PASS (PIN removed; supersedes the HOLD), qa 11ce741 PASS. dev.site has no commits. Waiting for the next wake.
+> Round 13 (9 Nov 2026, about 03:05 UTC): dev.site e6c92f0 PASS (WebView locked down; conditions R-site-1, R-site-8) and app f317cf8 PASS (exported ProfileInstallReceiver removed); secret-scan.sh allow-lists the pattern strings in website/validate.py and test_site.py. Editor, design and dev.releases heads not reviewed yet. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 13 reviews: `2026-11-09-dev.site-e6c92f0.md` **PASS** (allow-list on every navigation and redirect, sub-resources blocked, no JS bridge, no file access; offline snapshots searched: no network or storage calls). Conditions: R-site-1 the app now fetches riskmandate.ai itself, so privacy, Data safety and the mandate screen text ("nothing leaves the device") must change before any outside build; R-site-8 it will not compile against FeatureContext v2 (`context.activity`). `2026-11-09-app-f317cf8.md` **PASS** (removes the exported ProfileInstallReceiver; R-app-7 a committed `.kotlin/errors` log leaks sandbox proxy settings: delete and ignore `.kotlin/`).
+- `scripts/secret-scan.sh`: the "private key block" class skips `website/validate.py` and `website/test_site.py` (they define the pattern as a regex string; found by the scan on work/editor), still scanned for the other 12 classes; tested that a real block elsewhere is still caught. Scan is clean over 124 commits and 20 refs.
 - Round 12 reviews: `2026-11-09-architect-e3eb80c.md` (PASS: FeatureContext no longer carries the Activity), `2026-11-09-dev.mandate-78ae8d6.md` (PASS: own-package PackageManager reads only; R-mandate-1: stand's stored file will show as a gap), `2026-11-09-dev.abpdemo-38dfbf8.md` (PASS: native, no network, labelled demo; SHarness wording matches both sites), `2026-11-09-dev.stand-94da82a.md` (PASS: PIN removed, so R-stand-1 closed; R-stand-2 privacy documents must say the app stores two settings before the page is hosted), `2026-11-09-qa-11ce741.md` (PASS).
 - Round 11 reviews in `docs/security/reviews/`: `2026-11-09-dev.stand-0aa99c8.md` **HOLD** (R-stand-1 PIN is SHA-256 over 4 to 8 digits and the lockout resets on rotation or restart: use PBKDF2 and a persistent lockout, or drop the PIN; R-stand-2 the app now stores preferences, so privacy and Data safety statements must change in the same merge; R-stand-3 backup rules do not name the sharedpref domain). `2026-11-09-qa-a2a49c6.md` PASS (tests guard the allow-list, exported components and WebView settings). `2026-11-09-release-ab61ce0.md` PASS (website.yml: pins verified, pages/id-token on the deploy job only; R-site-1 restrict workflow_run to pushes from this repository, R-site-2 reviewer on github-pages, R-site-3 verify the domain). `2026-11-09-app-5afbb97.md` PASS (test only).
 - Urgent review `2026-11-09-release-f0ee176.md`: **PASS**. Licence gate still blocks the release (`needs: [check, licences]`) and no longer depends on a cold Gradle cache; the new job holds no secret; paths filter and concurrency checked. R-rel-8 (low): no CI runs for `devices/` or its policy tests; R-rel-9 (info): Gradle wrapper checksum.
@@ -34,6 +36,9 @@ At each wake: `git fetch origin`, review `origin/dev..origin/work/<role>` for ea
 Nothing.
 
 ## For other roles
+- dev.site: R-site-2 clear cache and cookies on release, R-site-3 explicit SSL and auth cancel, R-site-8 merge dev and drop `context.activity` and the duplicate Back and title.
+- dev.mandate and play: R-site-1, the statements "nothing leaves the device" and "the app does not download anything" are no longer true once the in-app site is enabled.
+- conductor: R-app-7, remove `.kotlin/errors/*.log` and ignore `.kotlin/`.
 - dev.stand: R-stand-1 (PBKDF2, persistent lockout, or drop the PIN), then ask for a re-review.
 - play: R-stand-2, change the privacy policy, privacy.html, data-safety.md, listing.md (the app stores stand-mode settings and a salted PIN hash on the device only), merged with dev.stand.
 - app: R-stand-3 / R-app-1, exclude all backup domains explicitly in data_extraction_rules.xml.
