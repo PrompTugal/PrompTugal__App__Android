@@ -78,7 +78,7 @@ class HomeFeatureOrderTest {
                 HomeScreen(
                     "0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {},
                     message = R.string.message_offline,
-                    features = listOf(FeatureButton("site", R.string.home_diagnostics) {}),
+                    features = listOf(FeatureButton("site", R.string.home_diagnostics, onClick = {})),
                 )
             }
         }
@@ -113,26 +113,38 @@ class HomeCornerTest {
 }
 
 @RunWith(AndroidJUnit4::class)
-class HomeWhatsNewTest {
+class HomeBadgeTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun show(offer: WhatsNewOffer?) = compose.setContent {
-        MaterialTheme { HomeScreen("0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {}, whatsNew = offer) }
+    @Test fun badgeShowsOnlyOnTheButtonThatHasOne() {
+        compose.setContent {
+            MaterialTheme {
+                HomeScreen(
+                    "0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {},
+                    features = listOf(
+                        FeatureButton("a", R.string.home_diagnostics, badge = R.string.home_licences) {},
+                        FeatureButton("b", R.string.home_diagnostics) {},
+                    ),
+                )
+            }
+        }
+        compose.onNodeWithTag(HomeTags.featureBadge("a"), useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag(HomeTags.featureBadge("b"), useUnmergedTree = true).assertDoesNotExist()
     }
 
-    @Test fun noOfferNoCard() {
-        show(null)
-        compose.onNodeWithTag(HomeTags.WHATS_NEW).assertDoesNotExist()
-    }
-
-    @Test fun offerShowsOpenAndLaterWithBigTargets() {
-        var opened = 0; var later = 0
-        show(WhatsNewOffer(onOpen = { opened++ }, onLater = { later++ }))
-        compose.onNodeWithTag(HomeTags.WHATS_NEW_OPEN).assertIsDisplayed().performClick()
-        compose.onNodeWithTag(HomeTags.WHATS_NEW_LATER).performClick()
-        assertEquals(1, opened); assertEquals(1, later)
+    @Test fun badgedButtonStillClicksAndIsBigEnough() {
+        var clicks = 0
+        compose.setContent {
+            MaterialTheme {
+                HomeScreen(
+                    "0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {},
+                    features = listOf(FeatureButton("a", R.string.home_diagnostics, badge = R.string.home_licences) { clicks++ }),
+                )
+            }
+        }
+        compose.onNodeWithTag(HomeTags.feature("a")).performClick()
+        assertEquals(1, clicks)
         val dp = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
-        for (t in listOf(HomeTags.WHATS_NEW_OPEN, HomeTags.WHATS_NEW_LATER))
-            assert(compose.onNodeWithTag(t).fetchSemanticsNode().boundsInRoot.height >= 56 * dp - 1)
+        assert(compose.onNodeWithTag(HomeTags.feature("a")).fetchSemanticsNode().boundsInRoot.height >= 48 * dp - 1)
     }
 }
