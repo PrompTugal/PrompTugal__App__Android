@@ -1,9 +1,24 @@
 # devices.android status
 
-> All five M2 tasks are done and pushed to work/devices (68 tests pass, secret scan clean). Waiting on Dinis's answers; nothing here has touched Google.
+> All five M2 tasks done and pushed (68 tests pass, secret scan clean). M2 to M4 parked by Dinis until after Web Summit (conductor, 9 Nov). Hand-over note below; nothing here has touched Google.
+
+## Hand-over (9 Nov, M2 parked until after Web Summit)
+**Where everything is** (all under `devices/`, merged to `dev` by the conductor):
+- `README.md`: runbook, hardening options H1 to H12, AMAPI and Workspace side by side with Google's terms quoted, and the ten questions for Dinis.
+- `REHEARSAL.md`: the M2 day, step by step, with dry-run outputs and recovery.
+- `amapi.mjs` (CLI, now with `qr`, `device-delete --yes`, `token-revoke`), `qr.mjs` (QR encoder), `policies/` (base policy, and the hardened options file which is not applied), `schema/` plus `trim-discovery.mjs` (trimmed discovery document, revision 20261104), `test/` (68 tests).
+
+**Unverified** (nothing has run against Google, no tablet has scanned a QR code):
+- That an Android provisioning screen reads the `qr.mjs` code at roughly 80 to 90 modules a side. Only zxing-cpp has decoded it.
+- What the tablet shows at each enrolment step (REHEARSAL.md describes it from documentation).
+- Whether Google endpoint management (Workspace) supports a userless, QR-enrolled, device-owner tablet: Google's pages contradict each other.
+- Chrome's managed-configuration keys for a URL allow-list (H11), AMAPI quota and error texts, Workspace edition and EMM prices, and whether the app's Device section detects fully managed mode on a real managed device.
+- The discovery document may have moved on: refresh `devices/schema/` (instructions in `trim-discovery.mjs`) and re-run the tests before applying anything.
+
+**First thing after the summit:** Dinis answers the questions at the end of the side-by-side section in `devices/README.md`, starting with the route, the private build's package ID, and the permissible-usage question. Then, in order: the Cloud project and key, the signup URL and enterprise, the private app on managed Play, and the rehearsal on one tablet that may be factory-reset. Apply only the hardening options he picks, and leave H2 (factory-reset block) off for the rehearsal.
 
 ## Doing
-Nothing. Stopped, as the brief says.
+Nothing. Stopped, as the brief and the conductor's hand-over request say.
 
 ## Done
 - QR encoder, `devices/qr.mjs` (commit f12a5e2): byte mode, versions 1 to 40, levels L to H, SVG and PNG, no dependencies. `enrol` now writes `.qr.svg` and `.qr.png` itself; `amapi.mjs qr --in <file>` draws any text file. Tested against standard vectors (Reed-Solomon, format and version bits, capacity table, alignment positions), by decoding its own matrix, SVG and PNG, and once outside the repo with the independent zxing-cpp decoder: every version 1 to 40 at every level at full capacity, 204 symbols, all read back exactly. Not yet scanned by a tablet.
