@@ -1,4 +1,4 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.experiments
 
 import ai.riskmandate.app.llm.StrictJson
 
@@ -12,7 +12,7 @@ object ToolTestExport {
     fun build(
         catalogueHash: String,
         outcome: ToolTestSuite.Outcome,
-        settings: LiveRunner.Settings,
+        settings: RunSettings,
         exportedAt: String,
         appVersionName: String,
         appVersionCode: Int,
@@ -38,7 +38,7 @@ object ToolTestExport {
         return StrictJson.render(doc)
     }
 
-    private fun settings(s: LiveRunner.Settings) = mapOf(
+    private fun settings(s: RunSettings) = mapOf(
         "temperature" to s.sampling.temperature, "top_p" to s.sampling.topP, "top_k" to s.sampling.topK,
         "seed" to s.sampling.seed, "max_tokens" to s.maxTokens,
     )
@@ -51,7 +51,7 @@ object ToolTestExport {
         "by_case" to r.runs.map { it.caseId }.distinct().associateWith { c -> ToolMode.entries.associate { it.name.lowercase() to stat(r.byCase(c, it)) } },
     )
 
-    private fun record(r: CaseRun, i: Int, hash: String, s: LiveRunner.Settings, at: String): Map<String, Any?> = linkedMapOf(
+    private fun record(r: CaseRun, i: Int, hash: String, s: RunSettings, at: String): Map<String, Any?> = linkedMapOf(
         "schema" to "abp-eval-run/1",
         "run_id" to "tooltest-$i-${r.caseId}-${r.mode.name.lowercase()}",
         "ts" to at,

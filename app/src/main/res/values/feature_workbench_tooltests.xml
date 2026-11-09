@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workbench_tt_decrease">Decrease %1$s</string>
+    <string name="workbench_tt_increase">Increase %1$s</string>
+    <string name="workbench_tt_loading_model">Loading %1$s</string>
+    <string name="workbench_tt_loop_run_of">Run %1$d of %2$d</string>
+    <string name="workbench_tt_loop_stopping">Stopping after this run</string>
+    <string name="workbench_tt_minus">-</string>
+    <string name="workbench_tt_no_model_title">No model yet</string>
+    <string name="workbench_tt_open_models">Set up a model</string>
+    <string name="workbench_tt_plus">+</string>
+    <string name="workbench_tt_problems">%1$d files could not be read and were skipped.</string>
+    <string name="workbench_tt_run">Run</string>
+    <string name="workbench_tt_selected">Selected</string>
+    <string name="workbench_tt_stat_of">%1$d of %2$d</string>
+    <string name="workbench_tt_stat_unfinished">Did not finish</string>
+    <string name="workbench_tt_stop">Stop</string>
+    <string name="workbench_tt_both">Both</string>
+    <string name="workbench_tt_by_case">Pass rate by case</string>
+    <string name="workbench_tt_by_kind">Pass rate by kind</string>
+    <string name="workbench_tt_failures">Failures: %1$d</string>
+    <string name="workbench_tt_intro">Small checks of how the model calls tools. Each case offers fake tools and checks, in code, whether the model called the right one the right way. Nothing runs for real.</string>
+    <string name="workbench_tt_loading">Loading tool tests</string>
+    <string name="workbench_tt_mode_help">Native uses the runtime\'s own tool calling. Text asks the model to write a JSON call in its answer. Both are measured, so you can see which works on this model.</string>
+    <string name="workbench_tt_more_failures">%1$d more failures are not shown.</string>
+    <string name="workbench_tt_native">Native</string>
+    <string name="workbench_tt_native_short">native</string>
+    <string name="workbench_tt_no_model_body">Set up a model to run the tool tests.</string>
+    <string name="workbench_tt_none">No tool tests are bundled with this build.</string>
+    <string name="workbench_tt_nothing_kept">After a screen rotation only the first few failures keep their raw output.</string>
+    <string name="workbench_tt_planned">%1$d runs</string>
+    <string name="workbench_tt_repeats">Repeats: %1$d</string>
+    <string name="workbench_tt_run_n">run %1$d</string>
+    <string name="workbench_tt_scope_all">All cases</string>
+    <string name="workbench_tt_text">Text</string>
+    <string name="workbench_tt_text_short">text</string>
+    <string name="workbench_tt_whole_kind">Whole kind</string>
+    <string name="workbench_tt_stop_low_battery">Stopped: the battery is low.</string>
+    <string name="workbench_tt_stop_hot">Stopped: the device is hot.</string>
+    <string name="workbench_tt_stop_time">Stopped: the time limit was reached.</string>
+    <string name="workbench_tt_stop_errors">Stopped: runs keep failing.</string>
+    <string name="workbench_tt_stop_user">Stopped by you.</string>
+    <string name="workbench_tt_stop_turned">Stopped: the screen was turned, so the loop ended. The counts so far are kept.</string>
+</resources>

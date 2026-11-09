@@ -1,5 +1,6 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.RunSettings
 import ai.riskmandate.app.llm.StrictJson
 
 /**
@@ -39,7 +40,7 @@ object LoopExport {
 
     private fun scenarioRef(s: Scenario) = mapOf("id" to s.id, "version" to s.version, "hash" to s.hash)
 
-    private fun settings(s: LiveRunner.Settings) = mapOf(
+    private fun settings(s: RunSettings) = mapOf(
         "temperature" to s.sampling.temperature, "top_p" to s.sampling.topP, "top_k" to s.sampling.topK,
         "seed" to s.sampling.seed, "max_tokens" to s.maxTokens, "tool_mode" to "native",
     )

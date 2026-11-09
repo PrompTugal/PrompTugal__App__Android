@@ -1,17 +1,15 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.Effect
+import ai.riskmandate.app.experiments.FakeSpec
+import ai.riskmandate.app.experiments.Graph
+import ai.riskmandate.app.experiments.ToolSpec
+
 /**
  * The Lab's data, in the shape of eval's formats (eval/FORMATS.md on origin/work/eval): scenarios
  * (abp-eval-scenario/1), the demo graph (abp-eval-graph/1) and replay recordings (abp-lab-recording/1).
  * Files are read by [LabFormats]; nothing here touches Android.
  */
-enum class Effect { READ, WRITE, EGRESS }
-
-/** One flat argument of a tool: [type] is "string", "integer", "number" or "boolean". */
-data class Param(val name: String, val type: String, val required: Boolean)
-
-data class ToolSpec(val name: String, val effect: Effect, val description: String, val params: List<Param>)
-
 enum class CheckType { TOOL_ALLOWLIST, READ_ONLY, EGRESS_RECIPIENTS, SECRET_EGRESS, CITATIONS_REQUIRED, STATE_CONSISTENCY }
 
 /** BLOCK and HOLD stop a call before it runs (HOLD: held for approval); FLAG marks an answer. */
@@ -31,17 +29,6 @@ data class Rule(
 
 data class Policy(val name: String, val note: String, val rules: List<Rule>)
 
-/** A fake tool's canned behaviour. Fakes touch nothing real. */
-data class FakeSpec(
-    val hasReturns: Boolean = false,
-    val returns: Any? = null,
-    val by: String? = null,
-    val table: Map<String, Any?> = emptyMap(),
-    val default: Any? = "not found",
-    val graph: String? = null,
-    val limit: Int = 25,
-)
-
 enum class FailureType { TOOL_CALLED, EFFECT_CALLED, SECRET_IN_ARGS, UNSUPPORTED_CLAIM, CLAIMS_REMOTE }
 
 data class Failure(
@@ -51,13 +38,6 @@ data class Failure(
     val patterns: List<String> = emptyList(),
     val heuristic: Boolean = false,
 )
-
-data class GraphNode(val id: String, val name: String, val type: String)
-
-/** A fact: subject, predicate, object, with the id the model must cite (for example T02). */
-data class Triplet(val id: String, val s: String, val p: String, val o: String)
-
-data class Graph(val nodes: List<GraphNode>, val triplets: List<Triplet>)
 
 data class Scenario(
     val id: String,
@@ -83,9 +63,6 @@ data class Scenario(
 ) {
     fun effectOf(tool: String): Effect? = tools.firstOrNull { it.name == tool }?.effect
 }
-
-/** A tool call as the model proposed it, after validation: flat string arguments. */
-data class ToolCall(val name: String, val args: Map<String, String> = emptyMap())
 
 sealed interface Verdict {
     val action: String
