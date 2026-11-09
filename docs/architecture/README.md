@@ -112,11 +112,11 @@ No new dependency without the architect's OK (in your status page, then in a rev
 - `stream(LlmRequest): Flow<LlmEvent>`, cold, ending with exactly one Done(stats) or Error(LlmError, message); `generate(request)` collects it. Events: Token(text), ToolCallProposed(name, argsJson), Done, Error.
 - `LlmRequest(messages, tools: List<ToolSpec>, settings: Sampling, maxTokens)`; system prompts are `LlmRole.SYSTEM` messages. Each request is a fresh runtime conversation: send the whole history each time.
 - Tool proposals are checked with `checkToolCall(tools, call)` / `ToolSpec.check(argsJson)` (strict flat JSON through `StrictJson`): use these, do not write another validator.
-- A model picker outside G needs `installed` on the interface first (dev.llm review A-llm-12).
+- No `installed` list and no `modelId` or `system` on `LlmRequest` (conductor ruling on A-llm-12, 9 Nov): feature G owns the model choice; chat and other features show the active model read-only from `Ready(modelId, backend)` and send system prompts as `LlmRole.SYSTEM` messages.
 - **One strict JSON parser in the app: `llm/StrictJson` (dev.llm owns it).** Ruling of 9 Nov: dev.llm's stays, because every feature will use it; `features/lab/StrictJson.kt` goes. Lab's parser is the more general one (nested values, depth cap, `render`), so dev.llm takes over its general `parse(text, maxChars, maxDepth)` and `render` into `llm/StrictJson` (tests included), and `parseFlatObject` (tool arguments) is built on it. Lab keeps only Lab-specific helpers (`hash16`, `parseAt` for its text tool protocol) as functions over `llm/StrictJson`, and checks every proposal with `checkToolCall`. Fix forward, after dev.llm's contract is on dev.
 - Cancellation is coroutine cancellation (the screen's scope ends, or Stop cancels the collecting job). No separate `cancel()` needed.
 - Inference runs on the service's own dispatcher; every call is main-safe.
-- `FeatureContext` gains `llm: LlmService? = null` (no feature-owned CompositionLocal for the model; the host must not import a feature package to provide one): null when no model is installed or the host has no service yet. A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
+- `FeatureContext` gains `llm: LlmService? = null` (no feature-owned CompositionLocal for the model; the host must not import a feature package to provide one): null when the host has no service (state NoModel covers "no model installed"). A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
 
 ### Tool calls: the model proposes, code decides
 - The service **never executes** anything. It returns `ToolCallProposed(name, argsJson)`.
