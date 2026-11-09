@@ -35,6 +35,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 15. R-shell-1: policy, `privacy.html`, `data-safety.md` (a table of everything stored, with where and whether it is on `dev`), the tester guide (en and pt-PT) and checklist row 19 no longer say the app stores nothing; the shell's `sidebar_collapsed`, What's new's `last_seen_version_code`, chat history in `noBackupFilesDir/feature_chat/` and model files in `noBackupFilesDir/models/` are listed, checked in the code on `dev` and `work/app`.
 
+16. G.8: the model-download draft (policy, `privacy.html`, `data-safety.md`) now carries dev.llm's details (download only on Download; `huggingface.co` and `hf.co` hosts, five redirects at most, no Authorization or cookies, resume, pinned size and SHA-256, `feature_models` prefs, `noBackupFilesDir/models`), still marked DRAFT until G is on; `model-licences.md` updated (generic files pinned to commits, Gemma 3 gated and not offered, the smallest-model placeholder reworded). Source: dev.llm's status page, not the merged code.
+
 ## Next
 Nothing until Dinis decides (below).
 
