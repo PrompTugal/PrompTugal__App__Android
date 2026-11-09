@@ -136,3 +136,11 @@ data class LlmRequest(val messages: List<LlmMessage>, val tools: List<ToolSpec> 
 - **No new dependency for JSON:** scenario files, tool arguments and chat history use `org.json` (part of Android) or a small hand-written parser. kotlinx-serialization (a compiler plugin) and Moshi/Gson are not approved without a reason.
 - **Chat storage:** one JSON file per conversation (or one file) under `filesDir/feature_chat/`, written off the main thread. Room is not approved; ask with a reason if a file is not enough.
 - **ViewModel:** not needed (the service is host-held). Ask before adding `lifecycle-viewmodel-compose`.
+
+## Design pass: the PrompTugal iOS look (Dinis, 9 Nov)
+- **Ownership:** design owns `Theme.kt` and `ui/` (tokens, components); app owns the shell (`MainActivity`, `HomeScreen`, `FeatureFrame`, navigation). Features adopt components; they do not restyle the shell.
+- **One frame still:** on tablets the shell may become a sidebar (feature list) plus a detail pane, but each feature is still drawn inside exactly one `FeatureFrame` (or its successor in the shell). A feature never draws a title bar, a Back button, a sidebar or insets. In the two-pane shell `onBack` still means "back to home" (the list), and on a tablet that may simply clear the selection.
+- **Navigation state** (the selected route) stays a `rememberSaveable` string in the host and survives rotation and the switch between phone (one pane) and tablet (two panes) layouts. Features keep their own sub-screen state as before.
+- **Home as cards:** cards come from `FEATURES` (title, `homeBadge()`, and an optional icon or summary only if added to `Feature` through the architect, with defaults). No per-feature code in the host.
+- **No new dependency without the architect's OK.** Material 3 and Compose foundation cover the shell (`ListDetailPaneScaffold` from material3-adaptive is a new dependency: ask first). A bundled font is allowed only as a `res/font` file with its licence recorded in `docs/security/licences.md` and the in-app licences, and an OFL or Apache licence. No downloadable fonts (a network call).
+- **When features switch:** once design's components and app's shell are on dev together, the conductor tells the feature devs. Until then features keep using `MaterialTheme` and the current `ui/` components, which keep working under the new theme.
