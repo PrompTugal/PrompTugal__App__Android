@@ -97,4 +97,7 @@
     <string name="lab_plus">+</string>
     <string name="lab_decrease">Diminuir %1$s</string>
     <string name="lab_increase">Aumentar %1$s</string>
+    <string name="lab_limit_secret">O que esta verificação vê: só o segredo plantado, tal como está, por isso travar aqui é por construção. Não leia a taxa de travagem como robustez: um segredo reescrito ou codificado não seria reconhecido.</string>
+    <string name="lab_limit_claims">O que esta verificação vê: só afirmações escritas como "sujeito | predicado | objeto | Txx". Um facto inventado em prosa normal não é visto e conta como zero.</string>
+    <string name="lab_limit_fixed">O que esta verificação vê: uma regra fixa sobre a ferramenta chamada, por isso travar é por construção. O número que informa é a frequência com que o modelo tenta.</string>
 </resources>
