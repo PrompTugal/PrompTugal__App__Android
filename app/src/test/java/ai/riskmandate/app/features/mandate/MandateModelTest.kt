@@ -62,8 +62,6 @@ class MandateModelTest {
             ReachItem(ReachKind.STORAGE, "shared_prefs/feature_models.xml", count = 1),
             ReachItem(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", count = 1),
             ReachItem(ReachKind.STORAGE, "no_backup/feature_chat", count = 1),
-            ReachItem(ReachKind.STORAGE, "no_backup/models", count = 2),
-            ReachItem(ReachKind.STORAGE, "external/models", count = 2),
         )
         assertTrue(MandateReport(cleanReach + mandated, mandate).gapIsEmpty)
         val stray = ReachItem(ReachKind.STORAGE, "shared_prefs/other.xml", count = 1)
@@ -71,22 +69,40 @@ class MandateModelTest {
     }
 
     @Test fun siteViewConnectionsAreReachOnlyWhenSiteIsOn_andMandated() {
-        assertEquals(emptyList<ReachItem>(), networkReach(setOf("abpdemo", "mandate")))
+        // Without the site view only the model download hosts are reach (the code is in the build either way).
+        assertEquals(modelDownloadReach(), networkReach(setOf("abpdemo", "mandate")))
         val site = networkReach(setOf("site", "mandate"))
-        assertEquals(listOf("connects:riskmandate.ai", "connects:www.riskmandate.ai"), site.map { it.id })
+        assertEquals(listOf("connects:riskmandate.ai", "connects:www.riskmandate.ai"), site.map { it.id }.filter { it.contains("riskmandate") })
         assertTrue(MandateReport(cleanReach + site, mandate).gapIsEmpty)
         // A connection to any other host would be gap.
         val other = ReachItem(ReachKind.NETWORK, "connects:example.com")
         assertEquals(listOf(other), MandateReport(cleanReach + site + other, mandate).gap)
     }
 
-    @Test fun modelDownloadHostsAreReachOnlyWhenModelsIsOn_andMandated() {
-        assertEquals(emptyList<ReachItem>(), networkReach(setOf("mandate")))
-        val models = networkReach(setOf("models"))
+    @Test fun modelDownloadHostsAreAskedOfTheRealPolicy_alwaysCounted_andMandated() {
+        // Counted whenever the code is in the build: no feature switch needed.
+        val models = networkReach(emptySet())
         assertEquals(listOf("connects:huggingface.co", "connects:hf.co", "connects:*.hf.co"), models.map { it.id })
         assertTrue(MandateReport(cleanReach + models, mandate).gapIsEmpty)
+        // The look-alike candidates are refused by the policy itself, so they are not reach.
+        assertEquals(models.map { it.id }, modelDownloadReach().map { it.id })
         val other = ReachItem(ReachKind.NETWORK, "connects:example.org")
         assertEquals(listOf(other), MandateReport(cleanReach + models + other, mandate).gap)
+    }
+
+    @Test fun modelFilesAreMandatedByExactNameFromTheCatalogue() {
+        val spec = ai.riskmandate.app.llm.ModelCatalog.ALL.first()
+        val ok = listOf(
+            "no_backup/models/${spec.fileName}", "no_backup/models/${spec.fileName}.part",
+            "no_backup/models/.${spec.fileName}.verified", "external/models/${spec.fileName}",
+            "external/models/.${spec.fileName}.verified",
+        ).map { ReachItem(ReachKind.STORAGE, it, count = 1) }
+        assertTrue(MandateReport(cleanReach + ok, mandate).gapIsEmpty)
+        val stray = ReachItem(ReachKind.STORAGE, "no_backup/models/other.bin", count = 1)
+        assertEquals(listOf(stray), MandateReport(cleanReach + ok + stray, mandate).gap)
+        // An adb folder never holds a ".part".
+        val part = ReachItem(ReachKind.STORAGE, "external/models/${spec.fileName}.part", count = 1)
+        assertEquals(listOf(part), MandateReport(cleanReach + part, mandate).gap)
     }
 
     @Test fun sameIdOfAnotherKindIsNotCovered() {
