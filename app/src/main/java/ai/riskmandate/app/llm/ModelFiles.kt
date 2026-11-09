@@ -55,14 +55,15 @@ object ModelFiles {
 
     /**
      * Whether Diagnostics shows the "Model bench" entry (architect A-llm-5): on a debuggable build, or when a
-     * catalogue file is already in the adb folder, so visitors on a stand tablet do not come across it.
-     * Reads one directory listing; cheap enough for the main thread when Diagnostics opens.
+     * catalogue file is on the device, either installed by feature G (the internal folder) or pushed with adb,
+     * so visitors on a stand tablet do not come across it before a model exists.
+     * Two directory listings; cheap enough for the main thread when Diagnostics opens.
      */
     fun benchAvailable(context: Context): Boolean =
         benchAvailable(context, context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
 
     fun benchAvailable(context: Context, debuggable: Boolean): Boolean =
-        debuggable || find(listOfNotNull(adbDir(context))).isNotEmpty()
+        debuggable || find(context).isNotEmpty()
 
     /** The adb command that puts [spec]'s file where [find] looks. */
     fun adbCommand(spec: ModelSpec, dir: String): String = "adb push ${spec.fileName} $dir/"

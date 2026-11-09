@@ -35,6 +35,8 @@
     <string name="models_bench_none">Ainda não há nenhum ficheiro de modelo. Envie um com o adb para a pasta abaixo e toque em Atualizar.</string>
     <string name="models_bench_pick">Modelo</string>
     <string name="models_bench_model_line">%1$s, %2$s (%3$s)</string>
+    <string name="models_bench_where_installed">instalado pela Configuração do modelo</string>
+    <string name="models_bench_where_adb">enviado com o adb</string>
     <string name="models_bench_backend">Corre em</string>
     <string name="models_bench_gpu">GPU</string>
     <string name="models_bench_cpu">CPU</string>
