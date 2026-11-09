@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * A summit feature. Each one lives in its own package under `features/` and is owned by one session,
@@ -23,6 +24,19 @@ interface Feature {
 
     /** False hides the button (a feature still being built). */
     val enabled: Boolean get() = true
+
+    /**
+     * The feature's icon in the shell's sidebar and on its Home card, or null for the shell's default.
+     * A vector from `material-icons-core` (already on the classpath through Material 3) or one the feature
+     * draws itself; no icon dependency is added for this.
+     */
+    val icon: ImageVector? get() = null
+
+    /** A short line above the title on the Home card (for example "Live demo"), en and pt-PT. Null: none. */
+    @get:StringRes val kicker: Int? get() = null
+
+    /** One or two sentences under the title on the Home card and in the sidebar's tooltip. Null: none. */
+    @get:StringRes val summary: Int? get() = null
 
     /**
      * An optional short badge on this feature's home-screen button (a string resource such as "New"),
@@ -58,6 +72,12 @@ class FeatureContext(
      * The default does nothing, for previews and tests.
      */
     val holdIdle: () -> () -> Unit = { {} },
+    /**
+     * Asks the host to open another feature by its id (for example chat's "set up a model" opening "models").
+     * The host decides: unknown or disabled ids are ignored, and it may refuse (for example in stand mode).
+     * A feature names another feature only by its id string, never by importing its package. Default: no-op.
+     */
+    val openFeature: (id: String) -> Unit = {},
 )
 
 /**

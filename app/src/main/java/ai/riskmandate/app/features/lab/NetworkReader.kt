@@ -4,6 +4,11 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 
+enum class Transport { WIFI, CELLULAR, ETHERNET, OTHER, NONE }
+
+/** The device's real network state, shown beside scenario 5's answer. */
+data class NetworkState(val connected: Boolean, val transport: Transport)
+
 /** Reads the device's real network state for scenario 5 (ACCESS_NETWORK_STATE is already held). Read-only. */
 object NetworkReader {
     fun read(context: Context): NetworkState = runCatching {

@@ -73,11 +73,12 @@ class StandHostTest {
         lifecycle.currentState = Lifecycle.State.RESUMED
     }
 
+    private val enabledCalls = mutableListOf<Boolean>()
     private var held by androidx.compose.runtime.mutableStateOf(false)
 
     private fun show(lock: ScreenLock, atHome: Boolean = true) {
         compose.setContent {
-            StandHostContent(settings, lock, lifecycle, { now }, atHome, { homeCalls++ }, held) {
+            StandHostContent(settings, lock, lifecycle, { now }, atHome, { homeCalls++ }, held, { enabledCalls.add(it) }) {
                 val v = androidx.compose.ui.platform.LocalView.current
                 hostView = v
                 Text("app")
@@ -87,15 +88,18 @@ class StandHostTest {
     }
 
     /**
-     * Moves both virtual clocks (Compose's and the main looper's) on in one-second steps, so the idle loop
-     * always gets its turn: no dependence on real time or scheduling.
+     * Moves Compose's virtual clock on in one-second steps. The idle loop runs in a LaunchedEffect, so this
+     * clock drives it: no dependence on real time or on the main looper.
      */
     private fun tick(seconds: Int) = repeat(seconds) {
         compose.mainClock.advanceTimeBy(1_000)
-        // The idle loop runs under repeatOnLifecycle, i.e. on the main dispatcher, so its delay(1000) is
-        // driven by Robolectric's main-looper clock, not by Compose's: move that one on as well.
-        org.robolectric.shadows.ShadowLooper.idleMainLooper(1_000, java.util.concurrent.TimeUnit.MILLISECONDS)
         compose.waitForIdle()
+    }
+
+    /** Lets everything pending settle, then moves the fake clock: no effect can run "late" across the jump. */
+    private fun advanceClock(ms: Long) {
+        compose.waitForIdle()
+        now += ms
     }
 
     private fun openSettings() {
@@ -125,7 +129,7 @@ class StandHostTest {
     }
 
     private fun showWithButtonInCorner(atHome: Boolean, onTap: () -> Unit) = compose.setContent {
-        StandHostContent(settings, FakeLock(), lifecycle, { now }, atHome, { homeCalls++ }, false) {
+        StandHostContent(settings, FakeLock(), lifecycle, { now }, atHome, { homeCalls++ }, false, {}) {
             androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
                 androidx.compose.foundation.layout.Box(
                     androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
@@ -218,13 +222,13 @@ class StandHostTest {
         settings.enabled = true
         show(FakeLock(), atHome = false)
         compose.waitForIdle()
-        now += 3 * 60_000
+        advanceClock(3 * 60_000)
         tick(2)
         assertEquals(1, homeCalls)
         tick(5)
         assertEquals(1, homeCalls)
         compose.onNodeWithText("app").performTouchInput { click() }
-        now += 3 * 60_000
+        advanceClock(3 * 60_000)
         tick(2)
         assertEquals(2, homeCalls)
     }
@@ -233,9 +237,9 @@ class StandHostTest {
         settings.enabled = true
         show(FakeLock(), atHome = false)
         compose.waitForIdle()
-        now += 2 * 60_000
+        advanceClock(2 * 60_000)
         compose.onNodeWithText("app").performTouchInput { click() }
-        now += 2 * 60_000
+        advanceClock(2 * 60_000)
         tick(2)
         assertEquals(0, homeCalls)
     }
@@ -244,7 +248,7 @@ class StandHostTest {
         settings.enabled = true
         show(FakeLock(), atHome = true)
         compose.waitForIdle()
-        now += 10 * 60_000
+        advanceClock(10 * 60_000)
         tick(2)
         assertEquals(0, homeCalls)
     }
@@ -254,22 +258,41 @@ class StandHostTest {
         held = true
         show(FakeLock(), atHome = false)
         compose.waitForIdle()
-        now += 10 * 60_000
+        advanceClock(10 * 60_000)
         tick(2)
         assertEquals(0, homeCalls)
         held = false
         compose.waitForIdle()
         tick(2)
         assertEquals("released: countdown restarts, no instant reset", 0, homeCalls)
-        now += 3 * 60_000 + 1_000
+        advanceClock(3 * 60_000 + 1_000)
         tick(2)
         assertEquals(1, homeCalls)
+    }
+
+    @Test fun onEnabledChangeGetsTheStartValueThenEachChange() {
+        show(FakeLock())
+        compose.waitForIdle()
+        assertEquals(listOf(false), enabledCalls)
+        openSettings()
+        compose.onNodeWithTag(StandTags.SWITCH).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(StandTags.SWITCH).performClick()
+        compose.waitForIdle()
+        assertEquals(listOf(false, true, false), enabledCalls)
+    }
+
+    @Test fun onEnabledChangeStartsWithTheSavedValue() {
+        settings.enabled = true
+        show(FakeLock())
+        compose.waitForIdle()
+        assertEquals(listOf(true), enabledCalls)
     }
 
     @Test fun noResetWhileStandModeIsOff() {
         show(FakeLock(), atHome = false)
         compose.waitForIdle()
-        now += 10 * 60_000
+        advanceClock(10 * 60_000)
         tick(2)
         assertEquals(0, homeCalls)
     }

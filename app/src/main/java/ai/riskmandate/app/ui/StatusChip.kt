@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /** The outcomes riskmandate.ai uses, plus [Neutral] for facts with no verdict (a version, "nothing collected"). */
 enum class ChipKind(val glyph: String) {
@@ -35,7 +36,7 @@ enum class ChipKind(val glyph: String) {
 @Composable
 fun StatusChip(label: String, kind: ChipKind, modifier: Modifier = Modifier, large: Boolean = false) {
     val colors = chipColors(kind)
-    val style = if (large) MaterialTheme.typography.titleLarge else MaterialTheme.typography.labelLarge
+    val style = if (large) MaterialTheme.typography.labelLarge.copy(fontSize = 22.sp, lineHeight = 28.sp) else MaterialTheme.typography.labelLarge
     Row(
         modifier = modifier
             .background(colors.container, RoundedCornerShape(50))

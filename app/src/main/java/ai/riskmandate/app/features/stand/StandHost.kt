@@ -3,11 +3,15 @@ package ai.riskmandate.app.features.stand
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -43,7 +47,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import ai.riskmandate.app.R
 import kotlinx.coroutines.delay
 
@@ -66,6 +69,7 @@ object StandTags {
  * @param goHome takes the app back to the home screen (for the idle reset).
  * @param idleHeld true while a feature needs the screen left alone (e.g. an auto-play loop): no idle reset.
  *   When it turns false the countdown restarts from that moment.
+ * @param onEnabledChange called with whether stand mode is on: once at start with the saved value, then on each change.
  */
 @Composable
 fun StandHost(
@@ -73,11 +77,12 @@ fun StandHost(
     atHome: Boolean,
     goHome: () -> Unit,
     idleHeld: Boolean = false,
+    onEnabledChange: (Boolean) -> Unit = {},
     content: @Composable () -> Unit,
 ) {
     val settings = remember(activity) { StandSettings.of(activity) }
     val lock = remember(activity) { ActivityScreenLock(activity) }
-    StandHostContent(settings, lock, activity.lifecycle, SystemClock::elapsedRealtime, atHome, goHome, idleHeld, content)
+    StandHostContent(settings, lock, activity.lifecycle, SystemClock::elapsedRealtime, atHome, goHome, idleHeld, onEnabledChange, content)
 }
 
 private const val CORNER_DP = 48
@@ -93,6 +98,7 @@ internal fun StandHostContent(
     atHome: Boolean,
     goHome: () -> Unit,
     idleHeld: Boolean,
+    onEnabledChange: (Boolean) -> Unit = {},
     content: @Composable () -> Unit,
 ) {
     var enabled by remember { mutableStateOf(settings.enabled) }
@@ -108,8 +114,18 @@ internal fun StandHostContent(
     val currentAtHome by rememberUpdatedState(atHome)
     val currentGoHome by rememberUpdatedState(goHome)
     val currentHeld by rememberUpdatedState(idleHeld)
+    val currentOnEnabledChange by rememberUpdatedState(onEnabledChange)
+    LaunchedEffect(enabled) { currentOnEnabledChange(enabled) }
+    // What the idle countdown last saw. The timer starts counting when it is created, so the first run of
+    // an effect must not restart it (effects run a little later, and would swallow time already idle).
+    val seen = remember { object { var enabled = enabled; var held = idleHeld } }
     // Released: count from now, so the reset does not fire at once for time spent held.
-    LaunchedEffect(idleHeld) { if (!idleHeld) timer.touch() }
+    LaunchedEffect(idleHeld) {
+        if (seen.held != idleHeld) {
+            seen.held = idleHeld
+            if (!idleHeld) timer.touch()
+        }
+    }
 
     // Keep the screen on with the view flag: no WAKE_LOCK permission needed.
     val view = LocalView.current
@@ -119,13 +135,17 @@ internal fun StandHostContent(
     }
     LaunchedEffect(enabled) {
         if (enabled) {
-            timer.touch()
+            if (!seen.enabled) timer.touch()
+            seen.enabled = true
             if (!asked && !lock.isLocked()) {
                 asked = true
                 lock.lock()
             }
             wasOn = true
-        } else if (wasOn) {
+        } else {
+            seen.enabled = false
+        }
+        if (!enabled && wasOn) {
             lock.unlock()
             asked = false
             wasOn = false
@@ -139,13 +159,15 @@ internal fun StandHostContent(
     }
     LaunchedEffect(enabled) {
         if (!enabled) return@LaunchedEffect
-        // Only counts while the app is in front; coming back after a long time away resets at once.
-        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            while (true) {
+        // Checked once a second in this effect's own coroutine (no hop to another dispatcher, so a test's
+        // clock drives it). Only acts while the app is in front; coming back after a long time away resets
+        // at once, because the countdown is measured on the clock, not by ticks.
+        while (true) {
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
                 if (currentHeld) timer.touch()
                 else if (timer.poll() && !currentAtHome) currentGoHome()
-                delay(1_000)
             }
+            delay(1_000)
         }
     }
 
@@ -236,31 +258,60 @@ private fun SettingsDialog(
     AlertDialog(
         onDismissRequest = onClose,
         title = { Text(stringResource(R.string.stand_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.stand_switch), Modifier.weight(1f))
-                    Switch(checked = enabled, onCheckedChange = onEnabled, modifier = Modifier.testTag(StandTags.SWITCH))
-                }
-                if (enabled) {
-                    Text(
-                        stringResource(if (pinned) R.string.stand_status_pinned else R.string.stand_status_not_pinned),
-                        Modifier.testTag(StandTags.STATUS),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { onMinutes(minutes - 1) }, modifier = Modifier.testTag(StandTags.LESS)) {
-                        Text(stringResource(R.string.stand_less))
-                    }
-                    Text(stringResource(R.string.stand_idle, minutes), Modifier.weight(1f))
-                    TextButton(onClick = { onMinutes(minutes + 1) }, modifier = Modifier.testTag(StandTags.MORE)) {
-                        Text(stringResource(R.string.stand_more))
-                    }
-                }
-                Text(stringResource(R.string.stand_unpin_hint), style = MaterialTheme.typography.bodySmall)
-            }
-        },
+        text = { SettingsBody(enabled, pinned, minutes, onEnabled, onMinutes) },
         confirmButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.stand_close)) } },
     )
+}
+
+/** The dialog's contents. Internal so a screenshot test can draw them in the activity window (a dialog is its own window). */
+@Composable
+internal fun SettingsBody(
+    enabled: Boolean,
+    pinned: Boolean,
+    minutes: Int,
+    onEnabled: (Boolean) -> Unit,
+    onMinutes: (Int) -> Unit,
+) {
+    Column(Modifier.verticalScroll(rememberScrollState())) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.stand_switch), Modifier.weight(1f))
+            Switch(checked = enabled, onCheckedChange = onEnabled, modifier = Modifier.testTag(StandTags.SWITCH))
+        }
+        if (enabled) {
+            Text(
+                stringResource(if (pinned) R.string.stand_status_pinned else R.string.stand_status_not_pinned),
+                Modifier.testTag(StandTags.STATUS),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = { onMinutes(minutes - 1) }, modifier = Modifier.testTag(StandTags.LESS)) {
+                Text(stringResource(R.string.stand_less))
+            }
+            Text(stringResource(R.string.stand_idle, minutes), Modifier.weight(1f))
+            TextButton(onClick = { onMinutes(minutes + 1) }, modifier = Modifier.testTag(StandTags.MORE)) {
+                Text(stringResource(R.string.stand_more))
+            }
+        }
+        Text(stringResource(R.string.stand_unpin_hint), style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/** The settings dialog drawn inline (title, body, button) for screenshots: same contents, in the activity window. */
+@Composable
+internal fun SettingsDialogPreview(enabled: Boolean, pinned: Boolean, minutes: Int) {
+    androidx.compose.material3.Surface(
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 6.dp,
+        modifier = Modifier.widthIn(max = 360.dp),
+    ) {
+        Column(Modifier.padding(24.dp)) {
+            Text(stringResource(R.string.stand_title), style = MaterialTheme.typography.headlineSmall)
+            Box(Modifier.padding(top = 16.dp, bottom = 24.dp)) { SettingsBody(enabled, pinned, minutes, {}, {}) }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = {}) { Text(stringResource(R.string.stand_close)) }
+            }
+        }
+    }
 }

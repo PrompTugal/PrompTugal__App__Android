@@ -13,4 +13,6 @@
     <string name="feature_site_not_in_copy">This page is not in the offline copy. Connect the device to the internet to read it.</string>
     <string name="feature_site_webview_description">riskmandate.ai page</string>
     <string name="feature_site_privacy">riskmandate.ai has its own privacy policy and may set its own cookies. This app collects nothing.</string>
+    <string name="feature_site_kicker">riskmandate.ai</string>
+    <string name="feature_site_summary">The riskmandate.ai pages inside the app, with an offline copy for bad Wi-Fi.</string>
 </resources>

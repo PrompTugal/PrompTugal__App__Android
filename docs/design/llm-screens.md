@@ -1,6 +1,6 @@
 # On-device LLM screens: design spec (G, H, I)
 
-Owner: design.android@promptugal.ai. Written 9 Nov 2026 from `briefs/2026-11-09__on-device-llm/README.md`. Reader: dev.llm (G), dev.chat (H), dev.lab (I), QA, security. Same ground rules as `summit.md` (tablet landscape first, phone second, light and dark, 48 dp touch targets, status never colour alone, English and pt-PT, no em-dashes, every screen scrolls so 200% font scale works, `FeatureContent` inside the host `FeatureFrame`, no second title bar). No brand change.
+Owner: design.android@promptugal.ai. Written 9 Nov 2026 from `briefs/2026-11-09__on-device-llm/README.md`. Reader: dev.llm (G), dev.chat (H), dev.lab (I), QA, security. Same ground rules as `summit.md` and the look in `android-theme.md` (tablet landscape first, phone second, light and dark, 48 dp touch targets, status never colour alone, English and pt-PT, no em-dashes, every screen scrolls so 200% font scale works, `FeatureContent` inside the host `FeatureFrame`, no second title bar). No brand change.
 
 **Replay and live look different, not just labelled differently** (security's request). A replay lane has a dashed 2 dp border (live: solid), a full-width strip at the top of the lane in the Held colours reading "REPLAY: recorded <date>, <backend>. Nothing is running now.", and the Run button reads **Replay** instead of **Run**. Both lanes are replays or both are live, never mixed in one run. The counters strip says "Replay" beside its title when any lane is a replay, and replay results are not added to live loop counters.
 
@@ -106,7 +106,7 @@ Phone and portrait: one lane at a time with a two-tab switch **Without ABP | Thr
 ### Motion and accessibility
 
 - Steps appear one at a time with a 0.3 s fade; with `rememberReduceMotion()` they appear at once. No flashing, no scrolling marquees.
-- Verdicts are word + glyph + colour (all pairs 7:1 or better). Left and right lanes mean the same thing in light and dark.
+- Verdicts are word + glyph + colour (all pairs AA or better). Left and right lanes mean the same thing in light and dark.
 - TalkBack: lane headers are headings; each `StepRow` reads "<n>. <title>, <verdict>. <detail>"; the headline counter and the run result sentence are polite live regions announced once per run, not per step; the final sentence is the single most important string on the screen.
 - Order of focus: scenario bar, provenance, left lane, right lane, counters. The side sheet traps focus while open and returns it to **Settings** on close.
 - Not shown: a claim about how likely a real agent is to fail; the numbers are this model, this scenario, these settings, and the lane chips say so.

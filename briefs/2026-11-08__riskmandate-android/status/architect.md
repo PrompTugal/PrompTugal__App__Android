@@ -1,11 +1,17 @@
 # architect.android status
 
-> 9 Nov 2026, about 02:10 UTC: P6 pushed (73b2c16, Feature.homeBadge). site 747b521 PASS (WebViewAssetLoader, rotation). app 62a5ee6 HOLD: A-app-8 is closed, but its What's new card imports feature packages into the host; rework onto P6. A-app-9 is approved and open. LLM side team: no commits yet.
+> 9 Nov 2026, about 03:00 UTC: dev.llm step 2 (31a87ac) PASS: the contract is accepted, with Idle and LlmError. FeatureContext.llm is written and verified on a trial (gate green). It is pushed once llm/LlmService.kt is on dev, because it cannot compile before. dev.llm's host lines still conflict with app's shell (A-llm-3).
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Ruling A-lab-7: one strict JSON parser, llm/StrictJson (dev.llm takes lab's general parse/render; lab keeps hash16/parseAt and uses checkToolCall). README and the lab review updated.
+- Review dev.llm 31a87ac PASS (contract accepted with Idle and LlmError; ToolSpec, StrictJson and checkToolCall are the one validator; LlmHost per the README; A-llm-12 installed list for chat; A-llm-13 TOO_LONG mapping; A-llm-3 still open). README contract section updated to what was built. FeatureContext.llm patch verified on a trial and waiting for LlmService on dev.
+- Reviews: design fb824aa PASS (A-des-4 ScreenHeader belongs to the host frame; A-des-5 breakpoints written down); dev.llm 9c3fbd5 PASS (A-llm-4/5 closed; A-llm-3: conflicts with app's shell, app re-does the host lines). README: one title per screen.
+- P7: `icon`, `kicker`, `summary` on `Feature` (null defaults) plus `FeaturePresentationTest`. Gate green.
+- Review: app 894a93b shell step 1 PASS (A-app-11 double header on phones and Back next to the sidebar; A-app-12 use P7; A-app-13 unused import).
+- Reviews: dev.llm c02632a PASS (A-llm-1 licences, A-llm-2 metadata flag only for the summit, A-llm-3/4/5: bench route through app, out of features/, debug or model-present only); dev.chat 4c6d11e PASS (A-chat-1: use context.llm, not a chat-owned CompositionLocal); eval 2aebd3d PASS (A-eval-1 budget ledger path); dev.lab b67a7c5 PASS fix-forward (A-lab-1 argument validation, A-lab-2 golden vectors shared with eval, A-lab-3 parse eval's formats). README: contract adds `installed` and `modelId`; noBackupFilesDir; LiteRT-LM approved.
 - Reviews: site 747b521 PASS; app 62a5ee6 HOLD (A-app-10: the What's new card imports ReleasesNotice and StandSettings and reads disk in composition; rework onto homeBadge). A-app-8 closed.
 - P6 pushed: `Feature.homeBadge()` (default null) plus `FeatureBadgeTest` (default, override, every listed feature answers). Gate green. README: the host must not import feature packages except `StandHost`.
 - On-device LLM rules (README): one host-held `LlmHost` per process (the one sanctioned process-wide object), a serialised service, a Flow-based contract shape, tool calls proposed by the model and validated in Kotlin per feature, plain-text output, pinned downloads over HttpURLConnection with Range, and storage paths with backup exclusions. Dependencies: LiteRT-LM approved in principle; org.json for JSON; Room, WorkManager, kotlinx-serialization and ViewModel not without a reason.
