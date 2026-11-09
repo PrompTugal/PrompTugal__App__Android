@@ -3,6 +3,18 @@ name: android
 on:
   push:
     branches: [dev]
+    # A push that changes nothing the app or the pipeline is built from (docs, board, briefs, devices/)
+    # runs nothing: no tests, no build, no Firebase notification for testers (docs/ci.md).
+    paths:
+      - 'app/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+      - '**/*.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.github/**'
+      - 'scripts/**'
   pull_request:
     branches: [dev, main]
   workflow_dispatch:
@@ -16,9 +28,9 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: android-${{ github.ref }}
-  cancel-in-progress: false
+# Concurrency is per job, not per workflow (docs/ci.md): a newer push cancels the older run's check,
+# licences and smoke jobs, but a release job that is running is never cancelled (cancel-in-progress
+# false: at most one runs and one waits per ref, a newer waiting one replaces an older waiting one).
 
 env:
   # CI owns the version: never set by hand (see docs/ci.md).
@@ -35,6 +47,9 @@ jobs:
     name: check (tests and lint)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: check-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -54,9 +69,10 @@ jobs:
       - name: Unit tests and lint
         run: ./gradlew --no-daemon testDebugUnitTest lintDebug
 
-      # Fails if a runtime dependency is not Apache-2.0, MIT or BSD (exceptions: scripts/licences-allow.txt).
-      - name: Dependency licence gate
-        run: bash scripts/ci-licences.sh
+      # Every screenshot an in-app release article lists (assets/releases/*/screenshots.txt) must have been
+      # written by the tests: fail here, early, not in the release job.
+      - name: Release article screenshots exist
+        run: bash scripts/release-screenshots.sh --verify
 
       - name: Upload test and lint reports
         if: always()
@@ -80,6 +96,41 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## check (run ${{ github.run_number }})"
+            echo "- version under test: ${VERSION_NAME} (code ${VERSION_CODE})"
+            echo "- unit tests and lint: ${{ job.status }}"
+            echo "- reports: artifact reports-${{ github.run_number }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Runs beside `check` (no extra wall-clock time) and gates the release the same way. Own job because
+  # scripts/licences.sh reads each dependency's POM from the Gradle cache, and the restored Gradle cache
+  # of the `check` job has none (every artifact read UNKNOWN on runs 28 to 31). A fresh Gradle home
+  # makes Gradle fetch the POMs itself. Fails if a runtime dependency is not Apache-2.0, MIT or BSD
+  # (exceptions: scripts/licences-allow.txt).
+  licences:
+    name: licences (dependency gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: licences-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Dependency licence gate
+        env:
+          GRADLE_USER_HOME: ${{ runner.temp }}/gradle-licences   # fresh: no cache restored, so POMs are fetched
+        run: bash scripts/ci-licences.sh
+
       - name: Upload the licence list
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -92,19 +143,18 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          {
-            echo "## check (run ${{ github.run_number }})"
-            echo "- version under test: ${VERSION_NAME} (code ${VERSION_CODE})"
-            echo "- unit tests and lint: ${{ job.status }}"
-            echo "- reports: artifact reports-${{ github.run_number }}"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## licences (run ${{ github.run_number }}): ${{ job.status }}, list in artifact licences-${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
 
   release:
     name: release (build, sign, distribute)
-    needs: check
+    needs: [check, licences]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Never cancelled once running (it may be distributing to testers): a newer release waits its turn.
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
     # The GitHub Environment `release` holds the release secrets and can require a reviewer (docs/ci.md).
     environment: release
     permissions:
@@ -142,6 +192,19 @@ jobs:
           umask 077
           echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
           echo "UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+
+      # The screenshots the check job's Robolectric tests wrote (same commit): copied into the release
+      # articles' assets before the build, never committed (docs/ci.md). continue-on-error: with no
+      # screenshots there is nothing to download, and the script fails only if an article lists one.
+      - name: Download the screenshots
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: app/build/screenshots
+
+      - name: Put the screenshots into the release articles
+        run: bash scripts/release-screenshots.sh
 
       - name: Release APK and AAB
         env:
@@ -273,6 +336,10 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # A newer push's smoke test supersedes this one (the release job is a different group, never cancelled).
+    concurrency:
+      group: smoke-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 

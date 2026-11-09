@@ -47,3 +47,21 @@ The Firebase step had the `npm ci` line and the `firebase` command joined into o
 ## Update: make-upload-key.sh message
 Closing message now points to Settings > Environments > release > Environment secrets and lists `FIREBASE_APP_ID`, `GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT` as environment variables; the header documents the no-JDK `docker run` form (note on root-owned files on Linux). `bash -n` and secret-scan pass.
 - For play.android: `docs/play/README.md` line 89 still says "four repository secrets"; they now live under Settings > Environments > release.
+
+## Update: CI cheap and fast (from conductor) and the licence-gate failure on dev
+- **Found and fixed:** dev runs 28 to 31 all failed at my licence gate inside `check` (every artifact UNKNOWN: with the warm Gradle cache restored there are no POMs for `licences.sh` to read), so `release` has not run since run 27. The gate is now its own parallel job `licences` with a fresh Gradle home; `release` needs `check` and `licences`. Cause is inferred from the log; the next dev run is the test.
+- **Docs-only pushes:** `push` has a `paths` filter (app/, gradle/, .github/, *.gradle.kts, gradle.properties, gradlew*, scripts/); docs, board, briefs, devices/ runs nothing (so no Firebase notification).
+- **Concurrency per job:** check, licences, smoke cancel older runs; release never cancelled once running (group `release-<ref>`).
+- **Run time:** median 5.6 min before the smoke job, 12.7 min with it (measured from the Actions API, in `docs/ci.md`), of which about 8 min was waiting for the previous run; expected about 7 to 8 min after this change, to re-measure.
+- Gate, actionlint, secret-scan pass. Untested live: the paths filter, pending-release replacement, and the licences job on a runner.
+- For conductor: a docs-only push to dev now produces no run; the latest run is not a signal for it.
+
+## Update: website deploy (GitHub Pages)
+`.github/workflows/website.yml`: build (unit tests, build.py, validate.py) then deploy (upload-pages-artifact v4.0.0, deploy-pages v4.0.5, SHA-pinned, pages and id-token write only on deploy) then verify (live `build.json` carries the commit). Skips cleanly until `website/build.py` exists and until Pages source is GitHub Actions. What Dinis does is in `docs/ci.md` (Pages source, custom domain, DNS CNAME `android.app` -> `promptugal.github.io`, allow `dev` in the `github-pages` environment). Untested live; `website/` is not on any branch yet.
+- For editor.android: `build.py` must write the site to `website/_site/` (index.html at root); the workflow adds CNAME and build.json; `GH_TOKEN` (read-only) and `GITHUB_REPOSITORY` are set for the build step; no pip packages.
+
+## Update: screenshots into the in-app release articles
+`scripts/release-screenshots.sh` + two workflow steps: the check job verifies every listed screenshot exists; the release job downloads the check job's `screenshots-<run>` artifact and copies them into `app/src/main/assets/releases/<dir>/screenshots/` before assembleRelease/bundleRelease. Not committed (stale, history bloat in a public repo). Contract I proposed because dev.releases' was not on origin/work/dev.releases yet: `assets/releases/<dir>/screenshots.txt` lines `<target>.png <- <source>.png`, source = a file in `app/build/screenshots/`. `website.yml` now also triggers on `app/src/main/assets/releases/**`. Details and caveats in `docs/ci.md`. Gate, actionlint, secret-scan pass; untested live.
+- For dev.releases: either use that manifest (no CI change per release) or tell me your contract; the article screen must cope with missing screenshots (local builds).
+- For conductor: please add `app/src/main/assets/releases/*/screenshots/` to `.gitignore` (not my file).
+- For editor.android: the site build does not run the Robolectric tests, so it sees articles without their generated PNGs.

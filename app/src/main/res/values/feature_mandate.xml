@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mandate_intro">This app\'s own reach, mandate and gap, on this device, now. Reach is read from Android as you open this screen. The gap is computed from the two, never written by hand.</string>
+    <string name="mandate_summary">Reach %1$d, mandate %2$d, gap %3$d</string>
+    <string name="mandate_gap_none">Gap: none. Everything this app can reach, its mandate needs.</string>
+    <string name="mandate_gap_some">Gap: %1$d. This app can reach things its mandate does not need:</string>
+
+    <string name="mandate_defs_heading">The words</string>
+    <string name="mandate_def_reach">Reach: \"Everything the agent can actually access in this deployment, including what nobody thought to check.\"</string>
+    <string name="mandate_def_mandate">Mandate: \"The job, written down: what the business authorised it to do.\"</string>
+    <string name="mandate_def_gap">Gap: \"Reach minus mandate. Never written by hand, and recomputed whenever either side moves.\"</string>
+    <string name="mandate_def_source">Quoted in English from riskmandate.ai, read on 9 November 2026. Here the agent is this app.</string>
+
+    <string name="mandate_reach_heading">Reach: what this app can touch</string>
+    <string name="mandate_reach_permissions">Permissions</string>
+    <string name="mandate_perm_granted">%1$s (granted)</string>
+    <string name="mandate_perm_requested">%1$s (requested, not granted)</string>
+    <string name="mandate_reach_components">Exported components (other apps can start these)</string>
+    <string name="mandate_component_activity">Activity</string>
+    <string name="mandate_component_service">Service</string>
+    <string name="mandate_component_receiver">Receiver</string>
+    <string name="mandate_component_provider">Provider</string>
+    <string name="mandate_component_line">%1$s %2$s</string>
+    <string name="mandate_guard_none">no permission required to call it</string>
+    <string name="mandate_guard_by">callers must hold %1$s</string>
+    <string name="mandate_reach_network">Network</string>
+    <string name="mandate_cleartext_off">Cleartext (http) traffic: off</string>
+    <string name="mandate_cleartext_on">Cleartext (http) traffic: allowed</string>
+    <string name="mandate_reach_storage">Storage</string>
+    <string name="mandate_storage_none">Storage used: none. No files, databases or preferences, and no cloud backup.</string>
+    <string name="mandate_backup_on">Cloud backup of the app\'s data: allowed</string>
+    <string name="mandate_reach_device">Device management</string>
+    <string name="mandate_reach_none">none</string>
+
+    <string name="mandate_mandate_heading">Mandate: what its policy allows</string>
+    <string name="mandate_mandate_hosts">Addresses the app will open: https only, port %1$d, on these hosts</string>
+    <string name="mandate_mandate_probe_heading">The allow-list, tried now on sample addresses</string>
+    <string name="mandate_probe_allowed">%1$s: allowed</string>
+    <string name="mandate_probe_refused">%1$s: refused</string>
+    <string name="mandate_mandate_managed">Managed configuration the app reads (set by an organisation, never sent anywhere)</string>
+    <string name="mandate_managed_value">%1$s: %2$s</string>
+    <string name="mandate_managed_unset">not set</string>
+    <string name="mandate_managed_refused">%1$s was set but refused, so the default is used</string>
+    <string name="mandate_mandate_allowed">Reach it allows, and why</string>
+    <string name="mandate_reason_open_pages">to open riskmandate.ai pages, in the in-app view or in your browser</string>
+    <string name="mandate_reason_offline_hint">to tell you when the device is offline</string>
+    <string name="mandate_reason_launcher">the one screen that starts the app</string>
+    <string name="mandate_reason_internal_guard">guards the app\'s own receivers; only apps signed by the same key can hold it</string>
+
+    <string name="mandate_loading">Reading this app\'s reach from the device…</string>
+    <string name="mandate_storage_file">Stored file: %1$s</string>
+    <string name="mandate_storage_dir">Stored directory: %1$s (%2$d files)</string>
+    <string name="mandate_reason_stand_settings">stand mode\'s two settings (on or off, idle minutes), on this device only</string>
+    <string name="mandate_reason_site_storage">web storage of the in-app riskmandate.ai view, on this device only</string>
+    <string name="mandate_reason_site_cache">cache of the in-app riskmandate.ai view; Android can clear it</string>
+
+    <string name="mandate_mandate_data">Data collected by the app: none. It has no analytics, accounts or identifiers. The app itself connects only to riskmandate.ai and www.riskmandate.ai, and only through the in-app site view. Pages it opens in your browser are the browser\'s own traffic. Links to other sites are not loaded in the app.</string>
+    <string name="mandate_connects">This app connects to: %1$s (the in-app site view)</string>
+    <string name="mandate_connects_none">This app connects to nothing itself. Pages open in your browser, which makes its own connection.</string>
+    <string name="mandate_reason_site_view">the in-app riskmandate.ai view loads pages from this host</string>
+
+    <string name="mandate_gap_heading">Gap: reach minus mandate</string>
+</resources>

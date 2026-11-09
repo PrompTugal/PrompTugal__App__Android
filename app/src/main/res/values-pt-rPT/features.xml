@@ -3,4 +3,8 @@
     <string name="feature_site_title">RiskMandate</string>
     <string name="feature_abpdemo_title">ABP em todas as camadas</string>
     <string name="feature_mandate_title">O mandato desta app</string>
+    <string name="feature_releases_title">Novidades</string>
+    <string name="feature_models_title">Configurar modelo</string>
+    <string name="feature_chat_title">Chat</string>
+    <string name="feature_lab_title">Laboratório ABP</string>
 </resources>

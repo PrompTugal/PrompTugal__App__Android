@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -63,5 +64,75 @@ class HomeScreenTest {
         }
         compose.onNodeWithTag(HomeTags.DIAGNOSTICS).performClick()
         assertEquals(1, opened)
+    }
+}
+
+@RunWith(AndroidJUnit4::class)
+class HomeFeatureOrderTest {
+    @get:Rule val compose = createComposeRule()
+
+    /** TalkBack reads in this order: title, Open, the message about opening, then the feature buttons. */
+    @Test fun messageComesRightAfterOpenAndBeforeFeatures() {
+        compose.setContent {
+            MaterialTheme {
+                HomeScreen(
+                    "0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {},
+                    message = R.string.message_offline,
+                    features = listOf(FeatureButton("site", R.string.home_diagnostics) {}),
+                )
+            }
+        }
+        fun top(tag: String) = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot.top
+        assert(top(HomeTags.OPEN) < top(HomeTags.MESSAGE))
+        assert(top(HomeTags.MESSAGE) < top(HomeTags.feature("site")))
+    }
+}
+
+@RunWith(AndroidJUnit4::class)
+class HomeCornerTest {
+    @get:Rule val compose = createComposeRule()
+
+    /** Stand mode (features/stand) listens for a long press in the bottom-end 48dp corner: nothing clickable may sit there. */
+    @Test fun bottomEndCornerHasNoClickableControl() {
+        compose.setContent {
+            MaterialTheme {
+                HomeScreen(
+                    "0.1.7 (7)", DeviceStatus.from(true, false, "Lisbon kiosk 3"), onOpen = {},
+                    message = R.string.message_offline,
+                    features = listOf(FeatureButton("a", R.string.home_diagnostics) {}, FeatureButton("b", R.string.home_licences) {}),
+                )
+            }
+        }
+        val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val dp = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
+        val corner = androidx.compose.ui.geometry.Rect(root.right - 48 * dp, root.bottom - 48 * dp, root.right, root.bottom)
+        compose.onAllNodes(androidx.compose.ui.test.hasClickAction()).fetchSemanticsNodes().forEach {
+            assert(!it.boundsInRoot.overlaps(corner)) { "a control overlaps the bottom-end corner: ${it.boundsInRoot}" }
+        }
+    }
+}
+
+@RunWith(AndroidJUnit4::class)
+class HomeWhatsNewTest {
+    @get:Rule val compose = createComposeRule()
+
+    private fun show(offer: WhatsNewOffer?) = compose.setContent {
+        MaterialTheme { HomeScreen("0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {}, whatsNew = offer) }
+    }
+
+    @Test fun noOfferNoCard() {
+        show(null)
+        compose.onNodeWithTag(HomeTags.WHATS_NEW).assertDoesNotExist()
+    }
+
+    @Test fun offerShowsOpenAndLaterWithBigTargets() {
+        var opened = 0; var later = 0
+        show(WhatsNewOffer(onOpen = { opened++ }, onLater = { later++ }))
+        compose.onNodeWithTag(HomeTags.WHATS_NEW_OPEN).assertIsDisplayed().performClick()
+        compose.onNodeWithTag(HomeTags.WHATS_NEW_LATER).performClick()
+        assertEquals(1, opened); assertEquals(1, later)
+        val dp = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
+        for (t in listOf(HomeTags.WHATS_NEW_OPEN, HomeTags.WHATS_NEW_LATER))
+            assert(compose.onNodeWithTag(t).fetchSemanticsNode().boundsInRoot.height >= 56 * dp - 1)
     }
 }
