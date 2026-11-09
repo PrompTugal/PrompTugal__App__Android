@@ -46,4 +46,16 @@
     <string name="lab_net_cellular">mobile data</string>
     <string name="lab_net_ethernet">Ethernet</string>
     <string name="lab_net_other">other</string>
+    <string name="lab_run">Run</string>
+    <string name="lab_stop">Stop</string>
+    <string name="lab_running">Running on this device</string>
+    <string name="lab_chip_live">Live on this device</string>
+    <string name="lab_run_error">This run did not finish: %1$s</string>
+    <string name="lab_no_model_title">No model yet</string>
+    <string name="lab_no_model_body">Set up a model to run live, or replay a recorded run below.</string>
+    <string name="lab_open_models">Set up a model</string>
+    <string name="lab_loading_model">Loading %1$s</string>
+    <string name="lab_inject_label">Add your own instruction to the document</string>
+    <string name="lab_inject_note">Stays on this device. Used in live runs only.</string>
+    <string name="lab_inject_shown">Your instruction, added to the document</string>
 </resources>

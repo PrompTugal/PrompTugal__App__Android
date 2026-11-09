@@ -29,7 +29,17 @@ object ToolProtocol {
     /** How many "{" positions are tried when looking for JSON in text (bounds the work). */
     private const val MAX_BRACE_TRIES = 64
 
-    data class RawCall(val name: String, val arguments: Any?)
+    /**
+     * A call as found. [argsJson], when set, is the exact argument text the model produced (a native proposal
+     * from the service); otherwise the arguments were read from text and are rendered back to JSON to check.
+     */
+    data class RawCall(val name: String, val arguments: Any?, val argsJson: String? = null)
+
+    /** A native proposal from the service. Its arguments are shown if small and flat enough to read; they are never trusted. */
+    fun fromProposal(p: LlmEvent.ToolCallProposed): RawCall {
+        val shown = if (p.argsJson.length <= 4096) runCatching { StrictJson.parse(p.argsJson.ifBlank { "{}" }) }.getOrNull() else null
+        return RawCall(p.name.take(MAX_NAME_CHARS), shown ?: emptyMap<String, Any?>(), p.argsJson)
+    }
 
     private val GEMMA_CALL = Regex("<\\|tool_call>\\s*call:\\s*([A-Za-z_]\\w*)\\s*\\((.*?)\\)\\s*<tool_call\\|>", RegexOption.DOT_MATCHES_ALL)
     private val KV = Regex("([A-Za-z_]\\w*)\\s*=\\s*(?:\"((?:[^\"\\\\]|\\\\.)*)\"|<\\|\"\\|>(.*?)<\\|\"\\|>|([^,\\s)]+))", RegexOption.DOT_MATCHES_ALL)
@@ -81,7 +91,7 @@ object ToolProtocol {
     /** Checks one found call: this turn's call cap first, then the shared [checkToolCall]. [index] is its place in the turn. */
     fun check(call: RawCall, index: Int, tools: List<LlmToolSpec>): ToolCheck {
         if (index >= MAX_CALLS_PER_TURN) return ToolCheck.Rejected(call.name.take(MAX_NAME_CHARS), "too many calls in one turn (limit $MAX_CALLS_PER_TURN)")
-        return checkToolCall(tools, LlmEvent.ToolCallProposed(call.name, StrictJson.render(call.arguments)))
+        return checkToolCall(tools, LlmEvent.ToolCallProposed(call.name, call.argsJson ?: StrictJson.render(call.arguments)))
     }
 
     /** An accepted call as the flat strings the ABP checks read. */
