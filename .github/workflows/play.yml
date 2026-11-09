@@ -12,8 +12,11 @@ on:
   workflow_dispatch:
     inputs:
       sha:
-        description: Commit on main to upload (default, the head of main)
-        required: false
+        description: Commit on main to upload (a person's decision; uses the human-promotion variant of the check)
+        required: true
+      base:
+        description: The main commit the approval was made against (the main before that commit was promoted)
+        required: true
 
 permissions:
   contents: read
@@ -40,22 +43,30 @@ jobs:
         with:
           fetch-depth: 0   # tags and history: the release is found by tag
 
+      # Defence in depth: main moves only by promote.yml (a signed, approved commit) or by Dinis. Re-run
+      # security.android's check (docs/security/approvals.md) with main's own copy of the verifier: the keys and
+      # approvals are those on the main BEFORE this push, the tip is the commit now on main. A push (automatic)
+      # must pass the normal check, which also refuses a commit that changes a trust path (workflows, keys, the
+      # verifier, CLAUDE.md): that one is uploaded only when a PERSON dispatches this workflow with the commit and
+      # the base, which uses the human-promotion variant. Fails closed on any non-zero exit.
       - name: Which commit, and is it approved
         id: sha
         env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          PUSHED: ${{ github.sha }}
           INPUT_SHA: ${{ inputs.sha }}
+          INPUT_BASE: ${{ inputs.base }}
         run: |
-          sha=$(git rev-parse "${INPUT_SHA:-HEAD}^{commit}")
+          if [ "$EVENT" = push ]; then base=$BEFORE; sha=$PUSHED; verifier=scripts/verify-approval.mjs
+          else base=$INPUT_BASE; sha=$INPUT_SHA; verifier=scripts/verify-approval-human.mjs; fi
+          [[ "$base" =~ ^[0-9a-f]{40}$ && ! "$base" =~ ^0+$ ]] || { echo "no usable base (the main before this push): refusing" >&2; exit 1; }
+          sha=$(git rev-parse "$sha^{commit}")
           git merge-base --is-ancestor "$sha" origin/main || { echo "$sha is not on main: refusing" >&2; exit 1; }
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "## play (run ${{ github.run_number }}): ${sha:0:12}" >> "$GITHUB_STEP_SUMMARY"
-          # Defence in depth: main only moves by promote.yml (an approved commit) or by Dinis. Re-check the
-          # signed approval with main's own verifier and keys, the approvals from dev.
-          git fetch -q origin dev 2>/dev/null || true
-          git show origin/dev:board/security/approvals.jsonl > "$RUNNER_TEMP/approvals.jsonl" 2>/dev/null || : > "$RUNNER_TEMP/approvals.jsonl"
-          if ! node scripts/verify-approval.mjs --sha "$sha" --approvals "$RUNNER_TEMP/approvals.jsonl" --keys board/keys.json 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"; then
-            echo "- not uploaded: no valid security PASS for this commit (a docs-only or hand-made commit on main needs its own approval; approve it, or dispatch with an approved sha)" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1
-          fi
+          echo "## play (run ${{ github.run_number }}): ${sha:0:12}, approval checked against main ${base:0:12} with $verifier" >> "$GITHUB_STEP_SUMMARY"
+          node "$verifier" --repo . --main "$base" --tip "$sha" | tee -a "$GITHUB_STEP_SUMMARY" || {
+            echo "- not uploaded: the signed approval check did not pass for this commit" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
 
       - name: Find the dev build of this commit
         id: rel
