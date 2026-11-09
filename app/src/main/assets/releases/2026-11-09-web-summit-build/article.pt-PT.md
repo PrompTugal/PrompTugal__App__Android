@@ -58,6 +58,12 @@ O botão RiskMandate abre as páginas do riskmandate.ai dentro da app, com separ
 
 Para uma bancada com Wi-Fi fraca, a app tem uma cópia offline das páginas, lidas a 9 de novembro de 2026. Mostra uma faixa a dizê-lo, com um botão Tentar online. Uma página que não está na cópia diz-o e pede ligação. O ecrã avisa ainda que o riskmandate.ai tem a sua própria política de privacidade e pode definir os seus próprios cookies, enquanto esta app não recolhe nada.
 
+As capturas de ecrã abaixo mostram a moldura da app em volta da página: os separadores, a faixa offline e a linha de privacidade. Não mostram a página em si.
+
+![O ecrã RiskMandate num telemóvel: separadores, faixa offline e linha de privacidade, sem a página.](screenshots/site-phone.png)
+
+![O mesmo ecrã num tablet de dez polegadas na horizontal.](screenshots/site-tablet.png)
+
 As palavras e os preços dessas páginas são do riskmandate.ai, não desta app. Se o site mudou desde 9 de novembro, a cópia offline fica desatualizada até à versão seguinte.
 
 ## Modo de bancada
@@ -73,6 +79,8 @@ O modo de bancada serve para um tablet deixado a funcionar numa bancada. Está *
 O Android pergunta uma vez se deve fixar o ecrã. Se recusar, ou se a fixação de ecrã estiver desativada em Definições, Segurança, o painel diz que o ecrã não está fixado, e manter o ecrã ligado e o regresso ao início continuam a funcionar. Para libertar o ecrã com o gesto do próprio Android: com navegação por três botões, mantenha premidos Voltar e Vista geral em simultâneo; com navegação por gestos, deslize para cima e mantenha. Se for pedido, introduza o PIN do ecrã de bloqueio. Planeie como tirar um tablet da fixação antes do dia.
 
 As definições ficam só no dispositivo: modo de bancada ativo ou não, e os minutos.
+
+Enquanto o ecrã está fixado, o botão Abrir riskmandate.ai do ecrã inicial não abre nenhum navegador. Mostra a mensagem "As páginas web não são abertas num navegador enquanto a aplicação estiver fixada." O botão RiskMandate, que mantém o riskmandate.ai dentro da app, continua a funcionar; as ligações que saem do riskmandate.ai não são abertas enquanto o ecrã estiver fixado.
 
 ## Novidades
 
