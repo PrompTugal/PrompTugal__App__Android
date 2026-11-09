@@ -12,10 +12,10 @@ on:
   workflow_dispatch:
     inputs:
       sha:
-        description: Commit on main to upload (a person's decision; uses the human-promotion variant of the check)
+        description: Commit on main to upload, 7 to 40 hex digits (a person's decision; uses the human-promotion variant of the check)
         required: true
       base:
-        description: The main commit the approval was made against (the main before that commit was promoted)
+        description: The main commit the approval was made against (the main before that commit was promoted), 7 to 40 hex digits
         required: true
 
 permissions:
@@ -59,7 +59,16 @@ jobs:
           INPUT_BASE: ${{ inputs.base }}
         run: |
           if [ "$EVENT" = push ]; then base=$BEFORE; sha=$PUSHED; verifier=scripts/verify-approval.mjs
-          else base=$INPUT_BASE; sha=$INPUT_SHA; verifier=scripts/verify-approval-human.mjs; fi
+          else
+            base=$INPUT_BASE; sha=$INPUT_SHA; verifier=scripts/verify-approval-human.mjs
+            # A person types these: accept 7 to 40 hex digits and resolve each to the full commit (git refuses an
+            # ambiguous abbreviation). The verifier below always gets full 40-digit SHAs.
+            for v in base sha; do
+              [[ "${!v}" =~ ^[0-9a-f]{7,40}$ ]] || { echo "the $v input must be 7 to 40 hex digits (a commit SHA), got: ${!v}" >&2; exit 1; }
+              printf -v "$v" '%s' "$(git rev-parse --verify --quiet "${!v}^{commit}")" || true
+              [ -n "${!v}" ] || { echo "the $v input does not name one commit in this repository" >&2; exit 1; }
+            done
+          fi
           [[ "$base" =~ ^[0-9a-f]{40}$ && ! "$base" =~ ^0+$ ]] || { echo "no usable base (the main before this push): refusing" >&2; exit 1; }
           sha=$(git rev-parse "$sha^{commit}")
           git merge-base --is-ancestor "$sha" origin/main || { echo "$sha is not on main: refusing" >&2; exit 1; }
