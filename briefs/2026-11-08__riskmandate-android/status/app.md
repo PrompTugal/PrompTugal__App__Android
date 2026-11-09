@@ -32,7 +32,10 @@ Nothing.
 - Not changed: `Feature.kt` (architect's), `Features.kt` (conductor's), `StandHost` (stand's).
 
 - `LocalisationTest` now covers every `values/*.xml` against the same file in `values-pt-rPT` (so `feature_<id>.xml` pairs are checked, names unique across files) and scans all Kotlin under `src/main/java` (host, `features/`, `ui/`) for hardcoded `Text("`, contentDescription, title, placeholder and onClick label. Qa may extend it.
-- Waiting on architect's `Feature.kt` (work/architect) for the narrow host interface, `config`/`device` in `FeatureContext`, and a hoisted `StandController` (shape to agree with dev.stand); then merge origin/work/architect, change MainActivity/HomeScreen, gate, push, message @parent. As of now work/architect has not pushed it.
+- Merged work/architect (e3eb80c, FeatureContext v2). MainActivity now passes `remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device) }`, so the deprecated activity constructor is unused (architect can delete it).
+- Removed the exported `androidx.profileinstaller.ProfileInstallReceiver` from the merged manifest (`tools:node="remove"`, lint `MissingClass` ignored for that line). Checked in the merged release manifest: it is gone, and MainActivity is the only exported component. Baseline-profile installation is dropped.
+- Home keeps the bottom-end 48dp corner free of controls for stand mode's long press (test `HomeCornerTest`). StandHost's own signature is unchanged by me; dev.stand owns it.
+- (Superseded) Waiting on architect's `Feature.kt` (work/architect) for the narrow host interface, `config`/`device` in `FeatureContext`, and a hoisted `StandController` (shape to agree with dev.stand); then merge origin/work/architect, change MainActivity/HomeScreen, gate, push, message @parent. As of now work/architect has not pushed it.
 
 ## Next
 Nothing that does not wait on others.
