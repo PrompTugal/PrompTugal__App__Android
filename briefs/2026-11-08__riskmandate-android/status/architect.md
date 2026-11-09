@@ -1,11 +1,12 @@
 # architect.android status
 
-> 9 Nov 2026, about 01:30 UTC: review round 2. app 5afbb97 PASS, qa a2a49c6 PASS; dev.stand 94da82a, dev.abpdemo 38dfbf8 and dev.mandate 78ae8d6 HOLD (each fix is small). A trial merge of all of them has no conflicts but 3 tests fail. FeatureContext v2 (e3eb80c) waits to be merged with app's MainActivity line.
+> 9 Nov 2026, about 01:45 UTC: review round 3. app f317cf8 PASS (v2 applied), qa c0c10e8 PASS (3 test fixes needed before site); dev.site e6c92f0, design 3397228 and dev.stand 23d16f3 HOLD. abpdemo and mandate are still HOLD from round 2. One frame rule: FeatureFrame only.
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Review round 3: app f317cf8 PASS; qa c0c10e8 PASS with A-qa-6 to A-qa-8 (static tests flag site's safe settings); dev.site e6c92f0 HOLD (does not compile against v2; own Back, title and insets; no onRenderProcessGone; offline copy under the real origin is for security to decide); design 3397228 HOLD (FeatureScaffold is a second frame: make it a content-only FeatureBody); dev.stand 23d16f3 HOLD (keep-screen-on fixed; corner still over every screen). Trial merge of all nine branches: site fails to compile; patched locally, 191 tests with 5 failing (abpdemo x2, mandate x1, site x2 from qa false positives, plus one real).
 - Review round 2 (`docs/architecture/reviews/2026-11-09-*`): app 5afbb97 PASS (FeatureFrame accepted into the rules); qa a2a49c6 PASS (A-qa-1: exemption marker for mandate's probe URLs); dev.stand 94da82a HOLD (corner swallows taps on every screen); dev.abpdemo 38dfbf8 HOLD (own title and Home inside FeatureFrame; string template in a contentDescription fails two tests); dev.mandate 78ae8d6 HOLD (own Back, title and insets inside FeatureFrame; probe URLs fail qa's link test). Trial merge of dev + architect + app + qa + stand + abpdemo + mandate: no conflicts, compiles, lint passes, 157 tests with 3 failing (abpdemo x2, mandate x1).
 - README: FeatureFrame rule (features draw content only), string prefix `<id>_`, stand corner and idle-reset notes.
 - FeatureContext v2 (`features/Feature.kt`): `activity` removed; `onBack` (go home), `config: ManagedConfig` and `device: DeviceStatus` added. A deprecated `FeatureContext(activity, onBack)` constructor keeps MainActivity compiling (it reads config and device itself) until app switches. Gate: 71 tests, lint, release APK and AAB green; secret scan clean. README updated (reach table, WebView offline path aligned with security's checklist A2: `/assets/feature_site/` on appassets.androidplatform.net).
@@ -13,6 +14,7 @@ Waiting for the first feature or app commits to review.
 - Review round 1 (01:35 UTC): `git log origin/dev..origin/work/<role>` empty for app, design, qa, dev.site, dev.abpdemo, dev.mandate, dev.stand. play has fb617fd (docs only, not app-touching, not reviewed).
 
 ## Next
+- Delete the deprecated `FeatureContext(activity, onBack)` constructor once app f317cf8 is on dev.
 At each wake: fetch, review every app-touching branch head into `docs/architecture/reviews/<date>-<role>-<sha>.md`, message the conductor with the verdict.
 
 ## Blocked
