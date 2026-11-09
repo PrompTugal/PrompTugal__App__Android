@@ -104,6 +104,13 @@ class SiteScreenTest {
         compose.onNodeWithTag(SiteTags.tab("home")).assertIsNotSelected()
     }
 
+    @Test fun theFeatureDescribesItselfForTheHomeCard() {
+        assertNotNull(SiteFeature.icon)
+        assertEquals("riskmandate.ai", app.getString(SiteFeature.kicker!!))
+        assertTrue(app.getString(SiteFeature.summary!!).isNotBlank())
+        assertFalse("no em-dash", app.getString(SiteFeature.summary!!).contains('\u2014'))
+    }
+
     @Test fun onlyARealTapOpensTheSystemBrowser() {
         val external = mutableListOf<String>()
         val c = client(OfflineSwitch(false), external)
