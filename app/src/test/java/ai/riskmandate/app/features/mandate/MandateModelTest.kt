@@ -62,6 +62,7 @@ class MandateModelTest {
             ReachItem(ReachKind.STORAGE, "shared_prefs/feature_models.xml", count = 1),
             ReachItem(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", count = 1),
             ReachItem(ReachKind.STORAGE, "no_backup/feature_chat", count = 1),
+            ReachItem(ReachKind.STORAGE, "no_backup/feature_workbench/runs.jsonl", count = 1),
         )
         assertTrue(MandateReport(cleanReach + mandated, mandate).gapIsEmpty)
         val stray = ReachItem(ReachKind.STORAGE, "shared_prefs/other.xml", count = 1)
@@ -103,6 +104,13 @@ class MandateModelTest {
         // An adb folder never holds a ".part".
         val part = ReachItem(ReachKind.STORAGE, "external/models/${spec.fileName}.part", count = 1)
         assertEquals(listOf(part), MandateReport(cleanReach + part, mandate).gap)
+    }
+
+    @Test fun workbenchRunLogIsMandatedByExactName_otherFilesThereAreGap() {
+        val log = ReachItem(ReachKind.STORAGE, "no_backup/feature_workbench/runs.jsonl", count = 1)
+        assertTrue(MandateReport(cleanReach + log, mandate).gapIsEmpty)
+        val other = ReachItem(ReachKind.STORAGE, "no_backup/feature_workbench/runs.jsonl.tmp", count = 1)
+        assertEquals(listOf(other), MandateReport(cleanReach + log + other, mandate).gap)
     }
 
     @Test fun sameIdOfAnotherKindIsNotCovered() {

@@ -160,3 +160,32 @@ class FeatureContextLlmTest {
         org.junit.Assert.assertNull(result.error)
     }
 }
+
+/** Feature.usesCloud and FeatureContext.cloudLlm: off and null by default; a separate field from llm. */
+@RunWith(AndroidJUnit4::class)
+class FeatureCloudTest {
+    private val device = DeviceStatus.from(hasDeviceOwner = false, inWorkProfile = false, label = null)
+
+    private object Plain : Feature {
+        override val id = "plain"
+        override val title = ai.riskmandate.app.R.string.app_name
+        @androidx.compose.runtime.Composable override fun Content(context: FeatureContext) = Unit
+    }
+
+    @Test fun noFeatureUsesTheCloudByDefault() {
+        org.junit.Assert.assertFalse(Plain.usesCloud)
+    }
+
+    @Test fun cloudLlmIsNullByDefaultAndSeparateFromLlm() {
+        val local = ai.riskmandate.app.llm.FakeLlmService()
+        val context = FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = device, llm = local)
+        org.junit.Assert.assertNull(context.cloudLlm)
+        org.junit.Assert.assertSame(local, context.llm)
+    }
+
+    @Test fun onlyFeaturesThatDeclareItAreCloudFeatures() {
+        val cloud = FEATURES.filter { it.usesCloud }.map { it.id }
+        // Each id here must have privacy, Data safety and mandate wording for the cloud (review gate).
+        org.junit.Assert.assertTrue("cloud features: $cloud", cloud.all { it in setOf("workbench") })
+    }
+}
