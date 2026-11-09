@@ -20,7 +20,10 @@
     <string name="licences_back_description">Voltar ao ecrã inicial</string>
     <string name="licences_apache_heading">Apache License, Version 2.0 (texto completo)</string>
 
-    <string name="home_whats_new_later">Mais tarde</string>
+    <string name="nav_menu">Abrir o menu de navegação</string>
+    <string name="nav_home">Início</string>
+    <string name="nav_section_now">Agora</string>
+    <string name="nav_section_features">Funcionalidades</string>
     <string name="home_diagnostics">Diagnóstico</string>
     <string name="message_failed">Ocorreu um erro ao abrir riskmandate.ai num navegador. Tente novamente ou abra-o você mesmo no navegador.</string>
     <string name="message_pinned">As páginas web não são abertas num navegador enquanto a aplicação estiver fixada.</string>
