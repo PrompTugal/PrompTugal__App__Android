@@ -3,6 +3,7 @@ package ai.riskmandate.app.features.lab
 import ai.riskmandate.app.R
 import ai.riskmandate.app.RiskMandateTheme
 import android.app.Application
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -243,5 +244,38 @@ class LabScreenTest {
         click(LabTags.LIVE_RUN)
         compose.waitUntil(30_000) { count(LabTags.SUMMARY_ABP) > 0 }
         assertTrue(busy.contains(true)); assertEquals(false, busy.last())
+    }
+
+    @Test fun aFinishedLoopsCountersSurviveRotation() {
+        val llm = FakeLlmService(reply = ::obedient)
+        val tester = StateRestorationTester(compose)
+        tester.setContent { RiskMandateTheme { LabScreen(data = data, initialScenario = "sample-planted", network = NetworkState(true, Transport.WIFI), llm = llm) } }
+        click(LabTags.MODE_LOOP)
+        repeat(3) { click(LabTags.LOOP_MINUS) }
+        click(LabTags.LOOP_RUN)
+        compose.waitUntil(30_000) { count(LabTags.STAT_HEADLINE) > 0 && count(LabTags.LOOP_RUN) > 0 }
+        compose.onNodeWithTag(LabTags.STAT_FAILED).assertTextContains("5 of 5", substring = true)
+        tester.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+        compose.onNodeWithTag(LabTags.STAT_FAILED).assertTextContains("5 of 5", substring = true)
+        compose.onNodeWithTag(LabTags.STAT_CAUGHT).assertTextContains("5 of 5", substring = true)
+        compose.onNodeWithTag(LabTags.STAT_HEADLINE).assertTextContains("1 in 1", substring = true)
+        assertEquals(0, count(LabTags.STOP_REASON)) // it finished: nothing was interrupted
+    }
+
+    @Test fun aRunningLoopIsStoppedByRotationAndKeepsItsCounts() {
+        val llm = FakeLlmService(tokenDelayMs = 400, reply = ::obedient)
+        val tester = StateRestorationTester(compose)
+        tester.setContent { RiskMandateTheme { LabScreen(data = data, initialScenario = "sample-planted", network = NetworkState(true, Transport.WIFI), llm = llm) } }
+        click(LabTags.MODE_LOOP)
+        click(LabTags.LOOP_RUN)
+        compose.waitUntil(30_000) { count(LabTags.STAT_FAILED) > 0 }
+        tester.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+        // The loop that was running is stopped, not silently restarted, and says why; its counts are still shown.
+        compose.onNodeWithTag(LabTags.STAT_FAILED).assertExists()
+        compose.onNodeWithTag(LabTags.STOP_REASON).assertTextContains(app.getString(R.string.lab_stop_turned))
+        compose.onNodeWithTag(LabTags.LOOP_RUN).assertExists()
+        assertEquals(0, count(LabTags.LOOP_STOP))
     }
 }

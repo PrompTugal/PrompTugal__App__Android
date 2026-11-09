@@ -195,5 +195,6 @@ internal fun stopText(stop: StopReason?): Int? = when (stop) {
     StopReason.TIME_CAP -> R.string.lab_stop_time
     StopReason.ERRORS -> R.string.lab_stop_errors
     StopReason.STOPPED -> R.string.lab_stop_user
+    StopReason.INTERRUPTED -> R.string.lab_stop_turned
     StopReason.DONE, null -> null
 }
