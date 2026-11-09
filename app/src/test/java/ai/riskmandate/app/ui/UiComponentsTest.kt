@@ -29,28 +29,6 @@ class UiComponentsTest {
 
     private val density get() = ApplicationProvider.getApplicationContext<android.app.Application>().resources.displayMetrics.density
 
-    @Test fun backButtonIsLabelledClickableAndBigEnough() {
-        var backs = 0
-        compose.setContent { RiskMandateTheme { FeatureScaffold("Title", onBack = { backs++ }) {} } }
-        compose.onNodeWithTag(UiTags.BACK).assertIsDisplayed().performClick()
-        assertEquals(1, backs)
-        compose.onNodeWithText("Back").assertIsDisplayed()
-        val h = compose.onNodeWithTag(UiTags.BACK).fetchSemanticsNode().boundsInRoot.height
-        assertTrue("back is ${h / density}dp", h >= 48 * density - 1)
-    }
-
-    @Test @Config(qualifiers = "pt-rPT")
-    fun backIsTranslated() {
-        compose.setContent { RiskMandateTheme { FeatureScaffold("Titulo", onBack = {}) {} } }
-        compose.onNodeWithText("Voltar").assertIsDisplayed()
-    }
-
-    @Test fun titleIsAHeading() {
-        compose.setContent { RiskMandateTheme { FeatureScaffold("Title", onBack = {}) {} } }
-        val cfg = compose.onNodeWithTag(UiTags.TITLE).fetchSemanticsNode().config
-        assertTrue(cfg.contains(SemanticsProperties.Heading))
-    }
-
     @Test fun layerRowSpeaksItsState() {
         compose.setContent {
             RiskMandateTheme {
@@ -84,7 +62,7 @@ class UiComponentsTest {
         compose.onNodeWithTag(UiTags.layer(6)).performScrollTo().assertIsDisplayed()
     }
 
-    @Test fun featureContentDrawsNoTitleBarAndFlagsWideLayout() {
+    @Test fun featureContentFlagsWideLayoutOnlyWhenWide() {
         var wide: Boolean? = null
         compose.setContent {
             RiskMandateTheme {
@@ -92,8 +70,6 @@ class UiComponentsTest {
             }
         }
         compose.onNodeWithText("body").assertIsDisplayed()
-        compose.onAllNodesWithTag(UiTags.BACK).assertCountEquals(0)
-        compose.onAllNodesWithTag(UiTags.TITLE).assertCountEquals(0)
         assertEquals(false, wide) // the default Robolectric screen is a phone
     }
 }

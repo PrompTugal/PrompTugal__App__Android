@@ -18,7 +18,7 @@ internal val sampleLayers = listOf("Browser", "Model", "Hook", "Inline proxy", "
 /** Screen B's shape, built only from the shared components: banner, six layers, a note card. */
 @Composable
 internal fun LayersSample(states: List<LayerState>, large: Boolean) {
-    FeatureScaffold(title = "ABP in every layer", onBack = {}, maxContentWidth = UiTokens.TextMaxWidth * 1.4f) {
+    PreviewFrame(title = "ABP in every layer", maxContentWidth = UiTokens.TextMaxWidth * 1.4f) {
         NoticeBanner("Demonstration: a staged example, not a live capture.")
         Spacer(Modifier.height(UiTokens.Gap))
         Column(verticalArrangement = Arrangement.spacedBy(if (large) 8.dp else 12.dp)) {
@@ -39,7 +39,8 @@ internal fun LayersSample(states: List<LayerState>, large: Boolean) {
 /** Screen C's shape: three section cards with chips. */
 @Composable
 internal fun CardsSample() {
-    FeatureScaffold(title = "This app's mandate", onBack = {}, actions = { StatusChip("Live", ChipKind.Allowed) }) {
+    PreviewFrame(title = "This app's mandate") {
+        StatusChip("Live", ChipKind.Allowed)
         Column(verticalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
             SectionCard("Reach") {
                 Text("What this app can touch on this device.")

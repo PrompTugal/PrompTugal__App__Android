@@ -24,8 +24,6 @@ object UiTokens {
 
 /** Test tags for the shared components, so feature tests do not invent their own. */
 object UiTags {
-    const val BACK = "ui_back"
-    const val TITLE = "ui_title"
     const val BANNER = "ui_banner"
     fun layer(index: Int) = "ui_layer_$index"
 }

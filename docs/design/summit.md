@@ -20,13 +20,13 @@ Owner: design.android@promptugal.ai. Written 9 Nov 2026 for Web Summit (9 to 12 
 
 **Language.** English and pt-PT for every string (tests enforce it). No em-dashes in prose.
 
-**Frame.** The host's `FeatureFrame` (app.android) draws the labelled Back button, the feature title as heading and the window insets. Features draw only their content, inside `FeatureContent` (scroll, centred max width, `LocalWideLayout`). `FeatureScaffold` (its own title bar) is for previews and tests only: two title bars would be wrong. Style of the frame (type, colours, 48 dp Back, label not icon) comes from `Theme.kt`; any change to `FeatureFrame` goes to app.android via the status page.
+**Frame.** The host's `FeatureFrame` (app.android) draws the labelled Back button, the feature title as heading and the window insets. Features draw only their content, inside `FeatureContent` (scroll, centred max width, `LocalWideLayout`). There is no second frame in `ui/` (the architect's rule). Style of the frame (type, colours, 48 dp Back, label not icon) comes from `Theme.kt`; any change to `FeatureFrame` goes to app.android via the status page.
 
 ## A. RiskMandate inside the app (`features/site/`)
 
 Purpose: riskmandate.ai's own pages, in the app, with native navigation, so a visitor never leaves the stand.
 
-- **Layout.** `FeatureScaffold(scrollable = false, maxContentWidth = Dp.Unspecified)`; the WebView fills the remaining height (`Modifier.weight(1f)`). Below the title bar, native tabs, one row, full width: **Home, Try it, Policies, Films, Stand** (the dev picks the exact pages from what riskmandate.ai has; at most five). On a 10" tablet the tabs are text, 20sp, 56 dp high, with a 3 dp underline on the selected one (and `selected` semantics). On a phone the row scrolls horizontally.
+- **Layout.** `FeatureContent(scrollable = false, maxContentWidth = Dp.Unspecified)`; the WebView fills the remaining height (`Modifier.weight(1f)`). Below the title bar, native tabs, one row, full width: **Home, Try it, Policies, Films, Stand** (the dev picks the exact pages from what riskmandate.ai has; at most five). On a 10" tablet the tabs are text, 20sp, 56 dp high, with a 3 dp underline on the selected one (and `selected` semantics). On a phone the row scrolls horizontally.
 - **Tabs do not rewrite the site.** Each tab loads one allowed URL; the site's own links work inside `Links.isAllowed`. A link outside it does nothing in the page and shows a one-line message (`NoticeBanner`-style, polite live region) "That link leaves riskmandate.ai; it is not opened here."
 - **States.** Loading: a thin determinate bar under the tabs, no spinner over the page. Offline or slow (bad venue Wi-Fi): show the bundled copy of the page with a `StatusChip("Offline copy", Held)` next to Back, and a "Try again" text button; return to live automatically when the network does. Error with no copy: a `SectionCard` "riskmandate.ai is not reachable" with Try again.
 - **Films.** The site has a film. Native full-screen playback is feature E; in A, play inside the page.
@@ -51,7 +51,7 @@ Purpose: show, from 2 m, how one Agent Behaviour Policy stops one planted instru
 
 Purpose: the product's own idea, applied to this app, live on this device. Everything is read from the device when the screen opens (permissions via PackageManager, the allow-list from `Links`, managed configuration), nothing is invented. **The app collects nothing; the screen shows that as a fact with its source, not a slogan.**
 
-- **Layout.** `FeatureScaffold`; three `SectionCard`s in the order the product says it: **Reach, Mandate, Gap**. Wide tablet (`LocalWideLayout`): three columns of equal width, same order, same height (scroll together); otherwise one column.
+- **Layout.** `FeatureContent`; three `SectionCard`s in the order the product says it: **Reach, Mandate, Gap**. Wide tablet (`LocalWideLayout`): three columns of equal width, same order, same height (scroll together); otherwise one column.
 - **Reach** ("what this app can touch on this device"): the permissions it declares (internet and network state, from the manifest), the hosts it may load (`Links.isAllowed`: riskmandate.ai over HTTPS), what it stores (nothing beyond its settings), whether this device is managed (`DeviceStatus`). Each item is a row: a label and a `StatusChip` (Allowed, Held, Blocked, Neutral) with a word.
 - **Mandate** ("what it was authorised to do"): opens riskmandate.ai, shows the device's management status, shows the build. Each with the source it comes from.
 - **Gap** ("reach minus mandate"): reach not covered by the mandate. For this app it is computed by `dev.mandate`, never hard-coded to "none"; if empty it says "No gap found: every capability it holds is one it was given a reason for." (the wording belongs to dev.mandate and goes to Dinis for sign-off since it is a claim). Each gap item is a `StatusChip(…, Blocked)` or `Held` row with what to do.
@@ -88,8 +88,7 @@ Purpose: release articles, in the app, with screenshots, so the team and visitor
 
 | Need | Component (`ai.riskmandate.app.ui`) | Screens |
 |---|---|---|
-| Content area (scroll, width, wide flag) | `FeatureContent` | A to C, F |
-| Own title bar (previews and tests only) | `FeatureScaffold` | none |
+| Content area inside the host frame (scroll, width, wide flag) | `FeatureContent` | A to C, F |
 | Titled block | `SectionCard` | B (scene), C, F (article cards) |
 | Status word + glyph | `StatusChip`, `ChipKind` | A (offline), B, C, D |
 | One layer of the diagram | `LayerRow`, `LayerState` | B |

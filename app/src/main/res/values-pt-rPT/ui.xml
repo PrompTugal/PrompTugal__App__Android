@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="ui_back">Voltar</string>
     <string name="ui_layer_waiting">Ainda não chegou</string>
     <string name="ui_layer_checking">A verificar agora</string>
     <string name="ui_layer_stopped">Travou a instrução aqui</string>
