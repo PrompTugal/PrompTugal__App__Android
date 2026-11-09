@@ -20,7 +20,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from abpeval import scenario as S, runner, report, recordings  # noqa: E402
-from abpeval.backends import OpenRouter, scrub, api_key, BackendError  # noqa: E402
+from abpeval.backends import OpenRouter, scrub, scrub_text, api_key, BackendError  # noqa: E402
 from abpeval.budget import Budget, BudgetExhausted, LedgerError, default_ledger, init_ledger  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -217,7 +217,7 @@ def main():
     try:
         a.fn(a)
     except (BackendError, BudgetExhausted, LedgerError, S.ScenarioError) as e:
-        sys.exit(f"stopped: {e}")
+        sys.exit("stopped: " + scrub_text(str(e)))
 
 
 if __name__ == "__main__":
