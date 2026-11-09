@@ -89,6 +89,33 @@ class LlmHostTest {
         assertEquals(LlmState.Ready("modela", "CPU"), h.state.value)
     }
 
+    @Test fun theFallbackToCpuIsReported() = runBlocking {
+        install(specA, bytesA)
+        val r = host(FakeRuntime(gpuFails = true)).generate(ask)
+        assertEquals("CPU", r.stats?.backend)
+        assertEquals("GPU", r.stats?.requestedBackend)
+        assertEquals(true, r.stats?.fellBackToCpu)
+        assertEquals(true, r.stats?.loadedModel)
+    }
+
+    @Test fun selectChoosesTheBackendAndReloadsOnlyWhenItChanges() = runBlocking {
+        install(specA, bytesA)
+        val rt = FakeRuntime()
+        val h = host(rt)
+        h.generate(ask)
+        assertEquals(listOf("a.litertlm" to BenchBackend.GPU), rt.loads)
+        h.select("modela", BenchBackend.GPU)
+        assertEquals(false, h.generate(ask).stats?.loadedModel)
+        h.select("modela", BenchBackend.CPU)
+        assertEquals(0, rt.open)
+        val r = h.generate(ask)
+        assertEquals(true, r.stats?.loadedModel)
+        assertEquals("CPU", r.stats?.backend)
+        assertEquals("CPU", r.stats?.requestedBackend)
+        assertEquals(false, r.stats?.fellBackToCpu)
+        assertEquals(BenchBackend.CPU, rt.loads.last().second)
+    }
+
     @Test fun loadFailureIsAStateAndAnErrorNotACrash() = runBlocking {
         install(specA, bytesA)
         val h = host(FakeRuntime(allFail = true))
