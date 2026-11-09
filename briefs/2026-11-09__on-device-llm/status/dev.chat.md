@@ -30,7 +30,7 @@
 
 ## After Dinis's tablet run (build 0.1.78, E2B, about 5.5 tokens/s)
 1. Every request without a preset now carries a short base system block (`ChatPresets.BASE_SYSTEM`, about 85 tokens): this is the RiskMandate app, RiskMandate means the product at riskmandate.ai, and two sentences quoted verbatim from the bundled riskmandate.ai text. Presets keep their full grounding instead. **Not measured:** time to first token before and after; I have no tablet. The block is under 600 characters; Dinis or QA should compare TTFT with and without (dev.llm's bench reports it).
-2. Badge now "Runs on this device" (pt-PT "Corre neste dispositivo"); the network chip stays.
+2. Badge now "Runs on this device" (pt-PT "Funciona neste dispositivo"); the network chip stays.
 3. `PlainText.clean` drops `**` and paired `__` for display (history keeps the model's raw text). Nothing is rendered; `<b>` and markdown links still show as text.
 4. Sampling was `Sampling.DEFAULT`: temperature 1.0, top-k 64, top-p 0.95 (Gemma's recommended). Chat now asks for temperature 0.4, top-k 64, top-p 0.9 (`ChatSampling`), no seed. Easy to change in one place; the lab and eval keep their own settings.
 
