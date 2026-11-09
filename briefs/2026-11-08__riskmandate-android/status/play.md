@@ -29,6 +29,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 12. R-site-1: the policy no longer says the app downloads nothing; it says the app connects to riskmandate.ai and www.riskmandate.ai only, loads those pages in the in-app view and nothing else, and deletes the view's cache, cookies, web storage and history when the in-app view closes (checked in `work/dev.site` ba979fc, `disposeSite()`, not yet on `dev`). Data safety options A to C unchanged (Dinis).
 
+13. A-app-5: policy and `data-safety.md` now say plainly that a tapped link to another website in the in-app view is handed (https only) to the device's own browser, never loaded in the app and not while pinned; the browser's own policy applies and the app sends nothing. Checked in `Browser.openExternal` and `Links.isExternalOk` on `work/app` (not yet on `dev`).
+
 ## Next
 Nothing until Dinis decides (below).
 
