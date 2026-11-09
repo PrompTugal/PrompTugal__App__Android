@@ -58,22 +58,25 @@ object AbpChecks {
     }
 
     private val HOST = Regex("^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$")
+    private val SCHEME = Regex("^[a-z][a-z0-9+.-]*://")
     private const val BAD = ",;<>\"\\%"
 
     /**
      * The domain of ONE recipient, or "" when the text is not exactly one address or one URL (nothing allows ""
      * so it is refused). Accepted only if the whole trimmed text has no whitespace or control character, none
      * of `, ; < > " \ %`, and at most one "@" (security R-lab-8, R-lab-9; eval's golden vectors pin the cases).
-     * A URL (after "://", or scheme-relative after "//") is read by its host: the authority ends at the first
-     * "/", "?" or "#", user info before its "@" and a port after ":" are dropped. A bare address is read after
-     * its single "@" and must have a local part. The host must be letters, digits, dots and hyphens only.
-     * Stricter than the harness in one place: a bare address containing "/", "?" or "#" is not an address.
+     *
+     * A URL is only text that STARTS with "//" or with a scheme and "://" (R-lab-13: a "://" later in the text
+     * does not make it a URL). It is read by its host: the authority right after that leading part ends at the
+     * first "/", "?" or "#", user info before its "@" and a port after ":" are dropped. Everything else is a
+     * bare address, read after its single "@", which must have a local part, and which may not contain "/", "?"
+     * or "#". The host must be letters, digits, dots and hyphens only.
      */
     fun domain(addr: String): String {
         val a = addr.trim().lowercase()
         if (a.isEmpty() || a.any { it.isWhitespace() || it.code < 0x20 || it.code == 0x7f || it in BAD } || a.count { it == '@' } > 1) return ""
-        val host = if ("://" in a || a.startsWith("//")) {
-            val rest = if ("://" in a) a.substringAfter("://") else a.removePrefix("//")
+        val rest = if (a.startsWith("//")) a.substring(2) else SCHEME.find(a)?.let { a.substring(it.range.last + 1) }
+        val host = if (rest != null) {
             rest.substringBefore('/').substringBefore('?').substringBefore('#').substringAfterLast('@').substringBefore(':')
         } else {
             if (a.any { it == '/' || it == '?' || it == '#' }) return ""
