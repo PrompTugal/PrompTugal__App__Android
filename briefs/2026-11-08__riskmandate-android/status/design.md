@@ -5,6 +5,11 @@
 ## Doing
 Nothing.
 
+## Done (logo pass, 9 Nov ~02:35 UTC)
+- Vector redraw of the RM monogram with the corner brackets: adaptive icon (navy background, foreground, monochrome), `ic_rm_monogram*`, `BrandMark` and `BrandWordmark` in `ui/Brand.kt`, colours sampled from the JPEG and recorded in `docs/design/brand/README-redraw.md`. **Proposal only: the shipped icon is not replaced, nothing is referenced by the manifest.** Departures from the JPEG are listed there (letter shapes by eye, R notch omitted, flat colour, wordmark in the system sans); the real fix is the original SVG.
+- Two variants behind one switch (`DefaultVariant` in `Theme.kt`): A (iOS structure, RiskMandate green accent, navy-leaning dark) and B (red, unchanged, today's default). Side by side in `docs/design/theme/variants-*`, measured contrast in `android-theme.md`.
+- Found and fixed: riskmandate.ai's green `#1A7F5A` is 4.4:1 on paper and 4.1:1 on its tint (under AA for small text), so A's light accent is `#177251`, 10% darker.
+
 ## Done (top priority pass, 9 Nov ~02:20 UTC)
 - `Theme.kt`: the iOS Palette (light and dark) as the Material scheme, serif headlines (`FontFamily.Serif`, nothing bundled), radius 14 shapes; `Pt.colors` and `Pt.type` for the rest; window background is paper. This answers the brand question: the iOS theme, not a new palette. Every existing screen already picks it up.
 - `ui/`: `Card`, `TitledCard`, `Kicker`, `ScreenHeader`, `StatTile` (tone, detail, `large`), `StatGrid`, `CountPill`, `KindBadge`, `StateView`/`LoadPhase`, `Page`, `Columns`; `NoticeBanner` is now the amber GapNote; `SectionCard` delegates to `TitledCard`; `Space` and `UiTokens`.
@@ -62,6 +67,8 @@ Adopt the components: start screens with `Page { ScreenHeader(...) ... }` (or `F
 `ui/` and `Theme.kt` are ready to merge early: they add files and one palette in `Theme.kt`, no feature touches them yet.
 
 ## For Dinis
+- Dinis: pick the look: A (RiskMandate green accent, navy dark, the conductor's recommendation) or B (PrompTugal red). Images: `docs/design/theme/variants-*.png`. One line switches it.
+- Dinis: approve the vector redraw of the logo for the app icon (`docs/design/brand/proposal-brand-sheet.png`), or send the original SVG. Nothing ships until you say.
 - Dinis: should the app move to the site's paper, ink and green and bundle Geist (SIL OFL; licence screen update)? Not done; the app keeps its navy until you say.
 - Dinis: the staged-demo label wording on B ("a staged example of one policy, not a live capture of a real agent") and C's "no gap found" sentence are claims; please approve before the summit.
 - Layer name size on B (44sp bold, about 6 mm cap height on a 10" panel) is computed, not measured at 2 m: please hold a tablet at 2 m once.

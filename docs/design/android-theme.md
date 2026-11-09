@@ -65,6 +65,22 @@ Radius 14 dp for cards, menus and dialogs (`Shapes.medium` and `large`); buttons
 
 `FreshnessLabel` is not ported yet (no feature has a refresh time to show); add it when C or I needs "Updated 4 min ago".
 
+## Two looks for Dinis to choose between (9 Nov 2026, from the logo)
+
+Dinis shared the RiskMandate logo (`docs/design/brand/riskmandate-logo-reference.jpg`). The conductor asked for two variants side by side; the accent is one switch (`DefaultVariant` in `Theme.kt`), so the choice costs one line.
+
+| | A: RiskMandate green accent | B: PrompTugal red (today's default) |
+|---|---|---|
+| Structure | the iOS structure: paper, cards, serif, kickers | identical |
+| Accent (kickers, primary button, selected row, count pills) | light `#177251`, dark `#66B78F` (the logo's green) | red `#AD222B` / `#FF868A` |
+| Red | only for blocked and errors | accent and "bad" |
+| Dark mode | navy-leaning: paper `#061224`, paper2 `#0C1C33`, card `#0F2038`, rule `#22344E`, ink `#E8EEF5`, muted `#9FB0C5` | the iOS charcoal `#14161B` |
+| Logo | icon, brand mark and wordmark, as redrawn | the icon only (the app is not recoloured by it) |
+
+Measured contrast for A (WCAG): light accent on card 5.8:1, on paper 5.2:1, on its tint (selected row, count pill) 4.8:1, white text on the accent button 5.9:1; dark accent on the navy card 6.8:1, on the navy paper 7.8:1, on its tint 5.4:1, navy text on the dark accent button 7.8:1; dark ink on card 14.0:1, muted on card 7.4:1; dark red, green, amber and blue on the navy card 7.0, 8.5, 9.7 and 7.9:1. **The site's own `#1A7F5A` is not used for text on paper**: it is 4.4:1 on paper and 4.1:1 on its own tint, under AA for small text; `#177251` is the nearest passing green. B's numbers are above. Both variants pass AA for text in light and dark.
+
+Side by side (left A, right B), tablet landscape: `docs/design/theme/variants-shell-light.png`, `variants-shell-dark.png`, `variants-lab-light.png`, `variants-lab-dark.png`. Recommendation recorded by the conductor: A. The brand pieces are in `docs/design/brand/README-redraw.md`.
+
 ## Shell (for app.android)
 
 Target: the iPad shell (`Apps/PrompTugal/Shell`: sidebar, destinations, a "Now" page). Rendered target: `docs/design/theme/after-ui-shell-tablet10-landscape-light.png` (and dark). The Compose sample that draws it is `ShellSample` in `app/src/test/.../ui/UiGallery.kt`: copy its structure, not its stand-in icons.

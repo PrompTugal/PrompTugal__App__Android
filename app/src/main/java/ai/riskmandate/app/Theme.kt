@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -38,19 +39,48 @@ data class PtColors(
     val green: Color,
     val amber: Color,
     val blue: Color,
+    /** The brand accent: kickers, the primary button, the selected item, count pills. Red in variant B, green in A. */
+    val accent: Color,
 )
 
 private val LightPt = PtColors(
     paper = Color(0xFFF5F1EA), paper2 = Color(0xFFEBE5DA), card = Color(0xFFFFFDF9),
     ink = Color(0xFF111318), muted = Color(0xFF555A63), rule = Color(0xFFD6CFC2),
-    red = Color(0xFFAD222B), green = Color(0xFF0B6B1E), amber = Color(0xFF8A5A00), blue = Color(0xFF1F4FA3),
+    red = Color(0xFFAD222B), green = Color(0xFF0B6B1E), amber = Color(0xFF8A5A00), blue = Color(0xFF1F4FA3), accent = Color(0xFFAD222B),
 )
 
 private val DarkPt = PtColors(
     paper = Color(0xFF14161B), paper2 = Color(0xFF1C1F25), card = Color(0xFF1F2229),
     ink = Color(0xFFECE7DE), muted = Color(0xFFA7ABB3), rule = Color(0xFF343842),
-    red = Color(0xFFFF868A), green = Color(0xFF6FCF7F), amber = Color(0xFFF2C14E), blue = Color(0xFF8FB4FF),
+    red = Color(0xFFFF868A), green = Color(0xFF6FCF7F), amber = Color(0xFFF2C14E), blue = Color(0xFF8FB4FF), accent = Color(0xFFFF868A),
 )
+
+/**
+ * The two candidate looks (Dinis picks; the conductor recommends A):
+ * - [PrompTugalRed] (B): the iOS Palette unchanged, red accent. Today's default.
+ * - [RiskMandateGreen] (A): the same iOS structure with RiskMandate's green as the accent (kickers, badges,
+ *   primary button, selection), red kept only for "blocked" and errors, and a navy-leaning dark mode taken from
+ *   the logo's background. Light accent `#177251` (riskmandate.ai's `#1A7F5A` darkened 10%, because the site's own
+ *   green is 4.4:1 on paper and 4.1:1 on its own tint, under AA for small text; `#177251` is at least 4.7:1 on the card, paper,
+ *   paper2 and tint); dark accent `#66B78F` (sampled from the logo's wordmark, at least 5.4:1 on the navy card and tint).
+ */
+enum class ThemeVariant { PrompTugalRed, RiskMandateGreen }
+
+/** The one switch: change this to ship the other look. */
+val DefaultVariant = ThemeVariant.PrompTugalRed
+
+private val GreenLightPt = LightPt.copy(accent = Color(0xFF177251))
+
+private val GreenDarkPt = DarkPt.copy(
+    paper = Color(0xFF061224), paper2 = Color(0xFF0C1C33), card = Color(0xFF0F2038),
+    ink = Color(0xFFE8EEF5), muted = Color(0xFF9FB0C5), rule = Color(0xFF22344E),
+    accent = Color(0xFF66B78F),
+)
+
+internal fun ptColorsFor(dark: Boolean, variant: ThemeVariant): PtColors = when (variant) {
+    ThemeVariant.PrompTugalRed -> if (dark) DarkPt else LightPt
+    ThemeVariant.RiskMandateGreen -> if (dark) GreenDarkPt else GreenLightPt
+}
 
 val LocalPtColors = staticCompositionLocalOf { LightPt }
 
@@ -91,21 +121,17 @@ data class StatusPalette(
     val blocked: StatusColors,
 )
 
-private val LightStatus = StatusPalette(
-    allowed = StatusColors(Color(0xFFDFEADD), LightPt.green),
-    redacted = StatusColors(Color(0xFFE2E6EE), LightPt.blue),
-    held = StatusColors(Color(0xFFF0E8D9), LightPt.amber),
-    blocked = StatusColors(Color(0xFFF4E1DE), LightPt.red),
+/** A tone on its own 13% tint over the card colour. */
+private fun statusOf(tone: Color, card: Color) = StatusColors(tone.copy(alpha = 0.13f).compositeOver(card), tone)
+
+internal fun statusFor(pt: PtColors) = StatusPalette(
+    allowed = statusOf(pt.green, pt.card),
+    redacted = statusOf(pt.blue, pt.card),
+    held = statusOf(pt.amber, pt.card),
+    blocked = statusOf(pt.red, pt.card),
 )
 
-private val DarkStatus = StatusPalette(
-    allowed = StatusColors(Color(0xFF293834), DarkPt.green),
-    redacted = StatusColors(Color(0xFF2E3545), DarkPt.blue),
-    held = StatusColors(Color(0xFF3A372E), DarkPt.amber),
-    blocked = StatusColors(Color(0xFF3C2F36), DarkPt.red),
-)
-
-val LocalStatusPalette = staticCompositionLocalOf { LightStatus }
+val LocalStatusPalette = staticCompositionLocalOf { statusFor(LightPt) }
 
 /** Read the palette inside [RiskMandateTheme] as `RiskMandateStatus.palette`. */
 object RiskMandateStatus {
@@ -113,65 +139,30 @@ object RiskMandateStatus {
         @Composable get() = LocalStatusPalette.current
 }
 
-private val LightColors = lightColorScheme(
-    primary = LightPt.red,
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFF4E1DE),
-    onPrimaryContainer = Color(0xFF6E141B),
-    secondary = LightPt.muted,
-    onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = LightPt.paper2,
-    onSecondaryContainer = LightPt.ink,
-    tertiary = LightPt.green,
-    onTertiary = Color(0xFFFFFFFF),
-    background = LightPt.paper,
-    onBackground = LightPt.ink,
-    surface = LightPt.card,
-    onSurface = LightPt.ink,
-    surfaceVariant = LightPt.paper2,
-    onSurfaceVariant = LightPt.muted,
-    surfaceContainerLowest = LightPt.card,
-    surfaceContainerLow = LightPt.card,
-    surfaceContainer = LightPt.paper2,
-    surfaceContainerHigh = LightPt.paper2,
-    surfaceContainerHighest = Color(0xFFE3DDD0),
-    outline = LightPt.muted,
-    outlineVariant = LightPt.rule,
-    error = LightPt.red,
-    onError = Color(0xFFFFFFFF),
-    errorContainer = Color(0xFFF4E1DE),
-    onErrorContainer = Color(0xFF6E141B),
-)
-
-private val DarkColors = darkColorScheme(
-    primary = DarkPt.red,
-    onPrimary = DarkPt.paper,
-    primaryContainer = Color(0xFF3C2F36),
-    onPrimaryContainer = Color(0xFFFFD9DA),
-    secondary = DarkPt.muted,
-    onSecondary = DarkPt.paper,
-    secondaryContainer = DarkPt.paper2,
-    onSecondaryContainer = DarkPt.ink,
-    tertiary = DarkPt.green,
-    onTertiary = DarkPt.paper,
-    background = DarkPt.paper,
-    onBackground = DarkPt.ink,
-    surface = DarkPt.card,
-    onSurface = DarkPt.ink,
-    surfaceVariant = DarkPt.paper2,
-    onSurfaceVariant = DarkPt.muted,
-    surfaceContainerLowest = DarkPt.paper,
-    surfaceContainerLow = DarkPt.card,
-    surfaceContainer = DarkPt.card,
-    surfaceContainerHigh = DarkPt.paper2,
-    surfaceContainerHighest = Color(0xFF262A32),
-    outline = DarkPt.muted,
-    outlineVariant = DarkPt.rule,
-    error = DarkPt.red,
-    onError = DarkPt.paper,
-    errorContainer = Color(0xFF3C2F36),
-    onErrorContainer = Color(0xFFFFD9DA),
-)
+private fun schemeFor(pt: PtColors, dark: Boolean): ColorScheme {
+    val onAccent = if (dark) pt.paper else Color(0xFFFFFFFF)
+    val accentTint = pt.accent.copy(alpha = 0.13f).compositeOver(pt.card)
+    val redTint = pt.red.copy(alpha = 0.13f).compositeOver(pt.card)
+    val base = if (dark) darkColorScheme() else lightColorScheme()
+    return base.copy(
+        primary = pt.accent, onPrimary = onAccent,
+        primaryContainer = accentTint, onPrimaryContainer = pt.ink,
+        secondary = pt.muted, onSecondary = onAccent,
+        secondaryContainer = pt.paper2, onSecondaryContainer = pt.ink,
+        tertiary = pt.green, onTertiary = onAccent,
+        background = pt.paper, onBackground = pt.ink,
+        surface = pt.card, onSurface = pt.ink,
+        surfaceVariant = pt.paper2, onSurfaceVariant = pt.muted,
+        surfaceContainerLowest = if (dark) pt.paper else pt.card,
+        surfaceContainerLow = pt.card,
+        surfaceContainer = if (dark) pt.card else pt.paper2,
+        surfaceContainerHigh = pt.paper2,
+        surfaceContainerHighest = pt.rule,
+        outline = pt.muted, outlineVariant = pt.rule,
+        error = pt.red, onError = onAccent,
+        errorContainer = redTint, onErrorContainer = pt.ink,
+    )
+}
 
 /**
  * Serif for headlines (display, headline, title), the system sans for everything else, as the iOS
@@ -212,12 +203,13 @@ private val PtShapes = Shapes(
 
 /** Material 3 in the PrompTugal look, light or dark following the system unless a test or preview forces it. */
 @Composable
-fun RiskMandateTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    val scheme: ColorScheme = if (darkTheme) DarkColors else LightColors
-    CompositionLocalProvider(
-        LocalPtColors provides if (darkTheme) DarkPt else LightPt,
-        LocalStatusPalette provides if (darkTheme) DarkStatus else LightStatus,
-    ) {
-        MaterialTheme(colorScheme = scheme, typography = PtTypography, shapes = PtShapes, content = content)
+fun RiskMandateTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    variant: ThemeVariant = DefaultVariant,
+    content: @Composable () -> Unit,
+) {
+    val pt = ptColorsFor(darkTheme, variant)
+    CompositionLocalProvider(LocalPtColors provides pt, LocalStatusPalette provides statusFor(pt)) {
+        MaterialTheme(colorScheme = schemeFor(pt, darkTheme), typography = PtTypography, shapes = PtShapes, content = content)
     }
 }
