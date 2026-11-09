@@ -12,7 +12,7 @@ MainActivity (app.android)                 one Activity, one Compose tree, no Fr
              ├─ "home"        HomeScreen    lists FEATURES.filter { enabled }
              ├─ "licences"    LicencesScreen
              ├─ "diagnostics" DiagnosticsScreen
-             └─ <feature.id>  feature.Content(FeatureContext)
+             └─ <feature.id>  FeatureFrame(title, onBack) { feature.Content(FeatureContext) }
 ```
 
 - **Host** (`MainActivity`, `HomeScreen`, `Browser`, `Links`, `ManagedConfig`, `DeviceStatus`, `Diagnostics*`): owned by app.android. Holds the only Activity-level state: `config` (managed configuration, re-read on resume and on `ACTION_APPLICATION_RESTRICTIONS_CHANGED`), `device`, the home message, and the current route.
@@ -22,7 +22,7 @@ MainActivity (app.android)                 one Activity, one Compose tree, no Fr
 
 ## Routing
 - A route is a string. Built-in routes are `Routes.HOME`, `LICENCES`, `DIAGNOSTICS`; a feature's route is its `id` (lowercase letters only, unique, never one of the built-in names).
-- The host owns the top level: it installs `BackHandler { goHome }` around every feature, and `FeatureContext.onBack` goes home. Leaving a feature removes its whole composition, so everything it `remember`ed or `rememberSaveable`d is dropped. That is also how stand mode's idle reset clears a feature.
+- The host owns the top level: it resolves the route before drawing (a saved route to a missing or disabled feature shows Home), installs one `BackHandler { goHome }` for every non-home route, and wraps each feature in `FeatureFrame` (Back button, title as heading, safe-drawing insets). **A feature draws content only: no title, no Back or Home button, no `safeDrawingPadding` of its own.** `FeatureFrame` is the only frame; design's `ui/` offers content-only layout (`FeatureBody`: padding, reading width, optional scroll, `LocalWideLayout`), never a second title bar. `FeatureContext.onBack` goes home. Leaving a feature removes its whole composition, so everything it `remember`ed or `rememberSaveable`d is dropped. That is also how stand mode's idle reset clears a feature.
 - **Navigation inside a feature is the feature's business**: hoist a small sealed class or enum of sub-screens in a `rememberSaveable`, and add your own `BackHandler(enabled = <not at your first sub-screen>)` inside `Content`. The innermost enabled `BackHandler` wins, so back steps through your sub-screens (or the WebView history) before the host's handler takes the user home.
 - No deep links, no new Activities, no Fragments, no Navigation-Compose.
 
@@ -69,8 +69,12 @@ No new dependency without the architect's OK (in your status page, then in a rev
 
 **Not approved without asking**: anything else, including `material-icons-extended` (draw the few vectors you need), Accompanist, Coil/Glide, a JSON library (abpdemo and mandate data is Kotlin code, not JSON), Hilt/Koin, Navigation-Compose, OkHttp/Retrofit (no feature makes its own network calls; site's WebView is the only network user).
 
+## Stand mode and the other features
+- StandHost wraps every screen. Its staff corner (bottom-end, 48dp) shows on the home screen only, so it never covers a feature's controls.
+- The idle reset goes home after N minutes without a touch on the main window. Touches inside a feature's dialog (another window) do not count, so keep dialogs short. A feature that runs unattended on purpose (abpdemo's auto-play) holds the reset off with `context.HoldIdleWhile(autoPlay)`, and only that way: it releases when the condition ends or the feature leaves the screen.
+
 ## Strings, assets, tests
-- Strings: `res/values/feature_<id>.xml` and `res/values-pt-rPT/feature_<id>.xml`, every name prefixed `feature_<id>_`, both files with the same names. No literal text in `Text(...)` or `contentDescription`. The title string (`feature_<id>_title`) stays in `features.xml` (conductor).
+- Strings: `res/values/feature_<id>.xml` and `res/values-pt-rPT/feature_<id>.xml`, every name prefixed `<id>_` (for example `stand_title`, `abpdemo_next`), both files with the same names; names are unique across all files (LocalisationTest). No literal text in `Text(...)` or `contentDescription`. The title string (`feature_<id>_title`) stays in `features.xml` (conductor).
 - Test tags: `<id>_<thing>` (for example `site_webview`, `abpdemo_layer_3`), declared in an `object <Id>Tags` in your package.
 - Tests: JVM (Robolectric and Compose UI test are available) under `app/src/test/java/ai/riskmandate/app/features/<id>/`. Keep the logic that matters pure and test it without Android: site's navigation decision, abpdemo's step sequence, mandate's reach-and-gap model, stand's idle timer. Then one Compose test that `Content` renders with a `FeatureContext` built from a Robolectric `ComponentActivity` and that `onBack` is reachable.
 - Turn `enabled = true` only when the screen works end to end on the gate and on a tablet.
@@ -83,5 +87,9 @@ No new dependency without the architect's OK (in your status page, then in a rev
 
 ## `FeatureContext` history
 - **9 Nov, v2 (architect):** `activity` removed; `config` and `device` added (P1); `onBack` kept and means "go home" (P2). A deprecated `FeatureContext(activity, onBack)` constructor stays only so `MainActivity` compiles until app.android passes its own values, built with `remember(config, device)` (P3); then it is deleted.
-- **Open, P4:** stand mode's on/off switch on the home screen: a small `StandController` the host hoists and passes to `StandHost` and `HomeScreen` (app and stand agree it; not a `FeatureContext` field).
+- **P4 closed:** stand's switch is the long-press corner inside StandHost, shown on Home only.
+- **9 Nov, v3 (architect, approved by the conductor):** `holdIdle: () -> () -> Unit` (default no-op), `FeatureContext.HoldIdleWhile(active)` and the host-side `IdleHolds`. Wiring:
+  - app (MainActivity): `val idle = remember { IdleHolds() }`; `FeatureContext(..., holdIdle = idle::hold)`; `StandHost(..., idleHeld = idle.held)`; `LaunchedEffect(route) { idle.clear() }` as a safety net.
+  - stand (StandHost): new parameter `idleHeld: Boolean = false`; while true, do not reset; when it turns false, `timer.touch()` so the countdown starts again from that moment.
+  - abpdemo: `context.HoldIdleWhile(auto)` in `Content`.
 - Anything else a feature needs from the host: ask (above). A new field needs a reason and a test.
