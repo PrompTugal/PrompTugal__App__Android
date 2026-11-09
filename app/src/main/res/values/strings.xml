@@ -25,7 +25,6 @@
     <string name="nav_section_device">This device</string>
     <string name="nav_collapse">Fold the sidebar to icons</string>
     <string name="nav_expand">Open the sidebar</string>
-    <string name="shell_brand_mark" translatable="false">RM</string>
     <string name="shell_brand_line">Web Summit</string>
     <string name="nav_home_action">Go to Now</string>
     <string name="nav_menu">Open the navigation menu</string>

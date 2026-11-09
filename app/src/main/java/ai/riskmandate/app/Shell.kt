@@ -1,6 +1,7 @@
 package ai.riskmandate.app
 
-import ai.riskmandate.app.ui.Kicker
+import ai.riskmandate.app.ui.BrandBlock
+import ai.riskmandate.app.ui.BrandMark
 import ai.riskmandate.app.ui.UiTokens
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
@@ -248,7 +249,7 @@ private fun SidebarContent(
                 modifier = Modifier.heightIn(min = 48.dp).testTag(ShellTags.COLLAPSE).align(if (collapsed) Alignment.CenterHorizontally else Alignment.End),
             ) { Icon(painterResource(R.drawable.ic_nav_panel), contentDescription = label, tint = Pt.colors.muted) }
         }
-        BrandBlock(brandLine, collapsed)
+        SidebarBrand(brandLine, collapsed)
         Spacer(Modifier.height(8.dp))
         for (section in sections) {
             if (section.items.isEmpty()) continue
@@ -268,32 +269,8 @@ private fun SidebarContent(
 }
 
 @Composable
-private fun BrandBlock(brandLine: String, collapsed: Boolean) {
-    val mark = @Composable { size: Int ->
-        Box(
-            Modifier.size(size.dp).clip(RoundedCornerShape(12.dp)).background(Pt.colors.ink),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                stringResource(R.string.shell_brand_mark),
-                color = MaterialTheme.colorScheme.background,
-                fontFamily = FontFamily.Serif,
-                fontWeight = FontWeight.Bold,
-                fontSize = (size * 0.4f).sp,
-            )
-        }
-    }
-    if (collapsed) {
-        mark(40)
-    } else {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            mark(56)
-            Column {
-                Kicker(stringResource(R.string.app_name))
-                if (brandLine.isNotBlank()) Text(brandLine, style = MaterialTheme.typography.bodyMedium, color = Pt.colors.muted)
-            }
-        }
-    }
+private fun SidebarBrand(brandLine: String, collapsed: Boolean) {
+    if (collapsed) BrandMark(size = 40.dp) else BrandBlock(brandLine.ifBlank { null }, Modifier.fillMaxWidth().padding(horizontal = 4.dp))
 }
 
 /** A 48 dp+ destination row: 24 dp line icon, label, optional pill. Selected: red at 12%, label semibold. */
