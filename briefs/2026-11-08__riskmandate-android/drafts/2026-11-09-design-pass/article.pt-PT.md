@@ -43,7 +43,7 @@ Esta parte chega com o novo shell da app. Está descrita a partir da especifica�
 - **Tablets (na horizontal, ou com 840 dp de largura ou mais):** uma barra lateral permanente à esquerda. Tem o bloco da marca e depois uma linha por funcionalidade, em secções. Pode recolher-se numa faixa estreita de ícones, e a app lembra-se disso no dispositivo.
 - **Modo de bancada:** a barra lateral começa recolhida, para o conteúdo ocupar o ecrã. O pessoal pode abri-la.
 - **Telemóveis e vertical:** o mesmo painel como gaveta, aberta por um botão de menu com legenda.
-- **Agora:** a página inicial passa a ser uma página de cartões: três mosaicos (funcionalidades ativas, o que a app recolhe, o que precisa de atenção) e depois um cartão por funcionalidade.
+- **Agora:** a página inicial passa a ser uma página de cartões: três mosaicos (funcionalidades ativas, as permissões que esta app pede, o que precisa de atenção) e depois um cartão por funcionalidade.
 
 As imagens abaixo são representações desse desenho, feitas pelos testes de capturas com conteúdo de exemplo. Não são capturas da app a funcionar.
 
@@ -59,6 +59,6 @@ O mandato desta app olha para mais do que a app guarda no dispositivo: o armazen
 
 ## Os textos de privacidade
 
-A política de privacidade e as respostas de segurança dos dados foram atualizadas para listar tudo o que a app guarda: a preferência de apresentação, o número da última nota de atualização mostrada e, onde as funcionalidades existem, o histórico de conversas e os ficheiros de modelos, com a forma de os apagar. A app continua a não recolher nada e a não enviar nada. Continua a pedir só duas permissões: internet e estado da rede.
+A política de privacidade e as respostas de segurança dos dados foram atualizadas para listar tudo o que a app guarda: a preferência de apresentação, o número da última nota de atualização mostrada e, onde as funcionalidades existem, o histórico de conversas e os ficheiros de modelos, com a forma de os apagar. A app não recolhe dados pessoais e não envia nada aos seus autores. A vista do riskmandate.ai dentro da app carrega páginas do riskmandate.ai como um navegador, e a configuração do modelo descarrega um ficheiro do Hugging Face só quando toca em Descarregar. Veja a política de privacidade para os pormenores. A app continua a pedir só duas permissões: internet e estado da rede.
 
 O número da versão está em baixo no ecrã inicial. Indique-o ao comunicar um problema.
