@@ -40,6 +40,8 @@ Waiting for the next app branch (dev.* branches were empty at last fetch).
 
 - Workbench (9 Nov, on request): `docs/qa/workbench-test-plan.md` (stats correctness with sources, sweep caps, run log, tool-test checks with a mutation scheme, rotation, sandbox) and `docs/qa/device-run-workbench.md` (draft device section; labels marked [confirm] until the feature lands). The plan needs `FakeLlmService` to script stats, stop reasons and a virtual clock (asked of dev.llm); today it scripts only a token delay.
 
+- Cloud key (9 Nov, dev.chat's request): `docs/qa/device-run-cloud-key.md` drafted (key never shown, survives restart, Remove, FLAG_SECURE and recents, not in stand mode, and section E: every on-device claim must stay true or change when the cloud switch is on). `KeystoreCipherTest` is not on the pushed `work/dev.chat` (14f671b has only SmokeTest in androidTest); I cannot run instrumented tests here (no emulator): the CI smoke job runs `connectedDebugAndroidTest` on dev.
+
 ## Next
 Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md` and message the conductor with each verdict. Tighten the plan with what each feature really does.
 
