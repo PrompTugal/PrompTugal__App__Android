@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 71 (9 Nov 2026): Workbench steps 2 and 3: dev.llm 3babbd4 PASS (R-wb-3 closed; R-wb-5 mandate entry and policy lines must land with the merge; R-wb-6 and R-wb-7 low and info), design 55026cb PASS. Waiting for dev.lab (experiments/, Tool tests) and dev.chat's cloud build (checklist M). Still open: the design-pass article, the Lab export share path (R-lab-11), R-app-2, and Dinis asks for the cloud key (credit limit per key, spend numbers, Data safety answer).
+> Round 72 (9 Nov 2026): dev.lab b2743f4 (Workbench tool tests) PASS (R-lab-14, R-lab-15 info; export builder exists but is not wired). Waiting for the Workbench merge entries (R-wb-5) and dev.chat's cloud build (checklist M). Still open: the design-pass article, the Lab export share path (R-lab-11), R-app-2, and Dinis asks for the cloud key.
 
 ## Doing
 Nothing. Stopped until woken.
