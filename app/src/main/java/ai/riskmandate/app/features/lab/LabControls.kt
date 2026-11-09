@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.RunSettings
+import ai.riskmandate.app.experiments.StopReason
 import ai.riskmandate.app.R
 import ai.riskmandate.app.llm.Sampling
 import ai.riskmandate.app.ui.ChipKind
@@ -40,7 +42,7 @@ import kotlin.math.roundToInt
 /** The sampling the visitor has chosen. Seed text empty means random. */
 data class SamplingChoice(val temperature: Double = Sampling.DEFAULT.temperature, val topP: Double = Sampling.DEFAULT.topP, val seedText: String = "") {
     val seed: Int? get() = seedText.trim().toIntOrNull()
-    fun toSettings() = LiveRunner.Settings(Sampling(temperature, Sampling.DEFAULT.topK, topP, seed))
+    fun toSettings() = RunSettings(Sampling(temperature, Sampling.DEFAULT.topK, topP, seed))
 
     companion object {
         const val TEMP_MIN = 0.0; const val TEMP_MAX = 1.5; const val TEMP_STEP = 0.1

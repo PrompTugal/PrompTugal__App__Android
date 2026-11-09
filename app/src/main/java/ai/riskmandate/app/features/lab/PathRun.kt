@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.FakeTools
+import ai.riskmandate.app.experiments.ToolProtocol
 import ai.riskmandate.app.llm.LlmEvent
 import ai.riskmandate.app.llm.ToolCheck
 

@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.DeviceGuard
+import ai.riskmandate.app.experiments.StopReason
 import ai.riskmandate.app.llm.FakeLlmService
 import ai.riskmandate.app.llm.FakeReply
 import ai.riskmandate.app.llm.LlmError
