@@ -29,6 +29,18 @@ Flakiness, how it is handled:
 
 **Untested from here** (no way to run workflows, no KVM in this session): the whole `smoke` job, the `uiautomator dump` text match on a real emulator (Compose text should appear as `text="..."`), and the throwaway-signing step. `actionlint` and shellcheck (through it) pass; `scripts/smoke-test.sh` was only syntax-checked.
 
+## Screenshots in the in-app release articles (feature F)
+
+CI puts Robolectric screenshots into the release articles at build time; **generated PNGs are not committed.** Why: they would go stale against the code that renders them, each regeneration adds about a hundred KB per image to the history of a public repository for ever, and a PNG nobody can tell is current is worse than none. CI renders them from the same commit it builds.
+
+Contract (`scripts/release-screenshots.sh`, proposed by release.android; dev.releases.android's own contract was not yet published on origin/work/dev.releases when this was written, so adapt it if it differs): an article is a folder `app/src/main/assets/releases/<dir>/`. If it has a `screenshots.txt`, each line is `<target>.png <- <source>.png`, where `<source>` is a file the screenshot tests write to `app/build/screenshots/` (today `ScreenshotTest` writes `<screen>-<device>-<orientation>-<theme>.png`) and `<target>` is the name the article uses. CI copies it to `app/src/main/assets/releases/<dir>/screenshots/<target>.png`. Blank lines and `#` comments are allowed; names are `[A-Za-z0-9._-]` and end `.png`; a listed source that does not exist is an error.
+
+- **check job**: after the tests, `release-screenshots.sh --verify` fails if any listed source was not written, so a renamed test output is caught early.
+- **release job**: downloads the check job's `screenshots-<run>` artifact (same commit, so no second Robolectric run), runs `release-screenshots.sh` before `assembleRelease` and `bundleRelease`, so the APK and AAB carry the PNGs.
+- A local build has no `screenshots/` folders unless `./gradlew testDebugUnitTest` and the script were run by hand: the article screen must cope with a missing screenshot. The generated folders belong in `.gitignore` (asked of the conductor, the file is not release's).
+- `website.yml` also runs when `app/src/main/assets/releases/**` changes. It does not render screenshots (that needs the Robolectric run), so a site build sees the articles without their generated PNGs unless `website/build.py` handles that: open for editor.android and dev.releases.
+- Untested live; the script was tested locally with a stub tree (copy, verify, bad names, missing source).
+
 ## The website: `.github/workflows/website.yml` (GitHub Pages)
 
 The Android site (`website/`, by editor.android) is built and deployed to **https://android.app.promptugal.ai** by its own workflow. Jobs: `build` (python3 unit tests `website/test_site.py`, `website/build.py`, `website/validate.py`), `deploy` (`actions/upload-pages-artifact` v4.0.0 and `actions/deploy-pages` v4.0.5, both pinned by SHA; `pages: write` and `id-token: write` only on this job) and `verify` (polls the live `build.json` until it carries the built commit, 4 minutes, fails if not).

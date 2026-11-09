@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
                                 DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = goHome)
                             }
                             feature != null -> FeatureFrame(title = feature.title, onBack = goHome) {
-                                feature.Content(FeatureContext(activity = this@MainActivity, onBack = goHome))
+                                feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device) })
                             }
                             else -> HomeScreen(
                                 version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",

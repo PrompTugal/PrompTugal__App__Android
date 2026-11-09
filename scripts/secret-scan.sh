@@ -4,8 +4,9 @@
 # Prints file/commit and the pattern class only, never the matched text. Exit 1 if anything matches.
 # Run before every push and every release:  scripts/secret-scan.sh [--fetch]
 #   --fetch  runs `git fetch --all --prune --quiet` first so other sessions' branches are included.
-# Only the script itself is excluded (it contains the patterns). No test directory is excluded: test
-# fixtures must not look like real secrets (build keys at run time, as devices/test does).
+# The script itself is excluded (it contains the patterns); two exact website files are excluded for the
+# "private key block" class only (see excl_pkb). No test directory is excluded: test fixtures must not look
+# like real secrets (build keys at run time, as devices/test does).
 set -uo pipefail
 cd "$(dirname "$0")/.."
 [ "${1:-}" = "--fetch" ] && git fetch --all --prune --quiet
@@ -27,6 +28,11 @@ classes=(
   'keystore password assignment|(store|key)(Password|_password)[[:space:]]*[=:][[:space:]]*["'"'"'][^"'"'"'$ {]{4,}["'"'"']'
 )
 excl=(-- . ':!scripts/secret-scan.sh')
+# Files that DEFINE a secret pattern as a regex string (the website validator and its test) would match the
+# "private key block" class on their own text. They are skipped for that one class only, and still scanned for
+# every other class. Keep this list to exact paths; any new entry is reviewed by security.
+excl_pkb=(-- . ':!scripts/secret-scan.sh' ':!website/validate.py' ':!website/test_site.py')
+exclfor() { [ "$1" = 'private key block' ] && echo "excl_pkb" || echo "excl"; }
 hits=0
 
 refs=$(git for-each-ref --format='%(refname:short)' | tr '\n' ' ')
@@ -37,7 +43,8 @@ echo "commits scanned: $ncommits"
 echo "working tree (tracked files):"
 for c in "${classes[@]}"; do
   name=${c%%|*}; re=${c#*|}
-  files=$(git grep -lIE "$re" "${excl[@]}" 2>/dev/null) && { echo "  [$name] $files"; hits=1; }
+  if [ "$name" = 'private key block' ]; then ex=("${excl_pkb[@]}"); else ex=("${excl[@]}"); fi
+  files=$(git grep -lIE "$re" "${ex[@]}" 2>/dev/null) && { echo "  [$name] $files"; hits=1; }
 done
 
 echo "history (class: commit: file):"
@@ -49,7 +56,8 @@ for c in $(git rev-list --all); do
   seen[$t]=1
   for k in "${classes[@]}"; do
     name=${k%%|*}; re=${k#*|}
-    out=$(git grep -lIE "$re" "$c" "${excl[@]}" 2>/dev/null) && { echo "$out" | sed "s|^|  [$name] |"; hits=1; }
+    if [ "$name" = 'private key block' ]; then ex=("${excl_pkb[@]}"); else ex=("${excl[@]}"); fi
+    out=$(git grep -lIE "$re" "$c" "${ex[@]}" 2>/dev/null) && { echo "$out" | sed "s|^|  [$name] |"; hits=1; }
   done
 done
 

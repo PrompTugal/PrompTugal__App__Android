@@ -10,11 +10,13 @@ on:
     branches: [dev]
     paths:
       - 'website/**'
+      - 'app/src/main/assets/releases/**'
       - '.github/workflows/website.yml'
   pull_request:
     branches: [dev, main]
     paths:
       - 'website/**'
+      - 'app/src/main/assets/releases/**'
       - '.github/workflows/website.yml'
   # A finished android run (a new release on the releases page): rebuild so the site shows it. A release
   # made with the built-in GITHUB_TOKEN does not trigger a `release` event, a workflow_run does.
