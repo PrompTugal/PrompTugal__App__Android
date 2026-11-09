@@ -89,7 +89,7 @@ No new dependency without the architect's OK (in your status page, then in a rev
 - **9 Nov, v2 (architect):** `activity` removed; `config` and `device` added (P1); `onBack` kept and means "go home" (P2). The transitional `FeatureContext(activity, onBack)` constructor was deleted once app passed its own values (`remember(config, device)`, P3; app f317cf8).
 - **P4 closed:** stand's switch is the long-press corner inside StandHost, shown on Home only.
 - **9 Nov, v3 (architect, approved by the conductor):** `holdIdle: () -> () -> Unit` (default no-op), `FeatureContext.HoldIdleWhile(active)` and the host-side `IdleHolds`. Wiring:
-  - app (MainActivity): `val idle = remember { IdleHolds() }`; `FeatureContext(..., holdIdle = idle::hold)`; `StandHost(..., idleHeld = idle.held)`; `LaunchedEffect(route) { idle.clear() }` as a safety net.
+  - app (MainActivity): `val idle = remember { IdleHolds() }`; `FeatureContext(..., holdIdle = idle::hold)`; `StandHost(..., idleHeld = idle.held)`. **No** `LaunchedEffect(route) { idle.clear() }`: it runs after the feature's hold is taken and wipes it (app review A-app-7). `HoldIdleWhile` already releases when the feature leaves.
   - stand (StandHost): new parameter `idleHeld: Boolean = false`; while true, do not reset; when it turns false, `timer.touch()` so the countdown starts again from that moment.
   - abpdemo: `context.HoldIdleWhile(auto)` in `Content`.
 - Anything else a feature needs from the host: ask (above). A new field needs a reason and a test.

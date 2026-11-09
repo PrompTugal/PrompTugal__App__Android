@@ -77,6 +77,9 @@ class IdleHolds {
         return { tokens.remove(token) }
     }
 
-    /** Drops every hold (the host calls this when the route changes, as a safety net). */
+    /**
+     * Drops every hold. Not for use from a `LaunchedEffect` on a route change: that runs after the new
+     * screen's hold is taken and would wipe it. Holds release themselves through [HoldIdleWhile].
+     */
     fun clear() = tokens.clear()
 }
