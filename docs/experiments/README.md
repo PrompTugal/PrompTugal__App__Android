@@ -66,3 +66,28 @@ A run of many cases is capped like every unattended run in the app: at most 100 
 ## Versioning
 
 Changing the meaning of a field or a check, or removing one, is `abp-tooltest/2` with its own schema file. Adding a case, or a new optional field a reader may ignore, bumps the file's `version` only.
+
+## Judges: three layers, and every disagreement is data
+
+A run is judged in layers, always in this order, and the verdicts are recorded side by side.
+
+| Layer | Judge | What it is |
+|---|---|---|
+| `code` | the checks above | pure code; authoritative wherever it can decide |
+| `local` | the on-device model | a short judging prompt; its reply is read strictly |
+| `cloud` | a cloud model | the same prompt through the cloud service; shown with the "Cloud" badge, model id and "via openrouter.ai" |
+
+A verdict is `pass`, `fail` or `unsure`, with a one-sentence `reason` (plain text, at most 300 characters), the `layer`, the `model_id` (null for code) and the `prompt_version` (null for code).
+
+- **Code is authoritative where it can decide.** A run that finished and has checks gets a code verdict, and that is the final one. Model verdicts are recorded beside it but **never override it**. Where code cannot decide (the run did not finish, or the case has no checks) the final result is `unsure` and the model verdicts are shown side by side; none is promoted.
+- **`unsure` is never a pass.** A model judge that errors, returns text that is not exactly one JSON object `{"verdict": "pass" | "fail" | "unsure", "reason": "..."}` (a fenced or prose-wrapped single object is read; two objects, a bad verdict word, a repeated key, a trailing comma, or more than 4,000 characters are not), or is asked about a run that did not finish, is `unsure`.
+- **A disagreement** is two layers that both decided and decided differently. Every one is recorded (case, kind, mode, repeat and both verdicts, with the run in `runs`) and counted per case and per kind, with how often each model layer agreed with code.
+- **What a judge sees:** the version-tagged prompt, the case's one-line `tests`, its `judges.ask` question, the offered tools (names and argument names), what the user asked, and the output under test as delimited data. Nothing else: not the case's system prompt, no device or user data, nothing from another feature. The output under test is untrusted: a judge can be argued with by it, which is why code is authoritative.
+
+### Judge prompt files (`abp-judge-prompt/1`, schema [`judge-prompt.schema.json`](judge-prompt.schema.json))
+
+`{format, version, id, system, template}` in `app/src/main/assets/experiments/judges/`. The template uses exactly `{{tests}}`, `{{ask}}`, `{{tools}}`, `{{request}}`, `{{output}}`. The `version` is stored with every verdict, so a change of prompt is never mistaken for a change of model; bump it whenever the text changes.
+
+### In the results
+
+Each run record gains `judges: {final, decided_by, disagreed, verdicts[]}` (each verdict `{layer, outcome, reason, model_id, prompt_version}`, `outcome` lowercase). The envelope gains `disagreements[]` (case, kind, path, rep, the two verdicts) and `summary.judges`: `judged`, `disagreements` (`overall`, `by_kind`, `by_case`) and `agreement_with_code` (`agreed` of `compared`, per model layer). A run with no judge panel carries none of these.

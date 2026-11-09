@@ -1,0 +1,59 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "abp-judge-prompt/1",
+ "title": "abp-judge-prompt/1: a versioned prompt for a model that judges a tool-test run",
+ "description": "Platform-neutral. The template has exactly these placeholders: {{tests}}, {{ask}}, {{tools}}, {{request}}, {{output}}. See docs/experiments/README.md.",
+ "type": "object",
+ "required": [
+  "format",
+  "version",
+  "id",
+  "system",
+  "template"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "format": {
+   "const": "abp-judge-prompt/1"
+  },
+  "version": {
+   "type": "string",
+   "minLength": 1,
+   "description": "Recorded with every verdict. Bump it whenever the text changes."
+  },
+  "id": {
+   "type": "string",
+   "pattern": "^[a-z][a-z0-9-]{0,39}$"
+  },
+  "system": {
+   "type": "string",
+   "minLength": 1,
+   "maxLength": 2000
+  },
+  "template": {
+   "type": "string",
+   "minLength": 1,
+   "maxLength": 2000,
+   "allOf": [
+    {
+     "pattern": "\\{\\{tests\\}\\}"
+    },
+    {
+     "pattern": "\\{\\{ask\\}\\}"
+    },
+    {
+     "pattern": "\\{\\{tools\\}\\}"
+    },
+    {
+     "pattern": "\\{\\{request\\}\\}"
+    },
+    {
+     "pattern": "\\{\\{output\\}\\}"
+    }
+   ],
+   "not": {
+    "pattern": "\\{\\{(?!tests\\}\\}|ask\\}\\}|tools\\}\\}|request\\}\\}|output\\}\\})"
+   }
+  }
+ }
+}
