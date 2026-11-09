@@ -22,6 +22,10 @@
     <string name="licences_back_description">Back to the home screen</string>
     <string name="licences_apache_heading">Apache License, Version 2.0 (full text)</string>
 
+    <string name="nav_menu">Open the navigation menu</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_section_now">Now</string>
+    <string name="nav_section_features">Features</string>
     <string name="home_diagnostics">Diagnostics</string>
     <string name="message_failed">Something went wrong opening riskmandate.ai in a browser. Try again, or open it in your browser yourself.</string>
     <string name="message_pinned">Web pages are not opened in a browser while the app is pinned.</string>
