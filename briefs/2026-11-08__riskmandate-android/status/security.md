@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 42 (9 Nov 2026): editor 719067c PASS (R-art-1 and R-art-2 fixed; R-art-4 and R-art-5, two false "keeps no data" sentences on the features and install pages, open), eval 359b2dd PASS (R-eval-1 to R-eval-4 closed). Everything queued is reviewed. Waiting for the next wake.
+> Round 43 (9 Nov 2026): editor ddc7b10 PASS (R-art-4 and R-art-5 closed, new validator guard), play dff39aa PASS (R-art-6 closed). Still to read when they land: the editor icon_svg fix, and the design-pass article when it moves into assets. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
