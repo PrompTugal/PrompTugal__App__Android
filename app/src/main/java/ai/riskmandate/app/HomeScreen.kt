@@ -166,7 +166,7 @@ fun HomeScreen(
 @Composable
 private fun LinkRow(text: String, tag: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     TextButton(onClick = onClick, modifier = modifier.heightIn(min = MinTouch).testTag(tag)) {
-        Text(text, color = Pt.colors.red)
+        Text(text, color = Pt.colors.accent)
     }
 }
 

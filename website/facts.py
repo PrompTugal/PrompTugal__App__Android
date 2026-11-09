@@ -4,6 +4,7 @@ Nothing here is typed by hand: the application ID, SDK levels, permissions, lang
 feature flags, test counts, licences and releases all come from files and git.
 Standard library only.
 """
+import html
 import os
 import re
 import subprocess
@@ -191,10 +192,14 @@ def icon_svg(manifest=None, res=None):
     width = float(vector.get(ns + 'viewportWidth', '108'))
     height = float(vector.get(ns + 'viewportHeight', '108'))
 
+    def q(value):
+        """An attribute value from the resource files, escaped so it can never break out of its attribute (R-art-7)."""
+        return html.escape(str(value), quote=True)
+
     def path(node):
         colour = node.get(ns + 'fillColor', '#FFFFFF')
         rule = ' fill-rule="evenodd"' if node.get(ns + 'fillType') == 'evenOdd' else ''
-        return f'<path d="{node.get(ns + "pathData")}" fill="{colour}"{rule}/>'
+        return f'<path d="{q(node.get(ns + "pathData", ""))}" fill="{q(colour)}"{rule}/>'
 
     body = ''
     for node in vector:
@@ -203,12 +208,12 @@ def icon_svg(manifest=None, res=None):
         elif node.tag == 'group':
             tx, ty = node.get(ns + 'translateX', '0'), node.get(ns + 'translateY', '0')
             sx, sy = node.get(ns + 'scaleX', '1'), node.get(ns + 'scaleY', '1')
-            body += f'<g transform="translate({tx} {ty}) scale({sx} {sy})">' + ''.join(path(p) for p in node if p.tag == 'path') + '</g>'
+            body += f'<g transform="translate({q(tx)} {q(ty)}) scale({q(sx)} {q(sy)})">' + ''.join(path(p) for p in node if p.tag == 'path') + '</g>'
     if not body:
         raise SystemExit(f'build: no paths in {fname}.xml')
     x, y = (width - 72) / 2, (height - 72) / 2
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x:g} {y:g} 72 72" width="72" height="72">'
-            f'<rect x="{x:g}" y="{y:g}" width="72" height="72" rx="16" fill="{fill}"/>{body}</svg>\n')
+            f'<rect x="{x:g}" y="{y:g}" width="72" height="72" rx="16" fill="{q(fill)}"/>{body}</svg>\n')
 
 
 def all_facts():

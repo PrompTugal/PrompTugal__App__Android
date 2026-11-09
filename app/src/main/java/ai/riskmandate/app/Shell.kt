@@ -193,7 +193,7 @@ private fun TopBar(@StringRes title: Int, onMenu: () -> Unit, onHome: (() -> Uni
         // A visible way home on every screen but Home itself (stand mode may pin the back gesture off).
         if (onHome != null) {
             IconButton(onClick = onHome, modifier = Modifier.heightIn(min = 48.dp).testTag(ShellTags.HOME)) {
-                Icon(painterResource(R.drawable.ic_nav_home), contentDescription = stringResource(R.string.nav_home_action), tint = Pt.colors.red)
+                Icon(painterResource(R.drawable.ic_nav_home), contentDescription = stringResource(R.string.nav_home_action), tint = Pt.colors.accent)
             }
         }
     }
@@ -273,11 +273,11 @@ private fun SidebarBrand(brandLine: String, collapsed: Boolean) {
     if (collapsed) BrandMark(size = 40.dp) else BrandBlock(brandLine.ifBlank { null }, Modifier.fillMaxWidth().padding(horizontal = 4.dp))
 }
 
-/** A 48 dp+ destination row: 24 dp line icon, label, optional pill. Selected: red at 12%, label semibold. */
+/** A 48 dp+ destination row: 24 dp line icon, label, optional pill. Selected: the accent at 12%, label semibold. */
 @Composable
 private fun NavRow(item: NavItem, selected: Boolean, collapsed: Boolean, onClick: () -> Unit) {
-    val red = Pt.colors.red
-    val tint = if (selected) red else Pt.colors.ink
+    val accent = Pt.colors.accent
+    val tint = if (selected) accent else Pt.colors.ink
     val title = stringResource(item.title)
     val badge = item.badge?.let { stringResource(it) }
     Row(
@@ -285,7 +285,7 @@ private fun NavRow(item: NavItem, selected: Boolean, collapsed: Boolean, onClick
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(if (selected) red.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent)
+            .background(if (selected) accent.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp)
             .testTag(ShellTags.item(item.route))
@@ -316,9 +316,9 @@ internal fun BadgePill(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
         style = MaterialTheme.typography.labelMedium,
-        color = Pt.colors.red,
+        color = Pt.colors.accent,
         modifier = modifier
-            .background(Pt.colors.red.copy(alpha = 0.12f), androidx.compose.foundation.shape.CircleShape)
+            .background(Pt.colors.accent.copy(alpha = 0.12f), androidx.compose.foundation.shape.CircleShape)
             .padding(horizontal = 8.dp, vertical = 3.dp),
     )
 }
