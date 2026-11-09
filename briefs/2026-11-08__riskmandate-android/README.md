@@ -5,7 +5,7 @@
 **Lead:** Dinis Cruz · **Conductor:** conductor.android@promptugal.ai (Opus, merges to `dev`) · **Sessions:** Sonnet · **Started:** 8 Nov 2026, about 23:00 UTC, at Dinis's word · **Model:** the iOS team's three-apps push (PrompTugal/PrompTugal__App__iOS `briefs/2026-11-08__three-apps/`)
 
 ## Milestones (stop and show Dinis at each)
-- **M1, CI to a device:** every push to `dev` notifies the testers' devices of a build that installs in one tap (Firebase App Distribution). Code done; waits on the Firebase project and the signing secrets.
+- **M1, CI to a device: DONE (9 Nov 2026, ~00:50 UTC).** 0.1.27 installed on Dinis's tablet as a one-tap update through Firebase App Tester, built and signed by CI on push to `dev`.
 - **M2, installed by itself on agent-owned devices:** a factory-fresh tablet scans a QR code, enrols fully managed, and gets the app force-installed and updated. Tooling in `devices/`; waits on the route (AMAPI or Workspace) and the private build's package ID.
 - **M3, devices not owned by the agent:** install from a link (Play internal testing or Firebase).
 - **Not before M1 to M3:** the vault, kiosk, local model, calendar, the other apps.

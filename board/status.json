@@ -1,7 +1,7 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-09T00:45Z",
-  "state": "M1 nearly done: the first CI-signed builds (v0.1.26, v0.1.27) are out; 0.1.26 installed on Dinis's tablet from the GitHub release, no cable (00:41 UTC). Last check: 0.1.27 as a one-tap update through Firebase App Tester.",
+  "updated": "2026-11-09T00:50Z",
+  "state": "M1 DONE (9 Nov 2026 ~00:50 UTC): 0.1.27 installed on Dinis's tablet as a one-tap update through Firebase App Tester, built and signed by CI on push to dev. Stopped to show Dinis, per the brief. M2 waits on his decisions.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
@@ -10,12 +10,12 @@
     "Security review (no secrets; 84 libraries all Apache-2.0); High A-1 URL allow-list bypass fixed (exact riskmandate.ai and www, 26 tests); findings A-2 to A-12 fixed; licences screen; Play Console groundwork in docs/play/. 52 app tests, 35 devices tests.",
     "Merged after security PASS (23:20 to 23:35): app (tablets, themes, pt-PT, screenshots, full Apache text; 61 tests), play (privacy page, minimal-functionality review, store assets plan, release notes, tester guides, device checklist), release (emulator smoke job, screenshot artifact, licence gate, Dependabot, release notes), devices (zero-dependency QR encoder verified on 204 symbols, offline policy schema validation, Workspace vs AMAPI side by side, REHEARSAL.md, hardened policy options; 68 tests), security (OSV 0 known vulns, M2 threat model, GitHub settings checklist).",
     "CI live on GitHub: check, release and smoke (emulator) jobs all green (run 24, 279e3e4); the emulator smoke test passed on its first attempt in about 1.5 minutes. Firebase auth moved to Workload Identity Federation (keyless) because the thecyberboardroom.com org blocks service-account keys; Dinis created the pool and provider (repo PrompTugal/PrompTugal__App__Android, environment release).",
-    "M1: first signed builds from CI (v0.1.26 GitHub release; v0.1.27 GitHub release and Firebase App Distribution to 'team' via keyless Google auth). 0.1.26 installed and running on Dinis's Lenovo tablet (agent@riskmandate.ai): tablet layout correct, Device 'Not managed' detected correctly on real hardware."
+    "M1: first signed builds from CI (v0.1.26 GitHub release; v0.1.27 GitHub release and Firebase App Distribution to 'team' via keyless Google auth). 0.1.26 installed and running on Dinis's Lenovo tablet (agent@riskmandate.ai): tablet layout correct, Device 'Not managed' detected correctly on real hardware.",
+    "M1 DONE: 0.1.27 delivered by Firebase App Distribution and installed as an update over 0.1.26 through App Tester on Dinis's tablet (agent@riskmandate.ai), no cable."
   ],
   "next": [
-    "merge work/app (44131ad: tablets, themes, pt-PT, screenshots, full Apache text) and work/play (6ee3f6b: privacy page, minimal-functionality review) once security.android says PASS",
-    "merge work/release and work/devices when they push and pass review",
-    "once secrets exist: first signed build to the 'team' testers on Firebase, installed on the Tab One"
+    "M2, once Dinis decides: the route (AMAPI test enterprise, Cloud Identity Premium or an EMM), the private build's package ID, the Play Console account; then a factory-fresh tablet enrolled by QR with the app force-installed (devices/REHEARSAL.md)",
+    "M3 needs the Play Console account (internal testing) or works today through Firebase for anyone added to 'team'"
   ],
   "asks": [
     "Dinis: the Play Console account (organisation, which company) and its D-U-N-S check: on the critical path for M2.",
