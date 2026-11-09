@@ -66,7 +66,7 @@ The app shows no advertising and contains no analytics, crash-reporting or adver
 
 ## Your rights
 
-Because the app collects nothing, we hold no personal data about you from the app. For data held about you by riskmandate.ai, see its privacy page. [TODO Dinis: add the controller's rights wording if a lawyer asks for it; the app collects no data, so the minimal statement is accurate today.]
+Because the app collects no personal data, we hold no personal data about you from the app. For data held about you by riskmandate.ai, see its privacy page. [TODO Dinis: add the controller's rights wording if a lawyer asks for it; the app collects no data, so the minimal statement is accurate today.]
 
 ## Changes
 
