@@ -89,8 +89,9 @@ class LlmHost(
                     }
                 } catch (e: CancellationException) {
                     throw e
-                } catch (e: Exception) {
-                    emit(LlmEvent.Error(LlmError.INFERENCE_FAILED, describe(e)))
+                } catch (t: Throwable) {
+                    // Throwable, not Exception: the native runtime can throw an Error (qa Q-llm-1).
+                    emit(LlmEvent.Error(LlmError.INFERENCE_FAILED, describe(t)))
                 }
             } finally {
                 scheduleIdleUnload()
@@ -122,7 +123,7 @@ class LlmHost(
         val id = loadedId
         loaded = null
         loadedId = null
-        runCatching { m.close() }
+        try { m.close() } catch (_: Throwable) {}
         _state.value = id?.let { LlmState.Idle(it) } ?: LlmState.NoModel
     }
 
@@ -142,7 +143,7 @@ class LlmHost(
             return null
         }
         _state.value = LlmState.Loading(pick.spec.id)
-        var lastError: Exception? = null
+        var lastError: Throwable? = null
         for (backend in listOf(BenchBackend.GPU, BenchBackend.CPU)) {
             try {
                 val m = runtime.load(pick.file, backend, maxTokens)
@@ -150,8 +151,9 @@ class LlmHost(
                 loadedId = pick.spec.id
                 _state.value = LlmState.Ready(pick.spec.id, m.backend.name)
                 return m to pick.spec.id
-            } catch (e: Exception) {
-                lastError = e
+            } catch (t: Throwable) {
+                // Creating an engine loads the native library: UnsatisfiedLinkError is an Error (qa Q-llm-1).
+                lastError = t
             }
         }
         _state.value = LlmState.Failed(pick.spec.id, lastError?.let(::describe) ?: "could not load the model")
@@ -165,7 +167,7 @@ class LlmHost(
         return found.firstOrNull { it.spec.id == preferredModelId } ?: found.firstOrNull()
     }
 
-    private fun describe(e: Exception) = "${e.javaClass.simpleName}: ${e.message ?: "no message"}".take(300)
+    private fun describe(t: Throwable) = "${t.javaClass.simpleName}: ${t.message ?: "no message"}".take(300)
 
     companion object {
         /** Unload after this long without a request. */

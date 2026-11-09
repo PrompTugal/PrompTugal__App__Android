@@ -40,9 +40,9 @@ class LiteRtRuntime(private val cacheDir: File) : LlmRuntime {
         ExperimentalFlags.enableBenchmark = true
         try {
             engine.initialize()
-        } catch (e: Exception) {
-            runCatching { engine.close() }
-            throw e
+        } catch (t: Throwable) {
+            try { engine.close() } catch (_: Throwable) {}
+            throw t
         } finally {
             ExperimentalFlags.enableBenchmark = false
         }
@@ -93,7 +93,7 @@ class LiteRtRuntime(private val cacheDir: File) : LlmRuntime {
                     runCatching { c.cancelProcess() }
                     throw e
                 }
-                val info = runCatching { c.getBenchmarkInfo() }.getOrNull()
+                val info = try { c.getBenchmarkInfo() } catch (_: Throwable) { null }
                 emit(
                     LlmEvent.Done(
                         LlmStats(

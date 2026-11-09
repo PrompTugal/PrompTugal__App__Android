@@ -1,6 +1,7 @@
 package ai.riskmandate.app.llm
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.os.Build
 import java.io.File
 import java.io.InputStream
@@ -57,6 +58,9 @@ object ModelFiles {
      * catalogue file is already in the adb folder, so visitors on a stand tablet do not come across it.
      * Reads one directory listing; cheap enough for the main thread when Diagnostics opens.
      */
+    fun benchAvailable(context: Context): Boolean =
+        benchAvailable(context, context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
+
     fun benchAvailable(context: Context, debuggable: Boolean): Boolean =
         debuggable || find(listOfNotNull(adbDir(context))).isNotEmpty()
 
