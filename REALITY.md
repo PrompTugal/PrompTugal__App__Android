@@ -8,3 +8,5 @@
 - `scripts/make-upload-key.sh` for Dinis.
 
 Does not exist yet: the secrets, the Firebase project and tester group, the Play Console account, the agent's key in `board/keys.json`, any device enrolment (M2), the vault, the other two apps.
+
+- 9 Nov 2026: Browser.openExternal on dev: an https link outside riskmandate.ai, tapped by the user inside the in-app site view, opens in the device's own browser (system browser via ACTION_VIEW), never inside the app and never while the app is pinned (pending Dinis's confirmation, board/status.json).
