@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 9 (9 Nov 2026, about 01:25 UTC): play fb617fd PASS; the seven summit branches have no commits beyond dev yet; wrote `docs/security/summit-checklist.md` (WebView, stand mode, mandate view, host). Waiting for the next wake.
+> Round 10 (9 Nov 2026, about 01:40 UTC): app 2bbc37b PASS and architect 8ab334d PASS; devices only changed its status page; design, qa and the four dev.* branches still have no commits. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Reviews `2026-11-09-app-2bbc37b.md` (PASS: host routing, FeatureFrame; stale saved routes now resolve to Home; no manifest or permission change) and `2026-11-09-architect-8ab334d.md` (PASS: docs; its WebView rules agree with my checklist; R-arch-1 restrict the asset loader to /feature_site/, R-arch-2 add SSL-cancel, no DownloadListener, safe browsing, cookie clearing).
 - Review `2026-11-09-play-fb617fd.md`: **PASS** (docs; R-play-7 info: a keyless Play route should use its own service account and condition).
 - `docs/security/summit-checklist.md`: what I will check in work/dev.site (WebView: allow-list on every navigation, no JS bridge, no file access, WebViewAssetLoader for the offline copy), dev.stand (lock task only, no PIN, no device-owner calls), dev.mandate (own PackageManager reads only), and the host. Skeleton on dev (Feature.kt, Features.kt, StandHost placeholder) read: no new permission, no exported component; `FeatureContext` gives features the whole activity (info).
 - Branches `work/architect`, `design`, `qa`, `dev.site`, `dev.abpdemo`, `dev.mandate`, `dev.stand`: no commits beyond dev at 01:25 UTC, nothing to review yet.
