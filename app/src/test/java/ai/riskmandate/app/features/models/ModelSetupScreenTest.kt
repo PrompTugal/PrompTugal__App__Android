@@ -93,6 +93,28 @@ class ModelSetupScreenTest {
         assertEquals(1, released)
     }
 
+    @Test fun deletingThroughTheFeatureRefreshesTheHostsService() = kotlinx.coroutines.runBlocking {
+        fakeInstalled(e2b)
+        val host = ai.riskmandate.app.llm.LlmHost({ dir }, object : ai.riskmandate.app.llm.LlmRuntime {
+            override fun load(file: File, backend: ai.riskmandate.app.llm.BenchBackend, maxTokens: Int) = throw IllegalStateException("not in this test")
+        })
+        host.refresh()
+        assertEquals(ai.riskmandate.app.llm.LlmState.Idle(e2b.id), host.state.value)
+        compose.setContent {
+            RiskMandateTheme {
+                ModelsFeature.Content(FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), llm = host))
+            }
+        }
+        waitFor(ModelSetupTags.delete(e2b.id))
+        compose.onNodeWithTag(ModelSetupTags.delete(e2b.id)).performScrollTo().performClick()
+        compose.onNodeWithTag(ModelSetupTags.CONFIRM_DELETE).performClick()
+        val end = System.currentTimeMillis() + 5_000
+        while (host.state.value != ai.riskmandate.app.llm.LlmState.NoModel && System.currentTimeMillis() < end) {
+            shadowOf(Looper.getMainLooper()).idle(); compose.waitForIdle(); Thread.sleep(20)
+        }
+        assertEquals(ai.riskmandate.app.llm.LlmState.NoModel, host.state.value)
+    }
+
     @Test fun listsTheOfferedModelsWithSizeAndLicence() {
         show()
         waitFor(ModelSetupTags.row(e2b.id))
