@@ -2,6 +2,10 @@
 
 > Feature H (chat with the local model) built against a stand-in `ChatLlm` interface and a fake. Gate green. `enabled = false` until it works on the tablet with a real model.
 
+## Update (P7, adapter)
+- P7 done: `ChatFeature` sets `icon` (`Icons.Filled.Face`, material-icons-core), `kicker` and `summary` (`chat_kicker`, `chat_summary`, en and pt-PT).
+- Adapter to `LlmService` NOT done yet. Read dev.llm's contract (31a87ac): it has `state` only, no `installed` list and no `modelId`/`system` on `LlmRequest` (the architect's README has them), so the picker cannot be fed from it yet; `system` goes as a `LlmMessage.system` instead. Merging `origin/work/dev.llm` into this branch conflicts in `MainActivity.kt` (host lines against dev's new shell), which is not mine to resolve. Plan once `llm/` is on `dev`: `LlmServiceChat(service): ChatLlm` mapping Token to pieces and Error to an exception, `state` to the installed model, `maxTokens` capped, then read `context.llm` when architect lands it.
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 
