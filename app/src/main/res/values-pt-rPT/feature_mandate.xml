@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mandate_intro">O alcance, o mandato e a lacuna desta app, neste dispositivo, agora. O alcance é lido do Android quando abre este ecrã. A lacuna é calculada a partir dos dois, nunca escrita à mão.</string>
+    <string name="mandate_summary">Alcance %1$d, mandato %2$d, lacuna %3$d</string>
+    <string name="mandate_gap_none">Lacuna: nenhuma. Tudo o que esta app consegue alcançar, o seu mandato precisa.</string>
+    <string name="mandate_gap_some">Lacuna: %1$d. Esta app consegue alcançar coisas de que o seu mandato não precisa:</string>
+
+    <string name="mandate_defs_heading">As palavras</string>
+    <string name="mandate_def_reach">Alcance (reach): \"Everything the agent can actually access in this deployment, including what nobody thought to check.\"</string>
+    <string name="mandate_def_mandate">Mandato (mandate): \"The job, written down: what the business authorised it to do.\"</string>
+    <string name="mandate_def_gap">Lacuna (gap): \"Reach minus mandate. Never written by hand, and recomputed whenever either side moves.\"</string>
+    <string name="mandate_def_source">Citado em inglês de riskmandate.ai, lido a 9 de novembro de 2026. Aqui o agente é esta app.</string>
+
+    <string name="mandate_reach_heading">Alcance: o que esta app pode tocar</string>
+    <string name="mandate_reach_permissions">Permissões</string>
+    <string name="mandate_perm_granted">%1$s (concedida)</string>
+    <string name="mandate_perm_requested">%1$s (pedida, não concedida)</string>
+    <string name="mandate_reach_components">Componentes exportados (outras apps podem iniciá-los)</string>
+    <string name="mandate_component_activity">Atividade</string>
+    <string name="mandate_component_service">Serviço</string>
+    <string name="mandate_component_receiver">Recetor</string>
+    <string name="mandate_component_provider">Fornecedor</string>
+    <string name="mandate_component_line">%1$s %2$s</string>
+    <string name="mandate_guard_none">não é preciso nenhuma permissão para o chamar</string>
+    <string name="mandate_guard_by">quem chama tem de ter %1$s</string>
+    <string name="mandate_reach_network">Rede</string>
+    <string name="mandate_cleartext_off">Tráfego em claro (http): desativado</string>
+    <string name="mandate_cleartext_on">Tráfego em claro (http): permitido</string>
+    <string name="mandate_reach_storage">Armazenamento</string>
+    <string name="mandate_storage_none">Armazenamento usado: nenhum. Sem ficheiros, bases de dados nem preferências, e sem cópia de segurança na nuvem.</string>
+    <string name="mandate_backup_on">Cópia de segurança na nuvem dos dados da app: permitida</string>
+    <string name="mandate_reach_device">Gestão do dispositivo</string>
+    <string name="mandate_reach_none">nenhum</string>
+
+    <string name="mandate_mandate_heading">Mandato: o que a sua política permite</string>
+    <string name="mandate_mandate_hosts">Endereços que a app abre: só https, porta %1$d, nestes anfitriões</string>
+    <string name="mandate_mandate_probe_heading">A lista de permitidos, testada agora em endereços de exemplo</string>
+    <string name="mandate_probe_allowed">%1$s: permitido</string>
+    <string name="mandate_probe_refused">%1$s: recusado</string>
+    <string name="mandate_mandate_managed">Configuração gerida que a app lê (definida por uma organização, nunca enviada para lado nenhum)</string>
+    <string name="mandate_managed_value">%1$s: %2$s</string>
+    <string name="mandate_managed_unset">não definido</string>
+    <string name="mandate_managed_refused">%1$s foi definido mas recusado, por isso usa-se o valor por omissão</string>
+    <string name="mandate_mandate_allowed">O alcance que permite, e porquê</string>
+    <string name="mandate_reason_open_pages">para abrir riskmandate.ai no seu navegador</string>
+    <string name="mandate_reason_offline_hint">para avisar quando o dispositivo está sem rede</string>
+    <string name="mandate_reason_launcher">o único ecrã que inicia a app</string>
+    <string name="mandate_reason_internal_guard">protege os recetores da própria app; só apps assinadas pela mesma chave a podem ter</string>
+
+    <string name="mandate_loading">A ler o alcance desta app no dispositivo…</string>
+    <string name="mandate_storage_file">Ficheiro guardado: %1$s</string>
+    <string name="mandate_storage_dir">Pasta guardada: %1$s (%2$d ficheiros)</string>
+    <string name="mandate_reason_stand_settings">as duas definições do modo expositor (ligado ou desligado, minutos de inatividade), só neste dispositivo</string>
+    <string name="mandate_reason_site_storage">armazenamento web da vista riskmandate.ai dentro da app, só neste dispositivo</string>
+    <string name="mandate_reason_site_cache">cache da vista riskmandate.ai dentro da app; o Android pode limpá-la</string>
+
+    <string name="mandate_mandate_data">Dados recolhidos pela app: nenhuns. Não tem análises, contas nem identificadores. O único tráfego de rede é o carregamento de páginas de riskmandate.ai, no seu navegador ou na vista dentro da app.</string>
+    <string name="mandate_connects">Esta app liga-se a: %1$s (a vista do site dentro da app)</string>
+    <string name="mandate_connects_none">Esta app não se liga a nada por si própria. As páginas abrem no seu navegador, que faz a sua própria ligação.</string>
+    <string name="mandate_reason_site_view">a vista riskmandate.ai dentro da app carrega páginas deste anfitrião</string>
+
+    <string name="mandate_gap_heading">Lacuna: alcance menos mandato</string>
+</resources>
