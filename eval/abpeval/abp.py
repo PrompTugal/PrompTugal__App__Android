@@ -26,7 +26,10 @@ def _domain(addr):
     if not a or _BAD.search(a) or a.count("@") > 1:
         return ""
     if "://" in a or a.startswith("//"):
-        host = urlparse(a if "://" in a else "http:" + a).hostname or ""
+        try:
+            host = urlparse(a if "://" in a else "http:" + a).hostname or ""
+        except ValueError:  # e.g. an unterminated [ in the host
+            return ""
     else:
         if re.search(r"[/?#]", a) or ("@" in a and not a.split("@")[0]):
             return ""  # a bare address has no path, query or fragment
