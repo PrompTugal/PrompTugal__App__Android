@@ -144,3 +144,42 @@ No new dependency without the architect's OK (in your status page, then in a rev
 - **Home as cards:** cards come from `FEATURES` (title, `homeBadge()`, and an optional icon or summary only if added to `Feature` through the architect, with defaults). No per-feature code in the host.
 - **No new dependency without the architect's OK.** Material 3 and Compose foundation cover the shell (`ListDetailPaneScaffold` from material3-adaptive is a new dependency: ask first). A bundled font is allowed only as a `res/font` file with its licence recorded in `docs/security/licences.md` and the in-app licences, and an OFL or Apache licence. No downloadable fonts (a network call).
 - **When features switch:** once design's components and app's shell are on dev together, the conductor tells the feature devs. Until then features keep using `MaterialTheme` and the current `ui/` components, which keep working under the new theme.
+
+## Preview of disabled features (staff only; conductor's request, 9 Nov; as built by app 2b0749f)
+A feature with `enabled = false` is never on Home, in the sidebar, or reachable through `openFeature` from an enabled feature. To let Dinis try one on a release build before it is enabled, the host has **one separate path**:
+- **A distinct route:** `preview/<id>`, produced **only** by Diagnostics > Preview. `resolveRoute` accepts it for any known feature id while stand mode is off; otherwise Home. A plain `<id>` for a disabled feature still goes Home, so a restored or guessed route cannot open it.
+- **Saved like any route** (the same `rememberSaveable` string), so rotation keeps it. Stand mode turning on sends it Home, as with Diagnostics.
+- **`openFeature`:** refused in stand mode, and refused for disabled ids from normal screens. While a Preview screen is showing, a disabled target opens as `preview/<target>` (chat in preview, then "set up a model", then models).
+- **Marked:** `FeatureFrame(preview = true)` shows a "Preview" pill next to the title.
+- **Same contract:** the same `FeatureContext` (`llm` included). Nothing in `features/` knows it is in preview, and no feature reads the route.
+
+## Workbench (feature `workbench`; brief `briefs/2026-11-09__on-device-llm/workbench.md`; ruling of 9 Nov)
+- **Feature:** id `workbench`, `enabled = false`, reached only through Diagnostics > Preview (`preview/workbench`), hidden in stand mode by the host as today. **No new `FeatureContext` capability:** `llm`, `holdIdle` (sweeps hold the idle reset), `openFeature("models")` (model choice) and `LocalView.keepScreenOn` cover it.
+- **Ownership (one owner per package):**
+  - `features/workbench/` (screens, tabs 1 Run and 2 Experiments, run log storage): **dev.llm**.
+  - `features/workbench/tooltests/` (tab 3's composable only): **dev.lab**, called from the workbench screen. A sub-package with its own owner, so the two never edit the same file.
+  - `experiments/` (new shared, non-feature package `app/src/main/java/ai/riskmandate/app/experiments/`): **dev.lab**. It holds the code both the Lab and the Workbench use:
+    - the tool-test catalogue format and parser, and the code checks (right tool, args pass `checkToolCall`, value rules, no call when none fits, no made-up tool, two-step, no secret in args, text after a result);
+    - the `ToolTestRunner` over `LlmService`, pure and JVM-tested with `FakeLlmService`;
+    - the generic loop with its caps: 100 runs, 30 minutes, 15% battery, severe thermal, 3 errors in a row. It moves out of the Lab's `LoopRunner`.
+    - `DeviceGuard`/device readings: battery, charging, thermal. It moves out of the Lab.
+    - the text tool-call protocol extractor (the generic part of the Lab's `ToolProtocol`).
+
+    The Lab keeps only what is ABP-specific: `PathRun`, `AbpChecks`, `Oracle`, `Claims`, scenarios and lanes. A feature package never imports another feature package; both import `experiments/` and `llm/`.
+- **Stats and run options live in `llm/` (dev.llm), additive only, defaults keep every caller compiling:**
+  - `LlmStats` gains `stopReason` (DONE, MAX_TOKENS, CANCELLED, ERROR), `backendUsed` and `fellBack`, and `coldLoad`, alongside the existing prompt/output tokens, TTFT, prefill and decode tokens/s, load ms and total ms. Each value says whether it is runtime-reported or measured in Kotlin.
+  - `MemoryProbe` stays in `llm/`.
+  - `LlmRequest.backend: BackendPreference = AUTO` (AUTO, GPU, CPU). The host reloads when it must, still serialised.
+  - `suspend fun unload()` on `LlmService` (default no-op in the interface) for an honest cold-load measurement. Not `LlmHost` casts.
+  - **No model parameter:** the model is chosen in G (`openFeature("models")`). The Workbench shows the active model from `Ready(modelId, backend)` and logs it per run. A model sweep is not offered for now (compare by switching in G; the log keeps both).
+- **Storage:** `noBackupFilesDir/feature_workbench/`, JSON through `llm/StrictJson`, written off the main thread, with a clear button. mandate lists it with its own reason in the same merge. No export path yet beyond "Copy run" (plain text, no identifiers). Results use the Lab's export format, so eval can read them later.
+- **Output:** plain text only; tools are fakes that record calls; nothing executes.
+
+## Post-summit items (approved, not before the summit build)
+- **P8, feature icons as drawables** (conductor's go for after the build; design chose drawables):
+  1. Add `@DrawableRes iconRes: Int? = null` to `Feature`, mark `icon: ImageVector?` `@Deprecated`; the shell uses `iconRes`, then its default icon (it ignores `icon`). Contract test.
+  2. design draws `res/drawable/ic_feature_<id>.xml` (24 dp, 2 dp stroke, line style) on request; each owner replaces its `icon` override with `iconRes`. No borrowed Material icons.
+  3. When no feature overrides `icon`, delete it.
+  - Same round: app derives the sidebar order from `FEATURES` (`NAV_ORDER` goes); sections move onto `Feature` through the architect only if they stay (A-app-14).
+- **Kotlin, Compose plugin and AGP bump** so LiteRT-LM's 2.4 metadata reads without `-Xskip-metadata-version-check`, then drop the flag (A-llm-2; release and app).
+- **APK size:** an AAB-only or ABI-split path for the arm64 and x86_64 native libraries (A-llm-8; release).

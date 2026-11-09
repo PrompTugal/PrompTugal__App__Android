@@ -1,11 +1,14 @@
 # architect.android status
 
-> 9 Nov 2026, about 05:00 UTC: FeatureContext.llm pushed (merged with dev 25d9cb7, gate green, contract tests). openFeature(id) pushed earlier (a26f037). Waiting for new heads to review.
+> 9 Nov 2026, about 06:00 UTC: contract on dev or pending merge: homeBadge, icon/kicker/summary, openFeature, llm. Preview path reviewed (app 093bdc4 PASS). Post-summit, approved: P8 (iconRes), the Kotlin bump to drop the metadata flag, APK split. Waiting for new heads.
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Workbench ruling (README "Workbench"): id workbench, Preview only, no new FeatureContext capability; features/workbench (dev.llm) with tooltests/ sub-package (dev.lab); new shared experiments/ package (dev.lab: tool-test format and checks, runner, loop caps, device readings, text protocol extractor); stats and run options additive in llm/ (stopReason, backendUsed/fellBack, coldLoad, BackendPreference, unload()); no model parameter; storage noBackupFilesDir/feature_workbench.
+- Review app 4e26cca (45752f8 Preview) PASS: matches the ruling (`preview_<id>`); A-app-14: host tables iconFor/sectionOf/NAV_ORDER belong on Feature/FEATURES (offer: P7 icon as @DrawableRes). README preview section aligned with the code.
+- Ruling: preview of disabled features through a separate host route `preview/<id>` from Diagnostics only. openFeature stays refused except from a feature itself opened in preview. README section written.
 - FeatureContext.llm: LlmService? = null, with FeatureContextLlmTest (null by default; a feature reaches a FakeLlmService). Gate green, secret scan clean.
 - FeatureContext.openFeature(id) (a26f037) with FeatureContextOpenFeatureTest.
 - Ruling A-lab-7: one strict JSON parser, llm/StrictJson (dev.llm takes lab's general parse/render; lab keeps hash16/parseAt and uses checkToolCall). README and the lab review updated.
@@ -30,6 +33,7 @@ Waiting for the first feature or app commits to review.
 - Review round 1 (01:35 UTC): `git log origin/dev..origin/work/<role>` empty for app, design, qa, dev.site, dev.abpdemo, dev.mandate, dev.stand. play has fb617fd (docs only, not app-touching, not reviewed).
 
 ## Next
+- After the summit build: P8 step 1 (iconRes, icon deprecated), then steps 2 and 3 with design and the owners; review app's NAV_ORDER from FEATURES. See README "Post-summit items".
 At each wake: fetch, review every app-touching branch head into `docs/architecture/reviews/<date>-<role>-<sha>.md`, message the conductor with the verdict.
 
 ## Blocked
