@@ -76,7 +76,7 @@ Google's definition (verified): "Collect" means transmitting data from your app 
 5. **Security practices badges.** Optional; not claiming "independent security review" (no review exists).
 6. **Privacy policy URL:** required for every app (Play Console Requirements policy, section 3.2). Link `privacy-policy.md` once hosted. TODO for Dinis.
 
-The result on the store page: "No data collected" and "No data shared with third parties". This is only true while the code stays as above. Any release that adds a dependency or permission must re-open this file first.
+What the store page will show depends on the Data safety answers, which are **open** (see the updates at the top of this file: the in-app view, local storage, the model download). Any release that adds a dependency, a permission or a network destination must re-open this file first.
 
 ## Content rating (IARC questionnaire)
 
