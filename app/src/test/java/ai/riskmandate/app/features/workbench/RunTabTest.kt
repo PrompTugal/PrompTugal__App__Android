@@ -176,6 +176,7 @@ class RunTabTest {
         FakeReply("From the cloud.", stats = ai.riskmandate.app.llm.LlmStats("google/gemma-3-4b-it", "cloud", 8, 3, null, 20.0, 300, 700, location = ai.riskmandate.app.llm.LlmLocation.CLOUD, costUsd = 0.0002))
     }) {
         override val location = ai.riskmandate.app.llm.LlmLocation.CLOUD
+        override fun maxCostMicros(request: ai.riskmandate.app.llm.LlmRequest): Long = 2_500
     }
 
     private fun showWorkbench(cloud: ai.riskmandate.app.llm.LlmService?, local: FakeLlmService) = compose.setContent {
@@ -221,6 +222,15 @@ class RunTabTest {
         }
         assertTrue("tool tests ran on the device (R-wb-9)", local.requests.isNotEmpty())
         assertTrue("nothing went to the cloud", cloudInner.requests.isEmpty())
+    }
+
+    @Test fun aCloudSweepShowsTheServicesWorstCaseCost() {
+        showWorkbench(cloud = cloudFake(), local = FakeLlmService())
+        compose.onNodeWithTag(RunTags.CLOUD).performScrollTo().performClick()
+        compose.onNodeWithTag(RunTags.PROMPT).performScrollTo().performTextInput("Hello")
+        compose.onNodeWithText("Experiments").performClick()
+        // 9 runs (the default plan) at most 2,500 micro-dollars each, read through LlmService.maxCostMicros.
+        compose.onNodeWithTag(ExperimentTags.CLOUD_COST).performScrollTo().assertTextContains("these 9 runs cost at most US$0.0225", substring = true)
     }
 
     @Test fun theCloudChoiceResetsWhenTheCloudServiceGoesAndComesBack() {
