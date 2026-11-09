@@ -1,6 +1,6 @@
 {
  "agent": "conductor.android@promptugal.ai",
- "updated": "2026-11-09T02:58Z",
+ "updated": "2026-11-09T03:05Z",
  "state": "Summit features A, B, C, D, F shipping; design pass to the PrompTugal iOS look under way (theme, components, sidebar shell); logo for the icon waiting on Dinis's choice of accent; LLM team: Lab and chat groundwork on dev (disabled), dev.llm's model bench in review, then Dinis runs it on the Idea Tab Plus.",
  "done": [
   "02:58 UTC: merged and pushed P7 (architect, Feature icon, kicker and summary) and dev.lab acf34e8 (strict tool-call parsing, rule-based ABP checks, Lab lanes on replayed samples), both with security PASS and the gate green. Sent design's A/B variants and logo redraw to Dinis.",
@@ -47,6 +47,7 @@
  ],
  "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
  "decisions": [
+  "9 Nov 2026, about 03:05 UTC, Dinis: theme variant A (RiskMandate green accent, red only for blocked and errors, navy-leaning dark mode) and design's vector redraw of the RM logo as the app icon are approved.",
   "Application ID: ai.riskmandate.app (Dinis, 8 Nov 2026 ~21:35 UTC). Final: fixed once on Google Play.",
   "Order (Dinis, 8 Nov 2026 ~21:40 UTC): RiskMandate is the first app and the one we learn Android development and publishing on; the PrompTugal app comes after it. Lessons go in docs/lessons.md so the PrompTugal app starts from them.",
   "Open source and for sale (Dinis, 8 Nov 2026 ~21:45 UTC): all these apps are open source (Apache 2.0, the repo's LICENSE) and will be put for sale eventually.",
