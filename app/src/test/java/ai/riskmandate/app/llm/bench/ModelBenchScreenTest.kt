@@ -20,6 +20,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -50,7 +51,14 @@ class ModelBenchScreenTest {
 
     @Test fun staysOffTheHomeScreenUntilItWorksOnTheTablet() = assertFalse(ModelsFeature.enabled)
 
+    @Test fun noAdbFolderBeforeScopedStorage() {
+        assertTrue(ModelFiles.adbDir(app, 29) == null)
+        assertTrue(ModelFiles.adbDir(app, 30) != null)
+    }
+
     @Test fun benchEntryOnlyWithAModelInTheBenchFolderOrOnADebugBuild() {
+        val debuggable = app.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
+        assertEquals("the plain overload follows the build's debuggable flag", debuggable, ModelFiles.benchAvailable(app))
         assertFalse(ModelFiles.benchAvailable(app, debuggable = false))
         assertTrue(ModelFiles.benchAvailable(app, debuggable = true))
         File(ModelFiles.adbDir(app)!!, "notes.txt").writeText("x")

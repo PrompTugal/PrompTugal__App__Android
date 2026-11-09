@@ -16,8 +16,6 @@
     <string name="message_refused">Esse endereço não pertence a riskmandate.ai, por isso a aplicação não o abre.</string>
 
     <string name="licences_title">Licenças de código aberto</string>
-    <string name="licences_back">Voltar</string>
-    <string name="licences_back_description">Voltar ao ecrã inicial</string>
     <string name="licences_apache_heading">Apache License, Version 2.0 (texto completo)</string>
 
     <string name="nav_section_today">Hoje</string>
@@ -26,8 +24,8 @@
     <string name="nav_collapse">Reduzir a barra lateral a ícones</string>
     <string name="nav_expand">Abrir a barra lateral</string>
     <string name="shell_brand_line">Web Summit</string>
+    <string name="nav_home_action">Ir para Agora</string>
     <string name="nav_menu">Abrir o menu de navegação</string>
-    <string name="nav_home">Início</string>
     <string name="home_now_title">Agora</string>
     <string name="home_now_summary">O que pode abrir neste dispositivo.</string>
     <string name="home_stat_features">Funcionalidades ativas</string>

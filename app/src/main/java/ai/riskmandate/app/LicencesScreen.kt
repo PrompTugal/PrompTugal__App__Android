@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 object LicenceTags {
     const val TEXT = "licences_text"
     const val APACHE = "licences_apache"
-    const val BACK = "licences_back"
 }
 
 /** The app's licence notice and library list, from res/raw/licences.txt (rebuilt by app/tools/make-licences.sh). */
@@ -42,8 +41,7 @@ private fun readRaw(context: Context, id: Int): String =
     context.resources.openRawResource(id).bufferedReader().use { it.readText() }
 
 @Composable
-fun LicencesScreen(text: String, apacheText: String, onBack: () -> Unit) {
-    val backDescription = stringResource(R.string.licences_back_description)
+fun LicencesScreen(text: String, apacheText: String) {
     Column(
         modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -52,23 +50,10 @@ fun LicencesScreen(text: String, apacheText: String, onBack: () -> Unit) {
             modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            TextButton(
-                onClick = onBack,
-                modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .testTag(LicenceTags.BACK)
-                    .semantics { onClick(label = backDescription, action = null) },
-            ) { Text(stringResource(R.string.licences_back)) }
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    stringResource(R.string.licences_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.semantics { heading() },
-                )
                 Text(
                     text,
                     style = MaterialTheme.typography.bodySmall,
@@ -96,5 +81,5 @@ fun LicencesScreen(text: String, apacheText: String, onBack: () -> Unit) {
 @Preview(showBackground = true)
 @Composable
 private fun LicencesPreview() = RiskMandateTheme {
-    LicencesScreen(text = "RiskMandate\n\nLicensed under the Apache License, Version 2.0.", apacheText = "Apache License ...", onBack = {})
+    LicencesScreen(text = "RiskMandate\n\nLicensed under the Apache License, Version 2.0.", apacheText = "Apache License ...")
 }

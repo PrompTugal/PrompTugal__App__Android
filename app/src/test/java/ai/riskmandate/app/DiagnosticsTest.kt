@@ -86,7 +86,7 @@ class DiagnosticsTest {
     @Test fun copyButtonPutsPlainTextOnTheClipboard() {
         val text = info.toText()
         compose.setContent {
-            MaterialTheme { DiagnosticsScreen(text = text, onCopy = { copyToClipboard(context, "Diagnostics", text) }, onBack = {}) }
+            MaterialTheme { DiagnosticsScreen(text = text, onCopy = { copyToClipboard(context, "Diagnostics", text) }) }
         }
         compose.onNodeWithTag(DiagnosticsTags.TEXT).assertTextContains("Version code: 7", substring = true)
         compose.onNodeWithTag(DiagnosticsTags.COPY).performClick()
@@ -100,7 +100,7 @@ class DiagnosticsTest {
         var withBench by mutableStateOf(true)
         compose.setContent {
             MaterialTheme {
-                DiagnosticsScreen(text = "x", onCopy = { true }, onBack = {}, onModelBench = if (withBench) ({ opened++ }) else null)
+                DiagnosticsScreen(text = "x", onCopy = { true }, onModelBench = if (withBench) ({ opened++ }) else null)
             }
         }
         compose.onNodeWithTag(DiagnosticsTags.MODEL_BENCH).performScrollTo().performClick()

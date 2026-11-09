@@ -23,7 +23,7 @@ class HostTest {
         compose.onNodeWithTag(DiagnosticsTags.TEXT).assertIsDisplayed()
         compose.activityRule.scenario.recreate() // what a tablet turn does
         compose.onNodeWithTag(DiagnosticsTags.TEXT).assertIsDisplayed()
-        compose.onNodeWithTag(DiagnosticsTags.BACK).performClick()
+        compose.onNodeWithTag(ShellTags.HOME).performClick() // the visible way home on a phone
         compose.onNodeWithTag(HomeTags.OPEN).performScrollTo().assertIsDisplayed()
     }
 

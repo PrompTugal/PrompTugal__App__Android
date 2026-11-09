@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,10 +39,12 @@ object Routes {
 
 /**
  * The route to show for a saved [screen]: itself if it is a built-in or an enabled feature, else Home;
- * and Home for the staff-only screens (Diagnostics, the model bench) while stand mode is on.
+ * and Home for the staff-only screens (Diagnostics, the model bench) while stand mode is on, and for a restored
+ * model-bench route when the bench is not available (release build with no model file pushed).
  */
-fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean): String = when {
+fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean, benchAvailable: Boolean = true): String = when {
     standOn && (screen == Routes.DIAGNOSTICS || screen == Routes.MODEL_BENCH) -> Routes.HOME
+    screen == Routes.MODEL_BENCH && !benchAvailable -> Routes.HOME
     screen in BUILT_IN || featureEnabled -> screen
     else -> Routes.HOME
 }
@@ -97,7 +98,8 @@ class MainActivity : ComponentActivity() {
                     // Stand mode (a visitor at a stand): Diagnostics and the model bench are staff tools, so they
                     // are hidden and unreachable while it is on (R-shell-1). Set from StandHost, see standOn below.
                     var standOn by remember { mutableStateOf(false) }
-                    val route = resolveRoute(screen, standOn, featureEnabled = feature != null)
+                    val benchAvailable = remember { ModelFiles.benchAvailable(this@MainActivity, BuildConfig.DEBUG) }
+                    val route = resolveRoute(screen, standOn, featureEnabled = feature != null, benchAvailable = benchAvailable)
                     LaunchedEffect(route, screen) { if (route != screen) screen = route }
                     // Features that run unattended on purpose (abpdemo's auto-play) hold stand mode's idle
                     // reset off through this. HoldIdleWhile releases when the feature leaves the screen; the
@@ -126,8 +128,8 @@ class MainActivity : ComponentActivity() {
                     )
                     val currentTitle = when (route) {
                         Routes.HOME -> R.string.home_now_title
-                        Routes.LICENCES -> R.string.home_licences
-                        Routes.DIAGNOSTICS -> R.string.home_diagnostics
+                        Routes.LICENCES -> R.string.licences_title
+                        Routes.DIAGNOSTICS -> R.string.diagnostics_title
                         Routes.MODEL_BENCH -> R.string.feature_models_title
                         else -> feature?.title ?: R.string.home_now_title
                     }
@@ -149,19 +151,21 @@ class MainActivity : ComponentActivity() {
                             },
                         ) {
                             when {
-                                route == Routes.LICENCES -> LicencesScreen(
-                                    text = remember { readLicences(this@MainActivity) },
-                                    apacheText = remember { readApacheLicence(this@MainActivity) },
-                                    onBack = goHome,
-                                )
+                                route == Routes.LICENCES -> FeatureFrame(title = R.string.licences_title, kicker = R.string.nav_section_device) {
+                                    LicencesScreen(
+                                        text = remember { readLicences(this@MainActivity) },
+                                        apacheText = remember { readApacheLicence(this@MainActivity) },
+                                    )
+                                }
                                 route == Routes.DIAGNOSTICS -> {
                                     val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
                                     // Only on a debuggable build or once a model file is pushed (architect A-llm-5).
-                                    val bench = remember { ModelFiles.benchAvailable(this@MainActivity, BuildConfig.DEBUG) }
-                                    DiagnosticsScreen(
-                                        text = text, onCopy = rememberCopyAction(text), onBack = goHome,
-                                        onModelBench = if (bench) ({ screen = Routes.MODEL_BENCH }) else null,
-                                    )
+                                    FeatureFrame(title = R.string.diagnostics_title, kicker = R.string.nav_section_device) {
+                                        DiagnosticsScreen(
+                                            text = text, onCopy = rememberCopyAction(text),
+                                            onModelBench = if (benchAvailable) ({ screen = Routes.MODEL_BENCH }) else null,
+                                        )
+                                    }
                                 }
                                 route == Routes.MODEL_BENCH -> FeatureFrame(title = R.string.feature_models_title, kicker = R.string.nav_section_device) {
                                     ModelBenchScreen()

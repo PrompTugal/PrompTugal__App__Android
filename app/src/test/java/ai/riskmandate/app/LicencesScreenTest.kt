@@ -42,15 +42,12 @@ class LicencesScreenTest {
         compose.setContent {
             MaterialTheme {
                 var open = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-                if (open.value) LicencesScreen(text = text, apacheText = apache, onBack = { open.value = false })
+                if (open.value) LicencesScreen(text = text, apacheText = apache)
                 else HomeScreen("0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {}, onLicences = { open.value = true })
             }
         }
         compose.onNodeWithTag(HomeTags.LICENCES).performScrollTo().performClick()
-        compose.onNodeWithText("Open source licences").assertIsDisplayed()
         compose.onNodeWithTag(LicenceTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(LicenceTags.APACHE).assertExists()
-        compose.onNodeWithTag(LicenceTags.BACK).performClick()
-        compose.onNodeWithTag(HomeTags.OPEN).performScrollTo().assertIsDisplayed()
     }
 }

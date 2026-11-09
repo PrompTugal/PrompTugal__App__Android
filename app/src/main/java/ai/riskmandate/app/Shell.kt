@@ -86,6 +86,7 @@ object ShellTags {
     const val MENU = "shell_menu"
     const val TOP_TITLE = "shell_top_title"
     const val COLLAPSE = "shell_collapse"
+    const val HOME = "shell_home"
     fun item(route: String) = "nav_$route"
     fun pill(route: String) = "nav_pill_$route"
 }
@@ -164,6 +165,7 @@ fun AppShell(
                     TopBar(
                         title = currentTitle,
                         onMenu = { scope.launch { drawer.open() } },
+                        onHome = if (atHome) null else onBackHome,
                         modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(edges)),
                     )
                     Box(Modifier.weight(1f).fillMaxWidth().consumeWindowInsets(WindowInsets.safeDrawing.only(edges))) {
@@ -176,7 +178,7 @@ fun AppShell(
 }
 
 @Composable
-private fun TopBar(@StringRes title: Int, onMenu: () -> Unit, modifier: Modifier = Modifier) {
+private fun TopBar(@StringRes title: Int, onMenu: () -> Unit, onHome: (() -> Unit)?, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onMenu, modifier = Modifier.heightIn(min = 48.dp).testTag(ShellTags.MENU)) {
             Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu), tint = Pt.colors.ink)
@@ -185,8 +187,14 @@ private fun TopBar(@StringRes title: Int, onMenu: () -> Unit, modifier: Modifier
             stringResource(title),
             style = MaterialTheme.typography.titleMedium,
             color = Pt.colors.ink,
-            modifier = Modifier.padding(start = 4.dp).testTag(ShellTags.TOP_TITLE).semantics { heading() },
+            modifier = Modifier.padding(start = 4.dp).weight(1f).testTag(ShellTags.TOP_TITLE).semantics { heading() },
         )
+        // A visible way home on every screen but Home itself (stand mode may pin the back gesture off).
+        if (onHome != null) {
+            IconButton(onClick = onHome, modifier = Modifier.heightIn(min = 48.dp).testTag(ShellTags.HOME)) {
+                Icon(painterResource(R.drawable.ic_nav_home), contentDescription = stringResource(R.string.nav_home_action), tint = Pt.colors.red)
+            }
+        }
     }
 }
 

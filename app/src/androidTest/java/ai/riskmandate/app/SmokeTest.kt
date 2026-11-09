@@ -30,7 +30,7 @@ class SmokeTest {
         compose.onNodeWithTag(HomeTags.LICENCES).performScrollTo().performClick()
         compose.onNodeWithTag(LicenceTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(LicenceTags.APACHE).assertExists()
-        compose.onNodeWithTag(LicenceTags.BACK).performClick()
+        compose.onNodeWithTag(ShellTags.HOME).performClick()
         compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
     }
 
@@ -38,7 +38,7 @@ class SmokeTest {
         compose.onNodeWithTag(HomeTags.DIAGNOSTICS).performScrollTo().performClick()
         compose.onNodeWithTag(DiagnosticsTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(DiagnosticsTags.COPY).assertIsDisplayed()
-        compose.onNodeWithTag(DiagnosticsTags.BACK).performClick()
+        compose.onNodeWithTag(ShellTags.HOME).performClick()
         compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
     }
 

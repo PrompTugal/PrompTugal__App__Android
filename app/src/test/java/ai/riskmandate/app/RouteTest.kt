@@ -16,6 +16,12 @@ class RouteTest {
         assertEquals(Routes.HOME, resolveRoute("site", standOn = false, featureEnabled = false))
     }
 
+    @Test fun aRestoredModelBenchRouteGoesHomeWhenTheBenchIsNotAvailable() {
+        assertEquals(Routes.HOME, resolveRoute(Routes.MODEL_BENCH, standOn = false, featureEnabled = false, benchAvailable = false))
+        assertEquals(Routes.MODEL_BENCH, resolveRoute(Routes.MODEL_BENCH, standOn = false, featureEnabled = false, benchAvailable = true))
+        assertEquals(Routes.DIAGNOSTICS, resolveRoute(Routes.DIAGNOSTICS, standOn = false, featureEnabled = false, benchAvailable = false))
+    }
+
     @Test fun staffScreensAreUnreachableInStandModeButLicencesStay() {
         assertEquals(Routes.HOME, resolveRoute(Routes.DIAGNOSTICS, standOn = true, featureEnabled = false))
         assertEquals(Routes.HOME, resolveRoute(Routes.MODEL_BENCH, standOn = true, featureEnabled = false))

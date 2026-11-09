@@ -1,6 +1,8 @@
 package ai.riskmandate.app.llm
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.os.Build
 import java.io.File
 import java.io.InputStream
 import java.security.MessageDigest
@@ -35,8 +37,14 @@ object ModelFiles {
 
     fun internalDir(context: Context): File = File(context.noBackupFilesDir, DIR)
 
-    /** Null when shared storage is not mounted. Calling it creates the folder, so adb can push into it. */
-    fun adbDir(context: Context): File? = context.getExternalFilesDir(DIR)
+    /**
+     * The adb folder, or null when shared storage is not mounted or the device runs Android 10 or earlier:
+     * only scoped storage (API 30+) keeps other apps out of it (security R-llm-4). Calling it creates the
+     * folder, so adb can push into it.
+     */
+    fun adbDir(context: Context): File? = adbDir(context, Build.VERSION.SDK_INT)
+
+    fun adbDir(context: Context, sdk: Int): File? = if (sdk >= 30) context.getExternalFilesDir(DIR) else null
 
     /** Every catalogue file present in either folder, internal first. Other files are ignored. */
     fun find(context: Context): List<FoundModel> = find(listOfNotNull(internalDir(context), adbDir(context)))
@@ -50,6 +58,9 @@ object ModelFiles {
      * catalogue file is already in the adb folder, so visitors on a stand tablet do not come across it.
      * Reads one directory listing; cheap enough for the main thread when Diagnostics opens.
      */
+    fun benchAvailable(context: Context): Boolean =
+        benchAvailable(context, context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
+
     fun benchAvailable(context: Context, debuggable: Boolean): Boolean =
         debuggable || find(listOfNotNull(adbDir(context))).isNotEmpty()
 
@@ -66,6 +77,26 @@ object ModelFiles {
         if (hash == spec.sha256) return Verdict.OK
         file.delete()
         return Verdict.WRONG_HASH
+    }
+
+    /**
+     * A marker beside a verified file, bound to its size, modification time and pinned hash (security G.3: never
+     * to the name alone). Any change to the file, or a new pin, invalidates it.
+     */
+    fun markerFile(file: File): File = File(file.parentFile, ".${file.name}.verified")
+
+    private fun markerText(file: File, spec: ModelSpec) = "${file.length()}:${file.lastModified()}:${spec.sha256}"
+
+    fun markVerified(file: File, spec: ModelSpec) = markerFile(file).writeText(markerText(file, spec))
+
+    fun isMarkedVerified(file: File, spec: ModelSpec): Boolean =
+        file.length() == spec.sizeBytes && markerFile(file).let { it.isFile && it.readText() == markerText(file, spec) }
+
+    /** [verify], skipped when a valid marker says this exact file was verified; writes the marker on success. */
+    fun verifyOnce(file: File, spec: ModelSpec, onProgress: (Int) -> Unit = {}): Verdict {
+        if (isMarkedVerified(file, spec)) return Verdict.OK
+        markerFile(file).delete()
+        return verify(file, spec, onProgress).also { if (it == Verdict.OK) markVerified(file, spec) }
     }
 
     /** Lowercase hex SHA-256 of [input]. [total] (bytes expected) is only used for progress. */

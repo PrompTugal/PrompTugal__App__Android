@@ -75,7 +75,7 @@ class ScreenshotTest {
         val context = RuntimeEnvironment.getApplication()
         val text = readLicences(context)
         val apache = readApacheLicence(context)
-        shoot("licences") { LicencesScreen(text = text, apacheText = apache, onBack = {}) }
+        shoot("licences") { LicencesScreen(text = text, apacheText = apache) }
     }
 
     /** The whole shell (sidebar or top bar) around the Now page, with a sample set of destinations. */

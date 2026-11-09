@@ -61,23 +61,27 @@ object LiteRtBench {
 
         onProgress(BenchProgress.Loading)
         val cache = File(context.cacheDir, ModelFiles.DIR).apply { mkdirs() }
-        val engine = Engine(
-            EngineConfig(
-                modelPath = model.file.absolutePath,
-                backend = if (backend == BenchBackend.GPU) Backend.GPU() else Backend.CPU(),
-                maxNumTokens = MAX_TOKENS,
-                cacheDir = cache.absolutePath,
-            ),
-        )
+        // Built inside the try: creating the engine loads the native library, which can throw an Error
+        // (UnsatisfiedLinkError, NoClassDefFoundError). Every failure is reported, never thrown (qa Q-llm-1).
+        var engine: Engine? = null
         try {
+            val e0 = Engine(
+                EngineConfig(
+                    modelPath = model.file.absolutePath,
+                    backend = if (backend == BenchBackend.GPU) Backend.GPU() else Backend.CPU(),
+                    maxNumTokens = MAX_TOKENS,
+                    cacheDir = cache.absolutePath,
+                ),
+            )
+            engine = e0
             val loadStart = SystemClock.elapsedRealtime()
             // The runtime's benchmark counters must be on while the engine and conversation are created.
             ExperimentalFlags.enableBenchmark = true
             val conversation = try {
-                engine.initialize()
+                e0.initialize()
                 loadMs = SystemClock.elapsedRealtime() - loadStart
                 memoryAfterLoad = MemoryProbe.sample(context)
-                engine.createConversation(
+                e0.createConversation(
                     // Greedy (top-k 1), so the same model and backend give the same answer each run.
                     ConversationConfig(samplerConfig = SamplerConfig(topK = 1, topP = 1.0, temperature = 1.0)),
                 )
@@ -106,20 +110,20 @@ object LiteRtBench {
                     prefillTps = info.lastPrefillTokensPerSecond
                     decodeTokens = info.lastDecodeTokenCount
                     decodeTps = info.lastDecodeTokensPerSecond
-                } catch (e: Exception) {
+                } catch (t: Throwable) {
                     // Counters are experimental; wall-clock numbers still stand.
                 }
             }
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) {
-            error = "${e.javaClass.simpleName}: ${e.message ?: "no message"}".take(300)
+        } catch (t: Throwable) {
+            error = "${t.javaClass.simpleName}: ${t.message ?: "no message"}".take(300)
         } finally {
             withContext(NonCancellable) {
                 try {
-                    engine.close()
-                } catch (e: Exception) {
-                    // Already closed or never initialised.
+                    engine?.close()
+                } catch (t: Throwable) {
+                    // Already closed, never initialised, or the native library never loaded.
                 }
             }
         }
