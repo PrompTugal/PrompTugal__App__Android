@@ -20,8 +20,17 @@ import kotlinx.coroutines.sync.withLock
 class FakeLlmService(
     initial: LlmState = LlmState.Ready(MODEL_ID, "fake"),
     private val tokenDelayMs: Long = 0,
+    /** A virtual clock for the default stats' times (QA): each token advances it by [tokenDelayMs]. */
+    private val clock: () -> Long = { 0L },
     private val reply: (LlmRequest) -> FakeReply = { FakeReply("This is a fake answer.") },
 ) : LlmService {
+    /** How many times [unload] was called. */
+    @Volatile var unloads = 0
+        private set
+
+    override suspend fun unload() {
+        unloads++
+    }
     private val _state = MutableStateFlow(initial)
     override val state: StateFlow<LlmState> = _state.asStateFlow()
     private val lock = Mutex()
@@ -54,12 +63,16 @@ class FakeLlmService(
                 count++
             }
             r.toolCalls.forEach { emit(it) }
+            r.stats?.let {
+                emit(LlmEvent.Done(it))
+                return@withLock
+            }
             emit(
                 LlmEvent.Done(
                     LlmStats(
                         modelId = MODEL_ID, backend = "fake", promptTokens = request.messages.sumOf { tokens(it.text).size },
                         outputTokens = count, prefillTokensPerSecond = null, decodeTokensPerSecond = null,
-                        timeToFirstTokenMs = 0, totalMs = count * tokenDelayMs,
+                        timeToFirstTokenMs = clock(), totalMs = clock() + count * tokenDelayMs,
                         requestedBackend = "fake", maxTokens = request.maxTokens,
                         stopReason = if (count >= request.maxTokens) LlmStopReason.MAX_TOKENS else LlmStopReason.DONE,
                     ),
@@ -81,4 +94,6 @@ data class FakeReply(
     val toolCalls: List<LlmEvent.ToolCallProposed> = emptyList(),
     /** If set, the stream emits only this. */
     val error: LlmEvent.Error? = null,
+    /** If set, the Done event carries exactly these stats (every field scriptable, nulls included; QA). */
+    val stats: LlmStats? = null,
 )

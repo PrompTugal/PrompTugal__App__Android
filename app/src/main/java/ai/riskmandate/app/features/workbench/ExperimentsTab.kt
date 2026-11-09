@@ -77,12 +77,13 @@ fun ExperimentsTab(
     runner: LlmRunner?,
     /** The Run tab's current settings, or null when they are not valid. */
     base: RunSettings?,
-    models: List<String>,
     probe: () -> DeviceSample?,
     log: List<LogEntry>,
     onRecord: (String, RunRecord) -> Unit,
     onClearLog: () -> Unit,
     onRunning: (Boolean) -> Unit = {},
+    /** Monotonic milliseconds for the caps' 30-minute limit; injectable for tests (QA). */
+    clock: () -> Long = { System.nanoTime() / 1_000_000 },
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -95,17 +96,18 @@ fun ExperimentsTab(
     var job by remember { mutableStateOf<Job?>(null) }
     var progress by remember { mutableStateOf<ExperimentProgress?>(null) }
     var lastPlan by remember { mutableStateOf<ExperimentPlan?>(null) }
+    // The last results table, as validated counters, survives a rotation (SummaryCodec).
+    var savedSummary by rememberSaveable { mutableStateOf("") }
     var confirmClear by remember { mutableStateOf(false) }
     var copied by remember { mutableStateOf<Boolean?>(null) }
     val running = job != null
 
     val chosen = when (variable) {
         SweepVariable.SYSTEM_PROMPT -> listOf("on", "off")
-        SweepVariable.MODEL -> if (ab) listOf(valueA, valueB) else models
         else -> if (ab) listOf(valueA.trim(), valueB.trim()) else ExperimentPlan.parseValues(values)
     }
     val plan = ExperimentPlan(variable, chosen, repeats.toIntOrNull() ?: 0)
-    val expanded = base?.let { plan.expand(it, models) }
+    val expanded = base?.let { plan.expand(it) }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.workbench_experiment), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
@@ -124,7 +126,6 @@ fun ExperimentsTab(
         }
         when {
             variable == SweepVariable.SYSTEM_PROMPT -> Text(stringResource(R.string.workbench_values_system))
-            variable == SweepVariable.MODEL && !ab -> Text(stringResource(R.string.workbench_values_models, models.joinToString(", ").ifEmpty { "-" }))
             ab -> FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SmallField(valueA, R.string.workbench_value_a, ExperimentTags.VALUE_A, !running, KeyboardType.Text) { valueA = it }
                 SmallField(valueB, R.string.workbench_value_b, ExperimentTags.VALUE_B, !running, KeyboardType.Text) { valueB = it }
@@ -151,7 +152,12 @@ fun ExperimentsTab(
                         lastPlan = plan
                         progress = ExperimentProgress(0, list.size, null, emptyList(), null, false)
                         onRunning(true)
-                        val j = scope.launch { runExperiment(list, r, probe, onRecord = onRecord) { progress = it } }
+                        val j = scope.launch {
+                            runExperiment(list, r, probe, clock = clock, onRecord = onRecord) { p ->
+                                progress = p
+                                if (p.finished) savedSummary = SummaryCodec.encode(plan, ExperimentSummary.of(plan.values, p.results), p.stop)
+                            }
+                        }
                         job = j
                         j.invokeOnCompletion { if (job === j) job = null; onRunning(false) }
                     },
@@ -175,6 +181,14 @@ fun ExperimentsTab(
                 if (p.finished) {
                     OutlinedButton(onClick = { copied = copyToClipboard(context, "RiskMandate Workbench experiment", text) },
                         modifier = Modifier.heightIn(min = 48.dp).testTag(ExperimentTags.COPY)) { Text(stringResource(R.string.workbench_results_copy)) }
+                }
+            }
+        }
+        if (progress == null) {
+            SummaryCodec.decode(savedSummary)?.let { (p, rows, stop) ->
+                SelectionContainer {
+                    Text(ExperimentSummary.text(p, rows, stop), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.testTag(ExperimentTags.RESULTS))
                 }
             }
         }
@@ -228,7 +242,6 @@ private fun variableLabel(v: SweepVariable) = when (v) {
     SweepVariable.MAX_TOKENS -> R.string.workbench_max_tokens
     SweepVariable.BACKEND -> R.string.workbench_backend
     SweepVariable.SYSTEM_PROMPT -> R.string.workbench_system
-    SweepVariable.MODEL -> R.string.workbench_model
 }
 
 private fun stopLabel(s: ExperimentStop) = when (s) {

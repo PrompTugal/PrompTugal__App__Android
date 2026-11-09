@@ -2,9 +2,8 @@ package ai.riskmandate.app.features.workbench
 
 import ai.riskmandate.app.R
 import ai.riskmandate.app.copyToClipboard
-import ai.riskmandate.app.llm.BenchBackend
+import ai.riskmandate.app.llm.BackendPreference
 import ai.riskmandate.app.llm.LlmRunner
-import ai.riskmandate.app.llm.ModelSpec
 import ai.riskmandate.app.llm.RunRecord
 import ai.riskmandate.app.llm.RunReport
 import ai.riskmandate.app.llm.RunSettings
@@ -26,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,7 +63,10 @@ object RunTags {
     const val REPORT = "workbench_report"
     const val INVALID = "workbench_invalid"
     const val NO_SERVICE = "workbench_no_service"
-    fun model(id: String) = "workbench_model_$id"
+    const val MODEL = "workbench_model"
+    const val OPEN_MODELS = "workbench_open_models"
+    const val COLD = "workbench_cold"
+    const val DONE = "workbench_done"
     fun backend(name: String) = "workbench_backend_$name"
     fun systemPreset(i: Int) = "workbench_system_preset_$i"
     fun tools(i: Int) = "workbench_tools_$i"
@@ -71,8 +74,8 @@ object RunTags {
 
 /** The settings as typed: strings, so half-typed numbers do not fight the keyboard. Saved across rotation. */
 data class RunForm(
-    val modelId: String? = null,
     val backend: String = "AUTO",
+    val coldStart: Boolean = false,
     val system: String = "",
     val prompt: String = "",
     val temperature: String = "1.0",
@@ -82,30 +85,37 @@ data class RunForm(
     val maxTokens: String = "256",
     val toolSet: Int = -1,
 ) {
-    /** The settings, or null when a number is out of range (the screen says which fields to fix). */
+    /** The settings, or null when a number is out of range or the prompt is empty (the screen says what to fix). */
     fun settings(toolSets: List<ToolSet>): RunSettings? {
         val t = temperature.toDoubleOrNull()?.takeIf { it in 0.0..2.0 } ?: return null
         val k = topK.toIntOrNull()?.takeIf { it in 1..1000 } ?: return null
         val p = topP.toDoubleOrNull()?.takeIf { it > 0.0 && it <= 1.0 } ?: return null
-        val s = if (seed.isBlank()) null else seed.toIntOrNull() ?: return null
+        val s = if (seed.isBlank()) null else seed.toIntOrNull()?.takeIf { it >= 0 } ?: return null
         val m = maxTokens.toIntOrNull()?.takeIf { it in 1..ai.riskmandate.app.llm.LlmRequest.MAX_OUTPUT_TOKENS } ?: return null
-        if (prompt.isBlank()) return null
+        if (prompt.isBlank() || prompt.length > RunSettings.MAX_TYPED_CHARS || system.length > RunSettings.MAX_TYPED_CHARS) return null
         return RunSettings(
-            modelId = modelId,
-            backend = BenchBackend.entries.firstOrNull { it.name == backend },
+            backend = BackendPreference.entries.firstOrNull { it.name == backend } ?: BackendPreference.AUTO,
             systemPrompt = system,
             userPrompt = prompt,
             sampling = Sampling(temperature = t, topK = k, topP = p, seed = s),
             maxTokens = m,
             tools = toolSets.getOrNull(toolSet)?.tools ?: emptyList(),
+            coldStart = coldStart,
         )
     }
 
     companion object {
         /** Saved as a list of strings in a rememberSaveable. */
-        fun save(f: RunForm): List<String> = listOf(f.modelId ?: "", f.backend, f.system, f.prompt, f.temperature, f.topK, f.topP, f.seed, f.maxTokens, f.toolSet.toString())
-        fun restore(l: List<String>): RunForm = if (l.size != 10) RunForm() else
-            RunForm(l[0].ifEmpty { null }, l[1], l[2], l[3], l[4], l[5], l[6], l[7], l[8], l[9].toIntOrNull() ?: -1)
+        fun save(f: RunForm): List<String> = listOf(f.backend, f.coldStart.toString(), f.system, f.prompt, f.temperature, f.topK, f.topP, f.seed, f.maxTokens, f.toolSet.toString())
+
+        /** Checked on the way back: wrong shape gives the defaults, text is cut to the caps (security L). */
+        fun restore(l: List<String>): RunForm = if (l.size != 10) RunForm() else RunForm(
+            backend = l[0].takeIf { b -> BackendPreference.entries.any { it.name == b } } ?: "AUTO",
+            coldStart = l[1] == "true",
+            system = l[2].take(RunSettings.MAX_TYPED_CHARS), prompt = l[3].take(RunSettings.MAX_TYPED_CHARS),
+            temperature = l[4].take(8), topK = l[5].take(8), topP = l[6].take(8), seed = l[7].take(10), maxTokens = l[8].take(8),
+            toolSet = l[9].toIntOrNull()?.coerceIn(-1, 50) ?: -1,
+        )
     }
 }
 
@@ -125,7 +135,9 @@ data class SystemPreset(val label: Int, val text: String)
 @Composable
 fun RunTab(
     runner: LlmRunner?,
-    models: List<ModelSpec>,
+    /** The model in use, read from the service (Ready, Idle or Loading), or null. Chosen in Model setup. */
+    activeModel: String?,
+    onOpenModels: () -> Unit,
     presets: List<SystemPreset>,
     toolSets: List<ToolSet>,
     /** The form and the last run are held by the Workbench, so they survive switching tabs. */
@@ -170,12 +182,10 @@ fun RunTab(
         }
 
         Text(stringResource(R.string.workbench_model), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = form.modelId == null, enabled = !running, onClick = { edit { it.copy(modelId = null) } },
-                label = { Text(stringResource(R.string.workbench_model_current)) }, modifier = Modifier.heightIn(min = 48.dp).testTag(RunTags.model("current")))
-            models.forEach { m ->
-                FilterChip(selected = form.modelId == m.id, enabled = !running, onClick = { edit { it.copy(modelId = m.id) } },
-                    label = { Text(m.displayName) }, modifier = Modifier.heightIn(min = 48.dp).testTag(RunTags.model(m.id)))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(activeModel ?: stringResource(R.string.workbench_model_none), modifier = Modifier.testTag(RunTags.MODEL))
+            TextButton(onClick = onOpenModels, enabled = !running, modifier = Modifier.heightIn(min = 48.dp).testTag(RunTags.OPEN_MODELS)) {
+                Text(stringResource(R.string.workbench_model_change))
             }
         }
         Text(stringResource(R.string.workbench_backend), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
@@ -184,6 +194,8 @@ fun RunTab(
                 FilterChip(selected = form.backend == b, enabled = !running, onClick = { edit { it.copy(backend = b) } },
                     label = { Text(stringResource(label)) }, modifier = Modifier.heightIn(min = 48.dp).testTag(RunTags.backend(b)))
             }
+            FilterChip(selected = form.coldStart, enabled = !running, onClick = { edit { it.copy(coldStart = !form.coldStart) } },
+                label = { Text(stringResource(R.string.workbench_cold_start)) }, modifier = Modifier.heightIn(min = 48.dp).testTag(RunTags.COLD))
         }
 
         Text(stringResource(R.string.workbench_system), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
@@ -194,12 +206,12 @@ fun RunTab(
             }
         }
         OutlinedTextField(
-            value = form.system, onValueChange = { v -> edit { it.copy(system = v.take(MAX_PROMPT)) } }, enabled = !running,
+            value = form.system, onValueChange = { v -> edit { it.copy(system = v.take(RunSettings.MAX_TYPED_CHARS)) } }, enabled = !running,
             label = { Text(stringResource(R.string.workbench_system_label)) }, minLines = 2, maxLines = 6,
             modifier = Modifier.fillMaxWidth().testTag(RunTags.SYSTEM),
         )
         OutlinedTextField(
-            value = form.prompt, onValueChange = { v -> edit { it.copy(prompt = v.take(MAX_PROMPT)) } }, enabled = !running,
+            value = form.prompt, onValueChange = { v -> edit { it.copy(prompt = v.take(RunSettings.MAX_TYPED_CHARS)) } }, enabled = !running,
             label = { Text(stringResource(R.string.workbench_prompt)) }, minLines = 2, maxLines = 8,
             modifier = Modifier.fillMaxWidth().testTag(RunTags.PROMPT),
         )
@@ -253,7 +265,18 @@ fun RunTab(
                     R.string.workbench_live, seconds(p.elapsedMs), p.firstTokenMs?.let { seconds(it) } ?: "-", p.pieces,
                 ),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag(RunTags.LIVE).semantics { liveRegion = LiveRegionMode.Polite },
+                // Not a live region: it changes with every token. The completion line below is announced once.
+                modifier = Modifier.testTag(RunTags.LIVE),
+            )
+        }
+        last?.let { rec ->
+            Text(
+                stringResource(
+                    R.string.workbench_done, stopWord(rec), rec.stats?.outputTokens ?: 0,
+                    rec.stats?.decodeTokensPerSecond?.let { String.format(java.util.Locale.ROOT, "%.1f", it) } ?: "-",
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag(RunTags.DONE).semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
         val answer = last?.text ?: live?.text ?: ""
@@ -284,7 +307,14 @@ private fun NumberField(value: String, label: Int, tag: String, enabled: Boolean
     )
 }
 
-private fun seconds(ms: Long) = String.format(java.util.Locale.ROOT, "%.1f s", ms / 1000.0)
+@Composable
+private fun stopWord(r: RunRecord): String = stringResource(
+    when (r.stopReason) {
+        ai.riskmandate.app.llm.LlmStopReason.DONE -> R.string.workbench_stop_done
+        ai.riskmandate.app.llm.LlmStopReason.MAX_TOKENS -> R.string.workbench_stop_max
+        ai.riskmandate.app.llm.LlmStopReason.CANCELLED -> R.string.workbench_stop_cancelled
+        ai.riskmandate.app.llm.LlmStopReason.ERROR -> R.string.workbench_stop_error
+    },
+)
 
-/** Longest prompt or system prompt accepted in the form (the request's own TOO_LONG check comes after). */
-const val MAX_PROMPT = 8_000
+private fun seconds(ms: Long) = String.format(java.util.Locale.ROOT, "%.1f s", ms / 1000.0)
