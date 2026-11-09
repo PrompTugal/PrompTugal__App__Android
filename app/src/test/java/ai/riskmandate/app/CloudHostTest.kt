@@ -94,6 +94,35 @@ class CloudHostTest {
         }
     }
 
+    private fun savingFailsWith(failure: Throwable) {
+        val broken = object : ai.riskmandate.app.cloud.KeyCipher {
+            override fun encrypt(plain: ByteArray): ByteArray = throw failure
+            override fun decrypt(blob: ByteArray): ByteArray = throw failure
+        }
+        host = CloudHost(dir, broken) { false }
+        show()
+        compose.onNodeWithTag(CloudKeyTags.FIELD).performTextInput(TEST_KEY)
+        compose.onNodeWithTag(CloudKeyTags.SAVE).performClick() // must not throw
+        compose.waitForIdle()
+        compose.onNodeWithTag(CloudKeyTags.MESSAGE).assertTextContains("Could not store the key on this tablet.")
+        assertFalse(host.key.isSet())
+        assertFalse("nothing from the exception is shown", allText().contains("secret detail"))
+        assertFalse(allText().contains(TEST_KEY))
+    }
+
+    // A Keystore or file failure must never crash the tap: a fixed message that carries nothing from the exception.
+    @Test fun aGeneralSecurityFailureOnSaveIsAFixedMessage() = savingFailsWith(java.security.GeneralSecurityException("secret detail"))
+
+    @Test fun aRuntimeFailureOnSaveIsAFixedMessage() = savingFailsWith(IllegalStateException("secret detail"))
+
+    @Test fun anIoFailureOnSaveIsAFixedMessage() = savingFailsWith(java.io.IOException("secret detail"))
+
+    @Test fun theIntroDoesNotPromiseVisitorsNeverSeeIt() {
+        val text = File("src/main/res/values/strings.xml").readText()
+        assertFalse(text.contains("Visitors never see this screen"))
+        assertTrue(text.contains("hidden while stand mode is on"))
+    }
+
     @Test fun removeKeyDeletesTheKeyTheEncryptionKeyAndSwitchesTheCloudOff() {
         host.saveKey(TEST_KEY)
         host.switch.turnOn()

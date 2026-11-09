@@ -46,7 +46,7 @@
     <string name="diagnostics_preview_heading">Pré-visualização</string>
     <string name="diagnostics_preview_note">Estes ecrãs estão a ser testados neste dispositivo. Não estão ativos para toda a gente e podem ainda não funcionar.</string>
     <string name="cloud_title">Modelo na nuvem (OpenRouter)</string>
-    <string name="cloud_intro">Só para a equipa. Com uma chave guardada e o interruptor ligado, o texto escrito num ecrã que usa o modelo na nuvem é enviado para o OpenRouter e para o fornecedor do modelo por trás dele. Os visitantes nunca veem este ecrã, e a nuvem está desligada no modo de balcão.</string>
+    <string name="cloud_intro">Só para a equipa: este ecrã fica escondido enquanto o modo de balcão estiver ativo. Com uma chave guardada e o interruptor ligado, o texto escrito num ecrã que usa o modelo na nuvem é enviado para o OpenRouter e para o fornecedor do modelo por trás dele. A nuvem está desligada no modo de balcão.</string>
     <string name="cloud_key_set">Chave guardada</string>
     <string name="cloud_key_none">Sem chave</string>
     <string name="cloud_field_label">Cole aqui a chave do OpenRouter</string>

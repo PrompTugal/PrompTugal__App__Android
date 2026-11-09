@@ -129,7 +129,17 @@ fun CloudKeyScreen(host: CloudHost, standOn: Boolean, onChanged: () -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
                 onClick = {
-                    val result = try { host.saveKey(pasted) } catch (e: java.io.IOException) { null }
+                    // A Keystore or file failure (IOException, GeneralSecurityException, any RuntimeException) must never crash the
+                    // tap: it becomes a fixed message that carries nothing from the exception.
+                    val result = try {
+                        host.saveKey(pasted)
+                    } catch (e: java.io.IOException) {
+                        null
+                    } catch (e: java.security.GeneralSecurityException) {
+                        null
+                    } catch (e: RuntimeException) {
+                        null
+                    }
                     pasted = "" // cleared the moment it is saved or refused: it never stays in the field
                     message = when (result) {
                         KeyCheck.OK -> R.string.cloud_saved
@@ -151,11 +161,11 @@ fun CloudKeyScreen(host: CloudHost, standOn: Boolean, onChanged: () -> Unit) {
             ) { Text(stringResource(R.string.cloud_save)) }
             OutlinedButton(
                 onClick = {
-                    host.removeKey()
+                    val removed = try { host.removeKey(); true } catch (e: Exception) { false }
                     pasted = ""
-                    keySet = false
+                    keySet = host.key.isSet()
                     switchOn = false
-                    message = R.string.cloud_removed
+                    message = if (removed) R.string.cloud_removed else R.string.cloud_save_failed
                     onChanged()
                 },
                 modifier = Modifier.heightIn(min = 48.dp).testTag(CloudKeyTags.REMOVE),

@@ -48,7 +48,7 @@
     <string name="diagnostics_preview_heading">Preview</string>
     <string name="diagnostics_preview_note">These screens are being tested on this device. They are not switched on for everyone and may not work yet.</string>
     <string name="cloud_title">Cloud model (OpenRouter)</string>
-    <string name="cloud_intro">Staff only. When a key is stored and the switch is on, text typed in a screen that uses the cloud model is sent to OpenRouter and to the model provider behind it. Visitors never see this screen, and the cloud is off in stand mode.</string>
+    <string name="cloud_intro">Staff only: this screen is hidden while stand mode is on. When a key is stored and the switch is on, text typed in a screen that uses the cloud model is sent to OpenRouter and to the model provider behind it. The cloud is off in stand mode.</string>
     <string name="cloud_key_set">Key set</string>
     <string name="cloud_key_none">No key</string>
     <string name="cloud_field_label">Paste the OpenRouter key here</string>
@@ -56,7 +56,7 @@
     <string name="cloud_remove">Remove key</string>
     <string name="cloud_saved">Key saved. Clear your keyboard\'s clipboard history too.</string>
     <string name="cloud_removed">Key removed.</string>
-    <string name="cloud_save_failed">The key could not be saved on this tablet.</string>
+    <string name="cloud_save_failed">Could not store the key on this tablet.</string>
     <string name="cloud_check_empty">Paste a key first.</string>
     <string name="cloud_check_short">That is too short to be an OpenRouter key.</string>
     <string name="cloud_check_long">That is too long to be an OpenRouter key.</string>
