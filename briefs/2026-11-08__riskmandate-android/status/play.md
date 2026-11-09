@@ -25,6 +25,12 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 10. Conductor's fix: `docs/play/README.md` (step 3, step 4 of the first upload, checklist rows 3 and 13) now says environment secrets in the GitHub environment `release`; Firebase is keyless (variables, no JSON). Step 9 now carries the blocker: the org policy refuses the Play service-account key, so the Play upload stays skipped until Dinis picks keyless, a policy exception or manual upload (none tested). `tester-guide-m3.md` updated to match. `origin/dev` merged first.
 
+11. R-stand-2: `privacy-policy.md`, `privacy.html`, `listing.md`, `data-safety.md` no longer say the app keeps no files or preferences. New policy sections "What stays on your device" (stand mode settings, What's new last-seen version, web view cookies and cache; never sent by the app) and "The in-app view of riskmandate.ai" (ordinary requests to the host on GitHub Pages; other hosts blocked). **Data safety is now an open decision, not "no data collected"**: local storage is not collection (Google's definition, read 9 Nov), but the in-app WebView is one the app controls, so its requests count; whether the IP address of an ordinary page load must be declared I cannot settle from Google's pages (`data-safety.md`, options A to C). Written from `work/dev.stand` and `work/dev.site` code, neither on `dev` yet; I found no What's new preferences code and no code that clears the web view's cookies or cache. `origin/dev` merged first.
+
+12. R-site-1: the policy no longer says the app downloads nothing; it says the app connects to riskmandate.ai and www.riskmandate.ai only, loads those pages in the in-app view and nothing else, and deletes the view's cache, cookies, web storage and history when the in-app view closes (checked in `work/dev.site` ba979fc, `disposeSite()`, not yet on `dev`). Data safety options A to C unchanged (Dinis).
+
+13. A-app-5: policy and `data-safety.md` now say plainly that a tapped link to another website in the in-app view is handed (https only) to the device's own browser, never loaded in the app and not while pinned; the browser's own policy applies and the app sends nothing. Checked in `Browser.openExternal` and `Links.isExternalOk` on `work/app` (not yet on `dev`).
+
 ## Next
 Nothing until Dinis decides (below).
 
@@ -39,6 +45,7 @@ Screenshots wait on the feature decision and on app.android's render harness.
 - **For security:** please review `privacy.html` and the claims in `minimal-functionality.md` before merge; the quotes come through a fetch tool that returns excerpts.
 
 ## For Dinis
+- Dinis: Data safety with the in-app view: keep "No data collected", declare the IP address, or leave the in-app view out of the store build (`docs/play/data-safety.md`, update of 9 November). The live Console form's wording decides it; please read it before choosing.
 - Dinis: the Play service-account key cannot be created under the organisation policy; choose how Play uploads will authenticate (keyless like Firebase, a policy exception, or manual upload) (`docs/play/README.md` step 9).
 - Dinis: choose the native features for the app (items 1 to 3 in `docs/play/minimal-functionality.md`), or decide the public listing waits and M1 to M3 use Firebase and the private route.
 - Dinis: free or paid decides whether `ai.riskmandate.app` can ever be sold. Google: "Once your app has been offered for free, the app can't be changed to paid" (`docs/play/README.md`, re-check table).

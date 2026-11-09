@@ -69,6 +69,11 @@ jobs:
       - name: Unit tests and lint
         run: ./gradlew --no-daemon testDebugUnitTest lintDebug
 
+      # Every screenshot an in-app release article lists (assets/releases/*/screenshots.txt) must have been
+      # written by the tests: fail here, early, not in the release job.
+      - name: Release article screenshots exist
+        run: bash scripts/release-screenshots.sh --verify
+
       - name: Upload test and lint reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -187,6 +192,19 @@ jobs:
           umask 077
           echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
           echo "UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+
+      # The screenshots the check job's Robolectric tests wrote (same commit): copied into the release
+      # articles' assets before the build, never committed (docs/ci.md). continue-on-error: with no
+      # screenshots there is nothing to download, and the script fails only if an article lists one.
+      - name: Download the screenshots
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: app/build/screenshots
+
+      - name: Put the screenshots into the release articles
+        run: bash scripts/release-screenshots.sh
 
       - name: Release APK and AAB
         env:

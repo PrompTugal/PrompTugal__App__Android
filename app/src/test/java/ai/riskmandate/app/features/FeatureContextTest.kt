@@ -1,0 +1,67 @@
+package ai.riskmandate.app.features
+
+import ai.riskmandate.app.DeviceStatus
+import ai.riskmandate.app.ManagedConfig
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/** The FeatureContext contract (architect owns this file). */
+@RunWith(AndroidJUnit4::class)
+class FeatureContextTest {
+    @get:Rule val compose = createComposeRule()
+
+    private val device = DeviceStatus.from(hasDeviceOwner = false, inWorkProfile = false, label = null)
+
+    @Test fun holdsAreCountedAndReleasedOnce() {
+        val holds = IdleHolds()
+        assertFalse(holds.held)
+        val a = holds.hold()
+        val b = holds.hold()
+        a(); a() // a second release of the same hold changes nothing
+        assertTrue(holds.held)
+        b()
+        assertFalse(holds.held)
+    }
+
+    @Test fun clearDropsEveryHoldAndLateReleasesAreHarmless() {
+        val holds = IdleHolds()
+        val a = holds.hold()
+        holds.clear()
+        assertFalse(holds.held)
+        a()
+        val b = holds.hold()
+        assertTrue(holds.held)
+        b()
+        assertFalse(holds.held)
+    }
+
+    @Test fun holdIdleWhileFollowsTheConditionAndTheScreen() {
+        val holds = IdleHolds()
+        val context = FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = device, holdIdle = holds::hold)
+        var active by mutableStateOf(false)
+        var shown by mutableStateOf(true)
+        compose.setContent { if (shown) context.HoldIdleWhile(active) }
+        compose.waitForIdle(); assertFalse(holds.held)
+        active = true
+        compose.waitForIdle(); assertTrue(holds.held)
+        active = false
+        compose.waitForIdle(); assertFalse(holds.held)
+        active = true
+        compose.waitForIdle(); assertTrue(holds.held)
+        shown = false // the feature leaves the screen while holding
+        compose.waitForIdle(); assertFalse(holds.held)
+    }
+
+    @Test fun theDefaultHoldDoesNothing() {
+        val context = FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = device)
+        context.holdIdle()() // no host: a no-op, never throws
+    }
+}

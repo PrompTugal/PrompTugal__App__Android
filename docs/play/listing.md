@@ -46,11 +46,13 @@ What the app does
 - Opens riskmandate.ai in a Custom Tab (your browser), only on riskmandate.ai over HTTPS.
 - Shows whether your device is managed by an organisation, and an optional label your organisation sets, so that the people who run your devices can tell them apart.
 - Lets your organisation choose which riskmandate.ai page the app opens, through managed configuration.
+- Shows riskmandate.ai inside the app as well, with an offline copy of the main pages, and has an optional stand mode for a tablet on a stand (keeps the screen on, returns to the start screen after idle time). [TODO: confirm both are in the build that is submitted]
 - Has a Diagnostics screen with the app version, device model, Android version and management state, which you can copy to share with support. Nothing is sent by the app.
 
 What the app does not do
 - It has no account and no sign-in.
-- It collects no data, has no analytics and shows no ads.
+- It has no analytics, shows no ads and does not ask for your personal data.
+- It keeps a few settings on your device (stand mode, What's new) and never sends them. The in-app view loads riskmandate.ai the way a browser does. [TODO Dinis: check against the Data safety decision, `data-safety.md`, "R-stand-2"]
 - It asks for two ordinary permissions: internet access and network state (to show an offline hint).
 
 The app is open source under the Apache 2.0 licence. [TODO Dinis: add the repository URL once he decides it is public]

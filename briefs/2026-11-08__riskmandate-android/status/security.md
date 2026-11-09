@@ -1,11 +1,15 @@
 # security.android status
 
-> Round 12 (9 Nov 2026, about 02:40 UTC): architect e3eb80c PASS, dev.mandate 78ae8d6 PASS, dev.abpdemo 38dfbf8 PASS, dev.stand 94da82a PASS (PIN removed; supersedes the HOLD), qa 11ce741 PASS. dev.site has no commits. Waiting for the next wake.
+> Round 15 (9 Nov 2026, about 04:40 UTC): licences regenerated (85 artifacts, 0 flagged) and OSV rerun (none known) for androidx.webkit 1.12.1; PASS: architect 7be8651, app e914cc6, dev.stand 9f207e8, dev.abpdemo b94232d, design b61b5d1, dev.site 13114fd, play 9c3e4c5; HOLD still: dev.mandate 5a43197 (R-site-1 strings). Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 15: `docs/security/licences.md` regenerated with `scripts/licences.sh` on the work/app head (Android SDK installed under /tmp, Maven Central 429s needed a retry): 85 artifacts, 0 flagged; `scripts/osv-check.sh`: no known vulnerabilities (webkit 1.12.1 included). Reviews `2026-11-09-*` for architect 7be8651 (FeatureContext v3 holdIdle: a callback, cleared on route change), app e914cc6 (webkit dependency, IdleHolds), dev.stand 9f207e8 (corner long-press on the home screen only, idleHeld), dev.abpdemo b94232d, design b61b5d1, dev.site 13114fd (content only; cache cleared on open and close; openExternal still not wired), play 9c3e4c5 (texts match the code): all **PASS**. **HOLD** dev.mandate 5a43197: `mandate_mandate_data` still says "Nothing leaves the device from this app" and the INTERNET reason says "in your browser" (en and pt-PT); three-string fix.
+- Round 14 reviews (docs/security/reviews/2026-11-09-*): **HOLD** dev.mandate 5a35d4c (R-site-1: `mandate_mandate_data` says "Nothing leaves the device" and the INTERNET reason says "in your browser"; false once the in-app site is on; two-string fix, en and pt-PT). **PASS**: app b2ad8aa (explicit backup exclusions close R-stand-3; `Browser.openExternal` and `Links.isExternalOk` are tight but not wired yet: when wired, open only for a user tap, `hasGesture` and not `isRedirect` (R-ext-1); the wider rule needs Dinis's decision (R-ext-2); qa's link test should be tightened (R-ext-3)); dev.site ba979fc (offline copy on the app-controlled asset origin with safe path handling, cache and cookies cleared on exit, explicit SSL cancel, permissions denied, renderer-gone handled; closes R-site-2, -3, -5, -8); play 6b3b3ec (privacy texts match the code; Data safety question put honestly to Dinis; R-stand-2 closed); dev.abpdemo, dev.stand 23d16f3, architect, design, release e7a242f (screenshots script has safe names; add the `.gitignore` entry); editor 4633489 (no private facts, no network in the builder; R-editor-1 do not publish the paragraph on open security gaps until they are closed).
+- Round 13 reviews: `2026-11-09-dev.site-e6c92f0.md` **PASS** (allow-list on every navigation and redirect, sub-resources blocked, no JS bridge, no file access; offline snapshots searched: no network or storage calls). Conditions: R-site-1 the app now fetches riskmandate.ai itself, so privacy, Data safety and the mandate screen text ("nothing leaves the device") must change before any outside build; R-site-8 it will not compile against FeatureContext v2 (`context.activity`). `2026-11-09-app-f317cf8.md` **PASS** (removes the exported ProfileInstallReceiver; R-app-7 a committed `.kotlin/errors` log leaks sandbox proxy settings: delete and ignore `.kotlin/`).
+- `scripts/secret-scan.sh`: the "private key block" class skips `website/validate.py` and `website/test_site.py` (they define the pattern as a regex string; found by the scan on work/editor), still scanned for the other 12 classes; tested that a real block elsewhere is still caught. Scan is clean over 124 commits and 20 refs.
 - Round 12 reviews: `2026-11-09-architect-e3eb80c.md` (PASS: FeatureContext no longer carries the Activity), `2026-11-09-dev.mandate-78ae8d6.md` (PASS: own-package PackageManager reads only; R-mandate-1: stand's stored file will show as a gap), `2026-11-09-dev.abpdemo-38dfbf8.md` (PASS: native, no network, labelled demo; SHarness wording matches both sites), `2026-11-09-dev.stand-94da82a.md` (PASS: PIN removed, so R-stand-1 closed; R-stand-2 privacy documents must say the app stores two settings before the page is hosted), `2026-11-09-qa-11ce741.md` (PASS).
 - Round 11 reviews in `docs/security/reviews/`: `2026-11-09-dev.stand-0aa99c8.md` **HOLD** (R-stand-1 PIN is SHA-256 over 4 to 8 digits and the lockout resets on rotation or restart: use PBKDF2 and a persistent lockout, or drop the PIN; R-stand-2 the app now stores preferences, so privacy and Data safety statements must change in the same merge; R-stand-3 backup rules do not name the sharedpref domain). `2026-11-09-qa-a2a49c6.md` PASS (tests guard the allow-list, exported components and WebView settings). `2026-11-09-release-ab61ce0.md` PASS (website.yml: pins verified, pages/id-token on the deploy job only; R-site-1 restrict workflow_run to pushes from this repository, R-site-2 reviewer on github-pages, R-site-3 verify the domain). `2026-11-09-app-5afbb97.md` PASS (test only).
 - Urgent review `2026-11-09-release-f0ee176.md`: **PASS**. Licence gate still blocks the release (`needs: [check, licences]`) and no longer depends on a cold Gradle cache; the new job holds no secret; paths filter and concurrency checked. R-rel-8 (low): no CI runs for `devices/` or its policy tests; R-rel-9 (info): Gradle wrapper checksum.
@@ -34,6 +38,15 @@ At each wake: `git fetch origin`, review `origin/dev..origin/work/<role>` for ea
 Nothing.
 
 ## For other roles
+- dev.mandate (blocking): R-site-1, fix `mandate_mandate_data` and `mandate_reason_open_pages` in en and pt-PT.
+- dev.site: when wiring `Browser.openExternal`, only for `request.hasGesture()` and not `isRedirect` (R-ext-1); R-site-10 use design's FeatureContent.
+- play: R-play-8 reword the Contact page sentence.
+- qa: R-ext-3 tighten the link test; R-qa-1 SSL override now exists: make the test fail only on `handler.proceed`.
+- conductor: R-app-7 and R-rel-10: remove `.kotlin/errors/*.log`, ignore `.kotlin/` and `app/src/main/assets/releases/*/screenshots/`; R-ext-2 record the external-link rule as a decision for Dinis.
+- editor: R-editor-1.
+- dev.site: R-site-2 clear cache and cookies on release, R-site-3 explicit SSL and auth cancel, R-site-8 merge dev and drop `context.activity` and the duplicate Back and title.
+- dev.mandate and play: R-site-1, the statements "nothing leaves the device" and "the app does not download anything" are no longer true once the in-app site is enabled.
+- conductor: R-app-7, remove `.kotlin/errors/*.log` and ignore `.kotlin/`.
 - dev.stand: R-stand-1 (PBKDF2, persistent lockout, or drop the PIN), then ask for a re-review.
 - play: R-stand-2, change the privacy policy, privacy.html, data-safety.md, listing.md (the app stores stand-mode settings and a salted PIN hash on the device only), merged with dev.stand.
 - app: R-stand-3 / R-app-1, exclude all backup domains explicitly in data_extraction_rules.xml.
@@ -53,6 +66,8 @@ Nothing.
 - conductor: `scripts/osv-check.sh` needs network to api.osv.dev; run it after `scripts/licences.sh` in the gate if wanted.
 
 ## For Dinis
+- Decide: may the in-app site hand a user-tapped https link to the system browser (the WebView still loads riskmandate.ai only)? Play's privacy text already says so (R-ext-2).
+- Data safety answer for the in-app view: ask the live Play Console form (play's `data-safety.md`, three options) before the privacy page is hosted.
 - Before the website goes live: verify promptugal.ai in GitHub for Pages, consider a required reviewer on the `github-pages` environment, allow `dev` in its deployment branches (R-site-2, R-site-3).
 - Stand mode: the staff PIN is a deterrent, not a security boundary (Android's own unpin gesture also exits). Decide if you want it at all for the summit.
 - WIF provider condition: use `assertion.repository_id`, `assertion.repository_owner_id`, `assertion.environment=='release'` and `assertion.ref=='refs/heads/dev'`; bind workloadIdentityUser to that one principalSet; give the service account only Firebase App Distribution Admin (R-wif-2 to R-wif-4). Set the `release` environment reviewer and deployment branch `dev` (A-2).

@@ -70,6 +70,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.browser:browser:1.8.0")
+    implementation("androidx.webkit:webkit:1.12.1") // WebViewAssetLoader for the in-app site (features/site)
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     testImplementation("junit:junit:4.13.2")

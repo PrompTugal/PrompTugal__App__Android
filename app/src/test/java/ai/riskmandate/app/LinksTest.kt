@@ -61,4 +61,37 @@ class LinksTest {
     }
     @Test fun surroundingWhitespaceIsTrimmed() = ok("  https://riskmandate.ai/ ")
     @Test fun emptyAndBlankAreRefused() { no(""); no("   ") }
+
+    private fun extOk(u: String) = assertTrue(u, Links.isExternalOk(u))
+    private fun extNo(u: String) = assertFalse(u, Links.isExternalOk(u))
+
+    @Test fun externalAcceptsOrdinaryHttpsLinks() {
+        extOk("https://example.org/")
+        extOk("https://example.org:8443/a/b?c=d#e")
+        extOk("https://medium.com/@someone/post") // '@' in a path is fine
+        extOk("HTTPS://Example.ORG")
+        extOk("https://sub.domain-1.example.co.uk/x")
+    }
+
+    @Test fun externalRefusesEverythingThatIsNotPlainHttps() {
+        for (u in listOf(
+            "http://example.org/", "javascript:alert(1)", "intent://x#Intent;scheme=https;end", "file:///etc/passwd",
+            "content://x/y", "data:text/html,hi", "market://details?id=x", "tel:123", "mailto:a@b.c", "//example.org/",
+            "example.org", "", "   ", "https://", "https:///x", "https://:443/", "https://.example.org/",
+        )) extNo(u)
+    }
+
+    @Test fun externalRefusesUserinfoBackslashWhitespaceControlAndBadHosts() {
+        extNo("https://example.org@evil.example/")
+        extNo("https://example.org:x@evil.example/")
+        extNo("https://evil.example\\@example.org/")
+        extNo("https://example.org/a b")
+        extNo("https://example.org/a\nb")
+        extNo("https://exa mple.org/")
+        extNo("https://ex%61mple.org/")
+        extNo("https://rıskmandate.ai/") // non-ASCII host
+        extNo("https://example.org:99999999/")
+        extNo("https://example.org:80a/")
+        extNo("https://example.org/" + "a".repeat(2100))
+    }
 }

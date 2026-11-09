@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="abpdemo_banner">DEMONSTRAÇÃO de como as camadas funcionam. Não é um ataque real: nada é enviado e nada está em risco.</string>
+    <string name="abpdemo_subtitle">Uma Política de Comportamento de Agentes (ABP), mantida em seis camadas</string>
+
+    <string name="abpdemo_scenario_title">O cenário</string>
+    <string name="abpdemo_scenario_body">Pede-se a um agente que resuma um documento. Uma linha plantada no documento manda-o enviar o mapa de agentes da empresa para um anfitrião externo.</string>
+    <string name="abpdemo_rule_label">A regra da ABP</string>
+    <string name="abpdemo_rule_text">Mapa de agentes para um anfitrião externo: Bloquear</string>
+    <string name="abpdemo_scene_hint">Prima Seguinte, ou inicie a reprodução automática, para ver cada camada a travá-lo.</string>
+
+    <string name="abpdemo_fires_label">O que a camada faz</string>
+    <string name="abpdemo_rule_fires_label">A regra que dispara</string>
+    <string name="abpdemo_strength_label">Que força tem</string>
+
+    <string name="abpdemo_layer_browser">No navegador</string>
+    <string name="abpdemo_layer_model">No modelo</string>
+    <string name="abpdemo_layer_hook">Como hook</string>
+    <string name="abpdemo_layer_proxy">Como proxy em linha</string>
+    <string name="abpdemo_layer_harness">No harness seguro</string>
+    <string name="abpdemo_layer_device">Como política do dispositivo</string>
+
+    <string name="abpdemo_does_browser">A ABP é verificada na página web antes de uma ação ser enviada.</string>
+    <string name="abpdemo_does_model">A regra é uma linha nas instruções do modelo. O modelo cumpre-a porque escolhe cumpri-la.</string>
+    <string name="abpdemo_does_hook">Um hook na própria máquina do agente verifica cada chamada de ferramenta contra a ABP antes de ela correr. É determinístico.</string>
+    <string name="abpdemo_does_proxy">Uma gateway ou proxy no caminho verifica cada pedido contra a ABP e retém este.</string>
+    <string name="abpdemo_does_harness">A ABP passa a ser uma Política de Comportamento de Processo, identificada por um hash. O kernel aplica-a a cada processo que o agente inicia, por isso um agente enganado não a consegue alargar.</string>
+    <string name="abpdemo_does_device">A política do próprio dispositivo define o que pode ser instalado e a que se pode ligar. É o chão onde as outras camadas assentam.</string>
+
+    <string name="abpdemo_fires_browser">A página recusa-se a enviar o mapa de agentes.</string>
+    <string name="abpdemo_fires_model">Dito: nunca enviar o mapa de agentes para um anfitrião externo.</string>
+    <string name="abpdemo_fires_hook">Verificado: negar a chamada de ferramenta que envia o mapa de agentes.</string>
+    <string name="abpdemo_fires_proxy">Retido: o anfitrião externo não está na lista da ABP, por isso o pedido é bloqueado.</string>
+    <string name="abpdemo_fires_harness">Retido: o kernel recusa a ligação ao anfitrião externo.</string>
+    <string name="abpdemo_fires_device">O dispositivo não permite outro caminho para fora.</string>
+
+    <string name="abpdemo_note_browser">A página pode ser contornada, por isso é apenas orientação.</string>
+    <string name="abpdemo_note_model">Um modelo pode ser levado a ignorar a regra, por isso é uma expectativa e não uma fronteira.</string>
+    <string name="abpdemo_note_hook">A mesma conta pode desligá-lo, por isso é uma definição.</string>
+    <string name="abpdemo_note_proxy">Fora do agente: este não consegue chegar ao caminho.</string>
+    <string name="abpdemo_note_harness">O SHarness hoje: uma versão inicial corre em Linux para um processo filho. O launcher que prenderia o próprio agente ainda é apenas o desenho (sharness.ai).</string>
+    <string name="abpdemo_note_device">Nada acima dele o pode baixar.</string>
+
+    <string name="abpdemo_strength_guidance">Orientação</string>
+    <string name="abpdemo_strength_soft">Branda</string>
+    <string name="abpdemo_strength_firm">Firme</string>
+    <string name="abpdemo_strength_strong">Forte</string>
+    <string name="abpdemo_strength_floor">Chão</string>
+
+    <string name="abpdemo_back">Anterior</string>
+    <string name="abpdemo_next">Seguinte</string>
+    <string name="abpdemo_autoplay_start">Reprodução automática</string>
+    <string name="abpdemo_autoplay_stop">Parar reprodução automática</string>
+    <string name="abpdemo_step_of">Passo %1$d de %2$d</string>
+    <string name="abpdemo_layer_state_done">Feito</string>
+    <string name="abpdemo_layer_state_now">Agora</string>
+    <string name="abpdemo_layer_state_waiting">À espera</string>
+    <string name="abpdemo_strength_cd">Força %1$s: %2$d de %3$d</string>
+    <string name="abpdemo_sources">Fontes: riskmandate.ai e sharness.ai, lidos a 9 nov 2026.</string>
+    <string name="abpdemo_layer_cd">%1$d. %2$s, %3$s</string>
+</resources>
