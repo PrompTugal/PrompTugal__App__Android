@@ -1,5 +1,9 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.Effect
+import ai.riskmandate.app.experiments.ToolCall
+import ai.riskmandate.app.experiments.Triplet
+
 /**
  * The ABP checks the Lab runs, in one pure module so they can be read as code and unit-tested.
  * The model proposes; this code decides. Nothing here touches a network, a file or an intent.

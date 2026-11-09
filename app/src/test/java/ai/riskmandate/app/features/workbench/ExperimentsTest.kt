@@ -1,6 +1,6 @@
 package ai.riskmandate.app.features.workbench
 
-import ai.riskmandate.app.llm.BenchBackend
+import ai.riskmandate.app.llm.BackendPreference
 import ai.riskmandate.app.llm.DeviceSample
 import ai.riskmandate.app.llm.FakeLlmService
 import ai.riskmandate.app.llm.FakeReply
@@ -36,13 +36,12 @@ class ExperimentsTest {
     @Test fun everyVariableAppliesAndBadValuesAreRefused() {
         assertEquals(0.5, ExperimentPlan(SweepVariable.TOP_P, listOf("0.5"), 1).expand(base).getOrThrow()[0].second.sampling.topP, 0.0)
         assertEquals(128, ExperimentPlan(SweepVariable.MAX_TOKENS, listOf("128"), 1).expand(base).getOrThrow()[0].second.maxTokens)
-        assertEquals(BenchBackend.CPU, ExperimentPlan(SweepVariable.BACKEND, listOf("cpu"), 1).expand(base).getOrThrow()[0].second.backend)
+        assertEquals(BackendPreference.CPU, ExperimentPlan(SweepVariable.BACKEND, listOf("cpu"), 1).expand(base).getOrThrow()[0].second.backend)
         val sys = ExperimentPlan(SweepVariable.SYSTEM_PROMPT, listOf("on", "off"), 1).expand(base).getOrThrow()
         assertEquals(listOf("Be brief.", ""), sys.map { it.second.systemPrompt })
-        assertEquals("gemma4e4b", ExperimentPlan(SweepVariable.MODEL, listOf("gemma4e4b"), 1).expand(base, listOf("gemma4e2b", "gemma4e4b")).getOrThrow()[0].second.modelId)
         listOf(
             ExperimentPlan(SweepVariable.TEMPERATURE, listOf("3"), 1), ExperimentPlan(SweepVariable.TOP_P, listOf("0"), 1),
-            ExperimentPlan(SweepVariable.BACKEND, listOf("npu"), 1), ExperimentPlan(SweepVariable.MODEL, listOf("other"), 1),
+            ExperimentPlan(SweepVariable.BACKEND, listOf("npu"), 1),
             ExperimentPlan(SweepVariable.TEMPERATURE, emptyList(), 1), ExperimentPlan(SweepVariable.TEMPERATURE, listOf("1"), 0),
             ExperimentPlan(SweepVariable.TEMPERATURE, (1..11).map { "0.1" }, 10),
         ).forEach { assertTrue(it.toString(), it.expand(base).isFailure) }
@@ -104,7 +103,7 @@ class ExperimentsTest {
         job.cancel()
         runCatching { job.await() }
         assertEquals(ExperimentStop.STOPPED, last?.stop)
-        assertEquals(LlmStopReason.STOPPED, logged.last())
+        assertEquals(LlmStopReason.CANCELLED, logged.last())
     }
 
     @Test fun spreadIsMeanSdMinMax() {

@@ -71,6 +71,9 @@ jobs:
 
       # Every screenshot an in-app release article lists (assets/releases/*/screenshots.txt) must have been
       # written by the tests: fail here, early, not in the release job.
+      - name: Script tests (release notes)
+        run: bash scripts/test-release-notes.sh
+
       - name: Release article screenshots exist
         run: bash scripts/release-screenshots.sh --verify
 

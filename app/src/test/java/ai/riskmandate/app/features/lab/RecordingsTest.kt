@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.FormatException
+import ai.riskmandate.app.experiments.ToolCall
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -78,7 +80,7 @@ class RecordingsTest {
         LabFormats.parseScenario(ok)
         val long = base.replace("\"patterns\": []", "\"patterns\": [\"" + "a".repeat(LabFormats.MAX_PATTERN_CHARS + 1) + "\"]")
         val bad = base.replace("\"patterns\": []", "\"patterns\": [\"(\"]")
-        for (t in listOf(long, bad)) try { LabFormats.parseScenario(t); org.junit.Assert.fail("accepted") } catch (_: LabFormats.FormatException) {}
+        for (t in listOf(long, bad)) try { LabFormats.parseScenario(t); org.junit.Assert.fail("accepted") } catch (_: FormatException) {}
     }
 
     @Test fun scenarioToolsMustFitTheSharedToolContract() {
@@ -90,7 +92,7 @@ class RecordingsTest {
         val many = base.replaceFirst(Regex("\"properties\": \\{\\s*\"name\""), "\"properties\": {" + extra + "\"name\"")
         for (t in listOf(badName, badType, many)) {
             org.junit.Assert.assertNotEquals("test edit did not change the file", base, t)
-            try { LabFormats.parseScenario(t); org.junit.Assert.fail("accepted") } catch (_: LabFormats.FormatException) {}
+            try { LabFormats.parseScenario(t); org.junit.Assert.fail("accepted") } catch (_: FormatException) {}
         }
     }
 }
