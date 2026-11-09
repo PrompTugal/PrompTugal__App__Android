@@ -28,8 +28,8 @@ Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an ad
 ## For architect (FeatureContext)
 `FeatureContext` has no `LlmService` yet. Until it does, chat reads it from `LocalChatLlm` (a `CompositionLocal` in the chat package, default `NoLlm`). When the architect adds it to the contract, chat reads `context.llm` instead: one line in `ChatFeature.Content` plus an adapter from `LlmService` to `ChatLlm`.
 
-## For app (host)
-- The privacy screen should say what Dinis decided: "Chat history is kept on this tablet only, in app-private storage. It is not backed up, transferred, sent or shared, and Clear history in Chat deletes it." (Strings are app's, not mine.)
+## For play (privacy text; conductor: play.android drafted it, DRAFT until H ships)
+- The privacy text should say what Dinis decided: "Chat history is kept on this tablet only, in app-private storage. It is not backed up, transferred, sent or shared, and Clear history in Chat deletes it." (Strings are app's, not mine.)
 
 ## For dev.llm
 What chat needs: the list of installed models (id, display name), a streaming call that emits pieces (one emission is about one token) and stops generating when its flow is cancelled, an optional system block, and the turns so far. If your interface can report real token counts, say so and I will show them instead of counting pieces.
