@@ -1,0 +1,88 @@
+<resources>
+    <string name="home_open">Abrir riskmandate.ai</string>
+    <string name="home_open_action">Abre riskmandate.ai no seu navegador</string>
+    <string name="home_device_heading">Dispositivo</string>
+    <string name="home_device_label">Etiqueta: %1$s</string>
+    <string name="home_about_heading">Acerca de</string>
+    <string name="home_about_text">RiskMandate: esta aplicação abre riskmandate.ai.</string>
+    <string name="home_licences">Licenças de código aberto</string>
+    <string name="home_build">Compilação %1$s</string>
+
+    <string name="device_fully_managed">Gerido por uma organização (dispositivo totalmente gerido)</string>
+    <string name="device_work_profile">Gerido por uma organização (perfil de trabalho)</string>
+    <string name="device_not_detected">Não gerido (nenhum proprietário do dispositivo nem perfil de trabalho detetado)</string>
+
+    <string name="message_no_browser">Não está instalado nenhum navegador neste dispositivo, por isso não é possível abrir riskmandate.ai.</string>
+    <string name="message_refused">Esse endereço não pertence a riskmandate.ai, por isso a aplicação não o abre.</string>
+
+    <string name="licences_title">Licenças de código aberto</string>
+    <string name="licences_models_heading">Ficheiros de modelos (descarregados a pedido)</string>
+    <string name="licences_models_note">Estes ficheiros não fazem parte da aplicação. O tablet só descarrega um quando lhe for pedido. A licença é a que a página do modelo indica.</string>
+    <string name="licences_apache_heading">Apache License, Version 2.0 (texto completo)</string>
+
+    <string name="nav_section_today">Hoje</string>
+    <string name="nav_section_explore">Explorar</string>
+    <string name="nav_section_device">Este dispositivo</string>
+    <string name="nav_collapse">Reduzir a barra lateral a ícones</string>
+    <string name="nav_expand">Abrir a barra lateral</string>
+    <string name="shell_brand_line">Web Summit</string>
+    <string name="nav_home_action">Ir para Agora</string>
+    <string name="nav_menu">Abrir o menu de navegação</string>
+    <string name="home_now_title">Agora</string>
+    <string name="home_now_summary">O que pode abrir neste dispositivo.</string>
+    <string name="home_stat_features">Funcionalidades ativas</string>
+    <string name="home_stat_permissions">Permissões que esta aplicação pede</string>
+    <string name="home_stat_attention">Precisa de atenção</string>
+    <string name="home_stat_attention_none">Nada a verificar</string>
+    <string name="home_stat_attention_some">Veja a nota acima</string>
+    <string name="home_links_heading">Esta aplicação</string>
+    <string name="home_diagnostics">Diagnóstico</string>
+    <string name="message_failed">Ocorreu um erro ao abrir riskmandate.ai num navegador. Tente novamente ou abra-o você mesmo no navegador.</string>
+    <string name="message_pinned">As páginas web não são abertas num navegador enquanto a aplicação estiver fixada.</string>
+    <string name="message_offline">Este dispositivo parece estar sem ligação. O navegador pode não conseguir carregar riskmandate.ai enquanto não estiver ligado.</string>
+
+    <string name="diagnostics_title">Diagnóstico</string>
+    <string name="diagnostics_intro">Para testadores e configuração de dispositivos. Não contém dados pessoais nem identificadores do dispositivo.</string>
+    <string name="diagnostics_preview_heading">Pré-visualização</string>
+    <string name="diagnostics_preview_note">Estes ecrãs estão a ser testados neste dispositivo. Não estão ativos para toda a gente e podem ainda não funcionar.</string>
+    <string name="cloud_title">Modelo na nuvem (OpenRouter)</string>
+    <string name="cloud_intro">Só para a equipa: este ecrã fica escondido enquanto o modo de balcão estiver ativo. Com uma chave guardada e o interruptor ligado, o texto escrito num ecrã que usa o modelo na nuvem é enviado para o OpenRouter e para o fornecedor do modelo por trás dele. A nuvem está desligada no modo de balcão.</string>
+    <string name="cloud_key_set">Chave guardada</string>
+    <string name="cloud_key_none">Sem chave</string>
+    <string name="cloud_field_label">Cole aqui a chave do OpenRouter</string>
+    <string name="cloud_save">Guardar chave</string>
+    <string name="cloud_remove">Remover chave</string>
+    <string name="cloud_saved">Chave guardada. Limpe também o histórico da área de transferência do teclado.</string>
+    <string name="cloud_removed">Chave removida.</string>
+    <string name="cloud_save_failed">Não foi possível guardar a chave neste tablet.</string>
+    <string name="cloud_check_empty">Cole primeiro uma chave.</string>
+    <string name="cloud_check_short">Isso é demasiado curto para ser uma chave do OpenRouter.</string>
+    <string name="cloud_check_long">Isso é demasiado longo para ser uma chave do OpenRouter.</string>
+    <string name="cloud_check_chars">Isso tem caracteres que uma chave do OpenRouter não tem.</string>
+    <string name="cloud_check_prefix">Uma chave do OpenRouter começa por sk-or-.</string>
+    <string name="cloud_switch_label">Usar o modelo na nuvem</string>
+    <string name="cloud_switch_note">Desligado por defeito, e desligado de novo após um reinício e no modo de balcão.</string>
+    <string name="cloud_model_heading">Modelo</string>
+    <string name="cloud_spend_heading">Despesa</string>
+    <string name="cloud_spend_line">Esta sessão US$%1$s de US$%2$s. Este tablet US$%3$s de US$%4$s.</string>
+    <string name="cloud_spend_missing">O registo da despesa falta ou está danificado, por isso nada é enviado até ser reposto.</string>
+    <string name="cloud_reset">Repor o total da despesa</string>
+    <string name="cloud_reset_title">Repor o total da despesa?</string>
+    <string name="cloud_reset_body">Este tablet gastou US$%1$s do seu limite de US$%2$s. Repor permite-lhe gastar de novo até ao limite.</string>
+    <string name="cloud_reset_confirm">Repor</string>
+    <string name="cloud_reset_cancel">Cancelar</string>
+    <string name="cloud_keystore_note">A chave é guardada cifrada com o Android Keystore. Isso protege um ficheiro copiado ou uma cópia de segurança, não quem possa usar a aplicação desbloqueada ou tenha acesso root, e uma chave mantida em memória não pode ser apagada.</string>
+    <string name="cloud_credit_note">O limite de crédito definido na chave no OpenRouter é o limite verdadeiro.</string>
+    <string name="cloud_badge">Nuvem: openrouter.ai</string>
+    <string name="cloud_badge_short">Nuvem</string>
+    <string name="diagnostics_cloud">Modelo na nuvem (OpenRouter)</string>
+    <string name="diagnostics_model_bench">Bancada do modelo (teste do LLM no dispositivo)</string>
+    <string name="diagnostics_copy">Copiar</string>
+    <string name="diagnostics_copied">Copiado para a área de transferência.</string>
+    <string name="diagnostics_copy_failed">Não foi possível copiar para a área de transferência.</string>
+
+    <string name="restriction_start_url_title">Página inicial</string>
+    <string name="restriction_start_url_description">A página de riskmandate.ai que a aplicação abre (apenas HTTPS em riskmandate.ai; qualquer outra volta a https://riskmandate.ai/).</string>
+    <string name="restriction_device_label_title">Etiqueta do dispositivo</string>
+    <string name="restriction_device_label_description">Uma etiqueta mostrada no ecrã inicial da aplicação para identificar este dispositivo.</string>
+</resources>

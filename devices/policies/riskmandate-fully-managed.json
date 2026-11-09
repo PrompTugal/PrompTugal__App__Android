@@ -1,0 +1,46 @@
+{
+  "_comment": "Keys starting with an underscore are notes; amapi.mjs strips them before sending. Placeholders __PACKAGE__, __START_URL__ and __DEVICE_LABEL__ are filled by `amapi.mjs policy-apply`. Why each setting is here: devices/README.md, section 'The policy'.",
+  "applications": [
+    {
+      "_comment": "The RiskMandate app: installed without asking, cannot be removed, updated as soon as Play has a new version. managedConfiguration keys match the app's restrictions (start_url, device_label).",
+      "packageName": "__PACKAGE__",
+      "installType": "FORCE_INSTALLED",
+      "autoUpdateMode": "AUTO_UPDATE_HIGH_PRIORITY",
+      "managedConfiguration": {
+        "start_url": "__START_URL__",
+        "device_label": "__DEVICE_LABEL__"
+      }
+    },
+    {
+      "_comment": "The app opens riskmandate.ai in a Custom Tab, which needs a browser. With playStoreMode WHITELIST only listed apps come from Play, so Chrome is listed to keep it present and updated.",
+      "packageName": "com.android.chrome",
+      "installType": "FORCE_INSTALLED",
+      "autoUpdateMode": "AUTO_UPDATE_DEFAULT"
+    }
+  ],
+  "playStoreMode": "WHITELIST",
+  "statusReportingSettings": {
+    "applicationReportsEnabled": true,
+    "deviceSettingsEnabled": true,
+    "softwareInfoEnabled": true,
+    "hardwareStatusEnabled": true,
+    "memoryInfoEnabled": true,
+    "displayInfoEnabled": true,
+    "powerManagementEventsEnabled": true,
+    "networkInfoEnabled": false
+  },
+  "systemUpdate": {
+    "_comment": "OS updates only between 02:00 and 05:00 device local time. Per the API the window also applies to Play app updates on the default mode (Chrome here); the RiskMandate app is AUTO_UPDATE_HIGH_PRIORITY, which has no constraints.",
+    "type": "WINDOWED",
+    "startMinutes": 120,
+    "endMinutes": 300
+  },
+  "advancedSecurityOverrides": {
+    "untrustedAppsPolicy": "DISALLOW_INSTALL",
+    "developerSettings": "DEVELOPER_SETTINGS_DISABLED",
+    "googlePlayProtectVerifyApps": "VERIFY_APPS_ENFORCED"
+  },
+  "autoDateAndTimeZone": "AUTO_DATE_AND_TIME_ZONE_ENFORCED",
+  "addUserDisabled": true,
+  "modifyAccountsDisabled": true
+}

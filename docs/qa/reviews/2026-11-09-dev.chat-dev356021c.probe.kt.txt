@@ -1,0 +1,47 @@
+package ai.riskmandate.app.features.chat
+
+import ai.riskmandate.app.DeviceStatus
+import ai.riskmandate.app.ManagedConfig
+import ai.riskmandate.app.RiskMandateTheme
+import ai.riskmandate.app.features.FeatureContext
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.junit4.StateRestorationTester
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/** QA probe: what a rotation (activity recreation) does to the chat. Plan H-8, X-3. */
+@RunWith(AndroidJUnit4::class)
+class QaChatProbeTest {
+    @get:Rule val compose = createComposeRule()
+    private fun count(t: String) = compose.onAllNodesWithTag(t).fetchSemanticsNodes().size
+
+    @Test fun aFinishedConversationSurvivesARotationOnScreen() {
+        val store = MemoryChatHistoryStore()
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent {
+            val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null))
+            CompositionLocalProvider(LocalChatLlm provides FakeChatLlm(pieces = listOf("An ", "answer.")), LocalChatStore provides store) {
+                RiskMandateTheme { ChatFeature.Content(ctx) }
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag(ChatTags.INPUT).performTextInput("hello there")
+        compose.onNodeWithTag(ChatTags.SEND).performClick()
+        compose.waitUntil(5_000) { count(ChatTags.STATS) == 1 }
+        println("PROBE before rotation: messages on screen=${count(ChatTags.message(0)) + count(ChatTags.message(1))}")
+        restoration.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+        compose.waitUntil(5_000) { count(ChatTags.INPUT) == 1 }
+        val shown = count(ChatTags.message(0)) + count(ChatTags.message(1))
+        println("PROBE after rotation: messages on screen=$shown, saved conversations=${store.saved.size}")
+        assertEquals("the conversation the visitor was in is still on screen after a rotation", 2, shown)
+    }
+}

@@ -1,0 +1,504 @@
+name: android
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Every push to dev runs the security gate (secret scan, licences, OSV, lint, tests), whatever it changes: a
+# docs commit can leak a secret too. Only a push that changes what the app is built from builds and
+# distributes (the `changes` job, docs/ci.md). The store is not reached from here: Google Play is uploaded
+# by play.yml from a push to main, after promote.yml (docs/ci.md, "Release flow").
+#
+# Concurrency is per job, not per workflow (docs/ci.md): a newer push cancels the older run's check,
+# licences and smoke jobs, but a release job that is running is never cancelled (cancel-in-progress
+# false: at most one runs and one waits per ref, a newer waiting one replaces an older waiting one).
+
+env:
+  # CI owns the version: never set by hand (see docs/ci.md).
+  VERSION_CODE: ${{ github.run_number }}
+  VERSION_NAME: 0.1.${{ github.run_number }}
+
+# Third-party actions are pinned by full commit SHA, the tag is in the comment.
+# actions/checkout v4.2.2, actions/setup-java v4.7.1, gradle/actions v4.4.4,
+# actions/upload-artifact v4.6.2, actions/download-artifact v4.3.0, actions/cache v4.2.3,
+# reactivecircus/android-emulator-runner v2.37.0, google-github-actions/auth v2.1.13,
+# actions/attest-build-provenance v4.1.1.
+jobs:
+  # Did this push change anything the app is built from? Decides whether `release` builds and distributes.
+  changes:
+    name: changes (does this push touch the build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      build: ${{ steps.diff.outputs.build }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Changed build paths
+        id: diff
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ] && ! bash scripts/changed-build-paths.sh "$BEFORE" "$GITHUB_SHA" > "$RUNNER_TEMP/changed.txt"; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            echo "## changes: no build path touched, so no build and no Firebase notification for this push" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            echo "## changes: build paths touched (or not a push): the release job will build" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # The secret scan over the full history and every ref (scripts/secret-scan.sh, security.android's).
+  scan:
+    name: scan (secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: scan-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0   # the whole history: the scan reads every commit
+
+      - name: Secret scan
+        run: bash scripts/secret-scan.sh
+
+  check:
+    name: check (tests and lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: check-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      - name: Cache Robolectric's Android runtime (about 150 MB, fetched by the tests)
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('app/build.gradle.kts', 'app/src/test/resources/robolectric.properties') }}
+
+      - name: Unit tests and lint
+        run: ./gradlew --no-daemon testDebugUnitTest lintDebug
+
+      # Every screenshot an in-app release article lists (assets/releases/*/screenshots.txt) must have been
+      # written by the tests: fail here, early, not in the release job.
+      - name: Script tests (release notes)
+        run: bash scripts/test-release-notes.sh
+
+      # The release flow's scripts: the signed-approval verifier, the promotion selector, the build-path
+      # rule and the release finder (keys generated at run time, throwaway git repositories).
+      - name: Script tests (release flow)
+        run: node --test scripts/test/*.test.mjs
+
+      # security.android's own self-test of the signed approvals (throwaway keys made in memory).
+      - name: Approvals self-test (security.android)
+        run: node docs/security/approvals/selftest.mjs
+
+      - name: Release article screenshots exist
+        run: bash scripts/release-screenshots.sh --verify
+
+      - name: Upload test and lint reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: reports-${{ github.run_number }}
+          path: |
+            app/build/reports/tests/
+            app/build/reports/lint-results-debug.*
+            app/build/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+      # Robolectric screenshots, when the tests write them (app/build/screenshots/).
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: app/build/screenshots/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## check (run ${{ github.run_number }})"
+            echo "- version under test: ${VERSION_NAME} (code ${VERSION_CODE})"
+            echo "- unit tests and lint: ${{ job.status }}"
+            echo "- reports: artifact reports-${{ github.run_number }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Runs beside `check` (no extra wall-clock time) and gates the release the same way. Own job because
+  # scripts/licences.sh reads each dependency's POM from the Gradle cache, and the restored Gradle cache
+  # of the `check` job has none (every artifact read UNKNOWN on runs 28 to 31). A fresh Gradle home
+  # makes Gradle fetch the POMs itself. Fails if a runtime dependency is not Apache-2.0, MIT or BSD
+  # (exceptions: scripts/licences-allow.txt).
+  licences:
+    name: licences (dependency gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: licences-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Dependency licence gate
+        env:
+          GRADLE_USER_HOME: ${{ runner.temp }}/gradle-licences   # fresh: no cache restored, so POMs are fetched
+        run: bash scripts/ci-licences.sh
+
+      # Known vulnerabilities (OSV.dev, public data only), from the list the licence step just wrote.
+      # Exit 1: a known vulnerability, 2: OSV could not be reached: both fail the gate (fail closed).
+      - name: Known vulnerabilities (OSV)
+        run: bash scripts/osv-check.sh
+
+      - name: Upload the licence list
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: licences-${{ github.run_number }}
+          path: |
+            docs/security/licences.md
+            docs/security/vulns.md
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## licences and OSV (run ${{ github.run_number }}): ${{ job.status }}, list in artifact licences-${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+
+  # ONE check named `security-gate`: it passes only if the secret scan, licences and OSV, lint and the tests
+  # all passed. This is the name promote.yml reads on a commit before it may reach main, and the name
+  # to require when main is protected. always(): it reports a failure, not a skipped job, when a part failed.
+  security-gate:
+    name: security-gate
+    needs: [scan, check, licences]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All parts passed
+        env:
+          SCAN: ${{ needs.scan.result }}
+          CHECK: ${{ needs.check.result }}
+          LICENCES: ${{ needs.licences.result }}
+        run: |
+          echo "secret scan: $SCAN, tests and lint: $CHECK, licences and OSV: $LICENCES" | tee -a "$GITHUB_STEP_SUMMARY"
+          [ "$SCAN" = success ] && [ "$CHECK" = success ] && [ "$LICENCES" = success ]
+
+  release:
+    name: release (build, sign, distribute)
+    needs: [security-gate, changes]
+    if: needs.changes.outputs.build == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Never cancelled once running (it may be distributing to testers): a newer release waits its turn.
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+    # The GitHub Environment `release` holds the release secrets and can require a reviewer (docs/ci.md).
+    environment: release
+    permissions:
+      contents: write       # to create the GitHub release
+      id-token: write       # keyless Google auth (Workload Identity Federation) for Firebase, and the build attestation
+      attestations: write   # the build provenance of the signed APK and AAB
+    env:
+      HAS_UPLOAD_KEY: ${{ secrets.UPLOAD_KEYSTORE_BASE64 != '' && secrets.UPLOAD_KEYSTORE_PASSWORD != '' && secrets.UPLOAD_KEY_ALIAS != '' && secrets.UPLOAD_KEY_PASSWORD != '' }}
+      # Firebase via Workload Identity Federation: the provider and service account are variables (not secrets).
+      # FIREBASE_APP_ID may be a variable or a secret.
+      HAS_FIREBASE: ${{ vars.GCP_WIF_PROVIDER != '' && vars.GCP_SERVICE_ACCOUNT != '' && (vars.FIREBASE_APP_ID != '' || secrets.FIREBASE_APP_ID != '') }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0   # full history and tags: the release notes list commits since the last release tag
+
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      - name: Release notes (commit subjects since the last release tag)
+        run: |
+          bash scripts/release-notes.sh "$VERSION_NAME" > "$RUNNER_TEMP/release-notes.md"
+          cat "$RUNNER_TEMP/release-notes.md"
+
+      - name: Decode the upload key
+        if: env.HAS_UPLOAD_KEY == 'true'
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          umask 077
+          echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+
+      # The screenshots the check job's Robolectric tests wrote (same commit): copied into the release
+      # articles' assets before the build, never committed (docs/ci.md). continue-on-error: with no
+      # screenshots there is nothing to download, and the script fails only if an article lists one.
+      - name: Download the screenshots
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: app/build/screenshots
+
+      - name: Put the screenshots into the release articles
+        run: bash scripts/release-screenshots.sh
+
+      - name: Release APK and AAB
+        env:
+          UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.UPLOAD_KEYSTORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease bundleRelease
+
+      - name: Name the outputs and read the application ID
+        id: out
+        run: |
+          mkdir -p out
+          suffix=$([ "$HAS_UPLOAD_KEY" = true ] && echo "" || echo "-unsigned")
+          cp app/build/outputs/apk/release/*.apk "out/riskmandate-$VERSION_NAME$suffix.apk"
+          cp app/build/outputs/bundle/release/*.aab "out/riskmandate-$VERSION_NAME$suffix.aab"
+          # Read the application ID from the built APK, never hardcode it.
+          aapt2=$(ls "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/aapt2 | sort -V | tail -1)
+          app_id=$("$aapt2" dump badging "out/riskmandate-$VERSION_NAME$suffix.apk" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
+          if [ -z "$app_id" ]; then echo "could not read the application ID" >&2; exit 1; fi
+          echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
+          echo "suffix=$suffix" >> "$GITHUB_OUTPUT"
+          # SHA256SUMS travels with the build: play.yml checks the AAB it uploads from main against it.
+          (cd out && sha256sum "riskmandate-$VERSION_NAME$suffix.apk" "riskmandate-$VERSION_NAME$suffix.aab" > SHA256SUMS)
+          ls -la out
+
+      # Build provenance (SLSA, Sigstore, stored by GitHub): a signed statement that THIS workflow built these exact
+      # files from this commit. play.yml verifies it with `gh attestation verify` before uploading the AAB to Play.
+      # SHA256SUMS, in the same release as the AAB, only catches corruption; this catches tampering.
+      - name: Attest the build provenance of the signed APK and AAB
+        if: env.HAS_UPLOAD_KEY == 'true'
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: |
+            out/*.apk
+            out/*.aab
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: riskmandate-${{ env.VERSION_NAME }}
+          path: out/
+          if-no-files-found: error
+
+      # Keyless: exchanges the job's GitHub OIDC token for short-lived Google credentials. The provider only
+      # trusts this repository in the environment `release`. Sets GOOGLE_APPLICATION_CREDENTIALS (a file
+      # that holds no secret, only the federation config; the action removes it in its post step).
+      - name: Google auth (Workload Identity Federation)
+        id: gauth
+        if: github.event_name == 'push' && env.HAS_UPLOAD_KEY == 'true' && env.HAS_FIREBASE == 'true'
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Firebase App Distribution (testers group "team")
+        id: firebase
+        if: steps.gauth.outcome == 'success'
+        env:
+          FIREBASE_APP_ID: ${{ vars.FIREBASE_APP_ID || secrets.FIREBASE_APP_ID }}
+        run: |
+          # firebase-tools comes from .github/firebase/package-lock.json (integrity hashes), no install scripts.
+          # GOOGLE_APPLICATION_CREDENTIALS comes from the auth step.
+          npm ci --ignore-scripts --no-audit --no-fund --prefix .github/firebase
+          .github/firebase/node_modules/.bin/firebase appdistribution:distribute "out/riskmandate-$VERSION_NAME.apk" \
+            --app "$FIREBASE_APP_ID" --groups team \
+            --release-notes-file "$RUNNER_TEMP/release-notes.md"
+
+      # The release carries the signed APK, the signed AAB and SHA256SUMS: this is the build play.yml uploads to
+      # Google Play, unchanged, once its commit reaches main. The tag points at the built commit.
+      - name: GitHub release with the APK and AAB
+        id: ghrelease
+        if: github.event_name == 'push' && env.HAS_UPLOAD_KEY == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION_NAME" "out/riskmandate-$VERSION_NAME.apk" "out/riskmandate-$VERSION_NAME.aab" out/SHA256SUMS \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "RiskMandate $VERSION_NAME" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"
+
+      - name: Remove the keys
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
+
+      - name: Summary
+        if: always()
+        env:
+          APP_ID: ${{ steps.out.outputs.app_id }}
+          FIREBASE_OUTCOME: ${{ steps.firebase.outcome }}
+          GAUTH_OUTCOME: ${{ steps.gauth.outcome }}
+          GH_OUTCOME: ${{ steps.ghrelease.outcome }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          reason() { # $1 outcome, $2 secrets-present flag(s), $3 push-only
+            case "$1" in
+              success) echo "ran" ;;
+              failure) echo "FAILED" ;;
+              cancelled) echo "cancelled" ;;
+              *) if [ "$HAS_UPLOAD_KEY" != true ]; then echo "skipped: upload key secrets missing"
+                 elif [ "$2" != true ]; then echo "skipped: $3 missing"
+                 elif [ "$4" = push ] && [ "$EVENT" != push ]; then echo "skipped: only on push"
+                 else echo "skipped"; fi ;;
+            esac
+          }
+          {
+            echo "## release (run ${{ github.run_number }})"
+            echo "- version: ${VERSION_NAME} (versionCode ${VERSION_CODE}), application ID: ${APP_ID:-unknown}"
+            echo "- signing: $([ "$HAS_UPLOAD_KEY" = true ] && echo 'signed with the upload key' || echo 'UNSIGNED: UPLOAD_KEYSTORE_* and UPLOAD_KEY_* secrets missing')"
+            echo "- Firebase App Distribution: $([ "$GAUTH_OUTCOME" = failure ] && echo 'FAILED at Google auth (Workload Identity Federation: check the provider, service account and the release environment)' || reason "$FIREBASE_OUTCOME" "$HAS_FIREBASE" 'variables GCP_WIF_PROVIDER, GCP_SERVICE_ACCOUNT or FIREBASE_APP_ID (variable or secret)' push))"
+            echo "- Google Play: not from dev; play.yml uploads from main after promotion"
+            echo "- GitHub release: $(reason "$GH_OUTCOME" true '' push)"
+            echo "- artifact: riskmandate-${VERSION_NAME}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Emulator smoke test. A separate job, after `release`, so an emulator that fails to boot never blocks
+  # the release job (nothing needs this job). It installs the release APK the release job built (signed
+  # when the upload key exists; otherwise signed here with a throwaway key so the minified build is the
+  # one tested) and asserts the home screen appears. Flakiness: see docs/ci.md.
+  smoke:
+    name: smoke (emulator)
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    # A newer push's smoke test supersedes this one (the release job is a different group, never cancelled).
+    concurrency:
+      group: smoke-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      # Build the debug and instrumented APKs before the emulator starts, so emulator minutes are not
+      # spent compiling. connectedDebugAndroidTest then only installs and runs them.
+      - name: Build the instrumented test APKs
+        run: ./gradlew --no-daemon --console=plain assembleDebug assembleDebugAndroidTest
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: riskmandate-${{ env.VERSION_NAME }}
+          path: apk
+
+      - name: Make the APK installable
+        id: apk
+        run: |
+          apk=$(ls apk/*.apk | head -1)
+          case "$apk" in
+            *-unsigned.apk)
+              # No upload key yet: align and sign with a throwaway key made here (never reused, not a secret).
+              bt=$(ls -d "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/* | sort -V | tail -1)
+              keytool -genkeypair -keystore "$RUNNER_TEMP/smoke.jks" -alias smoke -keyalg RSA -keysize 2048 \
+                -validity 2 -storepass smoketest -keypass smoketest -dname "CN=ci smoke test" >/dev/null
+              "$bt/zipalign" -p -f 4 "$apk" "$RUNNER_TEMP/aligned.apk"
+              "$bt/apksigner" sign --ks "$RUNNER_TEMP/smoke.jks" --ks-pass pass:smoketest \
+                --out "$RUNNER_TEMP/smoke.apk" "$RUNNER_TEMP/aligned.apk"
+              apk="$RUNNER_TEMP/smoke.apk"
+              echo "how=unsigned release APK, signed with a throwaway key" >> "$GITHUB_OUTPUT" ;;
+            *) echo "how=release APK as built (signed with the upload key)" >> "$GITHUB_OUTPUT" ;;
+          esac
+          echo "path=$apk" >> "$GITHUB_OUTPUT"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Two attempts, each a fresh emulator boot: an emulator that does not boot or a first-launch ANR
+      # is the usual flake, an app that really fails fails both times.
+      - name: Smoke test (attempt 1)
+        id: smoke1
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
+        env:
+          SMOKE_APK: ${{ steps.apk.outputs.path }}
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          disable-animations: true
+          emulator-boot-timeout: 400
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/emulator-checks.sh "$SMOKE_APK" smoke-out/1
+
+      - name: Smoke test (attempt 2, only if the first failed)
+        id: smoke2
+        if: steps.smoke1.outcome == 'failure'
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
+        env:
+          SMOKE_APK: ${{ steps.apk.outputs.path }}
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          disable-animations: true
+          emulator-boot-timeout: 400
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/emulator-checks.sh "$SMOKE_APK" smoke-out/2
+
+      - name: Upload screenshot, UI dump and logcat
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: smoke-${{ github.run_number }}
+          path: |
+            smoke-out/
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Summary
+        if: always()
+        env:
+          HOW: ${{ steps.apk.outputs.how }}
+          S1: ${{ steps.smoke1.outcome }}
+          S2: ${{ steps.smoke2.outcome }}
+        run: |
+          result=PASSED
+          if [ "$S1" != success ] && [ "$S2" != success ]; then result="FAILED (both attempts)"
+          elif [ "$S1" != success ]; then result="passed on the second attempt (the first was a flake or a real intermittent failure: look at artifact smoke-${{ github.run_number }})"; fi
+          {
+            echo "## smoke (run ${{ github.run_number }})"
+            echo "- installed: ${HOW:-unknown}"
+            echo "- release APK launch and instrumented SmokeTest on an API 34 x86_64 emulator: $result"
+            cat smoke-out/*/result.txt 2>/dev/null | sed 's/^/  - /'
+            echo "- screenshot, UI dump and logcat: artifact smoke-${{ github.run_number }}"
+          } >> "$GITHUB_STEP_SUMMARY"

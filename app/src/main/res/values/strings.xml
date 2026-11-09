@@ -1,0 +1,90 @@
+<resources>
+    <string name="app_name" translatable="false">RiskMandate</string>
+
+    <string name="home_open">Open riskmandate.ai</string>
+    <string name="home_open_action">Opens riskmandate.ai in your web browser</string>
+    <string name="home_device_heading">Device</string>
+    <string name="home_device_label">Label: %1$s</string>
+    <string name="home_about_heading">About</string>
+    <string name="home_about_text">RiskMandate: this app opens riskmandate.ai.</string>
+    <string name="home_licences">Open source licences</string>
+    <string name="home_build">Build %1$s</string>
+
+    <string name="device_fully_managed">Managed by an organisation (fully managed device)</string>
+    <string name="device_work_profile">Managed by an organisation (work profile)</string>
+    <string name="device_not_detected">Not managed (no device owner or work profile detected)</string>
+
+    <string name="message_no_browser">No web browser is installed on this device, so riskmandate.ai cannot be opened.</string>
+    <string name="message_refused">That address is not on riskmandate.ai, so the app will not open it.</string>
+
+    <string name="licences_title">Open source licences</string>
+    <string name="licences_models_heading">Model files (downloaded on request)</string>
+    <string name="licences_models_note">These files are not part of the app. The tablet downloads one only when asked to. The licence is the one the model\'s page states.</string>
+    <string name="licences_apache_heading">Apache License, Version 2.0 (full text)</string>
+
+    <string name="nav_section_today">Today</string>
+    <string name="nav_section_explore">Explore</string>
+    <string name="nav_section_device">This device</string>
+    <string name="nav_collapse">Fold the sidebar to icons</string>
+    <string name="nav_expand">Open the sidebar</string>
+    <string name="shell_brand_line">Web Summit</string>
+    <string name="nav_home_action">Go to Now</string>
+    <string name="nav_menu">Open the navigation menu</string>
+    <string name="home_now_title">Now</string>
+    <string name="home_now_summary">What you can open on this device.</string>
+    <string name="home_stat_features">Features on</string>
+    <string name="home_stat_permissions">Permissions this app asks for</string>
+    <string name="home_stat_attention">Needs a look</string>
+    <string name="home_stat_attention_none">Nothing to check</string>
+    <string name="home_stat_attention_some">See the note above</string>
+    <string name="home_links_heading">This app</string>
+    <string name="home_diagnostics">Diagnostics</string>
+    <string name="message_failed">Something went wrong opening riskmandate.ai in a browser. Try again, or open it in your browser yourself.</string>
+    <string name="message_pinned">Web pages are not opened in a browser while the app is pinned.</string>
+    <string name="message_offline">This device seems to be offline. Your browser may not be able to load riskmandate.ai until it is connected.</string>
+
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_intro">For testers and device set-up. It holds no personal data and no device identifiers.</string>
+    <string name="diagnostics_preview_heading">Preview</string>
+    <string name="diagnostics_preview_note">These screens are being tested on this device. They are not switched on for everyone and may not work yet.</string>
+    <string name="cloud_title">Cloud model (OpenRouter)</string>
+    <string name="cloud_intro">Staff only: this screen is hidden while stand mode is on. When a key is stored and the switch is on, text typed in a screen that uses the cloud model is sent to OpenRouter and to the model provider behind it. The cloud is off in stand mode.</string>
+    <string name="cloud_key_set">Key set</string>
+    <string name="cloud_key_none">No key</string>
+    <string name="cloud_field_label">Paste the OpenRouter key here</string>
+    <string name="cloud_save">Save key</string>
+    <string name="cloud_remove">Remove key</string>
+    <string name="cloud_saved">Key saved. Clear your keyboard\'s clipboard history too.</string>
+    <string name="cloud_removed">Key removed.</string>
+    <string name="cloud_save_failed">Could not store the key on this tablet.</string>
+    <string name="cloud_check_empty">Paste a key first.</string>
+    <string name="cloud_check_short">That is too short to be an OpenRouter key.</string>
+    <string name="cloud_check_long">That is too long to be an OpenRouter key.</string>
+    <string name="cloud_check_chars">That has characters an OpenRouter key does not have.</string>
+    <string name="cloud_check_prefix">An OpenRouter key starts with sk-or-.</string>
+    <string name="cloud_switch_label">Use the cloud model</string>
+    <string name="cloud_switch_note">Off by default, and off again after a restart and in stand mode.</string>
+    <string name="cloud_model_heading">Model</string>
+    <string name="cloud_spend_heading">Spending</string>
+    <string name="cloud_spend_line">This session US$%1$s of US$%2$s. This tablet US$%3$s of US$%4$s.</string>
+    <string name="cloud_spend_missing">The spending record is missing or damaged, so nothing is sent until it is reset.</string>
+    <string name="cloud_reset">Reset the spending total</string>
+    <string name="cloud_reset_title">Reset the spending total?</string>
+    <string name="cloud_reset_body">This tablet has spent US$%1$s of its US$%2$s limit. Resetting lets it spend up to the limit again.</string>
+    <string name="cloud_reset_confirm">Reset</string>
+    <string name="cloud_reset_cancel">Cancel</string>
+    <string name="cloud_keystore_note">The key is kept encrypted with the Android Keystore. That protects a copied file or a backup, not someone who can use the unlocked app or has root, and a key held in memory cannot be wiped.</string>
+    <string name="cloud_credit_note">The credit limit set on the key at OpenRouter is the real limit.</string>
+    <string name="cloud_badge">Cloud: openrouter.ai</string>
+    <string name="cloud_badge_short">Cloud</string>
+    <string name="diagnostics_cloud">Cloud model (OpenRouter)</string>
+    <string name="diagnostics_model_bench">Model bench (on-device LLM test)</string>
+    <string name="diagnostics_copy">Copy</string>
+    <string name="diagnostics_copied">Copied to the clipboard.</string>
+    <string name="diagnostics_copy_failed">Could not copy to the clipboard.</string>
+
+    <string name="restriction_start_url_title">Start page</string>
+    <string name="restriction_start_url_description">The riskmandate.ai page the app opens (HTTPS on riskmandate.ai only; anything else falls back to https://riskmandate.ai/).</string>
+    <string name="restriction_device_label_title">Device label</string>
+    <string name="restriction_device_label_description">A label shown on the app\'s home screen to identify this device.</string>
+</resources>

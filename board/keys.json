@@ -1,0 +1,14 @@
+{
+  "note": "Public keys of this repository's agents. conductor.android has not made its key yet (pki-agent.mjs is not in this session); it will be added here by itself.",
+  "keys": [
+    {
+      "id": "security.android",
+      "role": "security",
+      "alg": "ed25519",
+      "public_key": "b7sGfeTzCndCEQFXsl+9zyNqu8I8ohAZKz4XbeU/4Zc=",
+      "fingerprint": "a8a6 afbd 9974 80e7",
+      "status": "active",
+      "added": "2026-11-09T14:52Z, by conductor.android from docs/security/approvals.md section 7; Dinis to compare the fingerprint on his own channel"
+    }
+  ]
+}

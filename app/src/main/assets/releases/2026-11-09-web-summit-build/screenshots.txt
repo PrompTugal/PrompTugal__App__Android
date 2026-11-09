@@ -1,0 +1,12 @@
+# <target>.png <- <source>.png, the files the Robolectric screenshot tests write to app/build/screenshots/.
+# No screenshot tests exist yet for This app's mandate or stand mode. The site shots show the frame, not the page.
+home-tablet.png <- home-tablet10-landscape-light.png
+abp-1-scenario.png <- abpdemo-step1-tablet-light.png
+abp-2-browser.png <- abpdemo-step2-tablet-light.png
+abp-5-proxy.png <- abpdemo-step5-tablet-light.png
+abp-5-proxy-dark.png <- abpdemo-step5-tablet-dark.png
+abp-7-device.png <- abpdemo-step7-tablet-light.png
+whatsnew-list.png <- releases-list-phone-portrait-light.png
+whatsnew-reader.png <- releases-reader-tablet10-landscape-light.png
+site-phone.png <- site-phone-portrait-light.png
+site-tablet.png <- site-tablet10-landscape-light.png

@@ -1,0 +1,64 @@
+# Weekly, grouped update PRs. Dependabot reads this file from the default branch (main), so it takes
+# effect once a release PR carrying it is merged by Dinis. Pull requests target `dev` (the branch CI
+# builds and releases from), never main and never a work/* branch. The conductor merges them like any
+# other change; the gate (check job, licence gate) runs on each. Rationale: docs/ci.md.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+    # A dependency goes to the FIRST group whose pattern matches. The toolchain (Kotlin, Compose, AGP)
+    # moves together in one PR: bumping them one at a time fails the gate (Compose BOM, Kotlin and AGP
+    # must agree), see docs/ci.md "Toolchain pins". LiteRT-LM (the on-device model runtime) has its own
+    # group because it drags a newer Kotlin standard library into the app.
+    groups:
+      toolchain:
+        patterns: ["org.jetbrains.kotlin*", "androidx.compose*", "com.android.*"]
+      litertlm:
+        patterns: ["com.google.ai.edge.*"]
+      testing:
+        patterns: ["junit*", "org.robolectric*", "androidx.test*"]
+      androidx:
+        patterns: ["androidx.*"]
+    labels: [dependencies]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: [dependencies]
+
+  # firebase-tools, pinned by .github/firebase/package-lock.json (runs with the Firebase service account).
+  - package-ecosystem: npm
+    directory: /.github/firebase
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "deps"
+    groups:
+      firebase-tools:
+        patterns: ["*"]
+    labels: [dependencies]

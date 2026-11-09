@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The RiskMandate monogram as the adaptive icon (manifest icon and roundIcon), with a monochrome layer for themed icons. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/rm_navy" />
+    <foreground android:drawable="@drawable/ic_rm_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_rm_launcher_monochrome" />
+</adaptive-icon>

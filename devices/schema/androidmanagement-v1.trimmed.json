@@ -1,0 +1,3739 @@
+{
+ "_about": "Trimmed copy of the Android Management API v1 discovery document, for the offline policy test (devices/test/policy-schema.test.mjs). Regenerate with devices/trim-discovery.mjs. Descriptions are dropped; read them in the full document.",
+ "source": "https://androidmanagement.googleapis.com/$discovery/rest?version=v1",
+ "revision": "20261104",
+ "fetched": "2026-11-08",
+ "rootUrl": "https://androidmanagement.googleapis.com/",
+ "schemas": {
+  "AdvancedSecurityOverrides": {
+   "type": "object",
+   "properties": {
+    "contentProtectionPolicy": {
+     "type": "string",
+     "enum": [
+      "CONTENT_PROTECTION_POLICY_UNSPECIFIED",
+      "CONTENT_PROTECTION_DISABLED",
+      "CONTENT_PROTECTION_ENFORCED",
+      "CONTENT_PROTECTION_USER_CHOICE"
+     ]
+    },
+    "untrustedAppsPolicy": {
+     "type": "string",
+     "enum": [
+      "UNTRUSTED_APPS_POLICY_UNSPECIFIED",
+      "DISALLOW_INSTALL",
+      "ALLOW_INSTALL_IN_PERSONAL_PROFILE_ONLY",
+      "ALLOW_INSTALL_DEVICE_WIDE"
+     ]
+    },
+    "personalAppsThatCanReadWorkNotifications": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "commonCriteriaMode": {
+     "type": "string",
+     "enum": [
+      "COMMON_CRITERIA_MODE_UNSPECIFIED",
+      "COMMON_CRITERIA_MODE_DISABLED",
+      "COMMON_CRITERIA_MODE_ENABLED"
+     ]
+    },
+    "developerSettings": {
+     "type": "string",
+     "enum": [
+      "DEVELOPER_SETTINGS_UNSPECIFIED",
+      "DEVELOPER_SETTINGS_DISABLED",
+      "DEVELOPER_SETTINGS_ALLOWED"
+     ]
+    },
+    "googlePlayProtectVerifyApps": {
+     "type": "string",
+     "enum": [
+      "GOOGLE_PLAY_PROTECT_VERIFY_APPS_UNSPECIFIED",
+      "VERIFY_APPS_ENFORCED",
+      "VERIFY_APPS_USER_CHOICE"
+     ]
+    },
+    "mtePolicy": {
+     "type": "string",
+     "enum": [
+      "MTE_POLICY_UNSPECIFIED",
+      "MTE_USER_CHOICE",
+      "MTE_ENFORCED",
+      "MTE_DISABLED"
+     ]
+    }
+   }
+  },
+  "AlwaysOnVpnPackage": {
+   "type": "object",
+   "properties": {
+    "lockdownEnabled": {
+     "type": "boolean"
+    },
+    "packageName": {
+     "type": "string"
+    }
+   }
+  },
+  "ApiLevelCondition": {
+   "type": "object",
+   "properties": {
+    "minApiLevel": {
+     "type": "integer",
+     "format": "int32"
+    }
+   },
+   "deprecated": true
+  },
+  "ApnPolicy": {
+   "type": "object",
+   "properties": {
+    "overrideApns": {
+     "type": "string",
+     "enum": [
+      "OVERRIDE_APNS_UNSPECIFIED",
+      "OVERRIDE_APNS_DISABLED",
+      "OVERRIDE_APNS_ENABLED"
+     ]
+    },
+    "apnSettings": {
+     "type": "array",
+     "items": {
+      "$ref": "ApnSetting"
+     }
+    }
+   }
+  },
+  "ApnSetting": {
+   "type": "object",
+   "properties": {
+    "displayName": {
+     "type": "string"
+    },
+    "apnTypes": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "APN_TYPE_UNSPECIFIED",
+       "ENTERPRISE",
+       "BIP",
+       "CBS",
+       "DEFAULT",
+       "DUN",
+       "EMERGENCY",
+       "FOTA",
+       "HIPRI",
+       "IA",
+       "IMS",
+       "MCX",
+       "MMS",
+       "RCS",
+       "SUPL",
+       "VSIM",
+       "XCAP"
+      ]
+     }
+    },
+    "mmsc": {
+     "type": "string"
+    },
+    "proxyAddress": {
+     "type": "string"
+    },
+    "roamingProtocol": {
+     "type": "string",
+     "enum": [
+      "PROTOCOL_UNSPECIFIED",
+      "IP",
+      "IPV4V6",
+      "IPV6",
+      "NON_IP",
+      "PPP",
+      "UNSTRUCTURED"
+     ]
+    },
+    "mtuV4": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "networkTypes": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "NETWORK_TYPE_UNSPECIFIED",
+       "EDGE",
+       "GPRS",
+       "GSM",
+       "HSDPA",
+       "HSPA",
+       "HSPAP",
+       "HSUPA",
+       "IWLAN",
+       "LTE",
+       "NR",
+       "TD_SCDMA",
+       "UMTS"
+      ]
+     }
+    },
+    "proxyPort": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "mmsProxyAddress": {
+     "type": "string"
+    },
+    "numericOperatorId": {
+     "type": "string"
+    },
+    "protocol": {
+     "type": "string",
+     "enum": [
+      "PROTOCOL_UNSPECIFIED",
+      "IP",
+      "IPV4V6",
+      "IPV6",
+      "NON_IP",
+      "PPP",
+      "UNSTRUCTURED"
+     ]
+    },
+    "authType": {
+     "type": "string",
+     "enum": [
+      "AUTH_TYPE_UNSPECIFIED",
+      "NONE",
+      "PAP",
+      "CHAP",
+      "PAP_OR_CHAP"
+     ]
+    },
+    "username": {
+     "type": "string"
+    },
+    "password": {
+     "type": "string"
+    },
+    "apn": {
+     "type": "string"
+    },
+    "carrierId": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "alwaysOnSetting": {
+     "type": "string",
+     "enum": [
+      "ALWAYS_ON_SETTING_UNSPECIFIED",
+      "NOT_ALWAYS_ON",
+      "ALWAYS_ON"
+     ]
+    },
+    "mvnoType": {
+     "type": "string",
+     "enum": [
+      "MVNO_TYPE_UNSPECIFIED",
+      "GID",
+      "ICCID",
+      "IMSI",
+      "SPN"
+     ]
+    },
+    "mmsProxyPort": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "mtuV6": {
+     "type": "integer",
+     "format": "int32"
+    }
+   }
+  },
+  "ApplicationEvent": {
+   "type": "object",
+   "properties": {
+    "createTime": {
+     "type": "string",
+     "format": "google-datetime"
+    },
+    "eventType": {
+     "type": "string",
+     "enum": [
+      "APPLICATION_EVENT_TYPE_UNSPECIFIED",
+      "INSTALLED",
+      "CHANGED",
+      "DATA_CLEARED",
+      "REMOVED",
+      "REPLACED",
+      "RESTARTED",
+      "PINNED",
+      "UNPINNED"
+     ]
+    }
+   }
+  },
+  "ApplicationPolicy": {
+   "type": "object",
+   "properties": {
+    "disabled": {
+     "type": "boolean"
+    },
+    "minimumVersionCode": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "packageName": {
+     "type": "string"
+    },
+    "lockTaskAllowed": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "signingKeyCerts": {
+     "type": "array",
+     "items": {
+      "$ref": "ApplicationSigningKeyCert"
+     }
+    },
+    "managedConfigurationTemplate": {
+     "$ref": "ManagedConfigurationTemplate"
+    },
+    "alwaysOnVpnLockdownExemption": {
+     "type": "string",
+     "enum": [
+      "ALWAYS_ON_VPN_LOCKDOWN_EXEMPTION_UNSPECIFIED",
+      "VPN_LOCKDOWN_ENFORCED",
+      "VPN_LOCKDOWN_EXEMPTION"
+     ]
+    },
+    "defaultPermissionPolicy": {
+     "type": "string",
+     "enum": [
+      "PERMISSION_POLICY_UNSPECIFIED",
+      "PROMPT",
+      "GRANT",
+      "DENY"
+     ]
+    },
+    "credentialProviderPolicy": {
+     "type": "string",
+     "enum": [
+      "CREDENTIAL_PROVIDER_POLICY_UNSPECIFIED",
+      "CREDENTIAL_PROVIDER_ALLOWED",
+      "CREDENTIAL_PROVIDER_DISALLOWED"
+     ]
+    },
+    "customAppConfig": {
+     "$ref": "CustomAppConfig"
+    },
+    "preferentialNetworkId": {
+     "type": "string",
+     "enum": [
+      "PREFERENTIAL_NETWORK_ID_UNSPECIFIED",
+      "NO_PREFERENTIAL_NETWORK",
+      "PREFERENTIAL_NETWORK_ID_ONE",
+      "PREFERENTIAL_NETWORK_ID_TWO",
+      "PREFERENTIAL_NETWORK_ID_THREE",
+      "PREFERENTIAL_NETWORK_ID_FOUR",
+      "PREFERENTIAL_NETWORK_ID_FIVE"
+     ]
+    },
+    "delegatedScopes": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "DELEGATED_SCOPE_UNSPECIFIED",
+       "CERT_INSTALL",
+       "MANAGED_CONFIGURATIONS",
+       "BLOCK_UNINSTALL",
+       "PERMISSION_GRANT",
+       "PACKAGE_ACCESS",
+       "ENABLE_SYSTEM_APP",
+       "NETWORK_ACTIVITY_LOGS",
+       "SECURITY_LOGS",
+       "CERT_SELECTION"
+      ]
+     }
+    },
+    "autoUpdateMode": {
+     "type": "string",
+     "enum": [
+      "AUTO_UPDATE_MODE_UNSPECIFIED",
+      "AUTO_UPDATE_DEFAULT",
+      "AUTO_UPDATE_POSTPONED",
+      "AUTO_UPDATE_HIGH_PRIORITY"
+     ]
+    },
+    "userControlSettings": {
+     "type": "string",
+     "enum": [
+      "USER_CONTROL_SETTINGS_UNSPECIFIED",
+      "USER_CONTROL_ALLOWED",
+      "USER_CONTROL_DISALLOWED"
+     ]
+    },
+    "managedConfiguration": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "any"
+     }
+    },
+    "installConstraint": {
+     "type": "array",
+     "items": {
+      "$ref": "InstallConstraint"
+     }
+    },
+    "workProfileWidgets": {
+     "type": "string",
+     "enum": [
+      "WORK_PROFILE_WIDGETS_UNSPECIFIED",
+      "WORK_PROFILE_WIDGETS_ALLOWED",
+      "WORK_PROFILE_WIDGETS_DISALLOWED"
+     ]
+    },
+    "roles": {
+     "type": "array",
+     "items": {
+      "$ref": "Role"
+     }
+    },
+    "permissionGrants": {
+     "type": "array",
+     "items": {
+      "$ref": "PermissionGrant"
+     }
+    },
+    "extensionConfig": {
+     "$ref": "ExtensionConfig",
+     "deprecated": true
+    },
+    "connectedWorkAndPersonalApp": {
+     "type": "string",
+     "enum": [
+      "CONNECTED_WORK_AND_PERSONAL_APP_UNSPECIFIED",
+      "CONNECTED_WORK_AND_PERSONAL_APP_DISALLOWED",
+      "CONNECTED_WORK_AND_PERSONAL_APP_ALLOWED"
+     ]
+    },
+    "installType": {
+     "type": "string",
+     "enum": [
+      "INSTALL_TYPE_UNSPECIFIED",
+      "PREINSTALLED",
+      "FORCE_INSTALLED",
+      "BLOCKED",
+      "AVAILABLE",
+      "REQUIRED_FOR_SETUP",
+      "KIOSK",
+      "CUSTOM"
+     ],
+     "enumDeprecated": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+     ]
+    },
+    "installPriority": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "accessibleTrackIds": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "ApplicationReport": {
+   "type": "object",
+   "properties": {
+    "events": {
+     "type": "array",
+     "items": {
+      "$ref": "ApplicationEvent"
+     }
+    },
+    "versionName": {
+     "type": "string"
+    },
+    "displayName": {
+     "type": "string"
+    },
+    "versionCode": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "state": {
+     "type": "string",
+     "enum": [
+      "APPLICATION_STATE_UNSPECIFIED",
+      "REMOVED",
+      "INSTALLED"
+     ]
+    },
+    "signingKeyCerts": {
+     "type": "array",
+     "items": {
+      "$ref": "ApplicationSigningKeyCert"
+     },
+     "readOnly": true
+    },
+    "installerPackageName": {
+     "type": "string"
+    },
+    "keyedAppStates": {
+     "type": "array",
+     "items": {
+      "$ref": "KeyedAppState"
+     }
+    },
+    "signingKeyCertFingerprints": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     },
+     "deprecated": true
+    },
+    "packageSha256Hash": {
+     "type": "string"
+    },
+    "applicationSource": {
+     "type": "string",
+     "enum": [
+      "APPLICATION_SOURCE_UNSPECIFIED",
+      "SYSTEM_APP_FACTORY_VERSION",
+      "SYSTEM_APP_UPDATED_VERSION",
+      "INSTALLED_FROM_PLAY_STORE",
+      "CUSTOM"
+     ]
+    },
+    "packageName": {
+     "type": "string"
+    },
+    "userFacingType": {
+     "type": "string",
+     "enum": [
+      "USER_FACING_TYPE_UNSPECIFIED",
+      "NOT_USER_FACING",
+      "USER_FACING"
+     ]
+    }
+   }
+  },
+  "ApplicationReportingSettings": {
+   "type": "object",
+   "properties": {
+    "includeRemovedApps": {
+     "type": "boolean"
+    }
+   }
+  },
+  "ApplicationSigningKeyCert": {
+   "type": "object",
+   "properties": {
+    "signingKeyCertFingerprintSha256": {
+     "type": "string",
+     "format": "byte"
+    }
+   }
+  },
+  "BlockAction": {
+   "type": "object",
+   "properties": {
+    "blockAfterDays": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "blockScope": {
+     "type": "string",
+     "enum": [
+      "BLOCK_SCOPE_UNSPECIFIED",
+      "BLOCK_SCOPE_WORK_PROFILE",
+      "BLOCK_SCOPE_DEVICE"
+     ]
+    }
+   }
+  },
+  "ChoosePrivateKeyRule": {
+   "type": "object",
+   "properties": {
+    "packageNames": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "urlPattern": {
+     "type": "string"
+    },
+    "privateKeyAlias": {
+     "type": "string"
+    }
+   }
+  },
+  "CommonCriteriaModeInfo": {
+   "type": "object",
+   "properties": {
+    "policySignatureVerificationStatus": {
+     "type": "string",
+     "enum": [
+      "POLICY_SIGNATURE_VERIFICATION_STATUS_UNSPECIFIED",
+      "POLICY_SIGNATURE_VERIFICATION_DISABLED",
+      "POLICY_SIGNATURE_VERIFICATION_SUCCEEDED",
+      "POLICY_SIGNATURE_VERIFICATION_NOT_SUPPORTED",
+      "POLICY_SIGNATURE_VERIFICATION_FAILED"
+     ],
+     "readOnly": true
+    },
+    "commonCriteriaModeStatus": {
+     "type": "string",
+     "enum": [
+      "COMMON_CRITERIA_MODE_STATUS_UNKNOWN",
+      "COMMON_CRITERIA_MODE_DISABLED",
+      "COMMON_CRITERIA_MODE_ENABLED"
+     ]
+    }
+   }
+  },
+  "ComplianceRule": {
+   "type": "object",
+   "properties": {
+    "nonComplianceDetailCondition": {
+     "$ref": "NonComplianceDetailCondition"
+    },
+    "apiLevelCondition": {
+     "$ref": "ApiLevelCondition"
+    },
+    "packageNamesToDisable": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "disableApps": {
+     "type": "boolean"
+    }
+   },
+   "deprecated": true
+  },
+  "ContactInfo": {
+   "type": "object",
+   "properties": {
+    "dataProtectionOfficerEmail": {
+     "type": "string"
+    },
+    "euRepresentativeName": {
+     "type": "string"
+    },
+    "contactEmail": {
+     "type": "string"
+    },
+    "dataProtectionOfficerName": {
+     "type": "string"
+    },
+    "dataProtectionOfficerPhone": {
+     "type": "string"
+    },
+    "euRepresentativeEmail": {
+     "type": "string"
+    },
+    "euRepresentativePhone": {
+     "type": "string"
+    }
+   }
+  },
+  "ContentProviderEndpoint": {
+   "type": "object",
+   "properties": {
+    "signingCertsSha256": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "uri": {
+     "type": "string"
+    },
+    "packageName": {
+     "type": "string"
+    }
+   }
+  },
+  "CrossDevicePolicies": {
+   "type": "object",
+   "properties": {
+    "nearbyAppStreaming": {
+     "type": "string",
+     "enum": [
+      "NEARBY_APP_STREAMING_UNSPECIFIED",
+      "NEARBY_APP_STREAMING_USER_CHOICE",
+      "NEARBY_APP_STREAMING_DISABLED",
+      "NEARBY_APP_STREAMING_USER_CHOICE_SAME_MANAGED_ACCOUNT"
+     ]
+    },
+    "taskContinuityHandoff": {
+     "type": "string",
+     "enum": [
+      "TASK_CONTINUITY_HANDOFF_UNSPECIFIED",
+      "TASK_CONTINUITY_HANDOFF_ALLOWED",
+      "TASK_CONTINUITY_HANDOFF_DISALLOWED"
+     ]
+    },
+    "nearbyNotificationStreaming": {
+     "type": "string",
+     "enum": [
+      "NEARBY_NOTIFICATION_STREAMING_UNSPECIFIED",
+      "NEARBY_NOTIFICATION_STREAMING_USER_CHOICE",
+      "NEARBY_NOTIFICATION_STREAMING_DISABLED",
+      "NEARBY_NOTIFICATION_STREAMING_USER_CHOICE_SAME_MANAGED_ACCOUNT"
+     ]
+    }
+   }
+  },
+  "CrossProfilePolicies": {
+   "type": "object",
+   "properties": {
+    "crossProfileDataSharing": {
+     "type": "string",
+     "enum": [
+      "CROSS_PROFILE_DATA_SHARING_UNSPECIFIED",
+      "CROSS_PROFILE_DATA_SHARING_DISALLOWED",
+      "DATA_SHARING_FROM_WORK_TO_PERSONAL_DISALLOWED",
+      "CROSS_PROFILE_DATA_SHARING_ALLOWED"
+     ]
+    },
+    "exemptionsToShowWorkContactsInPersonalProfile": {
+     "$ref": "PackageNameList"
+    },
+    "crossProfileAppFunctions": {
+     "type": "string",
+     "enum": [
+      "CROSS_PROFILE_APP_FUNCTIONS_UNSPECIFIED",
+      "CROSS_PROFILE_APP_FUNCTIONS_DISALLOWED",
+      "CROSS_PROFILE_APP_FUNCTIONS_ALLOWED"
+     ]
+    },
+    "crossProfileCopyPaste": {
+     "type": "string",
+     "enum": [
+      "CROSS_PROFILE_COPY_PASTE_UNSPECIFIED",
+      "COPY_FROM_WORK_TO_PERSONAL_DISALLOWED",
+      "CROSS_PROFILE_COPY_PASTE_ALLOWED"
+     ]
+    },
+    "showWorkContactsInPersonalProfile": {
+     "type": "string",
+     "enum": [
+      "SHOW_WORK_CONTACTS_IN_PERSONAL_PROFILE_UNSPECIFIED",
+      "SHOW_WORK_CONTACTS_IN_PERSONAL_PROFILE_DISALLOWED",
+      "SHOW_WORK_CONTACTS_IN_PERSONAL_PROFILE_ALLOWED",
+      "SHOW_WORK_CONTACTS_IN_PERSONAL_PROFILE_DISALLOWED_EXCEPT_SYSTEM"
+     ]
+    },
+    "workProfileWidgetsDefault": {
+     "type": "string",
+     "enum": [
+      "WORK_PROFILE_WIDGETS_DEFAULT_UNSPECIFIED",
+      "WORK_PROFILE_WIDGETS_DEFAULT_ALLOWED",
+      "WORK_PROFILE_WIDGETS_DEFAULT_DISALLOWED"
+     ]
+    }
+   }
+  },
+  "CustomAppConfig": {
+   "type": "object",
+   "properties": {
+    "userUninstallSettings": {
+     "type": "string",
+     "enum": [
+      "USER_UNINSTALL_SETTINGS_UNSPECIFIED",
+      "DISALLOW_UNINSTALL_BY_USER",
+      "ALLOW_UNINSTALL_BY_USER"
+     ]
+    }
+   }
+  },
+  "Date": {
+   "type": "object",
+   "properties": {
+    "day": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "year": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "month": {
+     "type": "integer",
+     "format": "int32"
+    }
+   }
+  },
+  "DefaultApplication": {
+   "type": "object",
+   "properties": {
+    "packageName": {
+     "type": "string"
+    }
+   }
+  },
+  "DefaultApplicationContext": {
+   "type": "object",
+   "properties": {
+    "defaultApplicationScope": {
+     "type": "string",
+     "enum": [
+      "DEFAULT_APPLICATION_SCOPE_UNSPECIFIED",
+      "SCOPE_FULLY_MANAGED",
+      "SCOPE_WORK_PROFILE",
+      "SCOPE_PERSONAL_PROFILE"
+     ],
+     "readOnly": true
+    }
+   }
+  },
+  "DefaultApplicationInfo": {
+   "type": "object",
+   "properties": {
+    "defaultApplicationType": {
+     "type": "string",
+     "enum": [
+      "DEFAULT_APPLICATION_TYPE_UNSPECIFIED",
+      "DEFAULT_ASSISTANT",
+      "DEFAULT_BROWSER",
+      "DEFAULT_CALL_REDIRECTION",
+      "DEFAULT_CALL_SCREENING",
+      "DEFAULT_DIALER",
+      "DEFAULT_HOME",
+      "DEFAULT_SMS",
+      "DEFAULT_WALLET"
+     ],
+     "readOnly": true
+    },
+    "defaultApplicationSettingAttempts": {
+     "type": "array",
+     "items": {
+      "$ref": "DefaultApplicationSettingAttempt"
+     },
+     "readOnly": true
+    },
+    "packageName": {
+     "type": "string",
+     "readOnly": true
+    }
+   }
+  },
+  "DefaultApplicationSetting": {
+   "type": "object",
+   "properties": {
+    "defaultApplicationScopes": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "DEFAULT_APPLICATION_SCOPE_UNSPECIFIED",
+       "SCOPE_FULLY_MANAGED",
+       "SCOPE_WORK_PROFILE",
+       "SCOPE_PERSONAL_PROFILE"
+      ]
+     }
+    },
+    "defaultApplicationType": {
+     "type": "string",
+     "enum": [
+      "DEFAULT_APPLICATION_TYPE_UNSPECIFIED",
+      "DEFAULT_ASSISTANT",
+      "DEFAULT_BROWSER",
+      "DEFAULT_CALL_REDIRECTION",
+      "DEFAULT_CALL_SCREENING",
+      "DEFAULT_DIALER",
+      "DEFAULT_HOME",
+      "DEFAULT_SMS",
+      "DEFAULT_WALLET"
+     ]
+    },
+    "defaultApplications": {
+     "type": "array",
+     "items": {
+      "$ref": "DefaultApplication"
+     }
+    }
+   }
+  },
+  "DefaultApplicationSettingAttempt": {
+   "type": "object",
+   "properties": {
+    "packageName": {
+     "type": "string",
+     "readOnly": true
+    },
+    "attemptOutcome": {
+     "type": "string",
+     "enum": [
+      "ATTEMPT_OUTCOME_UNSPECIFIED",
+      "SUCCESS",
+      "APP_NOT_INSTALLED",
+      "APP_SIGNING_CERT_MISMATCH",
+      "OTHER_FAILURE"
+     ],
+     "readOnly": true
+    }
+   }
+  },
+  "Device": {
+   "type": "object",
+   "properties": {
+    "lastStatusReportTime": {
+     "type": "string",
+     "format": "google-datetime"
+    },
+    "powerManagementEvents": {
+     "type": "array",
+     "items": {
+      "$ref": "PowerManagementEvent"
+     }
+    },
+    "managementMode": {
+     "type": "string",
+     "enum": [
+      "MANAGEMENT_MODE_UNSPECIFIED",
+      "DEVICE_OWNER",
+      "PROFILE_OWNER"
+     ]
+    },
+    "securityPosture": {
+     "$ref": "SecurityPosture"
+    },
+    "policyName": {
+     "type": "string"
+    },
+    "applicationReports": {
+     "type": "array",
+     "items": {
+      "$ref": "ApplicationReport"
+     }
+    },
+    "appliedPasswordPolicies": {
+     "type": "array",
+     "items": {
+      "$ref": "PasswordRequirements"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "hardwareStatusSamples": {
+     "type": "array",
+     "items": {
+      "$ref": "HardwareStatus"
+     }
+    },
+    "state": {
+     "type": "string",
+     "enum": [
+      "DEVICE_STATE_UNSPECIFIED",
+      "ACTIVE",
+      "DISABLED",
+      "DELETED",
+      "PROVISIONING",
+      "LOST",
+      "PREPARING_FOR_MIGRATION",
+      "DEACTIVATED_BY_DEVICE_FINANCE"
+     ]
+    },
+    "memoryInfo": {
+     "$ref": "MemoryInfo"
+    },
+    "nonComplianceDetails": {
+     "type": "array",
+     "items": {
+      "$ref": "NonComplianceDetail"
+     }
+    },
+    "softwareInfo": {
+     "$ref": "SoftwareInfo"
+    },
+    "enrollmentTokenName": {
+     "type": "string"
+    },
+    "lastPolicyComplianceReportTime": {
+     "type": "string",
+     "format": "google-datetime",
+     "deprecated": true
+    },
+    "lastPolicySyncTime": {
+     "type": "string",
+     "format": "google-datetime"
+    },
+    "systemProperties": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "networkInfo": {
+     "$ref": "NetworkInfo"
+    },
+    "displays": {
+     "type": "array",
+     "items": {
+      "$ref": "Display"
+     }
+    },
+    "enrollmentTokenData": {
+     "type": "string"
+    },
+    "commonCriteriaModeInfo": {
+     "$ref": "CommonCriteriaModeInfo"
+    },
+    "appliedState": {
+     "type": "string",
+     "enum": [
+      "DEVICE_STATE_UNSPECIFIED",
+      "ACTIVE",
+      "DISABLED",
+      "DELETED",
+      "PROVISIONING",
+      "LOST",
+      "PREPARING_FOR_MIGRATION",
+      "DEACTIVATED_BY_DEVICE_FINANCE"
+     ]
+    },
+    "apiLevel": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "appliedPolicyName": {
+     "type": "string"
+    },
+    "appliedPolicyVersion": {
+     "type": "string",
+     "format": "int64"
+    },
+    "hardwareInfo": {
+     "$ref": "HardwareInfo"
+    },
+    "deviceSettings": {
+     "$ref": "DeviceSettings"
+    },
+    "ownership": {
+     "type": "string",
+     "enum": [
+      "OWNERSHIP_UNSPECIFIED",
+      "COMPANY_OWNED",
+      "PERSONALLY_OWNED"
+     ]
+    },
+    "disabledReason": {
+     "$ref": "UserFacingMessage"
+    },
+    "defaultApplicationInfo": {
+     "type": "array",
+     "items": {
+      "$ref": "DefaultApplicationInfo"
+     },
+     "readOnly": true
+    },
+    "user": {
+     "$ref": "User"
+    },
+    "previousDeviceNames": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "policyCompliant": {
+     "type": "boolean"
+    },
+    "userName": {
+     "type": "string"
+    },
+    "enrollmentTime": {
+     "type": "string",
+     "format": "google-datetime"
+    },
+    "dpcMigrationInfo": {
+     "$ref": "DpcMigrationInfo",
+     "readOnly": true
+    },
+    "memoryEvents": {
+     "type": "array",
+     "items": {
+      "$ref": "MemoryEvent"
+     }
+    }
+   }
+  },
+  "DeviceConnectivityManagement": {
+   "type": "object",
+   "properties": {
+    "wifiDirectSettings": {
+     "type": "string",
+     "enum": [
+      "WIFI_DIRECT_SETTINGS_UNSPECIFIED",
+      "ALLOW_WIFI_DIRECT",
+      "DISALLOW_WIFI_DIRECT"
+     ]
+    },
+    "configureWifi": {
+     "type": "string",
+     "enum": [
+      "CONFIGURE_WIFI_UNSPECIFIED",
+      "ALLOW_CONFIGURING_WIFI",
+      "DISALLOW_ADD_WIFI_CONFIG",
+      "DISALLOW_CONFIGURING_WIFI"
+     ]
+    },
+    "apnPolicy": {
+     "$ref": "ApnPolicy"
+    },
+    "wifiSsidPolicy": {
+     "$ref": "WifiSsidPolicy"
+    },
+    "privateDnsSettings": {
+     "$ref": "PrivateDnsSettings"
+    },
+    "usbDataAccess": {
+     "type": "string",
+     "enum": [
+      "USB_DATA_ACCESS_UNSPECIFIED",
+      "ALLOW_USB_DATA_TRANSFER",
+      "DISALLOW_USB_FILE_TRANSFER",
+      "DISALLOW_USB_DATA_TRANSFER"
+     ]
+    },
+    "bluetoothSharing": {
+     "type": "string",
+     "enum": [
+      "BLUETOOTH_SHARING_UNSPECIFIED",
+      "BLUETOOTH_SHARING_ALLOWED",
+      "BLUETOOTH_SHARING_DISALLOWED"
+     ]
+    },
+    "tetheringSettings": {
+     "type": "string",
+     "enum": [
+      "TETHERING_SETTINGS_UNSPECIFIED",
+      "ALLOW_ALL_TETHERING",
+      "DISALLOW_WIFI_TETHERING",
+      "DISALLOW_ALL_TETHERING"
+     ]
+    },
+    "wifiRoamingPolicy": {
+     "$ref": "WifiRoamingPolicy"
+    },
+    "preferentialNetworkServiceSettings": {
+     "$ref": "PreferentialNetworkServiceSettings"
+    }
+   }
+  },
+  "DeviceRadioState": {
+   "type": "object",
+   "properties": {
+    "minimumWifiSecurityLevel": {
+     "type": "string",
+     "enum": [
+      "MINIMUM_WIFI_SECURITY_LEVEL_UNSPECIFIED",
+      "OPEN_NETWORK_SECURITY",
+      "PERSONAL_NETWORK_SECURITY",
+      "ENTERPRISE_NETWORK_SECURITY",
+      "ENTERPRISE_BIT192_NETWORK_SECURITY"
+     ]
+    },
+    "wifiState": {
+     "type": "string",
+     "enum": [
+      "WIFI_STATE_UNSPECIFIED",
+      "WIFI_STATE_USER_CHOICE",
+      "WIFI_ENABLED",
+      "WIFI_DISABLED"
+     ]
+    },
+    "ultraWidebandState": {
+     "type": "string",
+     "enum": [
+      "ULTRA_WIDEBAND_STATE_UNSPECIFIED",
+      "ULTRA_WIDEBAND_USER_CHOICE",
+      "ULTRA_WIDEBAND_DISABLED"
+     ]
+    },
+    "nfc": {
+     "type": "string",
+     "enum": [
+      "NFC_UNSPECIFIED",
+      "NFC_USER_CHOICE",
+      "NFC_DISABLED"
+     ]
+    },
+    "cellularTwoGState": {
+     "type": "string",
+     "enum": [
+      "CELLULAR_TWO_G_STATE_UNSPECIFIED",
+      "CELLULAR_TWO_G_USER_CHOICE",
+      "CELLULAR_TWO_G_DISABLED"
+     ]
+    },
+    "airplaneModeState": {
+     "type": "string",
+     "enum": [
+      "AIRPLANE_MODE_STATE_UNSPECIFIED",
+      "AIRPLANE_MODE_USER_CHOICE",
+      "AIRPLANE_MODE_DISABLED"
+     ]
+    },
+    "userInitiatedAddEsimSettings": {
+     "type": "string",
+     "enum": [
+      "USER_INITIATED_ADD_ESIM_SETTINGS_UNSPECIFIED",
+      "USER_INITIATED_ADD_ESIM_ALLOWED",
+      "USER_INITIATED_ADD_ESIM_DISALLOWED"
+     ]
+    }
+   }
+  },
+  "DeviceSettings": {
+   "type": "object",
+   "properties": {
+    "isDeviceSecure": {
+     "type": "boolean"
+    },
+    "isEncrypted": {
+     "type": "boolean"
+    },
+    "encryptionStatus": {
+     "type": "string",
+     "enum": [
+      "ENCRYPTION_STATUS_UNSPECIFIED",
+      "UNSUPPORTED",
+      "INACTIVE",
+      "ACTIVATING",
+      "ACTIVE",
+      "ACTIVE_DEFAULT_KEY",
+      "ACTIVE_PER_USER"
+     ]
+    },
+    "verifyAppsEnabled": {
+     "type": "boolean"
+    },
+    "developmentSettingsEnabled": {
+     "type": "boolean"
+    },
+    "unknownSourcesEnabled": {
+     "type": "boolean"
+    },
+    "adbEnabled": {
+     "type": "boolean"
+    }
+   }
+  },
+  "DeviceWidePolicies": {
+   "type": "object",
+   "properties": {
+    "deviceRadioState": {
+     "$ref": "DeviceWideRadioState"
+    }
+   }
+  },
+  "DeviceWideRadioState": {
+   "type": "object",
+   "properties": {
+    "nfc": {
+     "type": "string",
+     "enum": [
+      "NFC_UNSPECIFIED",
+      "NFC_USER_CHOICE",
+      "NFC_DISABLED"
+     ]
+    }
+   }
+  },
+  "Display": {
+   "type": "object",
+   "properties": {
+    "displayId": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "density": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "height": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "refreshRate": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "state": {
+     "type": "string",
+     "enum": [
+      "DISPLAY_STATE_UNSPECIFIED",
+      "OFF",
+      "ON",
+      "DOZE",
+      "SUSPENDED"
+     ]
+    },
+    "width": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "name": {
+     "type": "string"
+    }
+   }
+  },
+  "DisplaySettings": {
+   "type": "object",
+   "properties": {
+    "screenTimeoutSettings": {
+     "$ref": "ScreenTimeoutSettings"
+    },
+    "screenBrightnessSettings": {
+     "$ref": "ScreenBrightnessSettings"
+    }
+   }
+  },
+  "DpcMigrationInfo": {
+   "type": "object",
+   "properties": {
+    "additionalData": {
+     "type": "string",
+     "readOnly": true
+    },
+    "previousDpc": {
+     "type": "string",
+     "readOnly": true
+    }
+   }
+  },
+  "EnrollmentToken": {
+   "type": "object",
+   "properties": {
+    "googleAuthenticationOptions": {
+     "$ref": "GoogleAuthenticationOptions"
+    },
+    "expirationTimestamp": {
+     "type": "string",
+     "format": "google-datetime"
+    },
+    "value": {
+     "type": "string"
+    },
+    "policyName": {
+     "type": "string"
+    },
+    "allowPersonalUsage": {
+     "type": "string",
+     "enum": [
+      "ALLOW_PERSONAL_USAGE_UNSPECIFIED",
+      "PERSONAL_USAGE_ALLOWED",
+      "PERSONAL_USAGE_DISALLOWED",
+      "PERSONAL_USAGE_DISALLOWED_USERLESS"
+     ]
+    },
+    "name": {
+     "type": "string"
+    },
+    "qrCode": {
+     "type": "string"
+    },
+    "additionalData": {
+     "type": "string"
+    },
+    "oneTimeOnly": {
+     "type": "boolean"
+    },
+    "duration": {
+     "type": "string",
+     "format": "google-duration"
+    },
+    "user": {
+     "$ref": "User",
+     "deprecated": true
+    }
+   }
+  },
+  "Enterprise": {
+   "type": "object",
+   "properties": {
+    "managedGooglePlayAccountsEnterpriseType": {
+     "type": "string",
+     "enum": [
+      "MANAGED_GOOGLE_PLAY_ACCOUNTS_ENTERPRISE_TYPE_UNSPECIFIED",
+      "CUSTOMER_MANAGED",
+      "EMM_MANAGED"
+     ],
+     "readOnly": true
+    },
+    "signinDetails": {
+     "type": "array",
+     "items": {
+      "$ref": "SigninDetail"
+     }
+    },
+    "primaryColor": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "contactInfo": {
+     "$ref": "ContactInfo"
+    },
+    "googleAuthenticationSettings": {
+     "$ref": "GoogleAuthenticationSettings"
+    },
+    "enabledNotificationTypes": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "NOTIFICATION_TYPE_UNSPECIFIED",
+       "ENROLLMENT",
+       "COMPLIANCE_REPORT",
+       "STATUS_REPORT",
+       "COMMAND",
+       "USAGE_LOGS",
+       "ENTERPRISE_UPGRADE"
+      ],
+      "enumDeprecated": [
+       false,
+       false,
+       true,
+       false,
+       false,
+       false,
+       false
+      ]
+     }
+    },
+    "enterpriseType": {
+     "type": "string",
+     "enum": [
+      "ENTERPRISE_TYPE_UNSPECIFIED",
+      "MANAGED_GOOGLE_DOMAIN",
+      "MANAGED_GOOGLE_PLAY_ACCOUNTS_ENTERPRISE"
+     ],
+     "readOnly": true
+    },
+    "pubsubTopic": {
+     "type": "string"
+    },
+    "managedGoogleDomainType": {
+     "type": "string",
+     "enum": [
+      "MANAGED_GOOGLE_DOMAIN_TYPE_UNSPECIFIED",
+      "TYPE_TEAM",
+      "TYPE_DOMAIN"
+     ],
+     "readOnly": true
+    },
+    "termsAndConditions": {
+     "type": "array",
+     "items": {
+      "$ref": "TermsAndConditions"
+     }
+    },
+    "name": {
+     "type": "string"
+    },
+    "enterpriseDisplayName": {
+     "type": "string"
+    },
+    "logo": {
+     "$ref": "ExternalData"
+    },
+    "appAutoApprovalEnabled": {
+     "type": "boolean",
+     "deprecated": true
+    }
+   }
+  },
+  "EuiccChipInfo": {
+   "type": "object",
+   "properties": {
+    "eid": {
+     "type": "string",
+     "readOnly": true
+    }
+   }
+  },
+  "ExtensionConfig": {
+   "type": "object",
+   "properties": {
+    "signingKeyFingerprintsSha256": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     },
+     "deprecated": true
+    },
+    "notificationReceiver": {
+     "type": "string",
+     "deprecated": true
+    }
+   }
+  },
+  "ExternalData": {
+   "type": "object",
+   "properties": {
+    "url": {
+     "type": "string"
+    },
+    "sha256Hash": {
+     "type": "string"
+    }
+   }
+  },
+  "ExtraCapabilities": {
+   "type": "object",
+   "properties": {
+    "localDeviceWipeCommand": {
+     "type": "string",
+     "enum": [
+      "LOCAL_DEVICE_WIPE_COMMAND_UNSPECIFIED",
+      "LOCAL_DEVICE_WIPE_COMMAND_DISALLOWED",
+      "LOCAL_DEVICE_WIPE_COMMAND_ALLOWED"
+     ]
+    }
+   }
+  },
+  "FreezePeriod": {
+   "type": "object",
+   "properties": {
+    "endDate": {
+     "$ref": "Date"
+    },
+    "startDate": {
+     "$ref": "Date"
+    }
+   }
+  },
+  "GoogleAuthenticationOptions": {
+   "type": "object",
+   "properties": {
+    "authenticationRequirement": {
+     "type": "string",
+     "enum": [
+      "AUTHENTICATION_REQUIREMENT_UNSPECIFIED",
+      "OPTIONAL",
+      "REQUIRED"
+     ]
+    },
+    "requiredAccountEmail": {
+     "type": "string"
+    }
+   }
+  },
+  "GoogleAuthenticationSettings": {
+   "type": "object",
+   "properties": {
+    "googleAuthenticationRequired": {
+     "type": "string",
+     "enum": [
+      "GOOGLE_AUTHENTICATION_REQUIRED_UNSPECIFIED",
+      "NOT_REQUIRED",
+      "REQUIRED"
+     ],
+     "readOnly": true
+    }
+   }
+  },
+  "HardwareInfo": {
+   "type": "object",
+   "properties": {
+    "serialNumber": {
+     "type": "string"
+    },
+    "brand": {
+     "type": "string"
+    },
+    "cpuShutdownTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "gpuShutdownTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "batteryShutdownTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "skinThrottlingTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "manufacturer": {
+     "type": "string"
+    },
+    "batteryThrottlingTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "skinShutdownTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "euiccChipInfo": {
+     "type": "array",
+     "items": {
+      "$ref": "EuiccChipInfo"
+     },
+     "readOnly": true
+    },
+    "model": {
+     "type": "string"
+    },
+    "deviceBasebandVersion": {
+     "type": "string"
+    },
+    "cpuThrottlingTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "gpuThrottlingTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "hardware": {
+     "type": "string"
+    },
+    "enterpriseSpecificId": {
+     "type": "string",
+     "readOnly": true
+    }
+   }
+  },
+  "HardwareStatus": {
+   "type": "object",
+   "properties": {
+    "batteryTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "fanSpeeds": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "cpuUsages": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "skinTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "cpuTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "gpuTemperatures": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "format": "float"
+     }
+    },
+    "createTime": {
+     "type": "string",
+     "format": "google-datetime"
+    }
+   }
+  },
+  "InstallConstraint": {
+   "type": "object",
+   "properties": {
+    "networkTypeConstraint": {
+     "type": "string",
+     "enum": [
+      "NETWORK_TYPE_CONSTRAINT_UNSPECIFIED",
+      "INSTALL_ON_ANY_NETWORK",
+      "INSTALL_ONLY_ON_UNMETERED_NETWORK"
+     ]
+    },
+    "deviceIdleConstraint": {
+     "type": "string",
+     "enum": [
+      "DEVICE_IDLE_CONSTRAINT_UNSPECIFIED",
+      "DEVICE_IDLE_NOT_REQUIRED",
+      "INSTALL_ONLY_WHEN_DEVICE_IDLE"
+     ]
+    },
+    "chargingConstraint": {
+     "type": "string",
+     "enum": [
+      "CHARGING_CONSTRAINT_UNSPECIFIED",
+      "CHARGING_NOT_REQUIRED",
+      "INSTALL_ONLY_WHEN_CHARGING"
+     ]
+    }
+   }
+  },
+  "KeyedAppState": {
+   "type": "object",
+   "properties": {
+    "severity": {
+     "type": "string",
+     "enum": [
+      "SEVERITY_UNSPECIFIED",
+      "INFO",
+      "ERROR"
+     ]
+    },
+    "message": {
+     "type": "string"
+    },
+    "key": {
+     "type": "string"
+    },
+    "lastUpdateTime": {
+     "type": "string",
+     "format": "google-datetime"
+    },
+    "createTime": {
+     "type": "string",
+     "format": "google-datetime"
+    },
+    "data": {
+     "type": "string"
+    }
+   }
+  },
+  "KioskCustomization": {
+   "type": "object",
+   "properties": {
+    "statusBar": {
+     "type": "string",
+     "enum": [
+      "STATUS_BAR_UNSPECIFIED",
+      "NOTIFICATIONS_AND_SYSTEM_INFO_ENABLED",
+      "NOTIFICATIONS_AND_SYSTEM_INFO_DISABLED",
+      "SYSTEM_INFO_ONLY"
+     ]
+    },
+    "systemNavigation": {
+     "type": "string",
+     "enum": [
+      "SYSTEM_NAVIGATION_UNSPECIFIED",
+      "NAVIGATION_ENABLED",
+      "NAVIGATION_DISABLED",
+      "HOME_BUTTON_ONLY"
+     ]
+    },
+    "systemErrorWarnings": {
+     "type": "string",
+     "enum": [
+      "SYSTEM_ERROR_WARNINGS_UNSPECIFIED",
+      "ERROR_AND_WARNINGS_ENABLED",
+      "ERROR_AND_WARNINGS_MUTED"
+     ]
+    },
+    "deviceSettings": {
+     "type": "string",
+     "enum": [
+      "DEVICE_SETTINGS_UNSPECIFIED",
+      "SETTINGS_ACCESS_ALLOWED",
+      "SETTINGS_ACCESS_BLOCKED"
+     ]
+    },
+    "powerButtonActions": {
+     "type": "string",
+     "enum": [
+      "POWER_BUTTON_ACTIONS_UNSPECIFIED",
+      "POWER_BUTTON_AVAILABLE",
+      "POWER_BUTTON_BLOCKED"
+     ]
+    }
+   }
+  },
+  "LaunchAppAction": {
+   "type": "object",
+   "properties": {
+    "packageName": {
+     "type": "string"
+    }
+   }
+  },
+  "ManagedConfigurationTemplate": {
+   "type": "object",
+   "properties": {
+    "templateId": {
+     "type": "string"
+    },
+    "configurationVariables": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "MemoryEvent": {
+   "type": "object",
+   "properties": {
+    "byteCount": {
+     "type": "string",
+     "format": "int64"
+    },
+    "createTime": {
+     "type": "string",
+     "format": "google-datetime"
+    },
+    "eventType": {
+     "type": "string",
+     "enum": [
+      "MEMORY_EVENT_TYPE_UNSPECIFIED",
+      "RAM_MEASURED",
+      "INTERNAL_STORAGE_MEASURED",
+      "EXTERNAL_STORAGE_DETECTED",
+      "EXTERNAL_STORAGE_REMOVED",
+      "EXTERNAL_STORAGE_MEASURED"
+     ]
+    }
+   }
+  },
+  "MemoryInfo": {
+   "type": "object",
+   "properties": {
+    "totalInternalStorage": {
+     "type": "string",
+     "format": "int64"
+    },
+    "totalRam": {
+     "type": "string",
+     "format": "int64"
+    }
+   }
+  },
+  "NetworkInfo": {
+   "type": "object",
+   "properties": {
+    "imei": {
+     "type": "string"
+    },
+    "meid": {
+     "type": "string"
+    },
+    "wifiMacAddress": {
+     "type": "string"
+    },
+    "telephonyInfos": {
+     "type": "array",
+     "items": {
+      "$ref": "TelephonyInfo"
+     }
+    },
+    "networkOperatorName": {
+     "type": "string",
+     "deprecated": true
+    }
+   }
+  },
+  "NonComplianceDetail": {
+   "type": "object",
+   "properties": {
+    "settingName": {
+     "type": "string"
+    },
+    "nonComplianceReason": {
+     "type": "string",
+     "enum": [
+      "NON_COMPLIANCE_REASON_UNSPECIFIED",
+      "API_LEVEL",
+      "MANAGEMENT_MODE",
+      "USER_ACTION",
+      "INVALID_VALUE",
+      "APP_NOT_INSTALLED",
+      "UNSUPPORTED",
+      "APP_INSTALLED",
+      "PENDING",
+      "APP_INCOMPATIBLE",
+      "APP_NOT_UPDATED",
+      "OS_NOT_PERMITTED",
+      "DEVICE_INCOMPATIBLE",
+      "APP_SIGNING_CERT_MISMATCH",
+      "PROJECT_NOT_PERMITTED"
+     ]
+    },
+    "specificNonComplianceReason": {
+     "type": "string",
+     "enum": [
+      "SPECIFIC_NON_COMPLIANCE_REASON_UNSPECIFIED",
+      "PASSWORD_POLICIES_USER_CREDENTIALS_CONFIRMATION_REQUIRED",
+      "PASSWORD_POLICIES_PASSWORD_EXPIRED",
+      "PASSWORD_POLICIES_PASSWORD_NOT_SUFFICIENT",
+      "ONC_WIFI_INVALID_VALUE",
+      "ONC_WIFI_API_LEVEL",
+      "ONC_WIFI_INVALID_ENTERPRISE_CONFIG",
+      "ONC_WIFI_USER_SHOULD_REMOVE_NETWORK",
+      "ONC_WIFI_KEY_PAIR_ALIAS_NOT_CORRESPONDING_TO_EXISTING_KEY",
+      "PERMISSIBLE_USAGE_RESTRICTION",
+      "REQUIRED_ACCOUNT_NOT_IN_ENTERPRISE",
+      "NEW_ACCOUNT_NOT_IN_ENTERPRISE",
+      "DEFAULT_APPLICATION_SETTING_UNSUPPORTED_SCOPES",
+      "DEFAULT_APPLICATION_SETTING_FAILED_FOR_SCOPE",
+      "PRIVATE_DNS_HOST_NOT_SERVING",
+      "USER_NOT_UNLOCKED"
+     ]
+    },
+    "fieldPath": {
+     "type": "string"
+    },
+    "specificNonComplianceContext": {
+     "$ref": "SpecificNonComplianceContext"
+    },
+    "packageName": {
+     "type": "string"
+    },
+    "currentValue": {
+     "type": "any"
+    },
+    "installationFailureReason": {
+     "type": "string",
+     "enum": [
+      "INSTALLATION_FAILURE_REASON_UNSPECIFIED",
+      "INSTALLATION_FAILURE_REASON_UNKNOWN",
+      "IN_PROGRESS",
+      "NOT_FOUND",
+      "NOT_COMPATIBLE_WITH_DEVICE",
+      "NOT_APPROVED",
+      "PERMISSIONS_NOT_ACCEPTED",
+      "NOT_AVAILABLE_IN_COUNTRY",
+      "NO_LICENSES_REMAINING",
+      "NOT_ENROLLED",
+      "USER_INVALID",
+      "NETWORK_ERROR_UNRELIABLE_CONNECTION",
+      "INSUFFICIENT_STORAGE"
+     ]
+    }
+   }
+  },
+  "NonComplianceDetailCondition": {
+   "type": "object",
+   "properties": {
+    "packageName": {
+     "type": "string"
+    },
+    "nonComplianceReason": {
+     "type": "string",
+     "enum": [
+      "NON_COMPLIANCE_REASON_UNSPECIFIED",
+      "API_LEVEL",
+      "MANAGEMENT_MODE",
+      "USER_ACTION",
+      "INVALID_VALUE",
+      "APP_NOT_INSTALLED",
+      "UNSUPPORTED",
+      "APP_INSTALLED",
+      "PENDING",
+      "APP_INCOMPATIBLE",
+      "APP_NOT_UPDATED",
+      "OS_NOT_PERMITTED",
+      "DEVICE_INCOMPATIBLE",
+      "APP_SIGNING_CERT_MISMATCH",
+      "PROJECT_NOT_PERMITTED"
+     ]
+    },
+    "settingName": {
+     "type": "string"
+    }
+   },
+   "deprecated": true
+  },
+  "OncCertificateProvider": {
+   "type": "object",
+   "properties": {
+    "certificateReferences": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "contentProviderEndpoint": {
+     "$ref": "ContentProviderEndpoint"
+    }
+   }
+  },
+  "OncWifiContext": {
+   "type": "object",
+   "properties": {
+    "wifiGuid": {
+     "type": "string"
+    }
+   }
+  },
+  "Outcome": {
+   "type": "object",
+   "properties": {
+    "outcomeType": {
+     "type": "string",
+     "enum": [
+      "OUTCOME_TYPE_UNSPECIFIED",
+      "FORCE",
+      "USER_PROMPT",
+      "BLOCK"
+     ]
+    }
+   }
+  },
+  "PackageNameList": {
+   "type": "object",
+   "properties": {
+    "packageNames": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "PasswordPoliciesContext": {
+   "type": "object",
+   "properties": {
+    "passwordPolicyScope": {
+     "type": "string",
+     "enum": [
+      "SCOPE_UNSPECIFIED",
+      "SCOPE_DEVICE",
+      "SCOPE_PROFILE"
+     ]
+    }
+   }
+  },
+  "PasswordRequirements": {
+   "type": "object",
+   "properties": {
+    "passwordMinimumNonLetter": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "maximumFailedPasswordsForWipe": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "passwordMinimumUpperCase": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "passwordMinimumLetters": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "passwordMinimumSymbols": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "passwordQuality": {
+     "type": "string",
+     "enum": [
+      "PASSWORD_QUALITY_UNSPECIFIED",
+      "BIOMETRIC_WEAK",
+      "SOMETHING",
+      "NUMERIC",
+      "NUMERIC_COMPLEX",
+      "ALPHABETIC",
+      "ALPHANUMERIC",
+      "COMPLEX",
+      "COMPLEXITY_LOW",
+      "COMPLEXITY_MEDIUM",
+      "COMPLEXITY_HIGH"
+     ]
+    },
+    "passwordMinimumNumeric": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "passwordScope": {
+     "type": "string",
+     "enum": [
+      "SCOPE_UNSPECIFIED",
+      "SCOPE_DEVICE",
+      "SCOPE_PROFILE"
+     ]
+    },
+    "passwordExpirationTimeout": {
+     "type": "string",
+     "format": "google-duration"
+    },
+    "passwordHistoryLength": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "unifiedLockSettings": {
+     "type": "string",
+     "enum": [
+      "UNIFIED_LOCK_SETTINGS_UNSPECIFIED",
+      "ALLOW_UNIFIED_WORK_AND_PERSONAL_LOCK",
+      "REQUIRE_SEPARATE_WORK_LOCK"
+     ]
+    },
+    "requirePasswordUnlock": {
+     "type": "string",
+     "enum": [
+      "REQUIRE_PASSWORD_UNLOCK_UNSPECIFIED",
+      "USE_DEFAULT_DEVICE_TIMEOUT",
+      "REQUIRE_EVERY_DAY"
+     ]
+    },
+    "passwordMinimumLength": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "passwordMinimumLowerCase": {
+     "type": "integer",
+     "format": "int32"
+    }
+   }
+  },
+  "PermissionGrant": {
+   "type": "object",
+   "properties": {
+    "permission": {
+     "type": "string"
+    },
+    "policy": {
+     "type": "string",
+     "enum": [
+      "PERMISSION_POLICY_UNSPECIFIED",
+      "PROMPT",
+      "GRANT",
+      "DENY"
+     ]
+    }
+   }
+  },
+  "PersistentPreferredActivity": {
+   "type": "object",
+   "properties": {
+    "categories": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "receiverActivity": {
+     "type": "string"
+    },
+    "actions": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "PersonalApplicationPolicy": {
+   "type": "object",
+   "properties": {
+    "installType": {
+     "type": "string",
+     "enum": [
+      "INSTALL_TYPE_UNSPECIFIED",
+      "BLOCKED",
+      "AVAILABLE"
+     ]
+    },
+    "packageName": {
+     "type": "string"
+    }
+   }
+  },
+  "PersonalCrossDevicePolicies": {
+   "type": "object",
+   "properties": {
+    "taskContinuityHandoff": {
+     "type": "string",
+     "enum": [
+      "TASK_CONTINUITY_HANDOFF_UNSPECIFIED",
+      "TASK_CONTINUITY_HANDOFF_ALLOWED",
+      "TASK_CONTINUITY_HANDOFF_DISALLOWED"
+     ]
+    }
+   }
+  },
+  "PersonalUsagePolicies": {
+   "type": "object",
+   "properties": {
+    "bluetoothSharing": {
+     "type": "string",
+     "enum": [
+      "BLUETOOTH_SHARING_UNSPECIFIED",
+      "BLUETOOTH_SHARING_ALLOWED",
+      "BLUETOOTH_SHARING_DISALLOWED"
+     ]
+    },
+    "maxDaysWithWorkOff": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "screenCaptureDisabled": {
+     "type": "boolean"
+    },
+    "personalApplications": {
+     "type": "array",
+     "items": {
+      "$ref": "PersonalApplicationPolicy"
+     }
+    },
+    "cameraDisabled": {
+     "type": "boolean"
+    },
+    "accountTypesWithManagementDisabled": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "crossDevicePolicies": {
+     "$ref": "PersonalCrossDevicePolicies"
+    },
+    "personalPlayStoreMode": {
+     "type": "string",
+     "enum": [
+      "PLAY_STORE_MODE_UNSPECIFIED",
+      "BLACKLIST",
+      "BLOCKLIST",
+      "ALLOWLIST"
+     ],
+     "enumDeprecated": [
+      false,
+      true,
+      false,
+      false
+     ]
+    },
+    "privateSpacePolicy": {
+     "type": "string",
+     "enum": [
+      "PRIVATE_SPACE_POLICY_UNSPECIFIED",
+      "PRIVATE_SPACE_ALLOWED",
+      "PRIVATE_SPACE_DISALLOWED"
+     ]
+    }
+   }
+  },
+  "Policy": {
+   "type": "object",
+   "properties": {
+    "networkEscapeHatchEnabled": {
+     "type": "boolean"
+    },
+    "backupService": {
+     "type": "string",
+     "enum": [
+      "BACKUP_SERVICE_UNSPECIFIED",
+      "BACKUP_SERVICE_DISABLED",
+      "BACKUP_SERVICE_USER_CHOICE"
+     ]
+    },
+    "deviceWidePolicies": {
+     "$ref": "DeviceWidePolicies"
+    },
+    "keyguardDisabled": {
+     "type": "boolean"
+    },
+    "ensureVerifyAppsEnabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "minimumApiLevel": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "cameraDisabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "wifiConfigDisabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "statusReportingSettings": {
+     "$ref": "StatusReportingSettings"
+    },
+    "wipeDataFlags": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "WIPE_DATA_FLAG_UNSPECIFIED",
+       "WIPE_ESIMS"
+      ]
+     }
+    },
+    "privateKeySelectionEnabled": {
+     "type": "boolean"
+    },
+    "oncCertificateProviders": {
+     "type": "array",
+     "items": {
+      "$ref": "OncCertificateProvider"
+     }
+    },
+    "installAppsDisabled": {
+     "type": "boolean"
+    },
+    "advancedSecurityOverrides": {
+     "$ref": "AdvancedSecurityOverrides"
+    },
+    "applications": {
+     "type": "array",
+     "items": {
+      "$ref": "ApplicationPolicy"
+     }
+    },
+    "crossProfilePolicies": {
+     "$ref": "CrossProfilePolicies"
+    },
+    "debuggingFeaturesAllowed": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "statusBarDisabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "removeUserDisabled": {
+     "type": "boolean"
+    },
+    "tetheringConfigDisabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "permissionGrants": {
+     "type": "array",
+     "items": {
+      "$ref": "PermissionGrant"
+     }
+    },
+    "smsDisabled": {
+     "type": "boolean"
+    },
+    "maximumTimeToLock": {
+     "type": "string",
+     "format": "int64"
+    },
+    "openNetworkConfiguration": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "any"
+     }
+    },
+    "createWindowsDisabled": {
+     "type": "boolean"
+    },
+    "dataRoamingDisabled": {
+     "type": "boolean"
+    },
+    "complianceRules": {
+     "type": "array",
+     "items": {
+      "$ref": "ComplianceRule"
+     },
+     "deprecated": true
+    },
+    "outgoingBeamDisabled": {
+     "type": "boolean"
+    },
+    "appFunctions": {
+     "type": "string",
+     "enum": [
+      "APP_FUNCTIONS_UNSPECIFIED",
+      "APP_FUNCTIONS_DISALLOWED",
+      "APP_FUNCTIONS_ALLOWED"
+     ]
+    },
+    "kioskCustomization": {
+     "$ref": "KioskCustomization"
+    },
+    "permittedInputMethods": {
+     "$ref": "PackageNameList"
+    },
+    "outgoingCallsDisabled": {
+     "type": "boolean"
+    },
+    "shortSupportMessage": {
+     "$ref": "UserFacingMessage"
+    },
+    "choosePrivateKeyRules": {
+     "type": "array",
+     "items": {
+      "$ref": "ChoosePrivateKeyRule"
+     }
+    },
+    "cameraAccess": {
+     "type": "string",
+     "enum": [
+      "CAMERA_ACCESS_UNSPECIFIED",
+      "CAMERA_ACCESS_USER_CHOICE",
+      "CAMERA_ACCESS_DISABLED",
+      "CAMERA_ACCESS_ENFORCED"
+     ]
+    },
+    "networkResetDisabled": {
+     "type": "boolean"
+    },
+    "mobileNetworksConfigDisabled": {
+     "type": "boolean"
+    },
+    "alwaysOnVpnPackage": {
+     "$ref": "AlwaysOnVpnPackage"
+    },
+    "policyEnforcementRules": {
+     "type": "array",
+     "items": {
+      "$ref": "PolicyEnforcementRule"
+     }
+    },
+    "adjustVolumeDisabled": {
+     "type": "boolean"
+    },
+    "name": {
+     "type": "string"
+    },
+    "usbFileTransferDisabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "shareLocationDisabled": {
+     "type": "boolean"
+    },
+    "defaultApplicationSettings": {
+     "type": "array",
+     "items": {
+      "$ref": "DefaultApplicationSetting"
+     }
+    },
+    "defaultPermissionPolicy": {
+     "type": "string",
+     "enum": [
+      "PERMISSION_POLICY_UNSPECIFIED",
+      "PROMPT",
+      "GRANT",
+      "DENY"
+     ]
+    },
+    "autofillPolicy": {
+     "type": "string",
+     "enum": [
+      "AUTOFILL_POLICY_UNSPECIFIED",
+      "AUTOFILL_USER_CHOICE",
+      "AUTOFILL_DISABLED"
+     ]
+    },
+    "longSupportMessage": {
+     "$ref": "UserFacingMessage"
+    },
+    "usageLog": {
+     "$ref": "UsageLog"
+    },
+    "installUnknownSourcesAllowed": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "persistentPreferredActivities": {
+     "type": "array",
+     "items": {
+      "$ref": "PersistentPreferredActivity"
+     }
+    },
+    "credentialsConfigDisabled": {
+     "type": "boolean"
+    },
+    "blockApplicationsEnabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "version": {
+     "type": "string",
+     "format": "int64"
+    },
+    "stayOnPluggedModes": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "BATTERY_PLUGGED_MODE_UNSPECIFIED",
+       "AC",
+       "USB",
+       "WIRELESS"
+      ]
+     }
+    },
+    "assistContentPolicy": {
+     "type": "string",
+     "enum": [
+      "ASSIST_CONTENT_POLICY_UNSPECIFIED",
+      "ASSIST_CONTENT_DISALLOWED",
+      "ASSIST_CONTENT_ALLOWED"
+     ]
+    },
+    "personalUsagePolicies": {
+     "$ref": "PersonalUsagePolicies"
+    },
+    "setupActions": {
+     "type": "array",
+     "items": {
+      "$ref": "SetupAction"
+     }
+    },
+    "deviceConnectivityManagement": {
+     "$ref": "DeviceConnectivityManagement"
+    },
+    "safeBootDisabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "deviceOwnerLockScreenInfo": {
+     "$ref": "UserFacingMessage"
+    },
+    "usbMassStorageEnabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "passwordRequirements": {
+     "$ref": "PasswordRequirements",
+     "deprecated": true
+    },
+    "deviceRadioState": {
+     "$ref": "DeviceRadioState"
+    },
+    "setUserIconDisabled": {
+     "type": "boolean"
+    },
+    "preferentialNetworkService": {
+     "type": "string",
+     "enum": [
+      "PREFERENTIAL_NETWORK_SERVICE_UNSPECIFIED",
+      "PREFERENTIAL_NETWORK_SERVICE_DISABLED",
+      "PREFERENTIAL_NETWORK_SERVICE_ENABLED"
+     ]
+    },
+    "bluetoothDisabled": {
+     "type": "boolean"
+    },
+    "systemUpdate": {
+     "$ref": "SystemUpdate"
+    },
+    "screenCaptureDisabled": {
+     "type": "boolean"
+    },
+    "autoDateAndTimeZone": {
+     "type": "string",
+     "enum": [
+      "AUTO_DATE_AND_TIME_ZONE_UNSPECIFIED",
+      "AUTO_DATE_AND_TIME_ZONE_USER_CHOICE",
+      "AUTO_DATE_AND_TIME_ZONE_ENFORCED"
+     ]
+    },
+    "frpAdminEmails": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "microphoneAccess": {
+     "type": "string",
+     "enum": [
+      "MICROPHONE_ACCESS_UNSPECIFIED",
+      "MICROPHONE_ACCESS_USER_CHOICE",
+      "MICROPHONE_ACCESS_DISABLED",
+      "MICROPHONE_ACCESS_ENFORCED"
+     ]
+    },
+    "permittedAccessibilityServices": {
+     "$ref": "PackageNameList"
+    },
+    "enterpriseDisplayNameVisibility": {
+     "type": "string",
+     "enum": [
+      "ENTERPRISE_DISPLAY_NAME_VISIBILITY_UNSPECIFIED",
+      "ENTERPRISE_DISPLAY_NAME_VISIBLE",
+      "ENTERPRISE_DISPLAY_NAME_HIDDEN"
+     ]
+    },
+    "workAccountSetupConfig": {
+     "$ref": "WorkAccountSetupConfig"
+    },
+    "autoTimeRequired": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "factoryResetDisabled": {
+     "type": "boolean"
+    },
+    "passwordPolicies": {
+     "type": "array",
+     "items": {
+      "$ref": "PasswordRequirements"
+     }
+    },
+    "setWallpaperDisabled": {
+     "type": "boolean"
+    },
+    "wifiConfigsLockdownEnabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "cellBroadcastsConfigDisabled": {
+     "type": "boolean"
+    },
+    "kioskCustomLauncherEnabled": {
+     "type": "boolean"
+    },
+    "bluetoothContactSharingDisabled": {
+     "type": "boolean"
+    },
+    "playStoreMode": {
+     "type": "string",
+     "enum": [
+      "PLAY_STORE_MODE_UNSPECIFIED",
+      "WHITELIST",
+      "BLACKLIST"
+     ]
+    },
+    "keyguardDisabledFeatures": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "KEYGUARD_DISABLED_FEATURE_UNSPECIFIED",
+       "CAMERA",
+       "NOTIFICATIONS",
+       "UNREDACTED_NOTIFICATIONS",
+       "TRUST_AGENTS",
+       "DISABLE_FINGERPRINT",
+       "DISABLE_REMOTE_INPUT",
+       "FACE",
+       "IRIS",
+       "BIOMETRICS",
+       "SHORTCUTS",
+       "ALL_FEATURES"
+      ]
+     }
+    },
+    "encryptionPolicy": {
+     "type": "string",
+     "enum": [
+      "ENCRYPTION_POLICY_UNSPECIFIED",
+      "ENABLED_WITHOUT_PASSWORD",
+      "ENABLED_WITH_PASSWORD"
+     ]
+    },
+    "unmuteMicrophoneDisabled": {
+     "type": "boolean",
+     "deprecated": true
+    },
+    "crossDevicePolicies": {
+     "$ref": "CrossDevicePolicies"
+    },
+    "mountPhysicalMediaDisabled": {
+     "type": "boolean"
+    },
+    "credentialProviderPolicyDefault": {
+     "type": "string",
+     "enum": [
+      "CREDENTIAL_PROVIDER_POLICY_DEFAULT_UNSPECIFIED",
+      "CREDENTIAL_PROVIDER_DEFAULT_DISALLOWED",
+      "CREDENTIAL_PROVIDER_DEFAULT_DISALLOWED_EXCEPT_SYSTEM",
+      "CREDENTIAL_PROVIDER_DEFAULT_ALLOWED"
+     ]
+    },
+    "vpnConfigDisabled": {
+     "type": "boolean"
+    },
+    "printingPolicy": {
+     "type": "string",
+     "enum": [
+      "PRINTING_POLICY_UNSPECIFIED",
+      "PRINTING_DISALLOWED",
+      "PRINTING_ALLOWED"
+     ]
+    },
+    "unifiedUpdatePolicy": {
+     "$ref": "UnifiedUpdatePolicy"
+    },
+    "appAutoUpdatePolicy": {
+     "type": "string",
+     "enum": [
+      "APP_AUTO_UPDATE_POLICY_UNSPECIFIED",
+      "CHOICE_TO_THE_USER",
+      "NEVER",
+      "WIFI_ONLY",
+      "ALWAYS"
+     ]
+    },
+    "displaySettings": {
+     "$ref": "DisplaySettings"
+    },
+    "bluetoothConfigDisabled": {
+     "type": "boolean"
+    },
+    "funDisabled": {
+     "type": "boolean"
+    },
+    "skipFirstUseHintsEnabled": {
+     "type": "boolean"
+    },
+    "modifyAccountsDisabled": {
+     "type": "boolean"
+    },
+    "locationMode": {
+     "type": "string",
+     "enum": [
+      "LOCATION_MODE_UNSPECIFIED",
+      "HIGH_ACCURACY",
+      "SENSORS_ONLY",
+      "BATTERY_SAVING",
+      "OFF",
+      "LOCATION_USER_CHOICE",
+      "LOCATION_ENFORCED",
+      "LOCATION_DISABLED"
+     ],
+     "enumDeprecated": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+     ]
+    },
+    "accountTypesWithManagementDisabled": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "recommendedGlobalProxy": {
+     "$ref": "ProxyInfo"
+    },
+    "addUserDisabled": {
+     "type": "boolean"
+    },
+    "androidDevicePolicyTracks": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "APP_TRACK_UNSPECIFIED",
+       "PRODUCTION",
+       "BETA"
+      ]
+     },
+     "deprecated": true
+    },
+    "uninstallAppsDisabled": {
+     "type": "boolean"
+    }
+   }
+  },
+  "PolicyEnforcementRule": {
+   "type": "object",
+   "properties": {
+    "settingName": {
+     "type": "string"
+    },
+    "blockAction": {
+     "$ref": "BlockAction"
+    },
+    "wipeAction": {
+     "$ref": "WipeAction"
+    }
+   }
+  },
+  "PostureDetail": {
+   "type": "object",
+   "properties": {
+    "securityRisk": {
+     "type": "string",
+     "enum": [
+      "SECURITY_RISK_UNSPECIFIED",
+      "UNKNOWN_OS",
+      "COMPROMISED_OS",
+      "HARDWARE_BACKED_EVALUATION_FAILED"
+     ]
+    },
+    "advice": {
+     "type": "array",
+     "items": {
+      "$ref": "UserFacingMessage"
+     }
+    }
+   }
+  },
+  "PowerManagementEvent": {
+   "type": "object",
+   "properties": {
+    "batteryLevel": {
+     "type": "number",
+     "format": "float"
+    },
+    "eventType": {
+     "type": "string",
+     "enum": [
+      "POWER_MANAGEMENT_EVENT_TYPE_UNSPECIFIED",
+      "BATTERY_LEVEL_COLLECTED",
+      "POWER_CONNECTED",
+      "POWER_DISCONNECTED",
+      "BATTERY_LOW",
+      "BATTERY_OKAY",
+      "BOOT_COMPLETED",
+      "SHUTDOWN"
+     ]
+    },
+    "createTime": {
+     "type": "string",
+     "format": "google-datetime"
+    }
+   }
+  },
+  "Predicate": {
+   "type": "object",
+   "properties": {
+    "dateUpperBound": {
+     "$ref": "Date"
+    },
+    "timeOfDayUpperBound": {
+     "$ref": "TimeOfDay"
+    },
+    "updateAgeUpperBound": {
+     "type": "string",
+     "format": "google-duration"
+    },
+    "timeOfDayLowerBound": {
+     "$ref": "TimeOfDay"
+    },
+    "updateAgeLowerBound": {
+     "type": "string",
+     "format": "google-duration"
+    },
+    "daysOfWeek": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "DAY_OF_WEEK_UNSPECIFIED",
+       "MONDAY",
+       "TUESDAY",
+       "WEDNESDAY",
+       "THURSDAY",
+       "FRIDAY",
+       "SATURDAY",
+       "SUNDAY"
+      ]
+     }
+    },
+    "dateLowerBound": {
+     "$ref": "Date"
+    }
+   }
+  },
+  "PreferentialNetworkServiceConfig": {
+   "type": "object",
+   "properties": {
+    "fallbackToDefaultConnection": {
+     "type": "string",
+     "enum": [
+      "FALLBACK_TO_DEFAULT_CONNECTION_UNSPECIFIED",
+      "FALLBACK_TO_DEFAULT_CONNECTION_ALLOWED",
+      "FALLBACK_TO_DEFAULT_CONNECTION_DISALLOWED"
+     ]
+    },
+    "preferentialNetworkId": {
+     "type": "string",
+     "enum": [
+      "PREFERENTIAL_NETWORK_ID_UNSPECIFIED",
+      "NO_PREFERENTIAL_NETWORK",
+      "PREFERENTIAL_NETWORK_ID_ONE",
+      "PREFERENTIAL_NETWORK_ID_TWO",
+      "PREFERENTIAL_NETWORK_ID_THREE",
+      "PREFERENTIAL_NETWORK_ID_FOUR",
+      "PREFERENTIAL_NETWORK_ID_FIVE"
+     ]
+    },
+    "nonMatchingNetworks": {
+     "type": "string",
+     "enum": [
+      "NON_MATCHING_NETWORKS_UNSPECIFIED",
+      "NON_MATCHING_NETWORKS_ALLOWED",
+      "NON_MATCHING_NETWORKS_DISALLOWED"
+     ]
+    }
+   }
+  },
+  "PreferentialNetworkServiceSettings": {
+   "type": "object",
+   "properties": {
+    "defaultPreferentialNetworkId": {
+     "type": "string",
+     "enum": [
+      "PREFERENTIAL_NETWORK_ID_UNSPECIFIED",
+      "NO_PREFERENTIAL_NETWORK",
+      "PREFERENTIAL_NETWORK_ID_ONE",
+      "PREFERENTIAL_NETWORK_ID_TWO",
+      "PREFERENTIAL_NETWORK_ID_THREE",
+      "PREFERENTIAL_NETWORK_ID_FOUR",
+      "PREFERENTIAL_NETWORK_ID_FIVE"
+     ]
+    },
+    "preferentialNetworkServiceConfigs": {
+     "type": "array",
+     "items": {
+      "$ref": "PreferentialNetworkServiceConfig"
+     }
+    }
+   }
+  },
+  "PrivateDnsSettings": {
+   "type": "object",
+   "properties": {
+    "privateDnsMode": {
+     "type": "string",
+     "enum": [
+      "PRIVATE_DNS_MODE_UNSPECIFIED",
+      "PRIVATE_DNS_USER_CHOICE",
+      "PRIVATE_DNS_AUTOMATIC",
+      "PRIVATE_DNS_SPECIFIED_HOST"
+     ]
+    },
+    "privateDnsHost": {
+     "type": "string"
+    }
+   }
+  },
+  "ProxyInfo": {
+   "type": "object",
+   "properties": {
+    "excludedHosts": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "host": {
+     "type": "string"
+    },
+    "port": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "pacUri": {
+     "type": "string"
+    }
+   }
+  },
+  "Role": {
+   "type": "object",
+   "properties": {
+    "roleType": {
+     "type": "string",
+     "enum": [
+      "ROLE_TYPE_UNSPECIFIED",
+      "COMPANION_APP",
+      "KIOSK",
+      "MOBILE_THREAT_DEFENSE_ENDPOINT_DETECTION_RESPONSE",
+      "SYSTEM_HEALTH_MONITORING"
+     ]
+    },
+    "extraCapabilities": {
+     "$ref": "ExtraCapabilities"
+    }
+   }
+  },
+  "Rule": {
+   "type": "object",
+   "properties": {
+    "predicate": {
+     "$ref": "Predicate"
+    },
+    "stages": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "STAGE_UNSPECIFIED",
+       "STAGE_DOWNLOAD",
+       "STAGE_APPLY"
+      ]
+     }
+    },
+    "targets": {
+     "type": "array",
+     "items": {
+      "$ref": "Target"
+     }
+    },
+    "outcome": {
+     "$ref": "Outcome"
+    },
+    "id": {
+     "type": "string"
+    }
+   }
+  },
+  "ScreenBrightnessSettings": {
+   "type": "object",
+   "properties": {
+    "screenBrightnessMode": {
+     "type": "string",
+     "enum": [
+      "SCREEN_BRIGHTNESS_MODE_UNSPECIFIED",
+      "BRIGHTNESS_USER_CHOICE",
+      "BRIGHTNESS_AUTOMATIC",
+      "BRIGHTNESS_FIXED"
+     ]
+    },
+    "screenBrightness": {
+     "type": "integer",
+     "format": "int32"
+    }
+   }
+  },
+  "ScreenTimeoutSettings": {
+   "type": "object",
+   "properties": {
+    "screenTimeout": {
+     "type": "string",
+     "format": "google-duration"
+    },
+    "screenTimeoutMode": {
+     "type": "string",
+     "enum": [
+      "SCREEN_TIMEOUT_MODE_UNSPECIFIED",
+      "SCREEN_TIMEOUT_USER_CHOICE",
+      "SCREEN_TIMEOUT_ENFORCED"
+     ]
+    }
+   }
+  },
+  "SecurityPosture": {
+   "type": "object",
+   "properties": {
+    "devicePosture": {
+     "type": "string",
+     "enum": [
+      "POSTURE_UNSPECIFIED",
+      "SECURE",
+      "AT_RISK",
+      "POTENTIALLY_COMPROMISED"
+     ]
+    },
+    "postureDetails": {
+     "type": "array",
+     "items": {
+      "$ref": "PostureDetail"
+     }
+    }
+   }
+  },
+  "SetupAction": {
+   "type": "object",
+   "properties": {
+    "launchApp": {
+     "$ref": "LaunchAppAction"
+    },
+    "title": {
+     "$ref": "UserFacingMessage"
+    },
+    "description": {
+     "$ref": "UserFacingMessage"
+    }
+   }
+  },
+  "SigninDetail": {
+   "type": "object",
+   "properties": {
+    "qrCode": {
+     "type": "string"
+    },
+    "tokenTag": {
+     "type": "string"
+    },
+    "googleAuthenticationOptions": {
+     "$ref": "SigninDetailGoogleAuthenticationOptions"
+    },
+    "signinUrl": {
+     "type": "string"
+    },
+    "signinEnrollmentToken": {
+     "type": "string"
+    },
+    "defaultStatus": {
+     "type": "string",
+     "enum": [
+      "SIGNIN_DETAIL_DEFAULT_STATUS_UNSPECIFIED",
+      "SIGNIN_DETAIL_IS_DEFAULT",
+      "SIGNIN_DETAIL_IS_NOT_DEFAULT"
+     ]
+    },
+    "allowPersonalUsage": {
+     "type": "string",
+     "enum": [
+      "ALLOW_PERSONAL_USAGE_UNSPECIFIED",
+      "PERSONAL_USAGE_ALLOWED",
+      "PERSONAL_USAGE_DISALLOWED",
+      "PERSONAL_USAGE_DISALLOWED_USERLESS"
+     ]
+    }
+   }
+  },
+  "SigninDetailGoogleAuthenticationOptions": {
+   "type": "object",
+   "properties": {
+    "authenticationRequirement": {
+     "type": "string",
+     "enum": [
+      "AUTHENTICATION_REQUIREMENT_UNSPECIFIED",
+      "OPTIONAL",
+      "REQUIRED"
+     ]
+    }
+   }
+  },
+  "SignupUrl": {
+   "type": "object",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "url": {
+     "type": "string"
+    }
+   }
+  },
+  "SingleApp": {
+   "type": "object",
+   "properties": {
+    "packageName": {
+     "type": "string"
+    }
+   }
+  },
+  "SoftwareInfo": {
+   "type": "object",
+   "properties": {
+    "deviceBuildSignature": {
+     "type": "string"
+    },
+    "androidBuildNumber": {
+     "type": "string"
+    },
+    "deviceKernelVersion": {
+     "type": "string"
+    },
+    "androidVersion": {
+     "type": "string"
+    },
+    "securityPatchLevel": {
+     "type": "string"
+    },
+    "bootloaderVersion": {
+     "type": "string"
+    },
+    "androidBuildTime": {
+     "type": "string",
+     "format": "google-datetime"
+    },
+    "androidDevicePolicyVersionName": {
+     "type": "string"
+    },
+    "systemUpdateInfo": {
+     "$ref": "SystemUpdateInfo"
+    },
+    "androidDevicePolicyVersionCode": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "primaryLanguageCode": {
+     "type": "string"
+    }
+   }
+  },
+  "SpecificNonComplianceContext": {
+   "type": "object",
+   "properties": {
+    "oncWifiContext": {
+     "$ref": "OncWifiContext"
+    },
+    "defaultApplicationContext": {
+     "$ref": "DefaultApplicationContext",
+     "readOnly": true
+    },
+    "passwordPoliciesContext": {
+     "$ref": "PasswordPoliciesContext"
+    }
+   }
+  },
+  "StatusReportingSettings": {
+   "type": "object",
+   "properties": {
+    "systemPropertiesEnabled": {
+     "type": "boolean"
+    },
+    "commonCriteriaModeEnabled": {
+     "type": "boolean"
+    },
+    "applicationReportingSettings": {
+     "$ref": "ApplicationReportingSettings"
+    },
+    "softwareInfoEnabled": {
+     "type": "boolean"
+    },
+    "hardwareStatusEnabled": {
+     "type": "boolean"
+    },
+    "memoryInfoEnabled": {
+     "type": "boolean"
+    },
+    "deviceSettingsEnabled": {
+     "type": "boolean"
+    },
+    "networkInfoEnabled": {
+     "type": "boolean"
+    },
+    "displayInfoEnabled": {
+     "type": "boolean"
+    },
+    "defaultApplicationInfoReportingEnabled": {
+     "type": "boolean"
+    },
+    "applicationReportsEnabled": {
+     "type": "boolean"
+    },
+    "powerManagementEventsEnabled": {
+     "type": "boolean"
+    }
+   }
+  },
+  "SystemUpdate": {
+   "type": "object",
+   "properties": {
+    "startMinutes": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "endMinutes": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "freezePeriods": {
+     "type": "array",
+     "items": {
+      "$ref": "FreezePeriod"
+     }
+    },
+    "type": {
+     "type": "string",
+     "enum": [
+      "SYSTEM_UPDATE_TYPE_UNSPECIFIED",
+      "AUTOMATIC",
+      "WINDOWED",
+      "POSTPONE"
+     ]
+    }
+   }
+  },
+  "SystemUpdateInfo": {
+   "type": "object",
+   "properties": {
+    "updateStatus": {
+     "type": "string",
+     "enum": [
+      "UPDATE_STATUS_UNKNOWN",
+      "UP_TO_DATE",
+      "UNKNOWN_UPDATE_AVAILABLE",
+      "SECURITY_UPDATE_AVAILABLE",
+      "OS_UPDATE_AVAILABLE"
+     ]
+    },
+    "updateReceivedTime": {
+     "type": "string",
+     "format": "google-datetime"
+    }
+   }
+  },
+  "Target": {
+   "type": "object",
+   "properties": {
+    "singleApp": {
+     "$ref": "SingleApp"
+    },
+    "targetType": {
+     "type": "string",
+     "enum": [
+      "TARGET_TYPE_UNSPECIFIED",
+      "SINGLE_APP",
+      "GOOGLE_SYSTEM_SERVICES",
+      "GOOGLE_PLAY_SYSTEM_UPDATE",
+      "OS_UPDATE_WITHOUT_API_LEVEL_CHANGE",
+      "OS_UPDATE_WITH_API_LEVEL_CHANGE"
+     ]
+    }
+   }
+  },
+  "TelephonyInfo": {
+   "type": "object",
+   "properties": {
+    "iccId": {
+     "type": "string",
+     "readOnly": true
+    },
+    "phoneNumber": {
+     "type": "string"
+    },
+    "configMode": {
+     "type": "string",
+     "enum": [
+      "CONFIG_MODE_UNSPECIFIED",
+      "ADMIN_CONFIGURED",
+      "USER_CONFIGURED"
+     ],
+     "readOnly": true
+    },
+    "activationState": {
+     "type": "string",
+     "enum": [
+      "ACTIVATION_STATE_UNSPECIFIED",
+      "ACTIVATED",
+      "NOT_ACTIVATED"
+     ],
+     "readOnly": true
+    },
+    "carrierName": {
+     "type": "string"
+    }
+   }
+  },
+  "TermsAndConditions": {
+   "type": "object",
+   "properties": {
+    "header": {
+     "$ref": "UserFacingMessage"
+    },
+    "content": {
+     "$ref": "UserFacingMessage"
+    }
+   }
+  },
+  "TimeOfDay": {
+   "type": "object",
+   "properties": {
+    "minutes": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "hours": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "seconds": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "nanos": {
+     "type": "integer",
+     "format": "int32"
+    }
+   }
+  },
+  "UnifiedUpdatePolicy": {
+   "type": "object",
+   "properties": {
+    "rules": {
+     "type": "array",
+     "items": {
+      "$ref": "Rule"
+     }
+    }
+   }
+  },
+  "UsageLog": {
+   "type": "object",
+   "properties": {
+    "uploadOnCellularAllowed": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "LOG_TYPE_UNSPECIFIED",
+       "SECURITY_LOGS",
+       "NETWORK_ACTIVITY_LOGS"
+      ]
+     }
+    },
+    "enabledLogTypes": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "LOG_TYPE_UNSPECIFIED",
+       "SECURITY_LOGS",
+       "NETWORK_ACTIVITY_LOGS"
+      ]
+     }
+    }
+   }
+  },
+  "User": {
+   "type": "object",
+   "properties": {
+    "accountIdentifier": {
+     "type": "string"
+    }
+   }
+  },
+  "UserFacingMessage": {
+   "type": "object",
+   "properties": {
+    "defaultMessage": {
+     "type": "string"
+    },
+    "localizedMessages": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "WebToken": {
+   "type": "object",
+   "properties": {
+    "enabledFeatures": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "FEATURE_UNSPECIFIED",
+       "PLAY_SEARCH",
+       "PRIVATE_APPS",
+       "WEB_APPS",
+       "STORE_BUILDER",
+       "MANAGED_CONFIGURATIONS",
+       "ZERO_TOUCH_CUSTOMER_MANAGEMENT"
+      ]
+     }
+    },
+    "value": {
+     "type": "string"
+    },
+    "permissions": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "WEB_TOKEN_PERMISSION_UNSPECIFIED",
+       "APPROVE_APPS"
+      ]
+     },
+     "deprecated": true
+    },
+    "name": {
+     "type": "string"
+    },
+    "parentFrameUrl": {
+     "type": "string"
+    }
+   }
+  },
+  "WifiRoamingPolicy": {
+   "type": "object",
+   "properties": {
+    "wifiRoamingSettings": {
+     "type": "array",
+     "items": {
+      "$ref": "WifiRoamingSetting"
+     }
+    }
+   }
+  },
+  "WifiRoamingSetting": {
+   "type": "object",
+   "properties": {
+    "wifiRoamingMode": {
+     "type": "string",
+     "enum": [
+      "WIFI_ROAMING_MODE_UNSPECIFIED",
+      "WIFI_ROAMING_DISABLED",
+      "WIFI_ROAMING_DEFAULT",
+      "WIFI_ROAMING_AGGRESSIVE"
+     ]
+    },
+    "wifiSsid": {
+     "type": "string"
+    }
+   }
+  },
+  "WifiSsid": {
+   "type": "object",
+   "properties": {
+    "wifiSsid": {
+     "type": "string"
+    }
+   }
+  },
+  "WifiSsidPolicy": {
+   "type": "object",
+   "properties": {
+    "wifiSsidPolicyType": {
+     "type": "string",
+     "enum": [
+      "WIFI_SSID_POLICY_TYPE_UNSPECIFIED",
+      "WIFI_SSID_DENYLIST",
+      "WIFI_SSID_ALLOWLIST"
+     ]
+    },
+    "wifiSsids": {
+     "type": "array",
+     "items": {
+      "$ref": "WifiSsid"
+     }
+    }
+   }
+  },
+  "WipeAction": {
+   "type": "object",
+   "properties": {
+    "wipeAfterDays": {
+     "type": "integer",
+     "format": "int32"
+    },
+    "preserveFrp": {
+     "type": "boolean"
+    }
+   }
+  },
+  "WorkAccountSetupConfig": {
+   "type": "object",
+   "properties": {
+    "requiredAccountEmail": {
+     "type": "string"
+    },
+    "authenticationType": {
+     "type": "string",
+     "enum": [
+      "AUTHENTICATION_TYPE_UNSPECIFIED",
+      "AUTHENTICATION_TYPE_NOT_ENFORCED",
+      "GOOGLE_AUTHENTICATED"
+     ]
+    }
+   }
+  }
+ },
+ "methods": {
+  "signupUrls.create": {
+   "httpMethod": "POST",
+   "path": "v1/signupUrls",
+   "parameters": {
+    "allowedDomains": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    },
+    "adminEmail": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    },
+    "callbackUrl": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    },
+    "projectId": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    }
+   },
+   "response": "SignupUrl"
+  },
+  "enterprises.create": {
+   "httpMethod": "POST",
+   "path": "v1/enterprises",
+   "parameters": {
+    "enterpriseToken": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    },
+    "signupUrlName": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    },
+    "agreementAccepted": {
+     "type": "boolean",
+     "location": "query",
+     "required": false
+    },
+    "projectId": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    }
+   },
+   "request": "Enterprise",
+   "response": "Enterprise"
+  },
+  "enterprises.policies.patch": {
+   "httpMethod": "PATCH",
+   "path": "v1/{+name}",
+   "parameters": {
+    "name": {
+     "type": "string",
+     "location": "path",
+     "required": true
+    },
+    "updateMask": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    }
+   },
+   "request": "Policy",
+   "response": "Policy"
+  },
+  "enterprises.enrollmentTokens.create": {
+   "httpMethod": "POST",
+   "path": "v1/{+parent}/enrollmentTokens",
+   "parameters": {
+    "parent": {
+     "type": "string",
+     "location": "path",
+     "required": true
+    }
+   },
+   "request": "EnrollmentToken",
+   "response": "EnrollmentToken"
+  },
+  "enterprises.devices.delete": {
+   "httpMethod": "DELETE",
+   "path": "v1/{+name}",
+   "parameters": {
+    "wipeDataFlags": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    },
+    "wipeReasonMessage": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    },
+    "name": {
+     "type": "string",
+     "location": "path",
+     "required": true
+    }
+   },
+   "response": "Empty"
+  },
+  "enterprises.enrollmentTokens.delete": {
+   "httpMethod": "DELETE",
+   "path": "v1/{+name}",
+   "parameters": {
+    "name": {
+     "type": "string",
+     "location": "path",
+     "required": true
+    }
+   },
+   "response": "Empty"
+  },
+  "enterprises.devices.list": {
+   "httpMethod": "GET",
+   "path": "v1/{+parent}/devices",
+   "parameters": {
+    "pageSize": {
+     "type": "integer",
+     "location": "query",
+     "required": false
+    },
+    "pageToken": {
+     "type": "string",
+     "location": "query",
+     "required": false
+    },
+    "parent": {
+     "type": "string",
+     "location": "path",
+     "required": true
+    }
+   },
+   "response": "ListDevicesResponse"
+  },
+  "enterprises.webTokens.create": {
+   "httpMethod": "POST",
+   "path": "v1/{+parent}/webTokens",
+   "parameters": {
+    "parent": {
+     "type": "string",
+     "location": "path",
+     "required": true
+    }
+   },
+   "request": "WebToken",
+   "response": "WebToken"
+  }
+ }
+}

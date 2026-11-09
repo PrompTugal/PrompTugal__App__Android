@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_site_tab_home">Início</string>
+    <string name="feature_site_tab_abp">O que é uma ABP</string>
+    <string name="feature_site_tab_how">Como funciona</string>
+    <string name="feature_site_tab_pricing">Preços</string>
+    <string name="feature_site_tab_harness">SHarness</string>
+    <string name="feature_site_tab_about">Sobre</string>
+    <string name="feature_site_snapshot_date">9 de novembro de 2026</string>
+    <string name="feature_site_offline_banner">Cópia offline de %1$s. As páginas e ligações fora desta cópia não estão disponíveis até o dispositivo ter ligação à internet.</string>
+    <string name="feature_site_try_online">Tentar online</string>
+    <string name="feature_site_not_in_copy">Esta página não está na cópia offline. Ligue o dispositivo à internet para a ler.</string>
+    <string name="feature_site_webview_description">Página de riskmandate.ai</string>
+    <string name="feature_site_privacy">riskmandate.ai tem a sua própria política de privacidade e pode definir os seus próprios cookies. Esta app não recolhe nada.</string>
+    <string name="feature_site_kicker">riskmandate.ai</string>
+    <string name="feature_site_summary">As páginas de riskmandate.ai dentro da app, com uma cópia offline para quando o Wi-Fi falha.</string>
+</resources>

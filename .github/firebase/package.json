@@ -1,0 +1,8 @@
+{
+  "name": "riskmandate-ci-firebase",
+  "private": true,
+  "description": "Integrity-pinned firebase-tools for the release job. Install with npm ci --ignore-scripts.",
+  "dependencies": {
+    "firebase-tools": "13.29.1"
+  }
+}

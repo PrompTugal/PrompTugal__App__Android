@@ -1,0 +1,144 @@
+package ai.riskmandate.app.features
+
+import ai.riskmandate.app.DeviceStatus
+import ai.riskmandate.app.ManagedConfig
+import ai.riskmandate.app.llm.LlmService
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.graphics.vector.ImageVector
+
+/**
+ * A summit feature. Each one lives in its own package under `features/` and is owned by one session,
+ * so parallel sessions never edit the same file. The home screen lists [FEATURES] in order.
+ *
+ * A feature is an `object`, so a process-wide singleton: it holds only `val` constants, never state.
+ * Rules: docs/architecture/README.md.
+ */
+interface Feature {
+    /** Stable route id, also used in tests: lowercase letters only, never a built-in route name. */
+    val id: String
+
+    /** Title on the home screen's button and at the top of the feature's screen. */
+    @get:StringRes val title: Int
+
+    /** False hides the button (a feature still being built). */
+    val enabled: Boolean get() = true
+
+    /**
+     * The feature's icon in the shell's sidebar and on its Home card, or null for the shell's default.
+     * A vector from `material-icons-core` (already on the classpath through Material 3) or one the feature
+     * draws itself; no icon dependency is added for this.
+     */
+    val icon: ImageVector? get() = null
+
+    /** A short line above the title on the Home card (for example "Live demo"), en and pt-PT. Null: none. */
+    @get:StringRes val kicker: Int? get() = null
+
+    /** One or two sentences under the title on the Home card and in the sidebar's tooltip. Null: none. */
+    @get:StringRes val summary: Int? get() = null
+
+    /**
+     * True if this feature may use the cloud model (OpenRouter). The host then passes
+     * [FeatureContext.cloudLlm] only when a key is stored and stand mode is off. Default false: on-device only.
+     * Declaring it is reviewed (privacy, mandate) like a new permission.
+     */
+    val usesCloud: Boolean get() = false
+
+    /**
+     * An optional short badge on this feature's home-screen button (a string resource such as "New"),
+     * or null for none. The home screen calls it for every enabled feature without knowing which one it
+     * is, so the host never imports a feature's package. Read from the composition: keep it cheap, and do
+     * any disk read off the main thread (for example `produceState` with `Dispatchers.IO`). It is called
+     * again each time the home screen shows, so it can disappear once the feature has been opened.
+     */
+    @Composable
+    @StringRes
+    fun homeBadge(): Int? = null
+
+    @Composable
+    fun Content(context: FeatureContext)
+}
+
+/**
+ * Everything a feature gets from the host. Deliberately not the Activity: a feature uses
+ * `LocalContext`, `LocalLifecycleOwner` and `LocalView` from Compose for the rest, and never casts
+ * them to an Activity. Changes to this class go through the architect (docs/architecture/README.md).
+ */
+class FeatureContext(
+    /** Takes the user back to the home screen (the host's own back handler does the same). */
+    val onBack: () -> Unit,
+    /** The managed configuration as the host last read it (on resume and on change). Read-only. */
+    val config: ManagedConfig,
+    /** This device's management state as the host last detected it. Read-only. */
+    val device: DeviceStatus,
+    /**
+     * Holds off stand mode's idle reset while a feature runs unattended on purpose (abpdemo's auto-play).
+     * Returns the release; calling it twice is harmless. Features do not call this directly: use
+     * [HoldIdleWhile], which releases when the condition ends or the feature leaves the screen.
+     * The default does nothing, for previews and tests.
+     */
+    val holdIdle: () -> () -> Unit = { {} },
+    /**
+     * Asks the host to open another feature by its id (for example chat's "set up a model" opening "models").
+     * The host decides: unknown or disabled ids are ignored, and it may refuse (for example in stand mode).
+     * A feature names another feature only by its id string, never by importing its package. Default: no-op.
+     */
+    val openFeature: (id: String) -> Unit = {},
+    /**
+     * The on-device model, or null when the host has no service. Features never load a model themselves.
+     * Watch [LlmService.state] (NoModel, Idle, Loading, Ready, Failed); on NoModel offer model setup with
+     * `openFeature("models")`. The service never runs a tool: check every proposal with the feature's own
+     * `ToolSpec` list (`checkToolCall`) before acting on it. Show model output as plain text.
+     */
+    val llm: LlmService? = null,
+    /**
+     * The cloud model (OpenRouter), or null. Passed only to a feature whose [Feature.usesCloud] is true, while a
+     * key is stored and stand mode is off. Never mixed with [llm]: label every answer from it "Cloud" (its
+     * `location` is CLOUD), and send history only on an explicit, visible per-request choice.
+     */
+    val cloudLlm: LlmService? = null,
+    /**
+     * True while the app can use the cloud model at all: the cloud switch is on, a key is stored and stand mode
+     * is off. Given to every feature, cloud or not, so on-device screens can say honestly whether anything may
+     * leave the device (for example Model setup's "Nothing you type leaves the device" only while this is
+     * false). A fact only: it carries no service and no key. The host rebuilds the context when it changes.
+     */
+    val cloudOn: Boolean = false,
+)
+
+/**
+ * Keeps stand mode's idle reset off while [active] is true, and releases it when [active] turns false
+ * or the feature leaves the screen. The only way a feature should hold the reset off.
+ */
+@Composable
+fun FeatureContext.HoldIdleWhile(active: Boolean) {
+    DisposableEffect(this, active) {
+        val release = if (active) holdIdle() else null
+        onDispose { release?.invoke() }
+    }
+}
+
+/**
+ * The host's record of idle holds (one per [hold] not yet released). Host-owned: MainActivity keeps one
+ * in `remember`, passes [hold] as [FeatureContext.holdIdle] and [held] to StandHost. Main thread only.
+ */
+class IdleHolds {
+    private val tokens = mutableStateListOf<Any>()
+
+    /** True while any feature holds the idle reset off. Compose state: readers recompose on change. */
+    val held: Boolean get() = tokens.isNotEmpty()
+
+    fun hold(): () -> Unit {
+        val token = Any()
+        tokens.add(token)
+        return { tokens.remove(token) }
+    }
+
+    /**
+     * Drops every hold. Not for use from a `LaunchedEffect` on a route change: that runs after the new
+     * screen's hold is taken and would wipe it. Holds release themselves through [HoldIdleWhile].
+     */
+    fun clear() = tokens.clear()
+}

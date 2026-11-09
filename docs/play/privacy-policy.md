@@ -1,0 +1,105 @@
+# Privacy policy: RiskMandate for Android (draft)
+
+Draft for Dinis, 8 November 2026. Not legal advice and not reviewed by a lawyer. Everything below is checked against the code of ai.riskmandate.app (file paths in `data-safety.md`). To publish: host the text between the lines at a public HTTPS URL that needs no login, is not a PDF and works on a phone. Suggested: `https://android.app.promptugal.ai/privacy` (the app's own home), or a page on `https://riskmandate.ai/` (the site already has `/privacy`; it describes the website, not the app, so the app needs its own page or a new section there). Then enter the URL in Play Console (App content, Privacy policy) and in the store listing. TODO for Dinis: choose the URL.
+
+Before publishing, replace every `[TODO]`. The publisher/company name is Dinis's decision (which company owns the Play Console account and sells the app).
+
+---
+
+# Privacy policy: RiskMandate for Android
+
+Last updated: [TODO: date of publication]
+
+**Who we are.** The RiskMandate app for Android (package `ai.riskmandate.app`) is published by [TODO: company name, registered address]. Contact: [TODO: a role email address for privacy questions].
+
+**In short.** The app collects no personal data. It has no accounts, no analytics, no advertising and no third-party software that sends data anywhere. The app sends nothing to us. Its in-app view of riskmandate.ai loads pages from that website the way a browser does, which the website's host sees as an ordinary web request (see "The in-app view of riskmandate.ai"). A few settings stay on your device and are never sent.
+
+## What the app does
+
+The app shows a home screen. A button opens https://riskmandate.ai/ (or another riskmandate.ai page) in your web browser. The app can also show riskmandate.ai pages inside the app (the in-app view, with a bundled offline copy of the main pages), has an optional stand mode (it keeps the screen on, can pin the screen, and returns the app to its start screen after a period without touch), and shows a What's new screen for each version. It tells you whether an organisation manages your device, shows a label your organisation may have set, and has a Diagnostics screen (below).
+
+## What the app collects
+
+Nothing that identifies you. The app does not collect, share or sell personal or sensitive data, and it sends no data of yours to us or to anyone else. It does not ask for your name, email address, location, contacts, photos, files, microphone, camera or any account.
+
+The app asks for two permissions, both ordinary ones that Android grants at install without a prompt: internet access, so that the app can hand a riskmandate.ai address to your browser and load riskmandate.ai's pages in its in-app view (the app connects to riskmandate.ai and www.riskmandate.ai, and to no other website), and network state, so that it can show a hint when your device appears to be offline. The app only checks whether a network connection exists; it does not read or keep your network name or address.
+
+The app's data is excluded from Android's cloud backup and device-to-device transfer. What the app does keep on your device is described next.
+
+## What stays on your device
+
+The app keeps a few small items in its own private storage on your device. The app never sends them to us or to anyone else, other apps cannot read them, and Android removes them when you clear the app's data or uninstall the app. They are:
+
+- **Stand mode's settings:** whether stand mode is on and how many idle minutes you chose (a number).
+- **Workbench run log (staff only; DRAFT: only in a build where the Workbench is reachable):** a file on the device, in the app's private storage that Android never backs up, with one line per test run in the Workbench (reached from Diagnostics, Preview; hidden in stand mode). Each line holds the run's settings and figures (model, backend, sampling settings, token counts, timings, tool-call counts, how it ended) plus the first 200 characters of the prompt and the first 300 characters of the answer. It keeps at most 500 runs (a file over 4 MB is ignored), is never sent, backed up or exported by the app, and a Clear button deletes it. Clearing the app's data or uninstalling the app deletes it too.
+- **Which model is in use (DRAFT: only in a build with the model setup):** which of the downloaded models you chose to use.
+- **Layout preference:** whether the side menu is collapsed (a yes or no).
+- **What's new:** the number of the app version for which the What's new screen was last shown, so that it is shown once per version.
+- **The in-app view:** whatever the web view inside the app stores while you read riskmandate.ai, that is, cookies and its web cache. The app deletes them, with the web storage and history of the view, when you close the in-app view. riskmandate.ai says that it sets no cookie (https://riskmandate.ai/privacy). The app switches off the web view's local (DOM) storage and third-party cookies.
+
+None of this is personal data that we receive, and the app does not look at it for any other purpose.
+
+## Managed configuration
+
+If your device is managed by an organisation (for example by your employer), that organisation can set two values for the app: the riskmandate.ai page the app opens (`start_url`) and a label for the device (`device_label`). Android delivers these values to the app on your device. The app reads them, shows the label on its home screen and opens the page. The values stay on your device: the app does not send them anywhere, and does not keep a copy beyond what Android already holds. Your organisation, not us, chooses these values and can see them in its own management console. The app can also tell whether your device is managed (a fully managed device or a work profile); it shows this on the screen and does not send it anywhere.
+
+## Diagnostics screen
+
+A Diagnostics screen shows the app's version, the Android version, the make and model of the device, whether and how the device is managed, the managed configuration as received (`start_url` and `device_label`, and whether the start page was refused), and which app installed this app (for example Google Play or Firebase App Distribution). These values are shown on the screen and are put on your clipboard only when you tap Copy. The app never sends them anywhere. The screen shows no serial number, IMEI, Android ID, account or network address.
+
+## Downloaded language model and chat (DRAFT: include only in the build where the model setup and chat are enabled)
+
+The app can download a language model file once, and only when you tap Download on the model setup screen; the screen first says: "Downloads a model file once from huggingface.co (and its download servers, hf.co). Nothing you type leaves the device." The file comes from Hugging Face (huggingface.co, where Google AI Edge's litert-community publishes the Gemma models). Hugging Face answers with a redirect to its content-delivery network, so the download also contacts hosts under hf.co (for example us.aws.cdn.hf.co); the app follows at most five redirects and only to https addresses on huggingface.co or hf.co, and refuses any other host. Downloading is an ordinary web request: those hosts see your IP address and what they need to serve the file, and Hugging Face's own privacy policy applies. The app sends no account, no cookie, no authorisation header, no message and nothing you typed. A partly downloaded file is kept so that the download can resume. The app checks the finished file against a fixed size and a fixed SHA-256 checksum before it uses it, and deletes it if it does not match. The screen warns you when your connection is metered, and checks that there is enough storage first.
+
+After the download the model runs on your device and works offline. **Nothing you type into the chat leaves the device, unless a staff member has switched on the cloud model described below.** The chat history is kept on your device only, in the app's private storage, excluded from Android's cloud backup and device-to-device transfer. The app never exports or publishes it. A Clear history button deletes it; so does clearing the app's data or uninstalling the app. The model file is kept in the app's private storage that Android never backs up; a Delete model button removes it. If a model file is installed by hand with a computer (adb), a copy may also sit in the app's own folder on shared storage, which on Android 11 and later only this app and adb can read.
+
+## Cloud model through OpenRouter (DRAFT: include only in a build that has the cloud model; it is off by default)
+
+A staff-only option lets a person at your organisation send a prompt to a cloud language model through OpenRouter (openrouter.ai) instead of the model on the device. This is the one case in which text typed in the app can leave the device.
+
+- **When:** only when a staff member has switched the cloud model on and taps send, one request at a time. The switch is off when the app starts, and the cloud model is refused whenever stand mode is on, so a visitor's text never goes to a third party. There are no background or scheduled requests.
+- **What is sent:** the prompt the staff member is sending, the system text and the settings chosen. Chat history is sent only if staff choose it for that request (off by default, and the app shows what will be sent before the first send of a session). The app never sends a device identifier, the device label, battery or memory figures, the app version, an account, a page you are reading or a file.
+- **To whom:** only to openrouter.ai. OpenRouter passes the request to the model provider behind the model chosen, and their own privacy policies apply to it. [TODO security and dev.chat: say whether the app asks OpenRouter to refuse providers that store or train on prompts, once OpenRouter's current documentation is checked (`docs/security/models.md`).]
+- **The key:** each tablet has its own OpenRouter key, pasted by staff. It is stored encrypted with the Android Keystore in the app's private storage that Android never backs up, is never shown, logged or copied, is sent only to openrouter.ai, and a Remove key button deletes it. This protects a copied file or backup, not someone who can use the unlocked app. The organisation sets a credit limit on each key at OpenRouter and can revoke it there.
+- **Spending:** the app keeps a running total of what the cloud requests cost (a number) on the device and stops at caps it cannot raise.
+- **Labels:** every screen and answer that used the cloud says "Cloud: openrouter.ai" and the model. The statements in this policy and in the app that nothing typed leaves the device are true only while the cloud model is off.
+
+## The in-app view of riskmandate.ai
+
+Where the in-app view is used, the app shows riskmandate.ai pages in a web view inside the app. Loading a page sends an ordinary web request to riskmandate.ai. That site is hosted on GitHub Pages: its privacy page says GitHub's servers see "the ordinary request information any web server sees, including your IP address", and that "We have no analytics dashboard, no log access and no way to see who read what" (https://riskmandate.ai/privacy, page dated 24 September 2026). The app loads riskmandate.ai's pages in the view and nothing else: it adds no identifier, runs no analytics and blocks requests from the view to any other website. Only https pages on riskmandate.ai and www.riskmandate.ai load in the view. If you tap a link in the view that leads to another website, the app hands that https address to your device's own browser, which opens it outside the app; the app never loads it inside the app and does not open it while the screen is pinned (stand mode). The app sends nothing: the browser, under its own privacy policy, loads that other website, and the app does not see what it loads. Only https addresses are handed over; others (such as http, intent or file addresses) are refused. The site's Contact page, whose form posts to another host, is not part of the in-app view. When you are offline, the app shows a copy of the main pages bundled in the app, and sends nothing.
+
+## The website the app opens
+
+When you tap the button, your browser opens riskmandate.ai. From that moment the website, not the app, handles what happens. riskmandate.ai has its own privacy page at https://riskmandate.ai/privacy, which says that the site has no analytics, no cookies and no advertising pixel, and describes what its forms and its hosting do. The button and the in-app view allow only https addresses on riskmandate.ai and www.riskmandate.ai; the one exception is the link handover to your browser described above.
+
+## Advertising, analytics and children
+
+The app shows no advertising and contains no analytics, crash-reporting or advertising software. It is not designed for children and is not directed at them.
+
+## Your rights
+
+Because the app collects no personal data, we hold no personal data about you from the app. For data held about you by riskmandate.ai, see its privacy page. [TODO Dinis: add the controller's rights wording if a lawyer asks for it; the app collects no data, so the minimal statement is accurate today.]
+
+## Changes
+
+If the app ever collects data, this policy will change first and the Play Store Data safety section will be updated before that release. The history of this page is public: [TODO: the repository URL, once Dinis decides the repository is public].
+
+## Open source
+
+The app's source code is published under the Apache License 2.0. [TODO: the repository URL.]
+
+---
+
+## Notes for Dinis (not part of the policy)
+
+0. **Cloud model (9 November 2026):** the OpenRouter section is a DRAFT written from `docs/security/summit-checklist.md` section M on `work/security` (Dinis's decision, owner dev.chat), **not from code: none exists yet**. Every statement is a requirement the build must meet (M.1 key, M.2 one pinned destination, M.3 what is sent, M.4 off by default and refused in stand mode, M.5 spend caps). Re-check each line against the merged code and the on-screen strings before use; if a requirement is dropped, change the line. The "nothing leaves the device" sentences (here, `models_privacy` on `work/dev.llm`, the chat kicker and summary) become conditional with the cloud model (M.4.3).
+0. **R-wb-5 (9 November 2026):** the Workbench run log bullet is from `RunLog.kt` on `dev` (`noBackupFilesDir/feature_workbench/runs.jsonl`, `LogEntry.PROMPT_CHARS = 200`, `ANSWER_CHARS = 300`, `MAX_ENTRIES = 500`, `MAX_BYTES` 4 MB, `RunLogStore.clear()`; no identifiers; the system prompt is stored as a length only) and `WorkbenchFeature.kt` (staff only, switched off, Diagnostics, Preview, hidden in stand mode). What a person types into the Workbench can therefore stay on the device in short form: the first 200 characters.
+0. **Q-g-1 (9 November 2026):** the quoted screen sentence is `models_privacy` with `models_privacy_host` filled in, as on `work/dev.llm` (`feature_models.xml`). pt-PT on the screen: "Descarrega um ficheiro de modelo uma vez de huggingface.co (e dos seus servidores de transferência, hf.co). Nada do que escreve sai do dispositivo." This hosted page is English only; if a Portuguese page is made, use that sentence verbatim.
+0. **G.8 (9 November 2026):** the download wording comes from dev.llm's status page (`work/dev.llm`: `ModelInstaller`, `DownloadPolicy`: https, port 443, no user info, each hop `huggingface.co` or under `hf.co`, at most 5 redirects, no Authorization header or cookies, resume with Range into `noBackupFilesDir/models/<file>.part`, pinned size and SHA-256, storage check, Wi-Fi notice, `feature_models` preferences for the chosen model). Not on `dev` yet; G is `enabled = false`. Re-check against the merged code.
+0. **R-shell-1 (9 November 2026):** `shell` SharedPreferences file, key `sidebar_collapsed` (`work/app` `MainActivity.kt`, not yet on `dev`); What's new's file is `feature_releases`, key `last_seen_version_code` (on `dev`); chat history is one JSON file in `noBackupFilesDir/feature_chat/` (on `dev`, `FileChatHistoryStore`); model files go to `noBackupFilesDir/models/` and, for an adb push on API 30+, `getExternalFilesDir("models")` (`work/app` `ModelFiles.kt`). `data_extraction_rules.xml` excludes every backup and transfer domain by name. The model and chat sentences stay DRAFT until those features are on in the submitted build.
+0. **R-stand-2 (9 November 2026):** the sections "What stays on your device" and "The in-app view" describe stand mode (`work/dev.stand`: `StandSettings`, SharedPreferences file `stand_mode`), the in-app view (`work/dev.site`: WebView, DOM storage off, third-party cookies off, other hosts blocked with 403, Contact page not a tab) and the What's new screen. **Neither branch was on `dev` when I wrote this**, and I found no What's new SharedPreferences code on any branch (the conductor's note is the source for that bullet) and no code that clears the web view's cookies or cache at the time; `work/dev.site` ba979fc now has `disposeSite()` (cache, history, cookies, web storage) called when the screen closes. Re-check every bullet against the merged code before this goes on a public URL.
+0. **On-device LLM draft (9 November 2026):** the section "Downloaded language model and chat" is a DRAFT from `briefs/2026-11-09__on-device-llm/README.md` (decisions by Dinis, 9 Nov) and describes features G and H, which are placeholders with `enabled = false` on `dev`. Delete the section from any public copy unless the submitted build has both on, and re-check it against the code (hosts, checksum, backup exclusion, Clear history). Model licences: `model-licences.md`.
+1. Every sentence is true of the code at the date above. Re-check this policy on each release that adds a dependency or a permission; CI could grep the manifest for new permissions (a follow-up).
+2. "Excluded from Android's cloud backup" is `app/src/main/res/xml/data_extraction_rules.xml` and `android:allowBackup="false"` in `AndroidManifest.xml`.
+3. If a lawyer adds GDPR wording (controller, legal basis, retention, the right to complain to a supervisory authority such as Portugal's CNPD), the facts above still hold; the lawyer adds, nothing here needs withdrawing.
+4. The policy must be reachable without login, not geo-fenced, and not a PDF (Play's requirements, from my knowledge; the Console also checks the link).

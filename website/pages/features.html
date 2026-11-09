@@ -1,0 +1,54 @@
+<!--
+title: Features · RiskMandate for Android
+description: What the RiskMandate Android app does today, read from the source, and the four summit features that are still in progress.
+nav: Features
+order: 2
+-->
+<section class="band">
+  <div class="wrap">
+    <p class="kicker">Features</p>
+    <h1>What exists today</h1>
+    <p class="lede">Everything on this page is checked against the source when the site is built.</p>
+  </div>
+</section>
+
+<section class="band band-alt" id="today">
+  <div class="wrap prose">
+    <h2>The core of the app</h2>
+    <ul>
+      <li><strong>One button, “Open riskmandate.ai”.</strong> It opens the site in a Chrome Custom Tab, or in the browser the system picks if none supports Custom Tabs. If there is no browser, the app says so.</li>
+      <li><strong>An address check.</strong> The app opens only <code>https</code> addresses on <code>riskmandate.ai</code> or <code>www.riskmandate.ai</code>, on port 443 with no embedded user name. Anything else is refused with a message. (A security review found this check could be fooled; it was fixed. See <a href="articles/2026-11-09-m1-ci-to-a-tablet-in-one-night.html">the article</a>.)</li>
+      <li><strong>A Device section.</strong> It says whether an organisation manages the device (fully managed, work profile, or not detected) and shows an optional device label.</li>
+      <li><strong>Managed configuration.</strong> An organisation’s device management can set the page the app opens (<code>start_url</code>, checked by the same address rule) and the device label (<code>device_label</code>). This is groundwork for managed devices; no device has been enrolled yet.</li>
+      <li><strong>A Diagnostics screen</strong> for testers: app and Android version, device model, management state, the managed configuration as received, and which app installed this one, with a Copy button. It holds no personal data and no device identifiers.</li>
+      <li><strong>An offline hint,</strong> using the network-state permission only to say the device seems to be offline.</li>
+      <li><strong>An open-source licences screen</strong> with the full Apache 2.0 text.</li>
+      <li><strong>Light and dark themes, tablet layouts, {{locales}}.</strong> The home screen shows two panes side by side in landscape when the screen is wide enough, as on 7 and 10 inch tablets.</li>
+    </ul>
+    <p>The build number is shown at the bottom of the home screen; quote it when you report a problem.</p>
+  </div>
+</section>
+
+<section class="band" id="summit">
+  <div class="wrap">
+    <h2>Summit features</h2>
+    <p class="prose">A team of agent sessions is building these features in parallel for Web Summit. The status below is read from the source when the site is built: a feature is “on” only when its owner has set <code>enabled = true</code> (stand mode has no switch of its own: it counts once its host is more than a placeholder). Anything else is “in progress”. The descriptions are the plan, not a promise. Anything about RiskMandate in them is limited to what riskmandate.ai says. What each shipped feature does, and how to use it at a stand, is in the <a href="articles/index.html">release articles</a>.</p>
+    {{features_table}}
+  </div>
+</section>
+
+<section class="band band-alt" id="platform">
+  <div class="wrap">
+    <h2>What it runs on</h2>
+    <dl class="stats">
+      <div><dt>{{app_id}}</dt><dd>application ID</dd></div>
+      <div><dt>{{min_sdk}}</dt><dd>minSdk (Android {{min_android}})</dd></div>
+      <div><dt>{{target_sdk}}</dt><dd>targetSdk</dd></div>
+      <div><dt>{{latest_version}}</dt><dd>latest release</dd></div>
+    </dl>
+    <h3>Permissions</h3>
+    <p class="prose">Both are ordinary permissions that Android grants at install without a prompt.</p>
+    {{permissions_table}}
+    <p class="prose muted">The app keeps a few things on the device only: stand mode’s switch and idle minutes, the frame’s display preference, the number of the last What’s new article shown and, in builds that have those features, chat history and language model files. It excludes its data from Android’s cloud backup and device-to-device transfer. Cleartext traffic is off. The privacy policy lists every stored item.</p>
+  </div>
+</section>

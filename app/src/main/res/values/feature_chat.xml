@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Feature H, chat with the local model. Owned by dev.chat. Claims about RiskMandate come only from the bundled riskmandate.ai text (res/raw/feature_chat_*.txt). -->
+    <string name="chat_badge">Runs on this device</string>
+    <string name="chat_new">New chat</string>
+    <string name="chat_history">History</string>
+    <string name="chat_history_close">Back to chat</string>
+    <string name="chat_history_empty">No saved chats yet.</string>
+    <string name="chat_history_untitled">(empty chat)</string>
+    <string name="chat_history_note">Chats are saved on this tablet only. They are not backed up, sent or shared.</string>
+    <string name="chat_clear">Clear history</string>
+    <string name="chat_clear_title">Delete every saved chat?</string>
+    <string name="chat_clear_body">All chats are deleted from this tablet. This cannot be undone.</string>
+    <string name="chat_clear_confirm">Delete</string>
+    <string name="chat_cancel">Cancel</string>
+    <string name="chat_model_label">Model</string>
+    <string name="chat_input_label">Message</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_stop">Stop</string>
+    <string name="chat_you">You</string>
+    <string name="chat_model">Model</string>
+    <string name="chat_thinking">Thinking…</string>
+    <string name="chat_stopped">Stopped</string>
+    <string name="chat_failed">The model stopped with an error.</string>
+    <string name="chat_stats">%1$s tokens per second, %2$s seconds, %3$s tokens</string>
+    <string name="chat_open_link">Open %1$s</string>
+    <string name="chat_empty_hint">Ask the model something, or try a preset. Everything stays on this device.</string>
+    <string name="chat_no_model_title">No model installed</string>
+    <string name="chat_no_model_body">Set up a model, then come back. Chat needs a model on this device.</string>
+    <string name="chat_loading">Looking for installed models…</string>
+    <string name="chat_save_failed">Could not save this chat on the tablet. It is still on screen.</string>
+    <string name="chat_presets">Presets</string>
+    <string name="chat_preset_rm_title">What is RiskMandate?</string>
+    <string name="chat_preset_rm_prompt">What is RiskMandate?</string>
+    <string name="chat_preset_abp_title">Explain an ABP</string>
+    <string name="chat_preset_abp_prompt">Explain an Agent Behaviour Policy (ABP).</string>
+    <string name="chat_preset_risk_title">Summarise a risk</string>
+    <string name="chat_preset_risk_prompt">Summarise this risk in three short sentences:\n\n</string>
+    <string name="chat_preset_triplets_title">Explain graph triplets</string>
+    <string name="chat_preset_triplets_prompt">Read a few triplets from the graph and explain them.</string>
+    <string name="chat_preset_triplets_note">Needs the graph tools, which are not built yet.</string>
+    <string name="chat_network_on">Network: on</string>
+    <string name="chat_network_off">Network: off</string>
+    <string name="chat_kicker">On device</string>
+    <string name="chat_summary">Talk to a language model that runs on this tablet. Nothing you type leaves the device.</string>
+    <string name="chat_model_active">Model: %1$s</string>
+    <string name="chat_open_models">Open Models</string>
+    <string name="chat_failed_no_model">No model is installed. Set one up in Models.</string>
+    <string name="chat_failed_load">The model could not be loaded. Try again, or pick a smaller model in Models.</string>
+    <string name="chat_failed_too_long">This chat is too long for the model. Start a new chat.</string>
+    <string name="chat_badge_cloud">Cloud: openrouter.ai</string>
+</resources>

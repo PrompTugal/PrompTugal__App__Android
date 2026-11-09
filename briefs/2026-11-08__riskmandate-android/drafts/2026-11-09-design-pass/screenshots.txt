@@ -1,0 +1,7 @@
+# <target>.png <- <source>.png, files the Robolectric screenshot tests write to app/build/screenshots/.
+# home-* is ScreenshotTest (the real home screen); ui-* is UiScreenshotTest (design samples, not the running app).
+home-tablet-light.png <- home-tablet10-landscape-light.png
+home-tablet-dark.png <- home-tablet10-landscape-dark.png
+frame-light.png <- ui-shell-tablet10-landscape-light.png
+frame-dark.png <- ui-shell-tablet10-landscape-dark.png
+now-phone.png <- ui-now-phone-portrait-light.png

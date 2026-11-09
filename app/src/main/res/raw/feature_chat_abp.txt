@@ -1,0 +1,23 @@
+The Agent Behaviour Policy (riskmandate.ai/abp). Every sentence below is the page's own.
+
+An Agent Behaviour Policy is a written description, for one agent in one deployment, of everything it can do, what you authorised it to do, the gap between the two, and what actually stands in the way. It is derived from your deployment rather than copied from a template. It describes and it does not judge, so it carries no score.
+
+Four objects. The order they are produced in matters.
+A behaviour policy is not a single list. The mandate is cheap, because you already know it. The grant is the work. The delta falls out of the two and is never written by hand.
+The mandate | What the agent is authorised and expected to do | Elicited. In minutes, because you already know it
+The grant | Everything the agent can do | Measured. From the deployment shape, the account and the credentials
+The delta | Excess where it can and you did not ask; shortfall where you asked and it cannot | Derived. Recomputed whenever the grant or the mandate moves, stored with the versions of both, never edited
+The barrier | What stands between the agent and each capability | Recorded per capability, from one of four kinds
+
+An inventory: "Your agent can do 340 things." A shrug. Nobody acts on an inventory, and the length of the list looks like a maintenance problem rather than a finding.
+A finding: "Your agent can do 340 things and you authorised 12." The mandate is the edge that gives the enumeration a shape. It is the cheapest object to capture and the one that makes the other three mean something.
+
+The barrier. Only one kind of thing is actually in the way.
+For every capability in the grant, a behaviour policy records what stands between the agent and it. There are four kinds, and three of them bound nothing. That is not an opinion — it follows from what each one is.
+none | nothing in the way | no
+expectation | a rule in prose, enforced by nobody | no
+setting | a switch the agent's own account can flip | no
+boundary | enforced above the grant, out of the agent's reach | yes
+A control bounds a grant only if it is enforced by something the grant does not include.
+
+Source: riskmandate.ai/abp, v1.40.3, read 9 November 2026.

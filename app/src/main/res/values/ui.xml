@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared components (ui/). Owned by design. -->
+    <string name="ui_layer_waiting">Not reached yet</string>
+    <string name="ui_layer_checking">Checking now</string>
+    <string name="ui_layer_stopped">Stopped the instruction here</string>
+    <string name="ui_layer_passed">Already past</string>
+    <string name="ui_step_number">%1$d.</string>
+    <string name="ui_try_again">Try again</string>
+    <string name="ui_nothing_here">Nothing here yet</string>
+    <string name="ui_is_empty">The %1$s is empty.</string>
+    <string name="ui_loading">Loading %1$s…</string>
+    <string name="ui_unavailable">%1$s unavailable</string>
+    <string name="ui_kind_native">Native</string>
+    <string name="ui_kind_web">Web</string>
+    <string name="ui_kind_hybrid">Hybrid</string>
+    <string name="ui_kind_screen">%1$s screen</string>
+</resources>
