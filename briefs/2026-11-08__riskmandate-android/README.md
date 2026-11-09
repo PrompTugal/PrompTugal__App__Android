@@ -41,3 +41,31 @@ Repository PrompTugal/PrompTugal__App__Android; application ID `ai.riskmandate.a
 
 ## Open for Dinis
 See `board/status.json` asks. The ones that unblock most: the Firebase project and secrets (M1); the private build's package ID and the device-management route (M2).
+
+## Summit phase (from 9 Nov 2026, ~01:15 UTC, at Dinis's word)
+
+M2 to M4 are parked until after Web Summit. The team builds the summit features in parallel, each on the M1 pipeline (every merge reaches the team's tablets through Firebase App Tester).
+
+**The features** (Dinis chose A to D; E waits for videos):
+- **A, RiskMandate inside the app** (`features/site/`): riskmandate.ai's pages in an in-app WebView limited to `Links.isAllowed`, native tabs, an offline copy for bad venue Wi-Fi.
+- **B, "ABP in every layer"** (`features/abpdemo/`): a native, animated, clearly labelled demonstration of one Agent Behaviour Policy stopping a planted instruction at six layers (browser, model, hook, inline proxy, secure harness, device policy). Claims only from riskmandate.ai and sharness.ai.
+- **C, this app's own mandate** (`features/mandate/`): a real, live reach, mandate and gap view of this app on this device (its permissions, its allow-list, what it collects: nothing).
+- **D, stand mode** (`features/stand/StandHost.kt`): screen pinning (startLockTask, Android asks once), keep the screen on, back to home after idle minutes; on and off from the home screen.
+- **E, demo videos**: later, once there are videos.
+
+**The skeleton** (on `dev`): `features/Feature.kt` (the contract), `features/Features.kt` (the list, conductor-owned), one package per feature with a placeholder whose `enabled = false` until its owner turns it on, `StandHost` wrapping the app. Strings per feature in `res/values/feature_<id>.xml` and `res/values-pt-rPT/feature_<id>.xml`. Tests per feature under `app/src/test/java/ai/riskmandate/app/features/<id>/`.
+
+| Role | Session name | Branch | Owns |
+|---|---|---|---|
+| architect | architect.android@promptugal.ai | `work/architect` | `features/Feature.kt`, `docs/architecture/`; reviews every app branch for structure (Verdict lines in `docs/architecture/reviews/`) |
+| design | design.android@promptugal.ai | `work/design` | `docs/design/` (screen specs for A to D), `app/src/main/java/ai/riskmandate/app/ui/` (shared components), `Theme.kt`; no brand change without Dinis |
+| qa | qa.android@promptugal.ai | `work/qa` | `docs/qa/` (test plans, device runs), cross-feature tests in `app/src/test/java/ai/riskmandate/app/qa/`, `app/src/androidTest/`; QA verdicts in `docs/qa/reviews/` |
+| dev.site | dev.site.android@promptugal.ai | `work/dev.site` | `features/site/` and its strings, raw assets and tests |
+| dev.abpdemo | dev.abpdemo.android@promptugal.ai | `work/dev.abpdemo` | `features/abpdemo/` and its strings and tests |
+| dev.mandate | dev.mandate.android@promptugal.ai | `work/dev.mandate` | `features/mandate/` and its strings and tests |
+| dev.stand | dev.stand.android@promptugal.ai | `work/dev.stand` | `features/stand/` and its strings and tests |
+| app (lead dev) | app.android@promptugal.ai | `work/app` | the rest of `app/` (MainActivity, HomeScreen, Browser, Diagnostics); integrates what a feature needs from the host |
+
+release, security and play keep their roles; devices is parked with M2.
+
+**Merge rule in the summit phase:** security PASS and a green gate, as before; architect and QA review every app branch in parallel and their findings go back to the owner (a HOLD from either also blocks the merge). A feature is turned on (`enabled = true`) by its owner only when its screen works end to end.

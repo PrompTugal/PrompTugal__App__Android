@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ object HomeTags {
     const val MESSAGE = "message"
     const val LICENCES = "licences"
     const val DIAGNOSTICS = "diagnostics"
+    fun feature(id: String) = "feature_$id"
 }
 
 /** Material's minimum touch target. */
@@ -62,6 +64,7 @@ fun HomeScreen(
     @StringRes message: Int? = null,
     onLicences: () -> Unit = {},
     onDiagnostics: () -> Unit = {},
+    features: List<FeatureButton> = emptyList(),
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
         val twoPane = maxWidth >= TwoPaneMinWidth && maxWidth > maxHeight
@@ -82,13 +85,13 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        PrimaryPane(onOpen, message)
+                        PrimaryPane(onOpen, message, features)
                     }
                     Column(Modifier.weight(1f)) { InfoPane(version, device, onLicences, onDiagnostics) }
                 }
             } else {
                 Column(Modifier.widthIn(max = ContentMaxWidth), horizontalAlignment = Alignment.CenterHorizontally) {
-                    PrimaryPane(onOpen, message)
+                    PrimaryPane(onOpen, message, features)
                     Spacer(Modifier.height(32.dp))
                     HorizontalDivider()
                     Spacer(Modifier.height(16.dp))
@@ -100,7 +103,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun ColumnScope.PrimaryPane(onOpen: () -> Unit, @StringRes message: Int?) {
+private fun ColumnScope.PrimaryPane(onOpen: () -> Unit, @StringRes message: Int?, features: List<FeatureButton>) {
     Text(
         stringResource(R.string.app_name),
         style = MaterialTheme.typography.headlineMedium,
@@ -118,6 +121,16 @@ private fun ColumnScope.PrimaryPane(onOpen: () -> Unit, @StringRes message: Int?
             .semantics { onClick(label = openAction, action = null) },
     ) {
         Text(stringResource(R.string.home_open))
+    }
+    // The summit features (features/Features.kt), one button each, under the main action.
+    for (f in features) {
+        Spacer(Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = f.onClick,
+            modifier = Modifier.heightIn(min = MinTouch).testTag(HomeTags.feature(f.id)),
+        ) {
+            Text(stringResource(f.title))
+        }
     }
     if (message != null) {
         Spacer(Modifier.height(12.dp))
@@ -199,3 +212,6 @@ private fun HomePreview() = RiskMandateTheme {
         onOpen = {},
     )
 }
+
+/** A home-screen button for a summit feature. */
+data class FeatureButton(val id: String, @StringRes val title: Int, val onClick: () -> Unit)

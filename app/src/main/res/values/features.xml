@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Feature titles. Each feature session may add its own strings in its own file
+         res/values/feature_<id>.xml (and values-pt-rPT/feature_<id>.xml), never here. -->
+    <string name="feature_site_title">RiskMandate</string>
+    <string name="feature_abpdemo_title">ABP in every layer</string>
+    <string name="feature_mandate_title">This app\'s mandate</string>
+</resources>

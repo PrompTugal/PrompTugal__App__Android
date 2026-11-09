@@ -18,8 +18,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import ai.riskmandate.app.features.FEATURES
+import ai.riskmandate.app.features.FeatureContext
+import ai.riskmandate.app.features.featureById
+import ai.riskmandate.app.features.stand.StandHost
 
-enum class Screen { HOME, LICENCES, DIAGNOSTICS }
+/** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
+object Routes {
+    const val HOME = "home"
+    const val LICENCES = "licences"
+    const val DIAGNOSTICS = "diagnostics"
+}
 
 class MainActivity : ComponentActivity() {
     private var config by mutableStateOf(ManagedConfig.DEFAULT)
@@ -38,30 +47,43 @@ class MainActivity : ComponentActivity() {
             RiskMandateTheme {
                 Surface(Modifier.fillMaxSize()) {
                     // Saved, so turning a tablet round does not drop the user back on the home screen.
-                    var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
+                    var screen by rememberSaveable { mutableStateOf(Routes.HOME) }
+                    val goHome = { screen = Routes.HOME }
+                    StandHost(activity = this@MainActivity, atHome = screen == Routes.HOME, goHome = goHome) {
                     when (screen) {
-                        Screen.LICENCES -> {
-                            BackHandler { screen = Screen.HOME }
+                        Routes.LICENCES -> {
+                            BackHandler { screen = Routes.HOME }
                             LicencesScreen(
                                 text = remember { readLicences(this@MainActivity) },
                                 apacheText = remember { readApacheLicence(this@MainActivity) },
-                                onBack = { screen = Screen.HOME },
+                                onBack = { screen = Routes.HOME },
                             )
                         }
-                        Screen.DIAGNOSTICS -> {
-                            BackHandler { screen = Screen.HOME }
+                        Routes.DIAGNOSTICS -> {
+                            BackHandler { screen = Routes.HOME }
                             // Read again each time the screen opens, so it shows the current state.
                             val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
-                            DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = { screen = Screen.HOME })
+                            DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = { screen = Routes.HOME })
                         }
-                        Screen.HOME -> HomeScreen(
+                        Routes.HOME -> HomeScreen(
                             version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                             device = device,
                             message = message,
                             onOpen = { message = open() },
-                            onLicences = { screen = Screen.LICENCES },
-                            onDiagnostics = { screen = Screen.DIAGNOSTICS },
+                            onLicences = { screen = Routes.LICENCES },
+                            onDiagnostics = { screen = Routes.DIAGNOSTICS },
+                            features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title) { screen = f.id } },
                         )
+                        else -> {
+                            val feature = featureById(screen)
+                            if (feature == null) {
+                                screen = Routes.HOME
+                            } else {
+                                BackHandler { screen = Routes.HOME }
+                                feature.Content(FeatureContext(activity = this@MainActivity, onBack = goHome))
+                            }
+                        }
+                    }
                     }
                 }
             }
