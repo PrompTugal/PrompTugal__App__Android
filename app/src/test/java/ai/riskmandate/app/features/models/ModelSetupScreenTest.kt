@@ -123,6 +123,18 @@ class ModelSetupScreenTest {
         }
     }
 
+    @Test fun thePrivacyLineSaysWhatGoesToTheCloudWhileACloudModelIsInUse() {
+        var cloud by androidx.compose.runtime.mutableStateOf(false)
+        compose.setContent {
+            RiskMandateTheme { ModelSetupScreen(installer = offline, adbDir = { null }, cloudInUse = cloud, io = Dispatchers.Unconfined) }
+        }
+        compose.onNodeWithTag(ModelSetupTags.PRIVACY).assertTextContains("Nothing you type leaves the device.", substring = true)
+        cloud = true
+        compose.waitForIdle()
+        compose.onNodeWithTag(ModelSetupTags.PRIVACY).assertTextContains("goes to openrouter.ai", substring = true)
+        assertFalse(compose.onNodeWithTag(ModelSetupTags.PRIVACY).fetchSemanticsNode().config.toString().contains("Nothing you type leaves the device"))
+    }
+
     @Test fun listsTheOfferedModelsWithSizeAndLicence() {
         show()
         waitFor(ModelSetupTags.row(e2b.id))

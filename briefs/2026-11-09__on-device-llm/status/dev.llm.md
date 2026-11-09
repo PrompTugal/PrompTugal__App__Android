@@ -5,6 +5,11 @@
 ## Doing
 Workbench (brief `briefs/2026-11-09__on-device-llm/workbench.md`, Dinis 9 Nov ~10:00 UTC): tabs 1 (Run) and 2 (Experiments). Step 1 (stats) pushed; next the `workbench` feature and the Run tab, then the run log, sweep and A/B. Earlier work (bench, LlmService/LlmHost, feature G) is on dev; G stays `enabled = false` until Dinis's tablet run.
 
+## Cloud wiring (checklist M.4.3)
+- Model setup: the privacy line is conditional (`ModelSetupScreen(cloudInUse)`): "Nothing you type leaves the device." only while no cloud model is in use; otherwise "The cloud model is switched on: what you send to it goes to openrouter.ai. Answers from the on-device model stay on the device." (en, pt-PT). ModelsFeature passes `context.cloudLlm != null`, which is always false for it (not a cloud feature): see "For app".
+- Workbench: `usesCloud = true`. When the host passes `cloudLlm`, the Run tab shows "On device / Cloud" (with a note: the prompt and system prompt go to openrouter.ai and each run costs money within the app's cap); the choice drives the Run tab, the experiments and tab 3. Every cloud run is labelled "Cloud · <model> via openrouter.ai" from `LlmStats.location`: the header chip (held tone), the answer and tool-call cards' kicker, a "Where" stat (and "Cost (USD)" when reported), "Copy run", and each run-log entry (new optional `cloud` field; older entries read as on the device). Without a cloud service there is no cloud choice and a saved one is ignored.
+- Tests: the conditional privacy line both ways, the cloud choice only with a cloud service, a cloud run labelled in chip, answer and stats and not sent to the device, the log entry's cloud flag and old entries.
+
 ## Workbench step 7: tab 3 and experiments/
 - Tab 3 hosts dev.lab's `features/workbench/tooltests/ToolTestsTab(llm, openFeature, onBusy, settings)` in a scroll the Workbench owns; its sampling and max tokens come from the Run tab's form; while it runs, the Workbench holds the idle reset and keeps the screen on (its `onBusy`).
 - Sweeps now decide their caps through `experiments/RunCaps.nextStop` with `experiments/AndroidDeviceGuard` (the Lab's and the tool tests' caps, one copy): `ExperimentCaps` is gone; the 100-run cap and 3 failures in a row use `RunCaps.MAX_RUNS` and `MAX_CONSECUTIVE_ERRORS`. `llm/DeviceProbe` stays only for what DeviceGuard does not give: the thermal level and app memory recorded before and after each run.
@@ -116,6 +121,7 @@ The bench shows the exact folder and commands on screen too. The first run of ea
 - Nothing. The bench needs Dinis and the tablet.
 
 ## For app
+- Model setup's privacy line needs to know whether a cloud model is in use anywhere in the app (the cloud switch is on and a key is stored). Model setup is not a cloud feature, so `context.cloudLlm` is always null for it. Smallest API: a read-only `cloudOn: Boolean` in `FeatureContext` for every feature (architect), or app passes `cloudInUse` to Model setup through it. Until then the line always reads the on-device version, which is true while no feature has a cloud service.
 Carried on this branch, as conductor agreed, in one separate commit for your review ("host lines for app.android's review"):
 1. `app/build.gradle.kts` dependencies: `implementation("com.google.ai.edge.litertlm:litertlm-android:0.18.1")`. Transitive: `com.google.code.gson:gson:2.14.0`, `org.jetbrains.kotlin:kotlin-reflect:2.4.0`, `org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0`.
 2. `app/build.gradle.kts` `kotlinOptions { freeCompilerArgs += "-Xskip-metadata-version-check" }`. Every LiteRT-LM release since 0.9 is built with Kotlin 2.2 or 2.4 metadata, and we are on Kotlin 2.0.21. Google's Edge Gallery uses the same flag. The other fix is the Kotlin, AGP and BOM bump you already found blocks the gate.

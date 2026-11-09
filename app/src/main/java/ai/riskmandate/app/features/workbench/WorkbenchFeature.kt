@@ -63,6 +63,9 @@ object WorkbenchFeature : Feature {
     // The conductor moves the title to features.xml (feature_workbench_title) when adding this to FEATURES.
     override val title = R.string.workbench_title
     override val enabled = false
+    // Staff may compare against the cloud model (OpenRouter); the host passes cloudLlm only with a key stored and
+    // stand mode off. Every cloud run, figure and verdict is labelled "Cloud" (checklist M.4.3).
+    override val usesCloud = true
 
     @Composable
     override fun Content(context: FeatureContext) = WorkbenchContent(context)
@@ -71,6 +74,16 @@ object WorkbenchFeature : Feature {
 object WorkbenchTags {
     const val TABS = "workbench_tabs"
     const val MODEL_CHIP = "workbench_model_chip"
+    const val WHERE_CHIP = "workbench_where_chip"
+}
+
+/** The cloud model's id from the service's state (CloudLlmService reports Ready(modelId, ...)). */
+internal fun cloudModel(state: LlmState): String = when (state) {
+    is LlmState.Ready -> state.modelId
+    is LlmState.Idle -> state.modelId
+    is LlmState.Loading -> state.modelId
+    is LlmState.Failed -> state.modelId ?: "-"
+    LlmState.NoModel -> "-"
 }
 
 /** The fixed system-prompt presets; the RiskMandate base block is added from llm/prompts when it has loaded. */
@@ -96,10 +109,16 @@ internal fun WorkbenchContent(
 ) {
     val app = LocalContext.current.applicationContext
     val scope = rememberCoroutineScope()
-    val service = context.llm
+    val local = context.llm
+    val cloud = context.cloudLlm
     val read: () -> DeviceSample? = remember(probe) { probe ?: { DeviceProbe.sample(app) } }
     // The caps decide on experiments/'s guard (shared with the Lab and the tool tests); the probe records readings.
     val capsGuard: DeviceGuard = remember(guard) { guard ?: AndroidDeviceGuard(app) }
+    // The Run tab's form says which service: on the device (default) or the cloud (only offered when cloudLlm exists).
+    var savedForm by rememberSaveable { mutableStateOf(RunForm.save(RunForm())) }
+    val form = RunForm.restore(savedForm)
+    val useCloud = form.useCloud && cloud != null
+    val service = if (useCloud) cloud else local
     val runner = remember(service) { service?.let { LlmRunner(it, probe = read, clock = clock, wallClock = wallClock) } }
     val state by (service?.state ?: remember { MutableStateFlow<LlmState>(LlmState.NoModel) }).collectAsState()
     val activeModel = when (val s = state) {
@@ -125,8 +144,6 @@ internal fun WorkbenchContent(
     }
 
     // The Run tab's form and last run live here, so switching tabs keeps them; the form survives rotation.
-    var savedForm by rememberSaveable { mutableStateOf(RunForm.save(RunForm())) }
-    val form = RunForm.restore(savedForm)
     var last by remember { mutableStateOf<RunRecord?>(null) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var running by remember { mutableStateOf(false) }
@@ -144,11 +161,12 @@ internal fun WorkbenchContent(
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Provenance: where it runs (the service says), and the model and backend actually in use.
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatusChip(
-                    stringResource(if (service?.location == LlmLocation.CLOUD) R.string.workbench_where_cloud else R.string.workbench_where_device),
-                    ChipKind.Neutral,
-                )
-                activeModel?.let { StatusChip(it, ChipKind.Neutral, modifier = Modifier.testTag(WorkbenchTags.MODEL_CHIP)) }
+                if (service?.location == LlmLocation.CLOUD) {
+                    StatusChip(stringResource(R.string.workbench_cloud_label, cloudModel(state)), ChipKind.Held, modifier = Modifier.testTag(WorkbenchTags.WHERE_CHIP))
+                } else {
+                    StatusChip(stringResource(R.string.workbench_where_device), ChipKind.Neutral, modifier = Modifier.testTag(WorkbenchTags.WHERE_CHIP))
+                    activeModel?.let { StatusChip(it, ChipKind.Neutral, modifier = Modifier.testTag(WorkbenchTags.MODEL_CHIP)) }
+                }
             }
             SegmentedControl(
                 labels = listOf(stringResource(R.string.workbench_tab_run), stringResource(R.string.workbench_tab_experiments), stringResource(R.string.workbench_tab_tools)),
@@ -159,6 +177,7 @@ internal fun WorkbenchContent(
             when (tab) {
                 0 -> RunTab(
                     runner = runner, activeModel = activeModel, onOpenModels = { context.openFeature("models") },
+                    cloudAvailable = cloud != null,
                     presets = presets, toolSets = emptyList(),
                     form = form, onForm = { savedForm = RunForm.save(it) }, last = last, onLast = { last = it },
                     onRunning = { running = it }, onRecord = { record("run", it) },

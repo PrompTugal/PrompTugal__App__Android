@@ -23,6 +23,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -169,6 +170,46 @@ class RunTabTest {
         assertEquals(2_000, f.prompt.length)
         assertEquals("AUTO", f.backend)
         assertEquals(50, f.toolSet)
+    }
+
+    private fun cloudFake() = object : ai.riskmandate.app.llm.LlmService by FakeLlmService(initial = ai.riskmandate.app.llm.LlmState.Ready("google/gemma-3-4b-it", "cloud"), reply = {
+        FakeReply("From the cloud.", stats = ai.riskmandate.app.llm.LlmStats("google/gemma-3-4b-it", "cloud", 8, 3, null, 20.0, 300, 700, location = ai.riskmandate.app.llm.LlmLocation.CLOUD, costUsd = 0.0002))
+    }) {
+        override val location = ai.riskmandate.app.llm.LlmLocation.CLOUD
+    }
+
+    private fun showWorkbench(cloud: ai.riskmandate.app.llm.LlmService?, local: FakeLlmService) = compose.setContent {
+        RiskMandateTheme {
+            WorkbenchContent(
+                FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), llm = local, cloudLlm = cloud),
+                io = kotlinx.coroutines.Dispatchers.Unconfined, probe = { null }, guard = ai.riskmandate.app.experiments.NoGuard,
+            )
+        }
+    }
+
+    @Test fun theCloudChoiceAppearsOnlyWithACloudServiceAndLabelsEverything() {
+        assertTrue(WorkbenchFeature.usesCloud)
+        val local = FakeLlmService { FakeReply("local") }
+        showWorkbench(cloud = cloudFake(), local = local)
+        compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("On this device")
+        compose.onNodeWithTag(RunTags.CLOUD).performScrollTo().performClick()
+        compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("Cloud \u00b7 google/gemma-3-4b-it via openrouter.ai")
+        compose.onNodeWithTag(RunTags.PROMPT).performScrollTo().performTextInput("Hello")
+        compose.onNodeWithTag(RunTags.RUN).performScrollTo().performClick()
+        waitFor(RunTags.RERUN)
+        assertTrue("the cloud answered, not the device", local.requests.isEmpty())
+        compose.onNodeWithTag(RunTags.ANSWER).performScrollTo().assertTextContains("From the cloud.")
+        compose.onNodeWithTag(RunTags.WHERE).performScrollTo().assertTextContains("Cloud \u00b7 google/gemma-3-4b-it via openrouter.ai")
+        // Header chip and the answer card's kicker carry it too (the stats row is checked above).
+        assertTrue(compose.onAllNodes(androidx.compose.ui.test.hasText("Cloud \u00b7 google/gemma-3-4b-it via openrouter.ai", substring = true)).fetchSemanticsNodes().size >= 2)
+    }
+
+    @Test fun withoutACloudServiceThereIsNoCloudChoice() {
+        showWorkbench(cloud = null, local = FakeLlmService())
+        assertTrue(compose.onAllNodes(hasTestTag(RunTags.CLOUD)).fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("On this device")
+        // A saved "cloud" choice is not honoured without a cloud service.
+        assertEquals(true, RunForm.restore(RunForm.save(RunForm(useCloud = true))).useCloud)
     }
 
     @Test fun theFeatureIsOffAndShowsTheRunTab() {
