@@ -7,4 +7,6 @@
     <string name="feature_releases_image_fallback">Captura de ecrã</string>
     <string name="feature_releases_offer">Veja o que há de novo nesta versão</string>
     <string name="feature_releases_badge">Novo</string>
+    <string name="feature_releases_kicker">Notas de versão</string>
+    <string name="feature_releases_summary">Um artigo por versão, com capturas de ecrã do que mudou.</string>
 </resources>
