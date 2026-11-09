@@ -145,7 +145,7 @@ fun ModelSetupScreen(
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(stringResource(R.string.models_setup_intro), style = MaterialTheme.typography.bodyLarge)
             Text(
-                stringResource(R.string.models_privacy, "huggingface.co"),
+                stringResource(R.string.models_privacy, stringResource(R.string.models_privacy_host)),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.testTag(ModelSetupTags.PRIVACY),
             )

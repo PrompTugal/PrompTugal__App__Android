@@ -71,7 +71,7 @@ class ModelSetupScreenTest {
             }
         }
         compose.onNodeWithTag(ModelSetupTags.PRIVACY)
-            .assertTextEquals("Downloads a model file once from huggingface.co. Nothing you type leaves the device.")
+            .assertTextEquals("Downloads a model file once from huggingface.co (and its download servers, hf.co). Nothing you type leaves the device.")
     }
 
     @Test fun theIdleResetIsHeldWhileADownloadRuns() {
