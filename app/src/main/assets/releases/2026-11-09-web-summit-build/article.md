@@ -65,7 +65,7 @@ The words and prices on those pages are riskmandate.ai's, not this app's. The ap
 Stand mode is for a tablet left running on a stand. It is **off by default** and has no button. When it is on:
 
 - the screen stays on;
-- the screen is pinned, if Android allows it, so a visitor cannot leave the app;
+- the screen is pinned, if Android allows it, which makes it harder for a visitor to leave the app. It deters; it does not lock the tablet, because Android's own unpin gesture still works (below);
 - after a set number of idle minutes the app goes back to the home screen. The default is 3 minutes, and you can set 1 to 30.
 
 **To switch it on or off:** on the home screen, **press and hold the bottom-right corner** (a square of about 48 density-independent pixels, inside the safe area). The settings panel opens. Use the "Stand mode on" switch, and Less and More for the idle minutes. When it is on, a faint dot sits in that corner.

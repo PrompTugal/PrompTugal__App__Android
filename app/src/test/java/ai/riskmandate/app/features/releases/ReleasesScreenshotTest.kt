@@ -75,15 +75,20 @@ class ReleasesScreenshotTest {
         }
     }
 
-    private fun articles() = ReleaseStore.load(ApplicationProvider.getApplicationContext<android.app.Application>(), "en")
+    /** The bundled articles (their images come from CI), else the fixture, so the shots exist on a bare checkout. */
+    private fun articles(): List<Article> =
+        ReleaseStore.load(ApplicationProvider.getApplicationContext<android.app.Application>(), "en").ifEmpty { listOf(Fixture.sample) }
+
+    private fun images(all: List<Article>): ArticleImages? = if (all.singleOrNull() === Fixture.sample) Fixture.images else null
 
     @Test fun listScreens() = shoot("list") {
         // Phone: the list. Tablet landscape draws the list and the reader, so the list shot uses the same screen.
-        ReleasesScreen(articles(), selectedDir = null, onSelect = {}, onLink = {})
+        val all = articles()
+        ReleasesScreen(all, selectedDir = null, onSelect = {}, onLink = {}, images = images(all))
     }
 
     @Test fun readerScreens() = shoot("reader") {
         val all = articles()
-        ReleasesScreen(all, selectedDir = all.first().dir, onSelect = {}, onLink = {})
+        ReleasesScreen(all, selectedDir = all.first().dir, onSelect = {}, onLink = {}, images = images(all))
     }
 }
