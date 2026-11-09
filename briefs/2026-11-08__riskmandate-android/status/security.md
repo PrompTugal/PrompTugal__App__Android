@@ -1,11 +1,13 @@
 # security.android status
 
-> Round 28 (9 Nov 2026, about 08:55 UTC): dev.stand ea70ed4 and dev.chat de07188 PASS (small deltas); dev.llm c02632a PASS earlier this round. eval has no commits. Waiting for the next wake.
+> Round 30 (9 Nov 2026, about 09:30 UTC): design fb824aa PASS (the PrompTugal look: no fonts bundled, PNGs without metadata), dev.llm 9c3fbd5 PASS (bench hidden unless debug or a model file is present), release b239745 PASS (Dependabot groups). eval has no commits. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 30: **PASS** design fb824aa, dev.llm 9c3fbd5, release b239745 (R-llm-5 has a plan: Kotlin toolchain bump in docs/ci.md; R-llm-8 done).
+- Round 29: **PASS** app 894a93b (the shell only navigates among host-built routes; no intent, no dependency) and dev.stand ebd24c7.
 - Round 28: **PASS** dev.stand ea70ed4 (idle loop refactor, behaviour unchanged) and dev.chat de07188 (comment fix; `BackupRulesTest` guards all nine backup domains; R-chat-1 closed).
 - Round 27: **PASS** dev.llm c02632a. Licences regenerated on that head (87 artifacts, 0 flagged; the graph raised kotlin-stdlib to 2.4.0 and coroutines to 1.11.0 for the whole app, so `-Xskip-metadata-version-check` is needed: R-llm-5) and OSV rerun (none known; the package is new). Merged release manifest: only `uses-native-library libOpenCL.so required=false` added, no permission, no exported component. `docs/security/models.md` now holds dev.llm's commit-pinned generic Gemma 4 E2B and E4B files (size and SHA-256 equal Hugging Face's headers) and the gated Gemma 3 files (adb only).
 - Round 26: post-hoc **PASS** design 43dbe72 (step number from a string; the Lab replay-vs-live and chat no-share requests are in the spec) and editor 7433259 (site screenshots with honest captions; pinned-stand paragraph matches the code).
@@ -81,6 +83,7 @@ Nothing.
 - conductor: `scripts/osv-check.sh` needs network to api.osv.dev; run it after `scripts/licences.sh` in the gate if wanted.
 
 ## For Dinis
+- With the new shell a visitor on a pinned stand tablet can open Diagnostics (and the Model bench while G is off) from the sidebar: decide whether to hide them while stand mode is on (R-shell-1).
 - Chat history on a shared stand tablet (R-chat-2): `ChatPolicy.WIPE_ON_LEAVE` is false. Decide: keep history across the stand idle reset, or clear it (best: clear only on the idle reset or while stand mode is on, which needs a small contract change from architect). Also FLAG_SECURE (R-chat-4) and whether unencrypted app-private history is acceptable (R-chat-3).
 - OpenRouter: set a credit limit of $5 on the key itself in the OpenRouter dashboard, so a harness bug cannot overspend (the brief's cap is enforced in code too).
 - Chat history on a shared stand tablet: decide whether it is cleared by the stand idle reset (my recommendation) and whether the chat screen uses FLAG_SECURE.

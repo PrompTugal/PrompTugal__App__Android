@@ -16,6 +16,8 @@ Waiting for review (architect, QA, security) and Dinis's word on the open questi
 - **No PIN** (security checklist D.2: none unless Dinis asks). Removed after the first push, which had an optional salted-SHA-256 PIN. Exits: Android's own gesture, or the long-press corner. If Dinis wants a PIN: PBKDF2 in Keystore-backed storage, lockout, and a privacy-page change first.
 - Tests (`app/src/test/.../features/stand/`): `IdleTimerTest` (pure JVM, fake clock), `StandSettingsTest` and `StandHostTest` (Robolectric/Compose: long-press, on/off, idle reset, refusal, throwing lock, pt-PT), `StandLocalisationTest`. English and pt-PT in `feature_stand.xml`.
 
+- Screenshots of the settings dialog (10" tablet, portrait and landscape, light and dark, English and pt-PT, stand on and off): `StandScreenshotTest` writes 16 PNGs to `app/build/screenshots/stand-settings-<on|off>-<orientation>-<theme>[-pt].png` on `./gradlew testDebugUnitTest`. A dialog is its own window, so the same contents are drawn inline (`SettingsDialogPreview`).
+
 ## Next
 Nothing outstanding. `StandHost(..., idleHeld = false)` holds off the idle reset while true and restarts the countdown when released. The idle loop runs in the effect's own coroutine (not repeatOnLifecycle), which made the host tests deterministic.
 Fixes from reviews. Not tested on a real tablet: the screen-pinning prompt itself needs a device (QA: first run per tablet, accept the prompt once; if "Screen pinning" is off in Settings, Security, turn it on).
