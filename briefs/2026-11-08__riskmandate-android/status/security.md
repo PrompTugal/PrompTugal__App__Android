@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 43 (9 Nov 2026): editor ddc7b10 PASS (R-art-4 and R-art-5 closed, new validator guard), play dff39aa PASS (R-art-6 closed). Still to read when they land: the editor icon_svg fix, and the design-pass article when it moves into assets. Waiting for the next wake.
+> Round 44 (9 Nov 2026): the whole editor head 68584d2 PASS (R-art-4 and R-art-5, validate guard, icon_svg; one low note R-art-7). Still to read when it moves: the design-pass article. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
