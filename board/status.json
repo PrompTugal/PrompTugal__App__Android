@@ -34,7 +34,8 @@
     "Dinis: brand for the app: move to riskmandate.ai's own palette and type (paper, ink, green; Geist), or keep the current neutral tokens (design.android's status page)?",
     "Dinis: read the M1 article (website/pages/articles/m1-ci-to-a-tablet-in-one-night.md on work/editor) before the site goes public; publisher details for the site.",
     "Dinis: a Contact tab in the in-app site (its form posts to another host, so it would open in the browser)? A staff PIN for stand mode after the summit?",
-    "Dinis: links tapped inside the in-app riskmandate.ai view to other https sites open in the device's own browser (never inside the app, never while pinned, only on a real tap). Today's default by the conductor, since the alternative is that such links do nothing; say if you want them blocked instead (security R-ext-2)."
+    "Dinis: links tapped inside the in-app riskmandate.ai view to other https sites open in the device's own browser (never inside the app, never while pinned, only on a real tap). Today's default by the conductor, since the alternative is that such links do nothing; say if you want them blocked instead (security R-ext-2).",
+    "Dinis: where the LLM data vault lives (graph, scenarios, results, recordings): a separate repository you create (suggest PrompTugal/RiskMandate__Android__Evidence, public) or an SG/Send vault; eval proposes the layout."
   ],
   "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
   "decisions": [
@@ -49,6 +50,7 @@
     "A public Android site, android.app.promptugal.ai, built from website/ like the iOS app's site, with a first article on M1 (Dinis, 9 Nov 2026 ~01:10 UTC: nothing here is confidential). editor.android started; release.android adds the Pages deploy.",
     "Stand mode off by default; staff switch it on per tablet (Dinis, 9 Nov 2026 ~01:15 UTC).",
     "In-app release articles ('What's new'): one Markdown article per release with CI-generated screenshots of the new screens, shared with the website (Dinis, 9 Nov 2026 ~01:15 UTC). dev.releases started.",
-    "Conductor's default, pending Dinis (9 Nov ~01:35 UTC): user-tapped https links to other sites from the in-app riskmandate.ai view open in the system browser (Browser.openExternal), never in the app, never while pinned, only on a real tap."
+    "Conductor's default, pending Dinis (9 Nov ~01:35 UTC): user-tapped https links to other sites from the in-app riskmandate.ai view open in the system browser (Browser.openExternal), never in the app, never while pinned, only on a real tap.",
+    "On-device LLM side team (Dinis's brief, 9 Nov 2026 ~01:45 UTC; briefs/2026-11-09__on-device-llm/README.md): features G model setup, H chat, I ABP Lab, and an eval harness; Google models only (Gemma 4 E2B default, E4B, smallest LiteRT model); OpenRouter cap $5 total; data in a separate vault, not this repository; chat history on the tablet only, excluded from backup. Sessions dev.llm, dev.chat, dev.lab, eval started."
   ]
 }

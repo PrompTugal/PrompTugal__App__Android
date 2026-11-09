@@ -18,6 +18,21 @@ class FeatureLinksTest {
     private val sources get() = featuresDir.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
     private val urlLiteral = Regex("""["'](?:[a-zA-Z][a-zA-Z0-9+.-]*):(?://)[^"'\s]*["']|"(?:https?|ftp|file|data|javascript|intent|market|content)[:][^"]*"""")
 
+    /**
+     * The one URL literal a feature may hold that Links.isAllowed refuses: the app's own asset origin, which the
+     * site feature (A) serves its bundled offline copy from through androidx.webkit's WebViewAssetLoader. Exact
+     * literal, in the site package only (the template form and the resolved form). That host answers from this app's
+     * `assets/feature_site/` and from nowhere else, so it is not the internet; QA checked in the review of
+     * dev.site that no navigation reaches it except through the loader and that its path stays under feature_site.
+     * Adding another origin or package means editing this map, so it is always a reviewed change.
+     */
+    private val appAssetOrigins: Map<String, Set<String>> = mapOf(
+        "site" to setOf(
+            "https://appassets.androidplatform.net/assets/feature_site/",
+            "https://\$ASSET_HOST/assets/feature_site/",
+        ),
+    )
+
     @Test fun sourcesWereFound() = assertTrue("features dir not found: wrong working directory?", sources.isNotEmpty())
 
     @Test fun everyUrlLiteralInFeatureSourcesIsAllowed() {
@@ -27,25 +42,70 @@ class FeatureLinksTest {
             val code = f.readLines().filterNot { it.trim().startsWith("//") || it.trim().startsWith("*") || it.trim().startsWith("/*") }
             for (line in code) for (m in urlLiteral.findAll(line)) {
                 val url = m.value.trim('"', '\'')
-                if (!Links.isAllowed(url)) bad += "${f.name}: $url"
+                if (url.substringAfter("://", "").isEmpty()) continue // a bare scheme prefix such as "https://" names no host
+                if (!Links.isAllowed(url) && url !in appAssetOrigins[f.parentFile.name].orEmpty()) bad += "${f.name}: $url"
             }
         }
         assertEquals("URL literals outside Links.isAllowed", emptyList<String>(), bad)
     }
 
-    /** Any code that navigates somewhere must name the allow-list in the same file. */
+    @Test fun appAssetOriginIsPinnedToTheOneHostAndFolder() {
+        for ((pkg, urls) in appAssetOrigins) {
+            val dir = File(featuresDir, pkg)
+            if (!dir.isDirectory) continue // not merged to this branch yet
+            val text = dir.walkTopDown().filter { it.extension == "kt" }.joinToString("\n") { it.readText() }
+            // The origin must stay the one host and folder, and the host constant must not be changed to another host.
+            if (text.contains("ASSET_HOST")) {
+                assertTrue("$pkg: ASSET_HOST must be appassets.androidplatform.net", text.contains("ASSET_HOST = \"appassets.androidplatform.net\""))
+            }
+            for (u in urls) assertFalse("$u is allowed: it needs no exemption", Links.isAllowed(u))
+        }
+    }
+
+    /**
+     * Any code that navigates must go through the allow-list: the file names `Links.` itself, or uses a type
+     * declared in a file of the same feature that does (e.g. `SitePolicy`, whose `decide` calls `Links.isAllowed`).
+     * And every feature that navigates has at least one file that names `Links.isAllowed`.
+     */
     @Test fun navigatingCodeConsultsTheAllowList() {
         val navigates = Regex("""\bloadUrl\(|\bloadDataWithBaseURL\(|\bACTION_VIEW\b|CustomTabsIntent|\bstartActivity\(|shouldOverrideUrlLoading|shouldInterceptRequest|\bUri\.parse\(""")
-        val offenders = sources.filter { navigates.containsMatchIn(it.readText()) && !it.readText().contains("Links.isAllowed") && !it.readText().contains("Links.") }
-            .map { it.name }
-        assertEquals("files that navigate without consulting Links", emptyList<String>(), offenders)
+        val decl = Regex("""^\s*(?:internal\s+|private\s+)?(?:data\s+|enum\s+)?(?:object|class)\s+(\w+)""", RegexOption.MULTILINE)
+        val offenders = mutableListOf<String>()
+        for (dir in featuresDir.listFiles { f -> f.isDirectory }.orEmpty()) {
+            val files = dir.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+            val gated = files.filter { it.readText().contains("Links.isAllowed") }
+            val gateTypes = gated.flatMap { f -> decl.findAll(f.readText()).map { it.groupValues[1] }.toList() }.toSet()
+            val navigating = files.filter { navigates.containsMatchIn(it.readText()) }
+            if (navigating.isNotEmpty() && gated.isEmpty()) offenders += "${dir.name}: navigates, no file names Links.isAllowed"
+            for (f in navigating) {
+                val t = f.readText()
+                val ok = t.contains("Links.") || gateTypes.any { Regex("""\b$it\b""").containsMatchIn(t) }
+                if (!ok) offenders += "${dir.name}/${f.name}"
+            }
+        }
+        assertEquals("navigating code that does not go through the allow-list", emptyList<String>(), offenders)
     }
 
     @Test fun webViewIsNeverGivenFileOrContentAccessOrJavascriptBridgeWithoutReview() {
-        // Review triggers, not bans: if one of these appears QA reads the code before PASS.
-        val risky = Regex("""allowFileAccessFromFileURLs|allowUniversalAccessFromFileURLs|setAllowContentAccess\(\s*true|addJavascriptInterface|setJavaScriptCanOpenWindowsAutomatically\(\s*true|MIXED_CONTENT_ALWAYS_ALLOW|setAllowFileAccess\(\s*true|onReceivedSslError""")
+        // Review triggers, not bans: only an enabling value matches (`= false` is fine), so a locked-down
+        // WebView passes; anything that opens a hole makes QA read the code before PASS.
+        val risky = Regex(
+            """allowFileAccessFromFileURLs\s*=\s*true|allowUniversalAccessFromFileURLs\s*=\s*true|allowFileAccess\s*=\s*true|allowContentAccess\s*=\s*true|""" +
+                """setAllowFileAccess(?:FromFileURLs)?\(\s*true|setAllowUniversalAccessFromFileURLs\(\s*true|setAllowContentAccess\(\s*true|""" +
+                """addJavascriptInterface|javaScriptCanOpenWindowsAutomatically\s*=\s*true|setJavaScriptCanOpenWindowsAutomatically\(\s*true|""" +
+                """MIXED_CONTENT_ALWAYS_ALLOW|MIXED_CONTENT_COMPATIBILITY_MODE|\bproceed\(\s*\)|safeBrowsingEnabled\s*=\s*false|WebView\.setWebContentsDebuggingEnabled""")
         val hits = sources.filter { risky.containsMatchIn(it.readText()) }.map { it.name }
         assertEquals("risky WebView settings: QA must review (then adjust this test with a reason)", emptyList<String>(), hits)
+    }
+
+    @Test fun aWebViewFeatureLocksTheSettingsDown() {
+        // Positive check: a feature that creates a WebView must switch file access, content access and mixed content off.
+        for (f in sources.filter { Regex("""\bWebView\(""").containsMatchIn(it.readText()) || it.readText().contains("WebView.") }) {
+            val pkg = f.parentFile.walkTopDown().filter { it.extension == "kt" }.joinToString("\n") { it.readText() }
+            for (needle in listOf("allowFileAccess = false", "allowContentAccess = false", "MIXED_CONTENT_NEVER_ALLOW")) {
+                assertTrue("${f.parentFile.name}: a WebView feature must set $needle", pkg.contains(needle))
+            }
+        }
     }
 
     @Test fun noFeatureResourceHoldsAUrlOutsideTheAllowList() {

@@ -42,7 +42,7 @@
     <string name="mandate_managed_unset">not set</string>
     <string name="mandate_managed_refused">%1$s was set but refused, so the default is used</string>
     <string name="mandate_mandate_allowed">Reach it allows, and why</string>
-    <string name="mandate_reason_open_pages">to open riskmandate.ai in your browser</string>
+    <string name="mandate_reason_open_pages">to open riskmandate.ai pages, in the in-app view or in your browser</string>
     <string name="mandate_reason_offline_hint">to tell you when the device is offline</string>
     <string name="mandate_reason_launcher">the one screen that starts the app</string>
     <string name="mandate_reason_internal_guard">guards the app\'s own receivers; only apps signed by the same key can hold it</string>
@@ -54,7 +54,7 @@
     <string name="mandate_reason_site_storage">web storage of the in-app riskmandate.ai view, on this device only</string>
     <string name="mandate_reason_site_cache">cache of the in-app riskmandate.ai view; Android can clear it</string>
 
-    <string name="mandate_mandate_data">Data collected by the app: none. It has no analytics, accounts or identifiers. The only network traffic is loading riskmandate.ai pages, in your browser or in the in-app view.</string>
+    <string name="mandate_mandate_data">Data collected by the app: none. It has no analytics, accounts or identifiers. The app itself connects only to riskmandate.ai and www.riskmandate.ai, and only through the in-app site view. Pages it opens in your browser are the browser\'s own traffic. Links to other sites are not loaded in the app.</string>
     <string name="mandate_connects">This app connects to: %1$s (the in-app site view)</string>
     <string name="mandate_connects_none">This app connects to nothing itself. Pages open in your browser, which makes its own connection.</string>
     <string name="mandate_reason_site_view">the in-app riskmandate.ai view loads pages from this host</string>

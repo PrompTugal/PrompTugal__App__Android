@@ -13,7 +13,9 @@ Context: the app runs on the team's own tablets at a stand, mostly in landscape,
 | X-4 | Every feature string exists in pt-PT, is not blank or a placeholder, uses the same format arguments as English | `qa/FeatureStringsTest` |
 | X-5 | No feature screen hardcodes text | `qa/FeatureStringsTest` |
 | X-6 | No URL literal in feature code, no feature string and no navigation outside `Links.isAllowed`; code that navigates names `Links`; no risky WebView settings (file access, JS bridge, mixed content, SSL-error override) | `qa/FeatureLinksTest` |
-| X-7 | Only `MainActivity` is exported; cleartext stays off | `qa/FeatureLinksTest` |
+| X-7 | Only `MainActivity` is exported; cleartext stays off. The source manifest is checked by `qa/FeatureLinksTest`; the **merged release manifest** (libraries add components, e.g. `ProfileInstallReceiver`) is checked by hand: `aapt2 dump xmltree --file AndroidManifest.xml app-release.apk` shows one `exported=true` | Auto (source) + Manual (APK) |
+| X-12 | One Back button and one title per feature screen (the host `FeatureFrame` draws them; a feature draws content only) | `qa/FeatureNavigationTest` checks the frame Back and title exist; duplicates are found by looking (probe for site in `docs/qa/reviews/`) |
+| X-11 | A control in any screen corner, bottom-end included, still gets its taps (stand mode's staff corner must not cover it) | Manual + probe in `docs/qa/reviews/` until fixed |
 | X-8 | Touch targets at least 48 dp, readable at font scale 200%, light and dark | Manual (and the feature's own tests) |
 | X-9 | Claims about RiskMandate, ABP or Sharness appear only if riskmandate.ai or sharness.ai says them. No benchmark, customer, price or certification claim | Manual (read every string; ask the owner for the source line) |
 | X-10 | The app asks for no new permission and collects nothing (the manifest has INTERNET and ACCESS_NETWORK_STATE only; Mandate view must say the same) | Manual: `aapt dump permissions` on the CI APK |
@@ -52,7 +54,7 @@ Context: the app runs on the team's own tablets at a stand, mostly in landscape,
 | C-1 | Shows reach (what the app can touch: permissions as granted on this device), mandate (the allow-list: `Links` hosts) and gap (what is not covered) | Manual |
 | C-2 | Values are read live from this device (PackageManager, `Links`), not hardcoded: change a permission or the managed `start_url` in a test, reopen, the screen changes | Feature test + Manual |
 | C-3 | Matches the manifest: only INTERNET and ACCESS_NETWORK_STATE; matches `Links` (riskmandate.ai, www.riskmandate.ai, https only, port 443) | Feature test (cross-checks the manifest) |
-| C-4 | States that the app collects nothing, and that is true: no analytics, no stored data (check the code for storage and network calls other than the WebView) | Review of code |
+| C-4 | States that the app collects nothing, and that is true: no analytics, no personal data (check the code for storage and network calls other than the WebView). The one stored thing is the stand-mode setting (on/off, idle minutes) in private SharedPreferences: the screen must say so, not claim "no data stored" | Review of code |
 | C-5 | No claim beyond riskmandate.ai; no "secure", "compliant" or "certified" wording | Manual |
 | C-6 | Works on a managed and an unmanaged device (Device section on home agrees with it) | Manual |
 | C-7 | Rotation, Back, pt-PT, 200% font scale as X-3, X-4, X-8 | as X |
@@ -60,7 +62,7 @@ Context: the app runs on the team's own tablets at a stand, mostly in landscape,
 ## D. Stand mode (`features/stand/StandHost.kt`)
 | # | Criterion | How |
 |---|---|---|
-| D-1 | On and off from the home screen; the state is visible and survives rotation | Manual + feature test |
+| D-1 | On and off by staff (the brief says from the home screen; the build uses a long-press on the bottom-end corner of any screen, a faint dot shows while on; Dinis to confirm); the state survives rotation and restart (a tablet back from the drawer is still in stand mode) | Manual + feature test |
 | D-2 | On: Android asks once to pin the screen (startLockTask); after accepting, Home and Recents do not leave the app. Off: the pin is released (`stopLockTask`) | Manual (the system dialog cannot be driven on the JVM) |
 | D-3 | On: the screen stays on (no sleep, no dim to black) for at least 20 minutes untouched; off: normal timeout returns | Manual |
 | D-4 | On: after N idle minutes the app returns to the home screen from any screen (site, ABP demo, Mandate, Licences, Diagnostics) and the animation/page state is reset; any touch resets the idle timer; N is stated | Feature test with a fake clock + Manual |
@@ -97,7 +99,7 @@ Do it on the tablet that will be on the stand, on the venue Wi-Fi, in the orient
 | 4:00 | 6 | Wi-Fi on. **ABP demo**: tap it, play it to the end, replay, press Back mid-way | Says "demonstration"; six layers stop the planted instruction; Back goes home | [ ] |
 | 5:30 | 7 | **Mandate**: tap it; read the three parts | Reach, mandate, gap; permissions are Internet and network state only; says it collects nothing | [ ] |
 | 6:30 | 8 | Rotate to portrait and back while on a feature | Same screen, nothing lost, nothing cut off | [ ] |
-| 7:00 | 9 | **Stand mode**: switch it on from home; accept the pin dialog; press Home and Recents | Cannot leave the app; screen stays on | [ ] |
+| 7:00 | 9 | **Stand mode**: long-press the bottom-end corner (a staff dialog opens), switch it on; accept the pin dialog; press Home and Recents | Cannot leave the app; screen stays on | [ ] |
 | 8:00 | 10 | In stand mode open the site, leave it alone for the idle time (N minutes, per the screen) | Returns to home by itself | [ ] |
 | 9:00 | 11 | Unpin (hold Back and Overview, or the way the screen says); switch stand mode off | Normal again | [ ] |
 | 9:30 | 12 | Switch stand mode **on** again, leave the app on home | Ready for the doors. Note the time and the build number | [ ] |
