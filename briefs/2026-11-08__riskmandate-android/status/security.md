@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 31 (9 Nov 2026, about 09:40 UTC): architect c9233a0 PASS (P7: icon, kicker, summary: read-only values, no capability). Waiting for the next wake (app host lines for LiteRT-LM and the eval harness are next).
+> Round 32 (9 Nov 2026): dev.lab acf34e8 PASS (R-lab-1 and R-lab-2 met; two low notes). Waiting for the next wake (app host lines for LiteRT-LM, eval harness, dev.llm 78a454e, design e2b96aa, qa 680c53d are next).
 
 ## Doing
 Nothing. Stopped until woken.
