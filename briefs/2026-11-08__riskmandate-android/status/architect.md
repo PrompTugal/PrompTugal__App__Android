@@ -6,6 +6,7 @@
 Waiting for the first feature or app commits to review.
 
 ## Done
+- P6 pushed: `Feature.homeBadge()` (default null) plus `FeatureBadgeTest` (default, override, every listed feature answers). Gate green. README: the host must not import feature packages except `StandHost`.
 - On-device LLM rules (README): one host-held `LlmHost` per process (the one sanctioned process-wide object), a serialised service, a Flow-based contract shape, tool calls proposed by the model and validated in Kotlin per feature, plain-text output, pinned downloads over HttpURLConnection with Range, and storage paths with backup exclusions. Dependencies: LiteRT-LM approved in principle; org.json for JSON; Room, WorkManager, kotlinx-serialization and ViewModel not without a reason.
 - Review round 6: app 95e7978 PASS (A-app-7 closed; A-app-8 still open; A-app-9 new: Browser.open ignores pinning); qa bdb73a5 PASS (guards precise); site ee25896 PASS (openExternal only on real main-frame taps); mandate 42f7a7b PASS (network wording true); releases 61d2b70 PASS (A-rel-1: the host must not call into the feature; proposal P6). Trial merge of all of them: green, 253 tests.
 - Deleted the transitional `FeatureContext(activity, onBack)` constructor (ffa3c6b), since app f317cf8 is on dev. Gate green.

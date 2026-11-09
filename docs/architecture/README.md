@@ -92,6 +92,7 @@ No new dependency without the architect's OK (in your status page, then in a rev
   - app (MainActivity): `val idle = remember { IdleHolds() }`; `FeatureContext(..., holdIdle = idle::hold)`; `StandHost(..., idleHeld = idle.held)`. **No** `LaunchedEffect(route) { idle.clear() }`: it runs after the feature's hold is taken and wipes it (app review A-app-7). `HoldIdleWhile` already releases when the feature leaves.
   - stand (StandHost): new parameter `idleHeld: Boolean = false`; while true, do not reset; when it turns false, `timer.touch()` so the countdown starts again from that moment.
   - abpdemo: `context.HoldIdleWhile(auto)` in `Content`.
+- **9 Nov, P6 (architect, approved by the conductor):** `@Composable @StringRes fun homeBadge(): Int? = null` on `Feature`. The home screen asks every enabled feature for a badge and shows it on the button; the host never imports a feature package (releases' "New" after an update uses it). Disk reads inside it go off the main thread. The host must not call into a feature package for anything else either (`ReleasesNotice`, `StandSettings`, ...); `StandHost` is the one sanctioned host entry point into `features/stand/`.
 - Anything else a feature needs from the host: ask (above). A new field needs a reason and a test.
 
 ## On-device LLM (side team: dev.llm, dev.chat, dev.lab, eval; brief `briefs/2026-11-09__on-device-llm/`)
