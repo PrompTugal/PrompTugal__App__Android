@@ -61,7 +61,7 @@ Every session that replied was idle, with a clean tree, nothing unpushed, and no
 | design | 23:37 | Idle after 55026cb. |
 | dev.chat | 23:37 | Idle after 9466c5d. |
 | release | 23:37 | Idle, open list empty. Last push fdfebde. |
-| app | no reply yet | Message delivered 23:37. No commits since 16:31. |
-| security | no reply yet | Message delivered 23:37. Last commit 18:57. |
+| app | 23:37 | Idle after f4a73c6. (Its own clock said 14:3x; the message arrived at 23:37 UTC.) |
+| security | 23:37 | Idle after the 3c2ba0f review and record; last push 727aeb1. It complied because the stop asks only for the safe thing. |
 
-From the order reaching this session (23:35:48) to 11 of 13 replies took under 2 minutes.
+From the order reaching this session (23:35:48) to all 13 replies took under 2 minutes.
