@@ -60,14 +60,14 @@ class MandateScreenTest {
 
     @Test fun noGapIsSaidPlainly() {
         show(state(cleanReach))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 4, mandate 9, gap 0")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 4, mandate 14, gap 0")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Gap: none. Everything this app can reach, its mandate needs.")
     }
 
     @Test fun aGapIsShownPlainlyWithItsItems() {
         show(state(cleanReach + dump))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 5, mandate 9, gap 1")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Reach 5, mandate 14, gap 1")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Gap: 1. This app can reach things its mandate does not need:")
         compose.onNodeWithTag(MandateTags.gapItem(dump.key)).performScrollTo().assertIsDisplayed()
@@ -104,7 +104,7 @@ class MandateScreenTest {
     @Test @Config(qualifiers = "pt-rPT")
     fun portugueseOnAPortugueseDevice() {
         show(state(cleanReach + dump))
-        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Alcance 5, mandato 9, lacuna 1")
+        compose.onNodeWithTag(MandateTags.SUMMARY).assertTextEquals("Alcance 5, mandato 14, lacuna 1")
         compose.onNodeWithTag(MandateTags.GAP_STATUS)
             .assertTextEquals("Lacuna: 1. Esta app consegue alcançar coisas de que o seu mandato não precisa:")
         compose.onNodeWithText("Dados recolhidos por esta app: nenhuns", substring = true).performScrollTo().assertIsDisplayed()
@@ -146,17 +146,24 @@ class MandateScreenTest {
             java.io.File(data, it).also { f -> f.parentFile!!.mkdirs(); f.writeText("x") }
         }
         java.io.File(app.cacheDir, "c.bin").writeText("x")
+        val chat = java.io.File(app.noBackupFilesDir, "feature_chat/history.json").also { it.parentFile!!.mkdirs(); it.writeText("x") }
+        val stray = java.io.File(app.noBackupFilesDir, "stray.bin").also { it.writeText("x") }
+        val ext = java.io.File(app.getExternalFilesDir(null), "models/m.bin").also { it.parentFile!!.mkdirs(); it.writeText("x") }
         try {
             val items = ReachCollector.storage(app).associateBy { it.id }
-            assertEquals(setOf("files/x.txt", "shared_prefs/stand_mode.xml", "app_webview", "cache"), items.keys)
+            assertEquals(
+                setOf("files/x.txt", "shared_prefs/stand_mode.xml", "app_webview", "cache", "no_backup/feature_chat", "no_backup/stray.bin", "external/models"),
+                items.keys,
+            )
             assertEquals(2, items.getValue("app_webview").count)
             val report = MandateReport(ReachCollector.collect(app), mandate)
             // Stand's settings, the in-app view's storage and its cache are mandated; a stray file is not.
-            assertEquals(listOf("files/x.txt"), report.gap.filter { it.kind == ReachKind.STORAGE }.map { it.id })
+            assertEquals(listOf("files/x.txt", "no_backup/stray.bin"), report.gap.filter { it.kind == ReachKind.STORAGE }.map { it.id })
         } finally {
             made.forEach { it.delete() }
             java.io.File(app.cacheDir, "c.bin").delete()
             java.io.File(data, "app_webview").deleteRecursively()
+            chat.parentFile!!.deleteRecursively(); stray.delete(); ext.parentFile!!.deleteRecursively()
         }
     }
 
