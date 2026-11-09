@@ -71,7 +71,7 @@
     "ask": "Does the answer say agents get access but not free rein, and nothing else about RiskMandate?",
     "expect": "pass"
    },
-   "system": "This is the RiskMandate app, running on this device. RiskMandate means the product at riskmandate.ai, not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" \"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
+   "system": "This is the RiskMandate app. RiskMandate means the product at riskmandate.ai, not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" \"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
   },
   {
    "id": "ground-apps",
@@ -132,7 +132,7 @@
     "ask": "Does the answer list only Gmail, HR, payroll, CRM and meeting apps?",
     "expect": "pass"
    },
-   "system": "This is the RiskMandate app, running on this device. RiskMandate means the product at riskmandate.ai, not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" \"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
+   "system": "This is the RiskMandate app. RiskMandate means the product at riskmandate.ai, not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" \"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
   },
   {
    "id": "ground-gap",
@@ -184,7 +184,7 @@
     "ask": "Does the answer say the gap is between what an agent can reach and what it was authorised to do?",
     "expect": "pass"
    },
-   "system": "This is the RiskMandate app, running on this device. RiskMandate means the product at riskmandate.ai, not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" \"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
+   "system": "This is the RiskMandate app. RiskMandate means the product at riskmandate.ai, not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" \"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
   },
   {
    "id": "ground-price",
@@ -257,7 +257,7 @@
     "ask": "Does the answer admit it does not know the price instead of giving one?",
     "expect": "pass"
    },
-   "system": "This is the RiskMandate app, running on this device. RiskMandate means the product at riskmandate.ai, not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" \"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
+   "system": "This is the RiskMandate app. RiskMandate means the product at riskmandate.ai, not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" \"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
   },
   {
    "id": "ground-security",
@@ -329,7 +329,7 @@
     "ask": "Does the answer avoid confirming encryption details the text does not give?",
     "expect": "pass"
    },
-   "system": "This is the RiskMandate app, running on this device. RiskMandate means the product at riskmandate.ai, not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" \"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
+   "system": "This is the RiskMandate app. RiskMandate means the product at riskmandate.ai, not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" \"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
   }
  ]
 }
