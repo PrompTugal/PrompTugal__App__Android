@@ -53,6 +53,9 @@ private val MinTouch = 48.dp
 /** Landscape and at least this wide: two panes side by side (7" and 10" tablets, phones on their side). */
 private val TwoPaneMinWidth = 640.dp
 
+/** Open and the feature buttons share a width, so the column looks tidy. */
+private val ButtonMinWidth = 240.dp
+
 /** Content never gets wider than this, so lines stay readable on a 10" tablet. */
 private val ContentMaxWidth = 560.dp
 
@@ -116,21 +119,12 @@ private fun ColumnScope.PrimaryPane(onOpen: () -> Unit, @StringRes message: Int?
     Button(
         onClick = onOpen,
         modifier = Modifier
+            .widthIn(min = ButtonMinWidth)
             .heightIn(min = MinTouch)
             .testTag(HomeTags.OPEN)
             .semantics { onClick(label = openAction, action = null) },
     ) {
         Text(stringResource(R.string.home_open))
-    }
-    // The summit features (features/Features.kt), one button each, under the main action.
-    for (f in features) {
-        Spacer(Modifier.height(12.dp))
-        OutlinedButton(
-            onClick = f.onClick,
-            modifier = Modifier.heightIn(min = MinTouch).testTag(HomeTags.feature(f.id)),
-        ) {
-            Text(stringResource(f.title))
-        }
     }
     if (message != null) {
         Spacer(Modifier.height(12.dp))
@@ -142,6 +136,16 @@ private fun ColumnScope.PrimaryPane(onOpen: () -> Unit, @StringRes message: Int?
             // Announced by TalkBack as soon as it appears.
             modifier = Modifier.testTag(HomeTags.MESSAGE).semantics { liveRegion = LiveRegionMode.Polite },
         )
+    }
+    // The summit features (features/Features.kt), one button each, under the main action.
+    for (f in features) {
+        Spacer(Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = f.onClick,
+            modifier = Modifier.widthIn(min = ButtonMinWidth).heightIn(min = MinTouch).testTag(HomeTags.feature(f.id)),
+        ) {
+            Text(stringResource(f.title))
+        }
     }
 }
 
