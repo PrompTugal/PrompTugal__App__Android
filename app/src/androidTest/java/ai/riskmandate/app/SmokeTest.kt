@@ -1,5 +1,6 @@
 package ai.riskmandate.app
 
+import ai.riskmandate.app.features.FEATURES
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -12,7 +13,7 @@ import org.junit.runner.RunWith
 
 /**
  * Smoke test on a real or emulated device: launches MainActivity and walks the home, licences and
- * diagnostics screens. Run with `./gradlew connectedDebugAndroidTest`. It never taps Open, because
+ * diagnostics screens and every enabled feature (open, rotate, back). Run with `./gradlew connectedDebugAndroidTest`. It never taps Open, because
  * that leaves the app for a browser.
  */
 @RunWith(AndroidJUnit4::class)
@@ -39,5 +40,38 @@ class SmokeTest {
         compose.onNodeWithTag(DiagnosticsTags.COPY).assertIsDisplayed()
         compose.onNodeWithTag(DiagnosticsTags.BACK).performClick()
         compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+    }
+
+    private fun back() {
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+    }
+
+    /** Every enabled feature opens from home and Back returns (a disabled one has no button). */
+    @Test fun everyEnabledFeatureOpensAndBackReturns() {
+        for (f in FEATURES.filter { it.enabled }) {
+            compose.onNodeWithTag(HomeTags.feature(f.id)).performScrollTo().assertIsDisplayed().performClick()
+            compose.waitForIdle()
+            compose.onNodeWithTag(HomeTags.OPEN).assertDoesNotExist()
+            back()
+            compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+        }
+    }
+
+    /** Recreating the activity (what a rotation does) keeps the user on the feature screen. */
+    @Test fun rotationKeepsEveryEnabledFeatureScreen() {
+        for (f in FEATURES.filter { it.enabled }) {
+            compose.onNodeWithTag(HomeTags.feature(f.id)).performScrollTo().performClick()
+            compose.waitForIdle()
+            compose.activityRule.scenario.recreate()
+            compose.waitForIdle()
+            compose.onNodeWithTag(HomeTags.OPEN).assertDoesNotExist()
+            back()
+            compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+        }
+    }
+
+    @Test fun disabledFeaturesHaveNoButton() {
+        for (f in FEATURES.filter { !it.enabled }) compose.onNodeWithTag(HomeTags.feature(f.id)).assertDoesNotExist()
     }
 }
