@@ -31,5 +31,5 @@ For each model, scenario, temperature (0, 0.3, 0.7, 1.0), seed (three by default
 ## Backends
 
 1. `openrouter`: hosted weights, precision chosen by the provider (recorded: `provider`, and `quantisation: provider-chosen, unknown`). `models.json` says which Google size stands in for which on-device model; OpenRouter lists no Gemma 4 E2B or E4B.
-2. `local-litert-lm`: the real E2B weights on this machine's CPU, see `docs` in the status page for the state.
+2. `local-litert-lm`: the real Gemma 4 E2B weights (`gemma-4-E2B-it.litertlm`, checksum pinned in `models.json`, verified before load) on this machine's CPU through LiteRT-LM's Python API (`pip install litert-lm-api` in a venv outside the repository; run `run.py --backend local` with that interpreter). Native tool calling, as the app will use. 4 cores, about 10 to 20 s per run.
 3. The tablet: loop-mode export in the same format, see `FORMATS.md`.
