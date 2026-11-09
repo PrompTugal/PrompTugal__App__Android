@@ -41,6 +41,8 @@ Waiting for conductor review. design.android's shared components have not landed
 
 - Twelfth round (design ruling, `docs/design/android-theme.md` "Icons", on `work/design`): `Feature.icon` is left null, so the host's id-based line icon applies; my `Icons.Filled.CheckCircle` override is removed. Kicker and summary stay.
 
+- Thirteenth round (conductor): mandate entry `no_backup/feature_workbench` for the Workbench run log (reason: settings, figures, the first 200 characters of each prompt and 300 of each answer, at most 500 runs, on this device only, never backed up; limits checked against `RunLog.kt` on `work/dev.llm`: `PROMPT_CHARS = 200`, `ANSWER_CHARS = 300`, `MAX_ENTRIES = 500`). Folder level, like chat. **Still to do, when dev.chat's policy code is on dev:** `no_backup/feature_cloud` (the encrypted key) and a `connects:openrouter.ai` entry derived from its URL policy the way the Hugging Face hosts are (asked of the real code, look-alikes included). I did not add them from the message alone: no such code is on dev, and the mandate must not claim storage or network that a build does not have.
+
 ## Vocabulary (riskmandate.ai, https://riskmandate.ai/, read 9 Nov 2026)
 - Reach: "Everything the agent can actually access in this deployment, including what nobody thought to check."
 - Mandate: "The job, written down: what the business authorised it to do."

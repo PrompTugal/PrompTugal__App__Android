@@ -37,7 +37,7 @@ data class ReachItem(
 }
 
 /** Why the mandate allows an item. Mapped to a string resource in the UI, so the reasons are translated. */
-enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE, SITE_VIEW, SHELL_UI, RELEASES_SEEN, CHAT_HISTORY, MODELS, MODELS_ADB, MODEL_CHOICE, MODEL_DOWNLOAD }
+enum class Reason { OPEN_ALLOWED_PAGES, OFFLINE_HINT, LAUNCHER, INTERNAL_GUARD, STAND_SETTINGS, SITE_STORAGE, SITE_CACHE, SITE_VIEW, SHELL_UI, RELEASES_SEEN, CHAT_HISTORY, MODELS, MODELS_ADB, MODEL_CHOICE, MODEL_DOWNLOAD, WORKBENCH_LOG }
 
 data class MandateEntry(val kind: ReachKind, val id: String, val reason: Reason) {
     val key: String get() = "${kind.name.lowercase()}:$id"
@@ -105,6 +105,7 @@ data class Mandate(
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", Reason.RELEASES_SEEN),
                 MandateEntry(ReachKind.STORAGE, "shared_prefs/feature_models.xml", Reason.MODEL_CHOICE),
                 MandateEntry(ReachKind.STORAGE, "no_backup/feature_chat", Reason.CHAT_HISTORY),
+                MandateEntry(ReachKind.STORAGE, "no_backup/feature_workbench", Reason.WORKBENCH_LOG),
             ) + modelFileEntries(),
             hosts = HOSTS,
             port = 443,

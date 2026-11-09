@@ -62,6 +62,7 @@ class MandateModelTest {
             ReachItem(ReachKind.STORAGE, "shared_prefs/feature_models.xml", count = 1),
             ReachItem(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", count = 1),
             ReachItem(ReachKind.STORAGE, "no_backup/feature_chat", count = 1),
+            ReachItem(ReachKind.STORAGE, "no_backup/feature_workbench", count = 1),
         )
         assertTrue(MandateReport(cleanReach + mandated, mandate).gapIsEmpty)
         val stray = ReachItem(ReachKind.STORAGE, "shared_prefs/other.xml", count = 1)
