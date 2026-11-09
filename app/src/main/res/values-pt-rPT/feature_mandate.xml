@@ -70,6 +70,6 @@
     <string name="mandate_reason_models">ficheiros de modelos de linguagem guardados dentro da app, só neste dispositivo, nunca copiados para a nuvem</string>
     <string name="mandate_reason_models_adb">ficheiros de modelos de linguagem postos na pasta da própria app no armazenamento partilhado (por exemplo com adb), nunca copiados para a nuvem</string>
     <string name="mandate_reason_model_choice">que modelo de linguagem escolheu, só neste dispositivo</string>
-    <string name="mandate_reason_model_download">o botão Descarregar da configuração do modelo vai buscar um modelo aqui, só quando o toca</string>
+    <string name="mandate_reason_model_download">só quando toca em Descarregar em Configurar modelo, para ir buscar um modelo aqui</string>
     <string name="mandate_gap_heading">Lacuna: alcance menos mandato</string>
 </resources>
