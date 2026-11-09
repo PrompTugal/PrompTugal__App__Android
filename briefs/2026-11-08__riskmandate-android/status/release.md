@@ -47,3 +47,11 @@ The Firebase step had the `npm ci` line and the `firebase` command joined into o
 ## Update: make-upload-key.sh message
 Closing message now points to Settings > Environments > release > Environment secrets and lists `FIREBASE_APP_ID`, `GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT` as environment variables; the header documents the no-JDK `docker run` form (note on root-owned files on Linux). `bash -n` and secret-scan pass.
 - For play.android: `docs/play/README.md` line 89 still says "four repository secrets"; they now live under Settings > Environments > release.
+
+## Update: CI cheap and fast (from conductor) and the licence-gate failure on dev
+- **Found and fixed:** dev runs 28 to 31 all failed at my licence gate inside `check` (every artifact UNKNOWN: with the warm Gradle cache restored there are no POMs for `licences.sh` to read), so `release` has not run since run 27. The gate is now its own parallel job `licences` with a fresh Gradle home; `release` needs `check` and `licences`. Cause is inferred from the log; the next dev run is the test.
+- **Docs-only pushes:** `push` has a `paths` filter (app/, gradle/, .github/, *.gradle.kts, gradle.properties, gradlew*, scripts/); docs, board, briefs, devices/ runs nothing (so no Firebase notification).
+- **Concurrency per job:** check, licences, smoke cancel older runs; release never cancelled once running (group `release-<ref>`).
+- **Run time:** median 5.6 min before the smoke job, 12.7 min with it (measured from the Actions API, in `docs/ci.md`), of which about 8 min was waiting for the previous run; expected about 7 to 8 min after this change, to re-measure.
+- Gate, actionlint, secret-scan pass. Untested live: the paths filter, pending-release replacement, and the licences job on a runner.
+- For conductor: a docs-only push to dev now produces no run; the latest run is not a signal for it.

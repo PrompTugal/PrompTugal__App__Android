@@ -6,8 +6,9 @@ Only Dinis adds secrets (repository settings, Secrets and variables, Actions). A
 
 | Job | Runs on | Does |
 |---|---|---|
-| `check` | every push to `dev`, every pull request, manual | unit tests and lint, then the dependency licence gate; uploads the reports (`reports-<run>`), Robolectric screenshots when `app/build/screenshots/` exists (`screenshots-<run>`) and the licence list (`licences-<run>`), always, pass or fail |
-| `release` | push to `dev` and manual runs on `dev`, after `check` passes, in the GitHub Environment `release` | release notes, release APK and AAB, signing, artifact `riskmandate-<version>`, distribution |
+| `check` | every push to `dev` that touches a build path (below), every pull request, manual | unit tests and lint; uploads the reports (`reports-<run>`) and Robolectric screenshots when `app/build/screenshots/` exists (`screenshots-<run>`), always, pass or fail |
+| `licences` | same, in parallel with `check` | the dependency licence gate (below); uploads the licence list (`licences-<run>`); `release` needs it |
+| `release` | push to `dev` and manual runs on `dev`, after `check` and `licences` pass, in the GitHub Environment `release` | release notes, release APK and AAB, signing, artifact `riskmandate-<version>`, distribution |
 | `smoke` | after `release`, same triggers | emulator smoke test of the release APK (below); nothing depends on it |
 
 Both jobs write a job summary: version, application ID (read from the built APK with `aapt2 dump badging`, never hardcoded, so a change of ID needs no workflow edit), signed or not, and each distribution step as ran, FAILED or skipped with the reason.
@@ -28,9 +29,30 @@ Flakiness, how it is handled:
 
 **Untested from here** (no way to run workflows, no KVM in this session): the whole `smoke` job, the `uiautomator dump` text match on a real emulator (Compose text should appear as `text="..."`), and the throwaway-signing step. `actionlint` and shellcheck (through it) pass; `scripts/smoke-test.sh` was only syntax-checked.
 
+## Cost under load: what runs, what is cancelled, how long it takes
+
+**Docs-only pushes run nothing.** The `push` trigger has a `paths` filter: the workflow runs on a push to `dev` only if it changes a file under `app/`, `gradle/` or `.github/`, any `*.gradle.kts`, `gradle.properties`, `gradlew`, `gradlew.bat` or `scripts/`. A push that changes only `docs/`, `board/`, `briefs/`, `devices/`, `README.md` and the like has no run: no tests, no build, no Firebase notification, no GitHub release, and no run number used (so versions skip nothing). GitHub evaluates the filter on every commit of the push, so a push that carries one app change still builds. Pull requests and manual runs are not filtered. Consequences: the conductor sees no new run for a docs-only push (the last run stays the latest signal); `devices/` changes are not built (the APK does not contain them and its tests are not part of this workflow, run `node --test devices/test/*.test.mjs` as the gate says); a change to a path outside the list that the build reads would need adding to it.
+
+**Concurrency is per job** (it was per workflow, which made a push wait for the whole previous run, smoke test included):
+- `check`, `licences`, `smoke`: `cancel-in-progress: true` per ref. A newer push cancels the older run's job; the older run's `release` then does not start (`needs`), so that commit is not built and the newer one is. Its release notes cover both.
+- `release`: group `release-<ref>`, `cancel-in-progress: false`. A running release (it may be distributing to testers) is never cancelled; at most one more waits, and a newer waiting one replaces an older waiting one (GitHub cancels the pending run in the group, not the running one). Nothing else shares that group, so a newer push's `check` cannot cancel it.
+- A cancelled older run shows as cancelled in the Actions list; that is the saving, not a failure. Not tested live: the pending-release replacement and how it interacts with a required reviewer on the `release` environment (a job waiting for approval may count as pending).
+
+**Run time (measured, 8 to 9 November 2026, runs 1 to 31 of this workflow, from the Actions API: `run_started_at` to `updated_at`, so it includes time spent waiting for the workflow-level concurrency group):**
+
+| Period | Runs (successful) | Median | Range |
+|---|---|---|---|
+| Before the smoke job (runs 1 to 18) | 12 | 5.6 min | 3.8 to 9.0 |
+| With the smoke job (runs 22 to 27) | 6 | 12.7 min | 8.1 to 17.2 |
+| Failed at the licence gate (runs 28 to 31) | 4 | 1.6 to 2.6 min | n/a |
+
+Where one run's time goes (run 27, per-job timestamps): `check` 1 m 45 s (tests and lint 53 s), `release` 2 m 0 s (APK and AAB 75 s, Firebase 13 s), `smoke` 3 m (APK build 39 s, emulator launch check and instrumented test 1 m 43 s). That is about 7 minutes of work; the run took 15 minutes because it waited about 8 minutes for the previous run's whole workflow to finish (check started at 00:35:29, run started at 00:27:22). Per-job concurrency removes that wait: `check` no longer queues behind the previous run's smoke job. Expected after this change (not yet measured): about 7 to 8 minutes from push to Firebase notification for a build that changes app code, and nothing for a docs-only push. Re-measure after a few runs; the median above will be replaced.
+
 ## Dependency licence gate
 
-`scripts/ci-licences.sh` runs `scripts/licences.sh` (security.android's; it lists the release runtime classpath from each POM) and then fails the `check` job if any artifact's licence is not Apache-2.0, MIT or BSD, or is unknown; for an artifact with several licences, every one must be allowed (R-rel-1). `licences.sh` itself also accepts ISC and public domain and never exits non-zero; the wrapper is stricter on purpose and reads its table (`docs/security/licences.md`, regenerated in the job, uploaded as `licences-<run>`). Exceptions go in `scripts/licences-allow.txt` (`group:artifact` plus a reason; security.android reviews it). Checked: passes now (84 artifacts, with a clean Gradle cache so the POMs are fetched by the script's own Gradle call); a doctored table with a GPL and an UNKNOWN row fails with exit 1 and an allow-list line clears that row. Proposed policy, to agree with security.android on its status page: allow-list empty, ISC and public domain not accepted without an exception.
+Own job `licences` (beside `check`, so no wall-clock cost), with a **fresh Gradle home** (`GRADLE_USER_HOME` under `$RUNNER_TEMP`). Reason, found on runs 28 to 31: inside the `check` job, where `setup-gradle` restores a warm Gradle cache, `scripts/licences.sh` found no POM for any of the 84 artifacts (all UNKNOWN) and the gate failed every run, blocking `release`. The script reads each POM from the Gradle cache; a restored cache has the resolution metadata but not the POM files, so Gradle never re-fetched them. This is an inference from the log and from a clean-cache run passing locally; the fix is the first live test. A fresh home costs about a minute of metadata downloads, in parallel with `check`.
+
+`scripts/ci-licences.sh` runs `scripts/licences.sh` (security.android's; it lists the release runtime classpath from each POM) and then fails the `licences` job if any artifact's licence is not Apache-2.0, MIT or BSD, or is unknown; for an artifact with several licences, every one must be allowed (R-rel-1). `licences.sh` itself also accepts ISC and public domain and never exits non-zero; the wrapper is stricter on purpose and reads its table (`docs/security/licences.md`, regenerated in the job, uploaded as `licences-<run>`). Exceptions go in `scripts/licences-allow.txt` (`group:artifact` plus a reason; security.android reviews it). Checked: passes now (84 artifacts, with a clean Gradle cache so the POMs are fetched by the script's own Gradle call); a doctored table with a GPL and an UNKNOWN row fails with exit 1 and an allow-list line clears that row. Proposed policy, to agree with security.android on its status page: allow-list empty, ISC and public domain not accepted without an exception.
 
 ## Release notes
 
