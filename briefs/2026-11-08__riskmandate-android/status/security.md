@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 51 (9 Nov 2026): dev.lab 44599b0 (live mode) PASS, checklist I met on the real path. Everything queued is reviewed. Still to read: the design-pass article when it moves into assets. Waiting for the next wake.
+> Round 52 (9 Nov 2026): dev.lab a01fcf7 PASS with R-lab-8 and R-lab-9 (backslash and multi-recipient egress bypasses in AbpChecks.domain and eval abp.py, to fix before the Lab is enabled) and R-lab-10 (golden vectors lack those cases); dev.chat 7859f64 PASS. Still to read: the design-pass article when it moves into assets. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
