@@ -2,13 +2,15 @@ package ai.riskmandate.app.features.mandate
 
 import ai.riskmandate.app.ManagedConfig
 import ai.riskmandate.app.R
+import ai.riskmandate.app.ui.ChipKind
+import ai.riskmandate.app.ui.FeatureContent
+import ai.riskmandate.app.ui.SectionCard
+import ai.riskmandate.app.ui.StatusChip
+import ai.riskmandate.app.ui.UiTokens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +25,7 @@ import androidx.compose.ui.unit.dp
 
 object MandateTags {
     const val LOADING = "mandate_loading"
+    const val CHIP = "mandate_chip"
     const val SUMMARY = "mandate_summary"
     const val GAP_STATUS = "mandate_gap_status"
     const val REACH = "mandate_reach"
@@ -35,15 +38,18 @@ object MandateTags {
 @Composable
 fun MandateScreen(state: MandateState) {
     val report = state.report
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
+    FeatureContent {
+        Column(verticalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
         Text(stringResource(R.string.mandate_intro), style = MaterialTheme.typography.bodyMedium)
         Text(
             stringResource(R.string.mandate_summary, report.reach.size, report.mandate.entries.size, report.gap.size),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.testTag(MandateTags.SUMMARY),
+        )
+        StatusChip(
+            if (report.gapIsEmpty) stringResource(R.string.mandate_chip_none) else stringResource(R.string.mandate_chip_some, report.gap.size),
+            if (report.gapIsEmpty) ChipKind.Allowed else ChipKind.Blocked,
+            modifier = Modifier.testTag(MandateTags.CHIP),
         )
         // Text, not colour alone, says whether there is a gap.
         Text(
@@ -54,23 +60,24 @@ fun MandateScreen(state: MandateState) {
             modifier = Modifier.testTag(MandateTags.GAP_STATUS),
         )
 
-        Heading(stringResource(R.string.mandate_defs_heading))
-        Text(stringResource(R.string.mandate_def_reach), style = MaterialTheme.typography.bodyMedium)
-        Text(stringResource(R.string.mandate_def_mandate), style = MaterialTheme.typography.bodyMedium)
-        Text(stringResource(R.string.mandate_def_gap), style = MaterialTheme.typography.bodyMedium)
-        Text(stringResource(R.string.mandate_def_source), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        SectionCard(stringResource(R.string.mandate_defs_heading)) {
+            Text(stringResource(R.string.mandate_def_reach), style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.mandate_def_mandate), style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.mandate_def_gap), style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.mandate_def_source), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
 
         ReachSection(state)
         MandateSection(state)
         GapSection(report)
+        }
     }
 }
 
 @Composable
 private fun ReachSection(state: MandateState) {
     val reach = state.report.reach
-    Heading(stringResource(R.string.mandate_reach_heading))
-    Column(Modifier.testTag(MandateTags.REACH), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    SectionCard(stringResource(R.string.mandate_reach_heading), Modifier.testTag(MandateTags.REACH)) {
         SubHeading(stringResource(R.string.mandate_reach_permissions))
         val perms = reach.filter { it.kind == ReachKind.PERMISSION }
         if (perms.isEmpty()) Line(stringResource(R.string.mandate_reach_none))
@@ -103,8 +110,7 @@ private fun ReachSection(state: MandateState) {
 @Composable
 private fun MandateSection(state: MandateState) {
     val mandate = state.report.mandate
-    Heading(stringResource(R.string.mandate_mandate_heading))
-    Column(Modifier.testTag(MandateTags.MANDATE), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    SectionCard(stringResource(R.string.mandate_mandate_heading), Modifier.testTag(MandateTags.MANDATE)) {
         SubHeading(stringResource(R.string.mandate_mandate_hosts, mandate.port))
         mandate.hosts.forEach { Line(it, mono = true) }
         SubHeading(stringResource(R.string.mandate_mandate_probe_heading))
@@ -133,8 +139,7 @@ private fun MandateSection(state: MandateState) {
 
 @Composable
 private fun GapSection(report: MandateReport) {
-    Heading(stringResource(R.string.mandate_gap_heading))
-    Column(Modifier.testTag(MandateTags.GAP), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    SectionCard(stringResource(R.string.mandate_gap_heading), Modifier.testTag(MandateTags.GAP)) {
         if (report.gapIsEmpty) {
             Line(stringResource(R.string.mandate_gap_none))
         } else {

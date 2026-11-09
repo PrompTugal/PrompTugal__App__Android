@@ -42,7 +42,7 @@
     <string name="mandate_managed_unset">não definido</string>
     <string name="mandate_managed_refused">%1$s foi definido mas recusado, por isso usa-se o valor por omissão</string>
     <string name="mandate_mandate_allowed">O alcance que permite, e porquê</string>
-    <string name="mandate_reason_open_pages">para abrir páginas de riskmandate.ai, na vista dentro da app ou no seu navegador</string>
+    <string name="mandate_reason_open_pages">para abrir riskmandate.ai no seu navegador ou na vista dentro da app</string>
     <string name="mandate_reason_offline_hint">para avisar quando o dispositivo está sem rede</string>
     <string name="mandate_reason_launcher">o único ecrã que inicia a app</string>
     <string name="mandate_reason_internal_guard">protege os recetores da própria app; só apps assinadas pela mesma chave a podem ter</string>
@@ -54,10 +54,12 @@
     <string name="mandate_reason_site_storage">armazenamento web da vista riskmandate.ai dentro da app, só neste dispositivo</string>
     <string name="mandate_reason_site_cache">cache da vista riskmandate.ai dentro da app; o Android pode limpá-la</string>
 
-    <string name="mandate_mandate_data">Dados recolhidos pela app: nenhuns. Não tem análises, contas nem identificadores. A própria app só se liga a riskmandate.ai e www.riskmandate.ai, e só através da vista do site dentro da app. As páginas que abre no seu navegador são tráfego do próprio navegador. As ligações para outros sites não são carregadas na app.</string>
+    <string name="mandate_mandate_data">Dados recolhidos por esta app: nenhuns. A vista dentro da app carrega páginas de riskmandate.ai por HTTPS, como um navegador. Esta app não acrescenta nenhum identificador.</string>
     <string name="mandate_connects">Esta app liga-se a: %1$s (a vista do site dentro da app)</string>
     <string name="mandate_connects_none">Esta app não se liga a nada por si própria. As páginas abrem no seu navegador, que faz a sua própria ligação.</string>
     <string name="mandate_reason_site_view">a vista riskmandate.ai dentro da app carrega páginas deste anfitrião</string>
 
+    <string name="mandate_chip_none">Sem lacuna</string>
+    <string name="mandate_chip_some">Lacuna: %1$d</string>
     <string name="mandate_gap_heading">Lacuna: alcance menos mandato</string>
 </resources>
