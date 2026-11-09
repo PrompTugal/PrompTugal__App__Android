@@ -69,7 +69,8 @@ object ToolTestExport {
             )
         },
         "final_text" to r.finalText,
-        "checks" to r.checks.map { mapOf("label" to it.label, "passed" to it.passed, "detail" to it.detail) },
+        "checks" to r.checks.map { mapOf("kind" to it.kind, "label" to it.label, "passed" to it.passed, "failure" to it.failure, "detail" to it.detail) },
+        "prompt" to mapOf("chars" to r.promptChars, "tokens" to r.promptTokens),
         "total_ms" to r.ms,
         "tokens" to mapOf("output" to r.outputTokens, "decode_tokens_per_second" to r.decodeTokensPerSecond),
         "error" to r.error,

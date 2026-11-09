@@ -10,7 +10,8 @@ import ai.riskmandate.app.llm.LlmService
  * leaves every case with about the same number of runs.
  */
 object ToolTestSuite {
-    const val MAX_RUNS = 300
+    /** The same cap as every other run of many experiments (security): 100 runs. "All cases, both modes" is 40 runs per repeat. */
+    const val MAX_RUNS = RunCaps.MAX_RUNS
     const val MAX_REPEATS = 10
     const val MAX_TOTAL_MS = RunCaps.MAX_TOTAL_MS
 

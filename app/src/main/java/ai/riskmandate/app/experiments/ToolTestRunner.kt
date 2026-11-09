@@ -26,10 +26,9 @@ object ToolTestRunner {
     ): CaseRun {
         val llmTools = ToolProtocol.llmTools(case.tools)
         val native = mode == ToolMode.NATIVE
-        val system = if (native) case.system else listOf(case.system, ToolProtocol.textInstructions(case.tools)).filter { it.isNotBlank() }.joinToString("\n\n")
-        val messages = ArrayList<LlmMessage>()
-        if (system.isNotBlank()) messages += LlmMessage.system(system)
-        for (m in case.messages) messages += history(m, native)
+        val messages = ArrayList(initialMessages(case, mode))
+        val promptChars = PromptSize.chars(case, mode)
+        var promptTokens: Int? = null
         val steps = ArrayList<StepRecord>()
         var finalText = ""
         var modelId: String? = null
@@ -41,6 +40,7 @@ object ToolTestRunner {
             case.id, case.kind, mode, rep, steps.toList(), finalText, now() - t0, modelId, backend,
             tokens, rates.takeIf { it.isNotEmpty() }?.average(), error,
             if (error == null) ToolChecks.evaluate(case, steps, finalText) else emptyList(),
+            promptChars, promptTokens,
         )
         try {
             var answered = false
@@ -48,6 +48,7 @@ object ToolTestRunner {
                 val res = llm.generate(LlmRequest(messages.toList(), if (native) llmTools else emptyList(), settings.sampling, settings.maxTokens))
                 res.error?.let { return finish(it.reason.name.lowercase().replace('_', ' ')) }
                 res.stats?.let { s ->
+                    if (steps.isEmpty()) promptTokens = s.promptTokens
                     modelId = s.modelId; backend = s.backend
                     tokens = if (s.outputTokens == null || tokens == null) null else tokens!! + s.outputTokens
                     s.decodeTokensPerSecond?.let { rates += it }
@@ -82,6 +83,13 @@ object ToolTestRunner {
             return finish("run error")
         }
         return finish(null)
+    }
+
+    /** The conversation the model starts from, in the way the mode wants it: the system prompt (with the text protocol in TEXT mode) and the case's messages. */
+    fun initialMessages(case: ToolCase, mode: ToolMode): List<LlmMessage> {
+        val native = mode == ToolMode.NATIVE
+        val system = if (native) case.system else listOf(case.system, ToolProtocol.textInstructions(case.tools)).filter { it.isNotBlank() }.joinToString("\n\n")
+        return (if (system.isNotBlank()) listOf(LlmMessage.system(system)) else emptyList()) + case.messages.flatMap { history(it, native) }
     }
 
     /** A case's starting message in the way the mode wants it: native keeps real tool messages, text writes them out. */

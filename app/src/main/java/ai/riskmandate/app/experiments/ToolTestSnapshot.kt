@@ -25,11 +25,11 @@ object ToolTestSnapshot {
             val detail = if (failed && kept < KEEP_FAILURES) {
                 kept++
                 mapOf(
-                    "checks" to r.checks.filter { !it.passed }.take(3).map { mapOf("l" to it.label.take(DETAIL), "d" to it.detail.take(DETAIL)) },
+                    "checks" to r.checks.filter { !it.passed }.take(3).map { mapOf("l" to it.label.take(DETAIL), "d" to it.detail.take(DETAIL), "k" to it.kind, "f" to it.failure) },
                     "raw" to rawExcerpt(r),
                 )
             } else null
-            linkedMapOf("c" to r.caseId, "k" to r.kind, "m" to r.mode.name, "r" to r.rep, "f" to (if (r.finished) 1 else 0), "p" to (if (r.passed) 1 else 0), "t" to r.ms, "x" to detail)
+            linkedMapOf("c" to r.caseId, "k" to r.kind, "m" to r.mode.name, "r" to r.rep, "f" to (if (r.finished) 1 else 0), "p" to (if (r.passed) 1 else 0), "t" to r.ms, "n" to r.promptChars, "x" to detail)
         }
         return StrictJson.render(mapOf("v" to 1, "planned" to planned, "stop" to stop?.name, "runs" to list))
     }
@@ -54,14 +54,14 @@ object ToolTestSnapshot {
                 val checks = when {
                     !finished -> emptyList()
                     passed -> listOf(CheckResult("passed", true, ""))
-                    x != null -> (x["checks"] as List<Map<String, Any?>>).map { CheckResult(it["l"] as String, false, it["d"] as String) }
+                    x != null -> (x["checks"] as List<Map<String, Any?>>).map { CheckResult(it["l"] as String, false, it["d"] as String, it["k"] as? String ?: "", it["f"] as? String) }
                     else -> listOf(CheckResult("failed", false, ""))
                 }
                 CaseRun(
                     m["c"] as String, m["k"] as String, ToolMode.valueOf(m["m"] as String), (m["r"] as Long).toInt(),
                     (x?.get("raw") as? String)?.let { listOf(StepRecord(it, emptyList())) } ?: emptyList(), "",
                     (m["t"] as Long).also { require(it in 0..24L * 3_600_000) }, null, null, null, null,
-                    if (finished) null else "did not finish", checks,
+                    if (finished) null else "did not finish", checks, ((m["n"] as? Long) ?: 0L).toInt().also { require(it in 0..1_000_000) },
                 )
             }
             require(runs.size <= planned.coerceAtLeast(runs.size) && runs.size <= MAX_RUNS)
