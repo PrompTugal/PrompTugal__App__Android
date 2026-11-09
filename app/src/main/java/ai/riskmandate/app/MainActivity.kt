@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -26,6 +27,7 @@ import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.IdleHolds
 import ai.riskmandate.app.features.stand.StandHost
+import ai.riskmandate.app.llm.LlmService
 import ai.riskmandate.app.llm.bench.ModelBenchScreen
 
 /** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
@@ -36,6 +38,9 @@ object Routes {
 
     /** The on-device LLM bench (dev.llm), reached from Diagnostics only on a debuggable build or once a model file is pushed. */
     const val MODEL_BENCH = "modelbench"
+
+    /** The staff-only OpenRouter key screen (Diagnostics > Cloud model). Never reachable in stand mode. */
+    const val CLOUD = "cloudkey"
 
     /** A feature that is not switched on yet, opened from Diagnostics > Preview (never on Home or in the sidebar). */
     fun preview(id: String) = "preview/$id"
@@ -53,9 +58,11 @@ fun hostFeatureContext(
     device: DeviceStatus,
     holdIdle: () -> () -> Unit,
     openFeature: (String) -> Unit,
+    /** The cloud service for this feature, or null (see [cloudLlmFor]). */
+    cloudLlm: LlmService? = null,
 ): FeatureContext = FeatureContext(
     onBack = onBack, config = config, device = device, holdIdle = holdIdle, openFeature = openFeature,
-    llm = LlmProcess.get(context),
+    llm = LlmProcess.get(context), cloudLlm = cloudLlm,
 )
 
 /**
@@ -97,7 +104,7 @@ fun requestedPermissionCount(context: android.content.Context): Int = try {
  * so a restored or guessed route cannot open it.
  */
 fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean, knownFeatureIds: Set<String> = emptySet()): String = when {
-    standOn && (screen == Routes.DIAGNOSTICS || screen == Routes.MODEL_BENCH || Routes.previewId(screen) != null) -> Routes.HOME
+    standOn && (screen == Routes.DIAGNOSTICS || screen == Routes.MODEL_BENCH || screen == Routes.CLOUD || Routes.previewId(screen) != null) -> Routes.HOME
     Routes.previewId(screen) != null -> if (Routes.previewId(screen) in knownFeatureIds) screen else Routes.HOME
     screen in BUILT_IN || featureEnabled -> screen
     else -> Routes.HOME
@@ -125,7 +132,7 @@ fun iconFor(id: String): Int = when (id) {
     else -> R.drawable.ic_nav_star
 }
 
-private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS, Routes.MODEL_BENCH)
+private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS, Routes.MODEL_BENCH, Routes.CLOUD)
 
 class MainActivity : ComponentActivity() {
     private var config by mutableStateOf(ManagedConfig.DEFAULT)
@@ -153,6 +160,11 @@ class MainActivity : ComponentActivity() {
                     // are hidden and unreachable while it is on (R-shell-1). Set from StandHost, see standOn below.
                     var standOn by remember { mutableStateOf(false) }
                     // Features not switched on yet: reachable only from Diagnostics > Preview (hidden in stand mode).
+                    val cloud = remember { CloudProcess.get(this@MainActivity) }
+                    // Cloud state the screens depend on (the truth lives in CloudHost; this makes the UI follow it).
+                    var cloudTick by remember { mutableIntStateOf(0) }
+                    val cloudKeySet = remember(cloudTick) { cloud.key.isSet() }
+                    val cloudOn = remember(cloudTick, standOn) { cloud.switch.isOn }
                     val previewFeatures = FEATURES.filter { !it.enabled }
                     val previewIds = previewFeatures.map { it.id }.toSet()
                     val route = resolveRoute(screen, standOn, featureEnabled = feature != null, knownFeatureIds = FEATURES.map { it.id }.toSet())
@@ -189,6 +201,7 @@ class MainActivity : ComponentActivity() {
                         Routes.LICENCES -> R.string.licences_title
                         Routes.DIAGNOSTICS -> R.string.diagnostics_title
                         Routes.MODEL_BENCH -> R.string.feature_models_title
+                        Routes.CLOUD -> R.string.cloud_title
                         else -> (feature ?: previewFeature)?.title ?: R.string.home_now_title
                     }
                     val permissionCount = remember { requestedPermissionCount(this@MainActivity) }
@@ -204,7 +217,12 @@ class MainActivity : ComponentActivity() {
                         // so it does not stay folded after stand mode ends).
                         onEnabledChange = { on ->
                             standOn = on
-                            if (on) sidebarCollapsed = true
+                            CloudProcess.standMode = on
+                            if (on) {
+                                sidebarCollapsed = true
+                                cloud.switch.turnOff() // a visitor's text never goes to a third party
+                                cloudTick++
+                            }
                         },
                     ) {
                         AppShell(
@@ -216,6 +234,7 @@ class MainActivity : ComponentActivity() {
                             onBackHome = goHome,
                             brandLine = device.label ?: stringResource(R.string.shell_brand_line),
                             sidebarCollapsed = sidebarCollapsed,
+                            cloudOn = cloudOn && cloudKeySet && !standOn,
                             onSidebarCollapsedChange = {
                                 sidebarCollapsed = it
                                 prefs.edit().putBoolean("sidebar_collapsed", it).apply()
@@ -233,6 +252,7 @@ class MainActivity : ComponentActivity() {
                                     FeatureFrame(title = R.string.diagnostics_title, kicker = R.string.nav_section_device) {
                                         DiagnosticsScreen(
                                             text = text, onCopy = rememberCopyAction(text),
+                                            onCloud = { screen = Routes.CLOUD },
                                             // Preview: features not switched on yet, and the model bench, in every build.
                                             // Diagnostics is hidden in stand mode, and so is everything behind it.
                                             preview = previewFeatures.map { f -> PreviewItem(f.id, f.title) { screen = Routes.preview(f.id) } } +
@@ -243,6 +263,9 @@ class MainActivity : ComponentActivity() {
                                                 },
                                         )
                                     }
+                                }
+                                route == Routes.CLOUD -> FeatureFrame(title = R.string.cloud_title, kicker = R.string.nav_section_device) {
+                                    CloudKeyScreen(host = cloud, standOn = standOn, onChanged = { cloudTick++ })
                                 }
                                 route == Routes.MODEL_BENCH -> FeatureFrame(title = R.string.feature_models_title, kicker = R.string.nav_section_device) {
                                     ModelBenchScreen()
@@ -255,10 +278,13 @@ class MainActivity : ComponentActivity() {
                                         preview = feature == null,
                                     ) {
                                         shown.Content(
-                                            remember(config, device, standOn, shown.id) {
+                                            remember(config, device, standOn, shown.id, cloudKeySet, cloudOn, cloud.model.id) {
                                                 hostFeatureContext(
                                                     context = this@MainActivity, onBack = goHome, config = config, device = device,
                                                     holdIdle = idle::hold,
+                                                    // The cloud model only reaches a feature that declares usesCloud, with a key stored,
+                                                    // the staff switch on and stand mode off; everyone else gets null.
+                                                    cloudLlm = cloudLlmFor(shown.usesCloud, cloudKeySet, cloudOn, standOn) { cloud.service() },
                                                     // A feature asks for another by id (chat's "set up a model" opens "models"); the
                                                     // host decides: unknown ids and stand mode are refused, and a switched-off feature
                                                     // opens only from a Preview screen.

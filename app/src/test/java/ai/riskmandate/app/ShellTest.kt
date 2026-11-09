@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
@@ -86,5 +88,36 @@ class ShellTest {
         assertEquals("site", selected)
         compose.onNodeWithTag(ShellTags.COLLAPSE).performClick()
         assertEquals(false, collapsed)
+    }
+
+    @Test @Config(qualifiers = "w900dp-h600dp")
+    fun theCloudBadgeShowsOnEveryScreenOnlyWhileTheCloudIsOn() {
+        var cloud by mutableStateOf(false)
+        compose.setContent {
+            RiskMandateTheme {
+                AppShell(
+                    sections = sections, selected = "home", currentTitle = R.string.home_now_title, atHome = true,
+                    onSelect = {}, onBackHome = {}, cloudOn = cloud,
+                ) { Text("content") }
+            }
+        }
+        compose.onNodeWithTag(ShellTags.CLOUD_BADGE).assertDoesNotExist()
+        cloud = true
+        compose.waitForIdle()
+        compose.onNodeWithTag(ShellTags.CLOUD_BADGE).assertIsDisplayed()
+    }
+
+    @Test
+    fun theCloudBadgeShowsInThePhoneTopBarToo() {
+        // (the closed drawer holds a second copy of the sidebar, so look at the first: the top bar's)
+        compose.setContent {
+            RiskMandateTheme {
+                AppShell(
+                    sections = sections, selected = "home", currentTitle = R.string.home_now_title, atHome = true,
+                    onSelect = {}, onBackHome = {}, cloudOn = true,
+                ) { Text("content") }
+            }
+        }
+        compose.onAllNodesWithTag(ShellTags.CLOUD_BADGE).onFirst().assertIsDisplayed()
     }
 }
