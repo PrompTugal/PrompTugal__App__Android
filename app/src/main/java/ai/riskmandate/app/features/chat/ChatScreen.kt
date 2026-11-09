@@ -54,7 +54,7 @@ import java.util.Locale
 /** The chat screen. Content only: the host's FeatureFrame draws the title and Back. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ChatScreen(controller: ChatController) {
+fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
     val state = controller.state
     val androidContext = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -119,7 +119,7 @@ fun ChatScreen(controller: ChatController) {
 
         when {
             showHistory -> HistoryList(state, onPick = { controller.select(it); showHistory = false }, modifier = Modifier.weight(1f))
-            state.modelsLoaded && state.models.isEmpty() -> NoModel(Modifier.weight(1f))
+            state.modelsLoaded && state.models.isEmpty() -> NoModel(onOpenModels, Modifier.weight(1f))
             else -> {
                 // Presets only on an empty chat: once talking, the messages get the room.
                 if (state.modelsLoaded && state.current.isEmpty) {
@@ -180,10 +180,11 @@ fun ChatScreen(controller: ChatController) {
 }
 
 @Composable
-private fun NoModel(modifier: Modifier) {
+private fun NoModel(onOpenModels: () -> Unit, modifier: Modifier) {
     Column(modifier.padding(top = UiTokens.Gap).testTag(ChatTags.NO_MODEL), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         NoticeBanner(stringResource(R.string.chat_no_model_title))
         Text(stringResource(R.string.chat_no_model_body), style = MaterialTheme.typography.bodyLarge)
+        Button(onClick = onOpenModels, modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(ChatTags.OPEN_MODELS)) { Text(stringResource(R.string.chat_open_models)) }
     }
 }
 
