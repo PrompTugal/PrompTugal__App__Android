@@ -91,6 +91,13 @@
       "model": "Sonnet",
       "branch": "work/dev.stand",
       "session": "session_018yvwtQFeezHPsT8mXzd2Jx"
+    },
+    {
+      "role": "editor",
+      "name": "editor.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/editor",
+      "session": "session_018yvwtPFB77ucsaWrmqTX5g"
     }
   ]
 }
