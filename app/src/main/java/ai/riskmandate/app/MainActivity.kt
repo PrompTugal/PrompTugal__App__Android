@@ -26,7 +26,6 @@ import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.IdleHolds
 import ai.riskmandate.app.features.stand.StandHost
-import ai.riskmandate.app.llm.ModelFiles
 import ai.riskmandate.app.llm.bench.ModelBenchScreen
 
 /** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
@@ -37,6 +36,10 @@ object Routes {
 
     /** The on-device LLM bench (dev.llm), reached from Diagnostics only on a debuggable build or once a model file is pushed. */
     const val MODEL_BENCH = "modelbench"
+
+    /** A feature that is not switched on yet, opened from Diagnostics > Preview (never on Home or in the sidebar). */
+    fun preview(id: String) = "preview/$id"
+    fun previewId(route: String): String? = if (route.startsWith("preview/")) route.removePrefix("preview/") else null
 }
 
 /**
@@ -57,11 +60,16 @@ fun hostFeatureContext(
 
 /**
  * The route to open when a feature asks for [id] through `FeatureContext.openFeature`, or null when the host
- * refuses: an id that is unknown or switched off, or any request while stand mode is on (stand mode keeps a
- * visitor on the screens staff chose).
+ * refuses: an id that is unknown, or any request while stand mode is on (stand mode keeps a visitor on the
+ * screens staff chose). A switched-off feature opens only when [previewIds] holds it, which the host passes
+ * only while a Preview screen is showing (Diagnostics > Preview).
  */
-fun resolveOpenFeature(id: String, standOn: Boolean, enabledIds: Set<String>): String? =
-    if (!standOn && id in enabledIds) id else null
+fun resolveOpenFeature(id: String, standOn: Boolean, enabledIds: Set<String>, previewIds: Set<String> = emptySet()): String? = when {
+    standOn -> null
+    id in enabledIds -> id
+    id in previewIds -> Routes.preview(id)
+    else -> null
+}
 
 /** How many of an app's [requested] permissions are Android's own: the app's own custom ones (from `<packageName>.`) do not count. */
 fun countRequestedPermissions(requested: Array<String>?, packageName: String): Int =
@@ -83,12 +91,14 @@ fun requestedPermissionCount(context: android.content.Context): Int = try {
 
 /**
  * The route to show for a saved [screen]: itself if it is a built-in or an enabled feature, else Home;
- * and Home for the staff-only screens (Diagnostics, the model bench) while stand mode is on, and for a restored
- * model-bench route when the bench is not available (release build with no model file pushed).
+ * and Home for the staff-only screens (Diagnostics, the model bench, every Preview screen) while stand mode
+ * is on. A `preview/<id>` route (produced only by the Preview list in Diagnostics) is accepted for any known
+ * feature id, enabled or not; an unknown id goes Home. A plain `<id>` of a switched-off feature still goes Home,
+ * so a restored or guessed route cannot open it.
  */
-fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean, benchAvailable: Boolean = true): String = when {
-    standOn && (screen == Routes.DIAGNOSTICS || screen == Routes.MODEL_BENCH) -> Routes.HOME
-    screen == Routes.MODEL_BENCH && !benchAvailable -> Routes.HOME
+fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean, knownFeatureIds: Set<String> = emptySet()): String = when {
+    standOn && (screen == Routes.DIAGNOSTICS || screen == Routes.MODEL_BENCH || Routes.previewId(screen) != null) -> Routes.HOME
+    Routes.previewId(screen) != null -> if (Routes.previewId(screen) in knownFeatureIds) screen else Routes.HOME
     screen in BUILT_IN || featureEnabled -> screen
     else -> Routes.HOME
 }
@@ -142,8 +152,11 @@ class MainActivity : ComponentActivity() {
                     // Stand mode (a visitor at a stand): Diagnostics and the model bench are staff tools, so they
                     // are hidden and unreachable while it is on (R-shell-1). Set from StandHost, see standOn below.
                     var standOn by remember { mutableStateOf(false) }
-                    val benchAvailable = remember { ModelFiles.benchAvailable(this@MainActivity, BuildConfig.DEBUG) }
-                    val route = resolveRoute(screen, standOn, featureEnabled = feature != null, benchAvailable = benchAvailable)
+                    // Features not switched on yet: reachable only from Diagnostics > Preview (hidden in stand mode).
+                    val previewFeatures = FEATURES.filter { !it.enabled }
+                    val previewIds = previewFeatures.map { it.id }.toSet()
+                    val route = resolveRoute(screen, standOn, featureEnabled = feature != null, knownFeatureIds = FEATURES.map { it.id }.toSet())
+                    val previewFeature = Routes.previewId(route)?.let { id -> FEATURES.firstOrNull { it.id == id } }
                     LaunchedEffect(route, screen) { if (route != screen) screen = route }
                     // Features that run unattended on purpose (abpdemo's auto-play) hold stand mode's idle
                     // reset off through this. HoldIdleWhile releases when the feature leaves the screen; the
@@ -176,7 +189,7 @@ class MainActivity : ComponentActivity() {
                         Routes.LICENCES -> R.string.licences_title
                         Routes.DIAGNOSTICS -> R.string.diagnostics_title
                         Routes.MODEL_BENCH -> R.string.feature_models_title
-                        else -> feature?.title ?: R.string.home_now_title
+                        else -> (feature ?: previewFeature)?.title ?: R.string.home_now_title
                     }
                     val permissionCount = remember { requestedPermissionCount(this@MainActivity) }
                     val prefs = remember { getSharedPreferences("shell", MODE_PRIVATE) }
@@ -217,37 +230,46 @@ class MainActivity : ComponentActivity() {
                                 }
                                 route == Routes.DIAGNOSTICS -> {
                                     val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
-                                    // Only on a debuggable build or once a model file is pushed (architect A-llm-5).
                                     FeatureFrame(title = R.string.diagnostics_title, kicker = R.string.nav_section_device) {
                                         DiagnosticsScreen(
                                             text = text, onCopy = rememberCopyAction(text),
-                                            onModelBench = if (benchAvailable) {
-                                                {
+                                            // Preview: features not switched on yet, and the model bench, in every build.
+                                            // Diagnostics is hidden in stand mode, and so is everything behind it.
+                                            preview = previewFeatures.map { f -> PreviewItem(f.id, f.title) { screen = Routes.preview(f.id) } } +
+                                                PreviewItem("modelbench", R.string.diagnostics_model_bench) {
                                                     // The bench loads its own copy of a model: free the app's one first.
                                                     lifecycleScope.launch { LlmProcess.peek()?.unload() }
                                                     screen = Routes.MODEL_BENCH
-                                                }
-                                            } else {
-                                                null
-                                            },
+                                                },
                                         )
                                     }
                                 }
                                 route == Routes.MODEL_BENCH -> FeatureFrame(title = R.string.feature_models_title, kicker = R.string.nav_section_device) {
                                     ModelBenchScreen()
                                 }
-                                feature != null -> FeatureFrame(title = feature.title, kicker = feature.kicker ?: sectionOf(feature.id)) {
-                                    feature.Content(
-                                        remember(config, device, standOn) {
-                                            hostFeatureContext(
-                                                context = this@MainActivity, onBack = goHome, config = config, device = device,
-                                                holdIdle = idle::hold,
-                                                // A feature asks for another by id (chat's "set up a model" opens "models"); the
-                                                // host decides: unknown or disabled ids and stand mode are refused.
-                                                openFeature = { id -> resolveOpenFeature(id, standOn, enabledFeatureIds)?.let { screen = it } },
-                                            )
-                                        },
-                                    )
+                                (feature ?: previewFeature) != null -> {
+                                    val shown = (feature ?: previewFeature)!!
+                                    FeatureFrame(
+                                        title = shown.title,
+                                        kicker = shown.kicker ?: sectionOf(shown.id),
+                                        preview = feature == null,
+                                    ) {
+                                        shown.Content(
+                                            remember(config, device, standOn, shown.id) {
+                                                hostFeatureContext(
+                                                    context = this@MainActivity, onBack = goHome, config = config, device = device,
+                                                    holdIdle = idle::hold,
+                                                    // A feature asks for another by id (chat's "set up a model" opens "models"); the
+                                                    // host decides: unknown ids and stand mode are refused, and a switched-off feature
+                                                    // opens only from a Preview screen.
+                                                    openFeature = { id ->
+                                                        val ids = if (feature == null) previewIds else emptySet()
+                                                        resolveOpenFeature(id, standOn, enabledFeatureIds, ids)?.let { screen = it }
+                                                    },
+                                                )
+                                            },
+                                        )
+                                    }
                                 }
                                 else -> HomeScreen(
                                     version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",

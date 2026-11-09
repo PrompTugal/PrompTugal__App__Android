@@ -135,7 +135,9 @@ fun ModelBenchScreen(
                 status = Status.Verifying(0)
                 val start = SystemClock.elapsedRealtime()
                 val verdict = withContext(io) {
-                    ModelFiles.verify(model.file, model.spec) { p -> ensureActive(); status = Status.Verifying(p) }
+                    // verifyOnce: a file feature G installed and checked (its marker still matches size, time and
+                    // pinned hash) is not hashed again; anything else is hashed in full.
+                    ModelFiles.verifyOnce(model.file, model.spec) { p -> ensureActive(); status = Status.Verifying(p) }
                 }
                 when (verdict) {
                     Verdict.WRONG_SIZE -> { status = Status.WrongSize; return@launch }
@@ -180,7 +182,10 @@ fun ModelBenchScreen(
                         ) {
                             RadioButton(selected = selected == path, onClick = null, enabled = !running)
                             Spacer(Modifier.padding(start = 8.dp))
-                            Text(stringResource(R.string.models_bench_model_line, m.spec.displayName, gigabytes(m.sizeBytes), m.file.parentFile?.name ?: ""))
+                            val where = stringResource(
+                                if (m.file.parentFile == ModelFiles.internalDir(context)) R.string.models_bench_where_installed else R.string.models_bench_where_adb,
+                            )
+                            Text(stringResource(R.string.models_bench_model_line, m.spec.displayName, gigabytes(m.sizeBytes), where))
                         }
                     }
                 }

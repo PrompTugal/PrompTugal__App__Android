@@ -43,6 +43,8 @@
 
     <string name="diagnostics_title">Diagnóstico</string>
     <string name="diagnostics_intro">Para testadores e configuração de dispositivos. Não contém dados pessoais nem identificadores do dispositivo.</string>
+    <string name="diagnostics_preview_heading">Pré-visualização</string>
+    <string name="diagnostics_preview_note">Estes ecrãs estão a ser testados neste dispositivo. Não estão ativos para toda a gente e podem ainda não funcionar.</string>
     <string name="diagnostics_model_bench">Bancada do modelo (teste do LLM no dispositivo)</string>
     <string name="diagnostics_copy">Copiar</string>
     <string name="diagnostics_copied">Copiado para a área de transferência.</string>
