@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stand_corner_label">Staff controls</string>
+    <string name="stand_title">Stand mode</string>
+    <string name="stand_switch">Stand mode on</string>
+    <string name="stand_status_pinned">The screen is pinned.</string>
+    <string name="stand_status_not_pinned">The screen is not pinned: Android was refused, or screen pinning is off in Settings, Security. Keep-awake and the idle reset still work.</string>
+    <string name="stand_idle">Back to start after %1$d min idle</string>
+    <string name="stand_less">Less</string>
+    <string name="stand_more">More</string>
+    <string name="stand_pin_prompt">Staff PIN</string>
+    <string name="stand_pin_field">PIN (4 to 8 digits)</string>
+    <string name="stand_pin_set">Set PIN</string>
+    <string name="stand_pin_remove">Remove PIN</string>
+    <string name="stand_pin_wrong">Wrong PIN.</string>
+    <string name="stand_pin_locked">Too many tries. Wait a minute.</string>
+    <string name="stand_pin_invalid">The PIN must be 4 to 8 digits.</string>
+    <string name="stand_pin_is_set">A staff PIN is set on this device.</string>
+    <string name="stand_pin_not_set">No staff PIN: anyone who long-presses this corner can change stand mode.</string>
+    <string name="stand_unpin_hint">To unpin with Android\'s own gesture: with three-button navigation hold Back and Overview together; with gesture navigation swipe up and hold. If asked, enter the lock-screen PIN.</string>
+    <string name="stand_ok">OK</string>
+    <string name="stand_cancel">Cancel</string>
+    <string name="stand_close">Close</string>
+</resources>
