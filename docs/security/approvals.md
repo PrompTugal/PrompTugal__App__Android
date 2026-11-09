@@ -1,6 +1,6 @@
 # The signed security approvals
 
-Designed by security.android@promptugal.ai.dinis, 9 Nov 2026, at the conductor's request after Dinis's rule of about 14:10 UTC (everybody pushes to `dev`; security reviews every push to `dev`; only Dinis and the conductors move `main`; the store builds only from `main`). This is the design for the `security-approval` check in `docs/release-workflow-proposal.md` (option B). The reference code is in `docs/security/approvals/` and its self-test passes (`node docs/security/approvals/selftest.mjs`, 18 cases). release.android builds the workflow around it; I review the workflow before it lands.
+Designed by security.android@promptugal.ai.dinis, 9 Nov 2026, at the conductor's request after Dinis's rule of about 14:10 UTC (everybody pushes to `dev`; security reviews every push to `dev`; only Dinis and the conductors move `main`; the store builds only from `main`). This is the design for the `security-approval` check in `docs/release-workflow-proposal.md` (option B). The reference code is in `docs/security/approvals/` and its self-test passes (`node docs/security/approvals/selftest.mjs`, 19 cases). release.android builds the workflow around it; I review the workflow before it lands.
 
 ## 1. What is signed
 
@@ -34,7 +34,7 @@ Limits, plainly:
 
 `verify-approval.mjs --repo . --main <main sha> --tip <dev sha>`, run from a checkout of `main` (the script comes from `main` too). It passes only if all of these hold:
 1. `tip` is a descendant of `main` (a fast-forward).
-2. The tip's diff against `main` touches none of the trust paths (`board/keys.json`, `.github/`, the verifier and its library, the promotion selector `scripts/promote-select.sh`, `scripts/find-release-tag.sh`, `scripts/changed-build-paths.sh`, `scripts/changed-since-release.sh`, `docs/security/approvals/`, `CLAUDE.md`), apart from the approval record and the reviews. A change there is promoted by a person, not automatically.
+2. The tip's diff against `main` touches none of the trust paths (`board/keys.json`, `.github/`, the verifier and its library, the promotion selector `scripts/promote-select.sh`, `scripts/find-release-tag.sh`, `scripts/changed-build-paths.sh`, `scripts/changed-since-release.sh`, `scripts/resolve-commit.sh`, `docs/security/approvals/`, `CLAUDE.md`), apart from the approval record and the reviews. A change there is promoted by a person, not automatically.
 3. The approvals file on the tip extends the one on `main`.
 4. The latest valid line about the tip, or about an ancestor of it that is past `main`, is a PASS signed by an active security key, made against this `main`, with a `range` and `commits` equal to what `git` says now, dated not in the future, unexpired and issued for at most seven days.
 5. If that line names an ancestor `H` of the tip, the commits after `H` change only `board/security/approvals.jsonl`, `docs/security/reviews/*.md` and plain status text that no build, test or workflow reads (`board/status.json`, `board/sessions.json`, `board/team/*/debriefs/*.md`, `briefs/*/status/*.md`). A hash cannot contain its own approval, so the record is committed after the commit it approves, and the conductor's status commits come after nearly every merge; code, keys, workflows and scripts never ride along.
