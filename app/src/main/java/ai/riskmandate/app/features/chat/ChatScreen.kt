@@ -244,7 +244,7 @@ private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(if (mine) R.string.chat_you else R.string.chat_model), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             // Plain Text: the model's output is never parsed as markup, links or code.
-            Text(if (m.text.isEmpty() && running) stringResource(R.string.chat_thinking) else m.text, style = MaterialTheme.typography.bodyLarge)
+            Text(if (m.text.isEmpty() && running) stringResource(R.string.chat_thinking) else PlainText.clean(m.text), style = MaterialTheme.typography.bodyLarge)
             if (m.stopped) Text(stringResource(R.string.chat_stopped), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (m.failed) Text(stringResource(failureText(m.failure)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
             if (!mine && !running) {

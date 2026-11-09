@@ -114,7 +114,7 @@ class ChatController(
         state = state.copy(generating = true, error = null)
         scope.launch { persistNow() } // the visitor's message is on disk before the answer starts
         val turns = ChatPrompt.turns(history + ChatMessage(ChatRole.USER, input))
-        val system = groundingText?.let(ChatPresets::system)
+        val system = groundingText?.let(ChatPresets::system) ?: ChatPresets.BASE_SYSTEM
         val started = clock()
         job = scope.launch {
             var tokens = 0

@@ -5,6 +5,7 @@ import ai.riskmandate.app.llm.LlmMessage
 import ai.riskmandate.app.llm.LlmRequest
 import ai.riskmandate.app.llm.LlmService
 import ai.riskmandate.app.llm.LlmState
+import ai.riskmandate.app.llm.Sampling
 import ai.riskmandate.app.llm.ModelCatalog
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -23,7 +24,11 @@ class ChatLlmException(val reason: String) : Exception(reason)
  * - Tool proposals are ignored: chat offers no tools. Done ends the answer and reports the real counts and speed ([ChatAnswerStats]); an Error becomes an exception.
  * - Stopping is cancelling the collector: the service cancels the native call.
  */
-class LlmServiceChat(private val service: LlmService, private val maxTokens: Int = DEFAULT_MAX_TOKENS) : ChatLlm {
+class LlmServiceChat(
+    private val service: LlmService,
+    private val maxTokens: Int = DEFAULT_MAX_TOKENS,
+    private val sampling: Sampling = Sampling(ChatSampling.TEMPERATURE, ChatSampling.TOP_K, ChatSampling.TOP_P),
+) : ChatLlm {
     override suspend fun installedModels(): List<ChatModelInfo> = when (val s = service.state.value) {
         LlmState.NoModel -> emptyList()
         is LlmState.Idle -> listOf(info(s.modelId))
@@ -37,7 +42,7 @@ class LlmServiceChat(private val service: LlmService, private val maxTokens: Int
             if (system != null) add(LlmMessage.system(system))
             for (t in turns) add(if (t.role == ChatRole.USER) LlmMessage.user(t.text) else LlmMessage.assistant(t.text))
         }
-        service.stream(LlmRequest(messages, maxTokens = maxTokens)).collect { e ->
+        service.stream(LlmRequest(messages, settings = sampling, maxTokens = maxTokens)).collect { e ->
             when (e) {
                 is LlmEvent.Token -> emit(e.text)
                 is LlmEvent.Error -> throw ChatLlmException(e.reason.name)
