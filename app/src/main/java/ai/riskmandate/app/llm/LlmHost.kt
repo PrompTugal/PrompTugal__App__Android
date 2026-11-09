@@ -91,7 +91,7 @@ class LlmHost(
                     throw e
                 } catch (t: Throwable) {
                     // Throwable, not Exception: the native runtime can throw an Error (qa Q-llm-1).
-                    emit(LlmEvent.Error(LlmError.INFERENCE_FAILED, describe(t)))
+                    emit(LlmEvent.Error(if (isContextOverflow(t)) LlmError.TOO_LONG else LlmError.INFERENCE_FAILED, describe(t)))
                 }
             } finally {
                 scheduleIdleUnload()
@@ -165,6 +165,17 @@ class LlmHost(
         val dir = modelDir()
         val found = catalog.mapNotNull { spec -> File(dir, spec.fileName).takeIf { it.isFile }?.let { FoundModel(spec, it) } }
         return found.firstOrNull { it.spec.id == preferredModelId } ?: found.firstOrNull()
+    }
+
+    /**
+     * Whether a runtime failure means the prompt did not fit the context (architect A-llm-13). LiteRT-LM reports
+     * it as an exception whose message mentions tokens and a limit; nothing else is mapped.
+     */
+    internal fun isContextOverflow(t: Throwable): Boolean {
+        val m = (t.message ?: "").lowercase()
+        val aboutTokens = "token" in m || "context" in m
+        val aboutLimit = listOf("exceed", "too long", "too many", "larger than", "max", "limit", "out of range").any { it in m }
+        return aboutTokens && aboutLimit
     }
 
     private fun describe(t: Throwable) = "${t.javaClass.simpleName}: ${t.message ?: "no message"}".take(300)
