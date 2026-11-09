@@ -123,13 +123,16 @@ class SiteTest(unittest.TestCase):
     def test_summit_features_are_in_progress_today(self):
         enabled = [f for f in self.facts['features'] if f['enabled']]
         features = (self.clean / 'features.html').read_text()
-        self.assertEqual(features.count('tag-progress'), 4 - len(enabled) - (0 if self.facts['stand_placeholder'] else 1))
+        shown_ids = {s[3] for s in build.SUMMIT_FEATURES} | {f['id'] for f in self.facts['features']}
+        stand_on = 0 if self.facts['stand_placeholder'] else 1
+        self.assertEqual(features.count('tag-progress'), len(shown_ids) - len(enabled) - stand_on)
 
     def test_a_feature_switched_on_in_the_source_shows_as_on(self):
         fake = [dict(f, enabled=True) for f in self.facts['features']]
         with mock.patch.object(facts, 'features', return_value=fake):
             out = self.tmp / 'on'
             build.build(out)
+        # every feature in the source, whether or not the page has text for it, shows as on; D (stand) is not a flagged feature
         self.assertEqual((out / 'features.html').read_text().count('tag-ok'), len(fake))
         # validate.py reads the real source, which has not switched them on: it must refuse this build
         self.assertRefused(validate.validate(out), 'shown as on but the source has not switched it on')
@@ -138,9 +141,32 @@ class SiteTest(unittest.TestCase):
         problems = self.broken('features.html', lambda t: t.replace('tag tag-progress">in progress', 'tag tag-ok">on', 1))
         self.assertRefused(problems, 'shown as on but the source has not switched it on')
 
-    def test_fewer_than_four_summit_features_is_refused(self):
-        problems = self.broken('features.html', lambda t: re.sub(r'<tr><td>D</td>.*?</tr>', '', t, count=1, flags=re.S))
-        self.assertRefused(problems, 'wants 4')
+    def test_a_missing_feature_row_is_refused(self):
+        problems = self.broken('features.html', lambda t: re.sub(r'<tr data-feature="stand">.*?</tr>', '', t, count=1, flags=re.S))
+        self.assertRefused(problems, 'lists features')
+
+    def test_a_feature_in_the_source_without_text_is_still_listed(self):
+        extra = {'name': 'NewThing', 'id': 'newthing', 'enabled': False, 'file': 'app/src/main/java/ai/riskmandate/app/features/newthing/NewThing.kt'}
+        with mock.patch.object(facts, 'features', return_value=self.facts['features'] + [extra]):
+            out = self.tmp / 'extra'
+            build.build(out)
+        self.assertIn('data-feature="newthing"', (out / 'features.html').read_text())
+
+    def test_enabled_forms_in_feature_objects(self):
+        def parse(line):
+            folder = self.tmp / 'ft'
+            shutil.rmtree(folder, ignore_errors=True)
+            (folder / 'x').mkdir(parents=True)
+            (folder / 'Features.kt').write_text('val FEATURES = listOf(X)')
+            (folder / 'x' / 'X.kt').write_text('object X : Feature {\n    override val id = "x"\n' + line + '\n}\n')
+            with mock.patch.object(facts, 'FEATURES_KT', folder / 'Features.kt'), mock.patch.object(facts, 'FEATURES_DIR', folder), mock.patch.object(facts, 'ROOT', folder):
+                return facts.features()[0]['enabled']
+        self.assertFalse(parse('    override val enabled = false'))
+        self.assertTrue(parse('    override val enabled = true'))
+        self.assertTrue(parse('    override val enabled: Boolean = true'))
+        self.assertTrue(parse('    override val enabled get() = true'))
+        self.assertFalse(parse('    override val enabled get() = BuildConfig.DEBUG'))  # not provably on
+        self.assertTrue(parse(''))  # no override: the interface default is on
 
     # --- privacy ------------------------------------------------------------
 
