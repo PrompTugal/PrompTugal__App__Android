@@ -56,9 +56,9 @@ private val DarkPt = PtColors(
 )
 
 /**
- * The two candidate looks (Dinis picks; the conductor recommends A):
- * - [PrompTugalRed] (B): the iOS Palette unchanged, red accent. Today's default.
- * - [RiskMandateGreen] (A): the same iOS structure with RiskMandate's green as the accent (kickers, badges,
+ * The two looks (Dinis chose A on 9 Nov 2026):
+ * - [PrompTugalRed] (B): the iOS Palette unchanged, red accent. The fallback.
+ * - [RiskMandateGreen] (A, shipped): the same iOS structure with RiskMandate's green as the accent (kickers, badges,
  *   primary button, selection), red kept only for "blocked" and errors, and a navy-leaning dark mode taken from
  *   the logo's background. Light accent `#177251` (riskmandate.ai's `#1A7F5A` darkened 10%, because the site's own
  *   green is 4.4:1 on paper and 4.1:1 on its own tint, under AA for small text; `#177251` is at least 4.7:1 on the card, paper,
@@ -66,8 +66,11 @@ private val DarkPt = PtColors(
  */
 enum class ThemeVariant { PrompTugalRed, RiskMandateGreen }
 
-/** The one switch: change this to ship the other look. */
-val DefaultVariant = ThemeVariant.PrompTugalRed
+/**
+ * The shipped look: A, chosen by Dinis on 9 Nov 2026. B ([ThemeVariant.PrompTugalRed]) is kept as a documented
+ * fallback and is still rendered by `UiScreenshotTest.variants`; change this one line to switch back.
+ */
+val DefaultVariant = ThemeVariant.RiskMandateGreen
 
 private val GreenLightPt = LightPt.copy(accent = Color(0xFF177251))
 

@@ -58,3 +58,25 @@ fun BrandWordmark(modifier: Modifier = Modifier, fontSize: TextUnit = 22.sp) {
     }
     Text(text, modifier, fontSize = fontSize, fontWeight = FontWeight.SemiBold, lineHeight = fontSize * 1.2f)
 }
+
+/**
+ * The sidebar's brand block (iOS `PublicShell`'s brand block): the mark, the wordmark and one muted line
+ * ([subtitle]: "Web Summit", or the device label on a managed tablet). Not interactive. No tagline: the
+ * logo's "AI agent governance and security" line is deliberately not shown on any screen.
+ */
+@Composable
+fun BrandBlock(subtitle: String?, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.layout.Row(
+        modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Space.M),
+    ) {
+        BrandMark(size = 56.dp)
+        androidx.compose.foundation.layout.Column {
+            BrandWordmark(fontSize = 22.sp)
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}

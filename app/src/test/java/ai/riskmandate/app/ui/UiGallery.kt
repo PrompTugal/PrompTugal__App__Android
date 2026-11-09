@@ -147,13 +147,7 @@ internal fun ShellSample() {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BrandMark(size = 56.dp)
-                Column {
-                    BrandWordmark(fontSize = 22.sp)
-                    Text("Web Summit", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = c.muted)
-                }
-            }
+            BrandBlock("Web Summit")
             Spacer(Modifier.height(16.dp))
             for ((section, items) in listOf(
                 "Today" to listOf("Now" to 0, "RiskMandate" to 0, "ABP in every layer" to 0),
@@ -213,14 +207,19 @@ internal fun BrandSample() {
         Text("Brand block (sidebar) and wordmark", color = c.ink)
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             BrandMark(size = 96.dp)
-            Column {
-                BrandWordmark(fontSize = 40.sp)
-                Kicker("AI agent governance and security")
-            }
+            BrandWordmark(fontSize = 40.sp)
         }
         Row(Modifier.background(androidx.compose.ui.res.colorResource(ai.riskmandate.app.R.color.rm_navy)).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             BrandMark(size = 64.dp)
             RiskMandateTheme(darkTheme = true) { BrandWordmark(fontSize = 32.sp) }
         }
+    }
+}
+
+/** The Play Store icon: the adaptive icon full bleed on a square (Play applies its own mask). */
+@Composable
+internal fun PlayIconSample() {
+    Box(Modifier.fillMaxSize().background(androidx.compose.ui.res.colorResource(ai.riskmandate.app.R.color.rm_navy))) {
+        androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(ai.riskmandate.app.R.drawable.ic_rm_launcher_foreground), null, Modifier.fillMaxSize())
     }
 }

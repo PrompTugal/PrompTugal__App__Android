@@ -1,6 +1,6 @@
 # RiskMandate monogram: vector redraw (proposal)
 
-Prepared 9 Nov 2026 by design.android@promptugal.ai from `riskmandate-logo-reference.jpg` (634 x 418 JPEG, Dinis). **A proposal for Dinis to approve. The shipped icon is unchanged; nothing here is referenced by the manifest or the launcher.** If approved, shipping is two edits (below). No claim, tagline or wordmark artwork is being invented: the wordmark is typeset, not redrawn.
+Prepared 9 Nov 2026 by design.android@promptugal.ai from `riskmandate-logo-reference.jpg` (634 x 418 JPEG, Dinis). **Approved by Dinis on 9 Nov 2026 (via the conductor), ready to ship as the launcher icon.** The files are in the resources; the manifest and `themes.xml` switch is app.android's (below). No claim, tagline or wordmark artwork is being invented: the wordmark is typeset, not redrawn, and **the tagline is not shown on any screen**.
 
 ## Sampled colours (from the JPEG, 8-bit sRGB)
 
@@ -26,23 +26,25 @@ The redraw uses navy `#051223` (the lighter, more truthful navy where the mark s
 
 `ui/Brand.kt`: `BrandMark` (the mark on navy, for the sidebar's brand block and the splash) and `BrandWordmark` ("Risk" in the text colour, "Mandate" in green: `#66B78F` on dark, `#177251` on light).
 
-Preview: `proposal-brand-sheet.png` (the adaptive icon through circle, squircle and rounded-square masks, the monochrome layer, the light-background mark, the brand block and the wordmark on paper and navy). It is rendered by `UiScreenshotTest.brand`.
+Also `ui/Brand.kt`: `BrandBlock(subtitle)`, the sidebar's brand block (mark, wordmark, one muted line, no tagline).
+
+Preview: `proposal-brand-sheet.png` (the adaptive icon through circle, squircle and rounded-square masks, the monochrome layer, the light-background mark, the brand block and the wordmark on paper and navy), rendered by `UiScreenshotTest.brand`. The Play Store icon, 512 x 512 px with alpha, full bleed (Play applies its own mask): `play-icon-512.png`, rendered by `UiScreenshotTest.playIcon`; regenerate it with `./gradlew testDebugUnitTest` (`app/build/screenshots/ui-play-icon-512-square-portrait-light.png`).
 
 ## Where the redraw departs from the JPEG (so the approver can judge)
 
 - The letters are a bold geometric sans drawn by eye from a 634 px source, not traced from the logo's font. Proportions match (R and M each about 55 units stem on a 240-unit cap height); letter shapes will differ in detail. **The R's small notch at its top-left is omitted.**
 - Flat colour instead of the bracket gradient (the JPEG shades the left edge darker).
 - The wordmark is the system sans in semibold, not the logo's typeface. It reads as the logo's colour scheme, not its lettering. A proper wordmark needs the original SVG.
-- The vertical rule, the tagline "AI AGENT GOVERNANCE & SECURITY" and the vignette are not part of the icon. The tagline is sample text in the preview only (set in the app's kicker style); it is not proposed for any screen without Dinis.
+- The vertical rule, the tagline "AI AGENT GOVERNANCE & SECURITY" and the vignette are not part of the icon, and the tagline is not on any screen (Dinis).
 
-**The right fix is the original vector (SVG) from whoever drew the logo.** This redraw is good enough to see the icon on the tablets and decide; it is not a substitute for the source.
+**The best long-term source is the original vector (SVG) from whoever drew the logo.** Dinis approved this redraw for now; if the SVG arrives, replace the paths in the four drawables and re-render `play-icon-512.png`.
 
 ## Splash (proposal, not applied)
 
 Android 12 and later draw the splash from the theme: `android:windowSplashScreenBackground` = `@color/rm_navy` and `android:windowSplashScreenAnimatedIcon` = `@drawable/ic_rm_launcher_foreground`, with no animation. This needs a `values-v31` theme edit in `themes.xml` (app.android's file) and is not made here. On older Android the launch window uses `windowBackground` (the paper colour) and the icon as today.
 
-## To ship, once Dinis approves
+## To ship (app.android; the conductor has asked)
 
 1. `AndroidManifest.xml`: `android:icon` and `android:roundIcon` from `@mipmap/ic_launcher` to `@mipmap/ic_launcher_rm` (app.android's file); delete the old `mipmap/ic_launcher.xml` and `drawable/ic_launcher_foreground.xml` in the same change.
-2. Update `docs/play/store-assets.md` (the icon section: the mark is RiskMandate's; trademark note stays) and render the 512 x 512 Play icon from the final vector.
+2. `docs/play/store-assets.md` (play.android): the icon section can use `play-icon-512.png`; the mark is RiskMandate's, the trademark note stays.
 3. If the splash is wanted, the `values-v31` theme above.

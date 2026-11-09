@@ -30,7 +30,7 @@ import java.io.File
 class UiScreenshotTest {
     @get:Rule val compose = createEmptyComposeRule()
 
-    private data class Device(val name: String, val wDp: Int, val hDp: Int, val density: String)
+    internal data class Device(val name: String, val wDp: Int, val hDp: Int, val density: String)
 
     // Portrait sizes in dp, as in ScreenshotTest.
     private val devices = listOf(
@@ -45,10 +45,11 @@ class UiScreenshotTest {
         variant: ThemeVariant = DefaultVariant,
         tag: String = "",
         onlyTablet10: Boolean = false,
+        devicesOverride: List<Device>? = null,
         content: @Composable () -> Unit,
     ) {
         outDir.mkdirs()
-        for (d in devices.filter { !onlyTablet10 || it.name == "tablet10" }) for (landscape in listOf(true, false).filter { !onlyTablet10 || it }) for (dark in listOf(false, true)) {
+        for (d in (devicesOverride ?: devices).filter { !onlyTablet10 || it.name == "tablet10" || devicesOverride != null }) for (landscape in listOf(true, false).filter { !onlyTablet10 || it }) for (dark in listOf(false, true)) {
             val (w, h) = if (landscape) d.hDp to d.wDp else d.wDp to d.hDp
             RuntimeEnvironment.setQualifiers(
                 "w${w}dp-h${h}dp-${if (landscape) "land" else "port"}-${if (dark) "night" else "notnight"}-${d.density}",
@@ -89,6 +90,9 @@ class UiScreenshotTest {
     @Test fun now() = shoot("now") { Surface(color = ai.riskmandate.app.Pt.colors.paper) { NowSample() } }
 
     @Test fun shell() = shoot("shell") { ShellSample() }
+
+    /** 512 x 512 px: 256 dp at xhdpi. Copy `ui-play-icon-512-square-portrait-light.png` to docs/design/brand/. */
+    @Test fun playIcon() = shoot("play-icon-512", tag = "", devicesOverride = listOf(Device("square", 256, 256, "xhdpi"))) { PlayIconSample() }
 
     @Test fun brand() = shoot("brand", onlyTablet10 = true) { BrandSample() }
 
