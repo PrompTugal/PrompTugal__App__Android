@@ -216,6 +216,31 @@ jobs:
           echo "secret scan: $SCAN, tests and lint: $CHECK, licences and OSV: $LICENCES" | tee -a "$GITHUB_STEP_SUMMARY"
           [ "$SCAN" = success ] && [ "$CHECK" = success ] && [ "$LICENCES" = success ]
 
+  # Ask for a promotion evaluation after the gate of every dev push. The run it starts is promote.yml AS IT IS ON
+  # `main` (`--ref main` makes GitHub use main's copy of the file and the ref main, which is what the Environment
+  # `promote` accepts): this dev-editable job can only request an evaluation, and an evaluation promotes nothing
+  # without a signed approval. It replaces a workflow_run trigger, which would have run DEV's copy (the default
+  # branch is dev). A workflow_dispatch started with the built-in token is allowed to start a run.
+  promote-dispatch:
+    name: promote-dispatch
+    needs: security-gate
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/dev' && needs.security-gate.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch promote.yml on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh workflow run promote.yml --repo "$GITHUB_REPOSITORY" --ref main; then
+            echo "## promote-dispatch: promote.yml dispatched on main (it evaluates the signed approvals and the gate)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=promote-dispatch::could not dispatch promote.yml on main (is it on main yet?)"
+            echo "## promote-dispatch: could NOT dispatch promote.yml on main (is it on main yet?)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   release:
     name: release (build, sign, distribute)
     needs: [security-gate, changes]
