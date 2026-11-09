@@ -93,7 +93,8 @@ jobs:
           built=$(git rev-parse "$TAG^{commit}")
           for f in "$aab" "$apk"; do
             gh attestation verify "$f" --repo "$GITHUB_REPOSITORY" \
-              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/android.yml" --source-digest "$built"
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/android.yml" --source-digest "$built" \
+              --source-ref refs/heads/dev --deny-self-hosted-runners
           done
           aapt2=$(ls "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/aapt2 | sort -V | tail -1)
           app_id=$("$aapt2" dump badging "$apk" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
