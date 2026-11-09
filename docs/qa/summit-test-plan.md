@@ -13,7 +13,8 @@ Context: the app runs on the team's own tablets at a stand, mostly in landscape,
 | X-4 | Every feature string exists in pt-PT, is not blank or a placeholder, uses the same format arguments as English | `qa/FeatureStringsTest` |
 | X-5 | No feature screen hardcodes text | `qa/FeatureStringsTest` |
 | X-6 | No URL literal in feature code, no feature string and no navigation outside `Links.isAllowed`; code that navigates names `Links`; no risky WebView settings (file access, JS bridge, mixed content, SSL-error override) | `qa/FeatureLinksTest` |
-| X-7 | Only `MainActivity` is exported; cleartext stays off | `qa/FeatureLinksTest` |
+| X-7 | Only `MainActivity` is exported; cleartext stays off. The source manifest is checked by `qa/FeatureLinksTest`; the **merged release manifest** (libraries add components, e.g. `ProfileInstallReceiver`) is checked by hand: `aapt2 dump xmltree --file AndroidManifest.xml app-release.apk` shows one `exported=true` | Auto (source) + Manual (APK) |
+| X-12 | One Back button and one title per feature screen (the host `FeatureFrame` draws them; a feature draws content only) | `qa/FeatureNavigationTest` checks the frame Back and title exist; duplicates are found by looking (probe for site in `docs/qa/reviews/`) |
 | X-11 | A control in any screen corner, bottom-end included, still gets its taps (stand mode's staff corner must not cover it) | Manual + probe in `docs/qa/reviews/` until fixed |
 | X-8 | Touch targets at least 48 dp, readable at font scale 200%, light and dark | Manual (and the feature's own tests) |
 | X-9 | Claims about RiskMandate, ABP or Sharness appear only if riskmandate.ai or sharness.ai says them. No benchmark, customer, price or certification claim | Manual (read every string; ask the owner for the source line) |

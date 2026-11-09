@@ -31,7 +31,7 @@ class QaCornerProbeTest {
         lc = LifecycleRegistry.createUnsafe(owner); lc.currentState = Lifecycle.State.RESUMED
         compose.setContent {
             StandHostContent(StandSettings.of(ApplicationProvider.getApplicationContext()), object : ScreenLock {
-                override fun isLocked() = false; override fun lock() = true; override fun unlock() {}; override fun keepScreenOn(on: Boolean) {}
+                override fun isLocked() = false; override fun lock() = true; override fun unlock() {}
             }, lc, { 0L }, false, {}) {
                 Box(Modifier.fillMaxSize()) {
                     Box(Modifier.align(Alignment.BottomEnd).size(48.dp).testTag("under").clickable { taps++ })
