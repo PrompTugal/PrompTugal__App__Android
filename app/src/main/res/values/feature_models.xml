@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Feature G (model setup), owner dev.llm. Step 1: the hidden bench. -->
+    <string name="models_kicker">On device</string>
+    <string name="models_summary">Download a language model once, check it, and run it on this tablet without a network.</string>
     <string name="models_bench_intro">Test bench for the on-device model. Push a model file with adb, pick it, run the fixed prompt, then copy the numbers. Everything runs on this device; nothing is sent anywhere.</string>
     <string name="models_bench_none">No model file found yet. Push one with adb into the folder below, then tap Refresh.</string>
     <string name="models_bench_pick">Model</string>

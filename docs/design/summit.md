@@ -6,13 +6,13 @@ Owner: design.android@promptugal.ai. Written 9 Nov 2026 for Web Summit (9 to 12 
 
 **Target.** The team's own Lenovo tablets in landscape at a stand, sitting on a stand, a visitor standing about 1 m away (2 m for B). Phone and portrait must work, but are second. Design landscape at 1280 x 800 dp (10"), check 960 x 600 dp (7"), then 800 x 360 dp (phone on its side) and 360 x 800 dp.
 
-**Look.** Keep the app's current tokens (navy `#1B2A41` primary, `Theme.kt`). For reference, riskmandate.ai itself uses: paper `#F7F6F2`, ink `#0D0D0C`, green `#1A7F5A` (accent `#22c55e` on dark canvas `#0A0A09`), gold `#B45309`, red `#C0392B`, blue `#1D4ED8`, border `#E2DFD8`, with Geist and Geist Mono. The app does not bundle Geist. **Decision for Dinis:** align the app to the site's paper, ink and green, and bundle Geist (an SIL OFL font; licence screen to be updated)? Not done; the navy stays until he says. The only additions in `Theme.kt` are status colours, taken from the site's four outcomes (allowed green, redacted blue, held amber, blocked red).
+**Look.** The PrompTugal iOS theme (Dinis, 9 Nov 2026, relayed by the conductor): paper, ink, red, serif headlines, red kickers, 14 dp cards. Spec, palette and component map: `android-theme.md`. This replaces the earlier navy tokens and answers the brand question. riskmandate.ai's own paper, ink and green are not used.
 
 **Components.** Everything below is built from `ai.riskmandate.app.ui` (see `ui/` KDoc and `briefs/.../status/design.md`). Do not re-style `Text`, `Button` or cards per screen.
 
 **Type.** Material 3 typography; body never under 16sp; on a stand screen, key text 24sp or more. Respect the user's font scale: every screen scrolls, so 200% never clips (tested for B).
 
-**Colour and light/dark.** Follow the system. Light is the stand default (daylight venue, matches the site). Status is never colour alone: word plus glyph plus colour. All status pairs are at least 7:1 contrast; body text 4.5:1 minimum.
+**Colour and light/dark.** Follow the system. Light is the stand default (daylight venue, matches the site). Status is never colour alone: word plus glyph plus colour. Status pairs are at least 4.9:1 (AA); body text 4.5:1 minimum; muted text on paper 6.2:1.
 
 **Touch.** 48 dp minimum, 56 dp or more for primary actions on the stand. Nothing needs a gesture, a long press (except staff exit in D) or a double tap.
 
@@ -44,7 +44,7 @@ Purpose: show, from 2 m, how one Agent Behaviour Policy stops one planted instru
 - **Controls** (all 56 dp, below the diagram): **Pause / Play**, **Next run**, **Replay**. A pause freezes the diagram. Auto-play starts on entry. A visitor can touch a layer row to jump to that run (rows are not buttons visually, so give them `Role.Button` and a 56 dp target only if the dev implements this; otherwise omit).
 - **Reading it without animation or sight.** `LayerRow` exposes `stateDescription` ("Checking now", "Stopped the instruction here"). The scene sentence is a polite live region so TalkBack announces each step. With animations removed, steps still advance (state changes, no tween); a "Step 3 of 6" text under the diagram says where the run is.
 - **Colour.** A stopped row is green (the defence held) and carries a "Stopped here" chip in the blocked style (the instruction was blocked); Checking is amber, Passed grey. Never colour alone.
-- **Dark.** Rows use the dark palette (container `#0B3B29` / text `#7FF0BF` for stopped); verified at 9:1.
+- **Dark.** Rows use the dark palette (stopped: `#6FCF7F` on its tint); verified at 6.4:1.
 - **Not shown.** No claim of detection rates, speed or coverage; no logos of third parties; no "AI-powered".
 
 ## C. This app's reach, mandate and gap (`features/mandate/`)
@@ -84,12 +84,15 @@ Purpose: release articles, in the app, with screenshots, so the team and visitor
 - **Accessibility.** List cards read as "<date>, <title>, <summary>"; reader reading order is title, date, body; images with captions are one item each; works at 200% (the list becomes one column below 840 dp whatever the orientation); light and dark use the theme, screenshots are shown as taken (a note in the caption says which theme).
 - **Claims.** Article text may describe the app; claims about RiskMandate come only from riskmandate.ai.
 
+The on-device LLM screens G (model setup), H (chat) and I (ABP Lab) are in `llm-screens.md`.
+
 ## Shared component map
 
 | Need | Component (`ai.riskmandate.app.ui`) | Screens |
 |---|---|---|
 | Content area inside the host frame (scroll, width, wide flag) | `FeatureContent` | A to C, F |
-| Titled block | `SectionCard` | B (scene), C, F (article cards) |
+| Titled block | `SectionCard` | B (scene), C, F (article cards), G, I |
+| Step of a run, big counter | `StepRow`, `StatTile` | I (see `llm-screens.md`) |
 | Status word + glyph | `StatusChip`, `ChipKind` | A (offline), B, C, D |
 | One layer of the diagram | `LayerRow`, `LayerState` | B |
 | Always-visible note | `NoticeBanner` | B (label), D (idle) |

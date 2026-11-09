@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * A summit feature. Each one lives in its own package under `features/` and is owned by one session,
@@ -23,6 +24,30 @@ interface Feature {
 
     /** False hides the button (a feature still being built). */
     val enabled: Boolean get() = true
+
+    /**
+     * The feature's icon in the shell's sidebar and on its Home card, or null for the shell's default.
+     * A vector from `material-icons-core` (already on the classpath through Material 3) or one the feature
+     * draws itself; no icon dependency is added for this.
+     */
+    val icon: ImageVector? get() = null
+
+    /** A short line above the title on the Home card (for example "Live demo"), en and pt-PT. Null: none. */
+    @get:StringRes val kicker: Int? get() = null
+
+    /** One or two sentences under the title on the Home card and in the sidebar's tooltip. Null: none. */
+    @get:StringRes val summary: Int? get() = null
+
+    /**
+     * An optional short badge on this feature's home-screen button (a string resource such as "New"),
+     * or null for none. The home screen calls it for every enabled feature without knowing which one it
+     * is, so the host never imports a feature's package. Read from the composition: keep it cheap, and do
+     * any disk read off the main thread (for example `produceState` with `Dispatchers.IO`). It is called
+     * again each time the home screen shows, so it can disappear once the feature has been opened.
+     */
+    @Composable
+    @StringRes
+    fun homeBadge(): Int? = null
 
     @Composable
     fun Content(context: FeatureContext)

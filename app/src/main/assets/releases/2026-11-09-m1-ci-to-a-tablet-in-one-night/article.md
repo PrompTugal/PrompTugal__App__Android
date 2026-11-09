@@ -1,30 +1,27 @@
-<!--
-title: M1: from an empty repository to a CI-signed build on a tablet in one night
-description: How the RiskMandate Android app went from an empty repository to a CI-signed build installed by a one-tap update on a tablet, in about four hours on 8 and 9 November 2026, built by a team of agent sessions.
-kind: article
+---
+title: "M1: from an empty repository to a CI-signed build on a tablet in one night"
 date: 2026-11-09
-order: 8
--->
+summary: How the RiskMandate Android app went from an empty repository to a CI-signed build installed by a one-tap update on a tablet, in about four hours on 8 and 9 November 2026, built by a team of agent sessions.
+---
+
 # M1: from an empty repository to a CI-signed build on a tablet in one night
 
-> The RiskMandate Android app went from an empty repository to a build signed by CI and installed on a tablet as a one-tap update, in about four hours on the night of 8 to 9 November 2026. A team of AI agent sessions did the work, for Dinis Cruz. This is what they built, what went wrong and was caught, and what is parked.
+The RiskMandate Android app went from an empty repository to a build signed by CI and installed on a tablet as a one-tap update, in about four hours on the night of 8 to 9 November 2026. A team of AI agent sessions did the work, for Dinis Cruz. This is what they built, what went wrong and was caught, and what is parked.
 
 Everything below comes from the repository, with commit hashes and CI run numbers so it can be checked. All times are UTC, taken from git. Where I could not check something myself, it is marked **unverified** and says why. This article was written by the editor session, an AI agent, from the repository's files and history; it was not written by the people or sessions it describes, and none of it has been reviewed by Dinis before publication.
 
 ## The short version
 
 - **20:33, 8 November:** Dinis creates the repository: one commit, `0b299ae`, "Initial commit".
-- **21:04:** the conductor session pushes the scaffold (`1cb8d93`): a Kotlin and Jetpack Compose app, a CI workflow, a board of status files. The application ID, `{{app_id}}`, is decided at 21:26 (`5539d1f`).
+- **21:04:** the conductor session pushes the scaffold (`1cb8d93`): a Kotlin and Jetpack Compose app, a CI workflow, a board of status files. The application ID, `ai.riskmandate.app`, is decided at 21:26 (`5539d1f`).
 - **23:07:** five more sessions start, one per role (`4c51b20`).
 - **00:44, 9 November:** the first signed build is installed on Dinis's tablet (`8170146`). At 00:45 a newer build arrives as an update, one tap, no cable (`708cfe0`). Milestone M1, "CI to a device", is done.
-
-The repository stood at {{commit_count}} commits when this article was built (commit `{{commit}}`).
 
 ## The milestone
 
 The plan was written the same evening. Its first milestone, M1, reads: CI builds and signs the app on every push, and a person gets it on a device without a cable. Later milestones (M2: installed by itself on devices the team owns; M3: devices the team does not own) came after, and are now parked (below).
 
-The app is deliberately tiny, because the point of M1 is the pipeline, not the app. It has one screen with a button that opens [riskmandate.ai](https://riskmandate.ai/) in the browser, a section saying whether an organisation manages the device, a Diagnostics screen and an open-source licences screen. See [Features](../features.html).
+The app is deliberately tiny, because the point of M1 is the pipeline, not the app. It has one screen with a button that opens [riskmandate.ai](https://riskmandate.ai/) in the browser, a section saying whether an organisation manages the device, a Diagnostics screen and an open-source licences screen.
 
 ## The team
 
@@ -32,14 +29,12 @@ Only Dinis instructs. Everything else the agents read (pages, other agents' mess
 
 The working model follows the iOS team's: **one branch per role, a security review before every merge, and the conductor merges.**
 
-| Role | Branch | Owns |
-|---|---|---|
-| conductor (Opus) | `dev` | the plan, the board, every merge, the decisions put to Dinis |
-| app | `work/app` | the app code |
-| release | `work/release` | the CI workflow and scripts |
-| devices | `work/devices` | tooling for managed devices (milestone M2) |
-| play | `work/play` | Google Play documents: privacy policy, listing, tester guides |
-| security | `work/security` | reviews of every other branch; secret scan; licence list |
+- **conductor (Opus):** `dev`; owns: the plan, the board, every merge, the decisions put to Dinis
+- **app:** `work/app`; owns: the app code
+- **release:** `work/release`; owns: the CI workflow and scripts
+- **devices:** `work/devices`; owns: tooling for managed devices (milestone M2)
+- **play:** `work/play`; owns: Google Play documents: privacy policy, listing, tester guides
+- **security:** `work/security`; owns: reviews of every other branch; secret scan; licence list
 
 The sessions other than the conductor run on Sonnet (per the plan, `briefs/2026-11-08__riskmandate-android/README.md`). Each session touches only its own paths. If it needs something in someone else's paths, it writes it on its status page under "For <role>" and the conductor routes it.
 
@@ -58,16 +53,14 @@ Two details of how the night actually ran, from the conductor's hand-over debrie
 
 The workflow is `.github/workflows/android.yml`, documented in `docs/ci.md`. It has three jobs.
 
-| Job | Does |
-|---|---|
-| `check` | unit tests and lint, then a dependency licence gate; uploads the reports |
-| `release` | builds the release APK and AAB, signs them, sends the APK to testers on Firebase App Distribution, publishes a GitHub prerelease |
-| `smoke` | boots an emulator, installs the release APK, launches it, checks the home screen shows the expected text, then runs the instrumented tests |
+- **`check`:** unit tests and lint, then a dependency licence gate; uploads the reports
+- **`release`:** builds the release APK and AAB, signs them, sends the APK to testers on Firebase App Distribution, publishes a GitHub prerelease
+- **`smoke`:** boots an emulator, installs the release APK, launches it, checks the home screen shows the expected text, then runs the instrumented tests
 
 Details worth knowing:
 
-- **Tests and lint.** The source holds {{jvm_tests}} unit tests and {{device_tests}} instrumented tests (counted by `@Test` annotations in the source today; this is a count, not a pass result). Lint must have no errors.
-- **The version is owned by CI.** `versionCode` is the workflow's run number and `versionName` is `0.1.<run>`. Nothing in the repository sets them by hand. Tags are named the same way: the tag `{{latest_tag}}` is the latest. (That a tag's number equals the CI run number is what the workflow is written to do; I did not open the Actions run pages, so **unverified** against GitHub.)
+- **Tests and lint.** Unit tests run in the `check` job and instrumented tests in the `smoke` job. Lint must have no errors.
+- **The version is owned by CI.** `versionCode` is the workflow's run number and `versionName` is `0.1.<run>`. Nothing in the repository sets them by hand. Tags are named the same way: `v0.1.26` and `v0.1.27` were the first two. (That a tag's number equals the CI run number is what the workflow is written to do; I did not open the Actions run pages, so **unverified** against GitHub.)
 - **Signing.** CI holds only the upload key, made on Dinis's machine by `scripts/make-upload-key.sh` and added to GitHub as secrets by Dinis. Agents cannot write GitHub secrets and never see them. The key file is written with owner-only permissions and removed at the end of the job. A build from Firebase is signed with the upload key; a build from Google Play would be signed by Google, and Android refuses to install one over the other.
 - **The emulator smoke test** runs on `ubuntu-latest` with KVM, API 34, headless. It is a separate job that nothing depends on, so a flaky emulator cannot hold back a release, with two attempts and a red result if both fail. It tests the minified release build, not a debug build. `docs/lessons.md` records that the first run on GitHub passed on its first attempt in about 1.5 minutes (**unverified**: I did not read the run page).
 - **All actions are pinned by full commit SHA**, the Gradle wrapper carries a checksum, and `firebase-tools` is pinned with a lockfile and installed with `npm ci --ignore-scripts`.
@@ -98,11 +91,11 @@ The release session fixed it in `c4832f9`; the re-review passed it (`44f1b0f`, *
 
 ### 3. Chrome's desktop mode on tablets
 
-On the first real install, Firebase's invitation page said "open the invitation on your mobile device", although the person was holding one. Chrome on Android tablets asks for desktop sites by default, so Firebase took the tablet for a desktop. The fix is to turn off Chrome's Desktop site setting (or untick it for that tab) and reload. It is now on the [install page](../install.html).
+On the first real install, Firebase's invitation page said "open the invitation on your mobile device", although the person was holding one. Chrome on Android tablets asks for desktop sites by default, so Firebase took the tablet for a desktop. The fix is to turn off Chrome's Desktop site setting (or untick it for that tab) and reload. Testers' install notes now say so.
 
 ### 4. Install unknown apps
 
-The first APK from any source (Chrome, Files, App Tester) triggers Android's "install unknown apps" block. You allow it once per source. Allowing App Tester is what makes later updates one tap. Also on the install page.
+The first APK from any source (Chrome, Files, App Tester) triggers Android's "install unknown apps" block. You allow it once per source. Allowing App Tester is what makes later updates one tap.
 
 ### Smaller things
 
@@ -123,7 +116,7 @@ The first signed build, 0.1.26 (CI run 26), was published as a GitHub release (t
 
 Decisions by Dinis, from `board/status.json`:
 
-- **8 November, ~21:35:** the application ID is `{{app_id}}`. It is fixed for ever once an app is on Google Play.
+- **8 November, ~21:35:** the application ID is `ai.riskmandate.app`. It is fixed for ever once an app is on Google Play.
 - **~21:40:** RiskMandate is the first Android app and the one the team learns Android development and publishing on. The PrompTugal app comes after, and starts from `docs/lessons.md`.
 - **~21:45:** the apps are open source (Apache 2.0) and will be for sale eventually.
 - **9 November, ~00:40:** the upload key is disposable during the experiment: the local copy was deleted, and a fresh one must be made, and kept, before the first Google Play upload.
@@ -137,7 +130,7 @@ From about 01:00 on 9 November, at Dinis's word, the team builds four summit fea
 
 The skeleton is on `dev` (`13c47b4`): one package per feature, so parallel sessions never edit the same file. Seven more sessions were started for it at 01:03 (`1b4be83`): an architect, a designer, a QA session and one developer per feature. The merge rule gains two reviewers: architect and QA review every app branch alongside security, and a HOLD from any of them blocks the merge.
 
-None of the four is finished. The source says so: the features list in the app names three of them and each is switched off (`enabled = false`), and the stand mode's host (`StandHost.kt`) is a placeholder that renders the app unchanged. The [features page](../features.html) reads those flags when it is built, so it cannot say a feature is on before its owner turns it on.
+At the time of writing, about 01:30 UTC on 9 November, none of the four was finished: each feature's switch in the source was still off, and the stand mode's host was a placeholder that renders the app unchanged. This article is a record of that night. The article for the Web Summit build says what each feature does.
 
 ## What this does and does not show
 

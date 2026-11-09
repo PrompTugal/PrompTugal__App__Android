@@ -19,6 +19,7 @@ FEATURES_KT = ROOT / 'app' / 'src' / 'main' / 'java' / 'ai' / 'riskmandate' / 'a
 FEATURES_DIR = FEATURES_KT.parent
 ICON_FOREGROUND = ROOT / 'app' / 'src' / 'main' / 'res' / 'drawable' / 'ic_launcher_foreground.xml'
 COLORS = ROOT / 'app' / 'src' / 'main' / 'res' / 'values' / 'colors.xml'
+RELEASES_DIR = ROOT / 'app' / 'src' / 'main' / 'assets' / 'releases'
 LICENCES = ROOT / 'docs' / 'security' / 'licences.md'
 PRIVACY = ROOT / 'docs' / 'play' / 'privacy.html'
 TESTER_GUIDE = ROOT / 'docs' / 'play' / 'tester-guide-firebase.md'
@@ -117,6 +118,43 @@ def licences():
             'artifacts': artifacts, 'by_licence': Counter(l for _, l in artifacts).most_common()}
 
 
+def front_matter(text):
+    """`---`, `key: value` lines, `---`, then the body: the same format the app reads. Values may be quoted."""
+    lines = text.replace('\r\n', '\n').split('\n')
+    if not lines or lines[0].strip() != '---':
+        return {}, text
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == '---'), None)
+    if end is None:
+        return {}, text
+    meta = {}
+    for line in lines[1:end]:
+        key, sep, value = line.partition(':')
+        if sep:
+            value = value.strip()
+            if len(value) > 1 and value[0] == value[-1] and value[0] in '"\'':
+                value = value[1:-1]
+            meta[key.strip()] = value
+    return meta, '\n'.join(lines[end + 1:]).lstrip('\n')
+
+
+def release_articles():
+    """The in-app release articles (app/src/main/assets/releases/<YYYY-MM-DD>-<slug>/article.md), newest first.
+
+    One source for the app and the site. A folder with no title or date, and the sample article, are skipped,
+    as the app skips what it cannot parse."""
+    found = []
+    for folder in sorted(RELEASES_DIR.glob('*/article.md')) if RELEASES_DIR.exists() else []:
+        meta, body = front_matter(folder.read_text())
+        name = folder.parent.name
+        date = meta.get('date') or (name[:10] if re.match(r'\d{4}-\d{2}-\d{2}', name) else '')
+        if not meta.get('title') or not date or meta.get('sample', '').lower() == 'true':
+            continue
+        found.append({'dir': name, 'title': meta['title'], 'date': date, 'summary': meta.get('summary', ''),
+                      'body': body, 'folder': folder.parent, 'has_pt': (folder.parent / 'article.pt-PT.md').exists()})
+    found.sort(key=lambda a: (a['date'], a['dir']), reverse=True)
+    return found
+
+
 def icon_svg():
     """The launcher mark as an SVG: the vector drawable's path on the launcher background colour."""
     path = re.search(r'android:pathData="([^"]+)"', ICON_FOREGROUND.read_text()).group(1)
@@ -145,6 +183,7 @@ def all_facts():
         'jvm_tests': count_tests(ROOT / 'app' / 'src' / 'test'),
         'device_tests': count_tests(ROOT / 'app' / 'src' / 'androidTest'),
         'licences': lic,
+        'articles': release_articles(),
         'commit': commit[:7],
         'commit_count': git('rev-list', '--count', 'HEAD') or '0',
     }

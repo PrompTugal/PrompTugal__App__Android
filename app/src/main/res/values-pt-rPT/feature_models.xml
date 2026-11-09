@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Funcionalidade G (configuração do modelo), responsável dev.llm. Passo 1: a bancada de testes escondida. -->
+    <string name="models_kicker">No dispositivo</string>
+    <string name="models_summary">Descarregue um modelo de linguagem uma vez, verifique-o e use-o neste tablet sem rede.</string>
     <string name="models_bench_intro">Bancada de testes do modelo no dispositivo. Envie um ficheiro de modelo com o adb, escolha-o, corra o pedido fixo e copie os números. Tudo corre neste dispositivo; nada é enviado para lado nenhum.</string>
     <string name="models_bench_none">Ainda não há nenhum ficheiro de modelo. Envie um com o adb para a pasta abaixo e toque em Atualizar.</string>
     <string name="models_bench_pick">Modelo</string>

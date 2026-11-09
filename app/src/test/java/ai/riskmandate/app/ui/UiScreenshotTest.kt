@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
@@ -74,4 +75,10 @@ class UiScreenshotTest {
     }
 
     @Test fun cards() = shoot("cards") { CardsSample() }
+
+    @Test fun lab() = shoot("lab") { LabSample() }
+
+    @Test fun now() = shoot("now") { Surface(color = ai.riskmandate.app.Pt.colors.paper) { NowSample() } }
+
+    @Test fun shell() = shoot("shell") { ShellSample() }
 }

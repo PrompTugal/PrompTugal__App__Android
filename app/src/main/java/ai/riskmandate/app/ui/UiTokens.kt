@@ -17,9 +17,26 @@ object UiTokens {
     /** Reading width for text screens (C, and the text parts of B). */
     val TextMaxWidth = 720.dp
 
-    val CardRadius = 16.dp
-    val CardPadding = 20.dp
+    /** The iOS `Space.radius`: 14 for every card. */
+    val CardRadius = 14.dp
+    val CardPadding = 16.dp
     val Gap = 16.dp
+
+    /** The iOS `Page` default: dashboards never get wider than this. */
+    val PageMaxWidth = 1200.dp
+
+    /** The iOS `Space.readable`: running text never gets wider than this. */
+    val Readable = 680.dp
+}
+
+/** The iOS `Space`: a 4-point grid. */
+object Space {
+    val Xs = 4.dp
+    val S = 8.dp
+    val M = 12.dp
+    val L = 16.dp
+    val Xl = 24.dp
+    val Xxl = 32.dp
 }
 
 /** Test tags for the shared components, so feature tests do not invent their own. */

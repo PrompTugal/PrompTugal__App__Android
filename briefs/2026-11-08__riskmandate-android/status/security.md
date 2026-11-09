@@ -1,11 +1,24 @@
 # security.android status
 
-> Round 17 (9 Nov 2026, about 05:25 UTC): dev.releases 61d2b70, app 95e7978, dev.mandate 42f7a7b, qa bdb73a5 all PASS. Open for Dinis: R-ext-2, R-play-9, A-2, R-wif-2 to R-wif-4, R-stand-4. Waiting for the next wake.
+> Round 30 (9 Nov 2026, about 09:30 UTC): design fb824aa PASS (the PrompTugal look: no fonts bundled, PNGs without metadata), dev.llm 9c3fbd5 PASS (bench hidden unless debug or a model file is present), release b239745 PASS (Dependabot groups). eval has no commits. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 30: **PASS** design fb824aa, dev.llm 9c3fbd5, release b239745 (R-llm-5 has a plan: Kotlin toolchain bump in docs/ci.md; R-llm-8 done).
+- Round 29: **PASS** app 894a93b (the shell only navigates among host-built routes; no intent, no dependency) and dev.stand ebd24c7.
+- Round 28: **PASS** dev.stand ea70ed4 (idle loop refactor, behaviour unchanged) and dev.chat de07188 (comment fix; `BackupRulesTest` guards all nine backup domains; R-chat-1 closed).
+- Round 27: **PASS** dev.llm c02632a. Licences regenerated on that head (87 artifacts, 0 flagged; the graph raised kotlin-stdlib to 2.4.0 and coroutines to 1.11.0 for the whole app, so `-Xskip-metadata-version-check` is needed: R-llm-5) and OSV rerun (none known; the package is new). Merged release manifest: only `uses-native-library libOpenCL.so required=false` added, no permission, no exported component. `docs/security/models.md` now holds dev.llm's commit-pinned generic Gemma 4 E2B and E4B files (size and SHA-256 equal Hugging Face's headers) and the gated Gemma 3 files (adb only).
+- Round 26: post-hoc **PASS** design 43dbe72 (step number from a string; the Lab replay-vs-live and chat no-share requests are in the spec) and editor 7433259 (site screenshots with honest captions; pinned-stand paragraph matches the code).
+- Round 25: **PASS** dev.lab b67a7c5 (conditions for live runs: caps and strict parsing R-lab-1, an import-ban test R-lab-2), dev.chat 4c7161d (R-chat-2: history survives the stand idle reset on a shared tablet; do not enable chat on stand tablets until Dinis decides), app 5eac3ad (generic badge).
+- Round 24: **PASS** dev.mandate 7f5706d, qa b3181d9 (R-ext-3 closed), dev.releases c554cd4, editor 3a695d3.
+- Round 23: **PASS** dev.releases ffb2ccd, dev.site aaaf525.
+- Round 22: **PASS** architect 3e3ea0e (homeBadge), app 03b393b (device-protected backup domains excluded; `Browser.open` refuses while pinned: in a pinned stand the Open button now only shows the message), design 372ddc5, play 8bb38e4 (LLM privacy drafts; name both hosts), dev.releases 5abcff5, dev.site aaaf525, dev.stand ecd28c2. `docs/security/models.md`: measured with HEAD requests that `huggingface.co/.../resolve/main/gemma-4-E2B-it-gpu.litertlm` answers 302 to `us.aws.cdn.hf.co` (size 2008432640, SHA-256 per `x-linked-etag` a53a5900...5cf5) and E4B (2969059328, 4912bb5a...b7ff); a checksum from the same server is not independent, so dev.llm confirms by hashing a downloaded file.
+- Round 21: **PASS** editor 90da553: the Web Summit release article (en and pt-PT, eight screenshots from the build's own tests) and the M1 article in the releases format: no private facts, no organisation or device names, no open-gap details, claims match the code; R-editor-5 soften "so a visitor cannot leave the app".
+- Round 20: **PASS** dev.site 747b521 (the asset loader serves `/assets/` but only `/assets/feature_site/` reaches it: two checks in front), app 62a5ee6, architect e2675d4 (docs; two lows for the download: do not let `HttpURLConnection` follow redirects, keep models and chat history in `noBackupFilesDir`).
+- Round 19: `docs/security/summit-checklist.md` sections G to K for the on-device LLM team (model download: pinned URLs and byte sizes, own redirect handling to a host suffix list, SHA-256 before load and after any copy, no load-any-file, LiteRT-LM merged-manifest and OSV/licence checks; chat: text output, history cleared on the stand idle reset, no content logging; Lab: fake tools, strict allow-listed parsing, planted secret must be an obvious fake that matches no pattern, FileProvider reviewed if used; eval: key only from the environment and redacted, $5 cap in code and on the key, results out of the repository, hashed dependencies); `docs/security/models.md` (the table a model must be in before it is offered); `scripts/secret-scan.sh` gained `OpenRouter key` and `Hugging Face token` classes (tested).
+- Round 18: **PASS** dev.mandate 0b29d55 (design components; the data sentence is shortened to what the code shows; the site's no-analytics statement is at https://riskmandate.ai/privacy if dev.mandate wants to quote it).
 - Round 17: **PASS** dev.releases 61d2b70 (What's new: reads only its own assets; links only through `Links.isAllowed` and `Browser.open`, other links plain text; image paths whitelisted; stores one int; committed PNG has no metadata), app 95e7978 (idle holds no longer cleared by the host), dev.mandate 42f7a7b (final strings, en and pt-PT, accurate), qa bdb73a5 (the asset-origin exemption is pinned to one host and folder; the SSL guard trips on `proceed()` only).
 - Round 16: **PASS** architect 0b521af (transitional Activity constructor deleted), app c68ed92, dev.mandate e552307 (R-site-1 closed: the screen now derives the app's own connections from the enabled features), dev.site ee25896 (openExternal wired with `hasGesture()` and not `isRedirect`: R-ext-1 met), editor 6e8845e (R-editor-1 closed). Open: R-ext-2 (Dinis, external-link rule), R-play-9 (Data safety answer), A-2 and R-wif-2 to R-wif-4 (Dinis, GitHub and Google Cloud settings), R-stand-4 (accepted).
 - Round 15: `docs/security/licences.md` regenerated with `scripts/licences.sh` on the work/app head (Android SDK installed under /tmp, Maven Central 429s needed a retry): 85 artifacts, 0 flagged; `scripts/osv-check.sh`: no known vulnerabilities (webkit 1.12.1 included). Reviews `2026-11-09-*` for architect 7be8651 (FeatureContext v3 holdIdle: a callback, cleared on route change), app e914cc6 (webkit dependency, IdleHolds), dev.stand 9f207e8 (corner long-press on the home screen only, idleHeld), dev.abpdemo b94232d, design b61b5d1, dev.site 13114fd (content only; cache cleared on open and close; openExternal still not wired), play 9c3e4c5 (texts match the code): all **PASS**. **HOLD** dev.mandate 5a43197: `mandate_mandate_data` still says "Nothing leaves the device from this app" and the INTERNET reason says "in your browser" (en and pt-PT); three-string fix.
@@ -40,6 +53,8 @@ At each wake: `git fetch origin`, review `origin/dev..origin/work/<role>` for ea
 Nothing.
 
 ## For other roles
+- dev.llm, dev.chat, dev.lab, eval: read `docs/security/summit-checklist.md` sections G to K before pushing; dev.llm fills `docs/security/models.md` size and SHA-256 per model.
+- play: the model download tells huggingface.co the device's IP address; privacy and Data safety change in the same merge as feature G.
 - dev.mandate (blocking): R-site-1, fix `mandate_mandate_data` and `mandate_reason_open_pages` in en and pt-PT.
 - dev.site: when wiring `Browser.openExternal`, only for `request.hasGesture()` and not `isRedirect` (R-ext-1); R-site-10 use design's FeatureContent.
 - play: R-play-8 reword the Contact page sentence.
@@ -68,6 +83,10 @@ Nothing.
 - conductor: `scripts/osv-check.sh` needs network to api.osv.dev; run it after `scripts/licences.sh` in the gate if wanted.
 
 ## For Dinis
+- With the new shell a visitor on a pinned stand tablet can open Diagnostics (and the Model bench while G is off) from the sidebar: decide whether to hide them while stand mode is on (R-shell-1).
+- Chat history on a shared stand tablet (R-chat-2): `ChatPolicy.WIPE_ON_LEAVE` is false. Decide: keep history across the stand idle reset, or clear it (best: clear only on the idle reset or while stand mode is on, which needs a small contract change from architect). Also FLAG_SECURE (R-chat-4) and whether unencrypted app-private history is acceptable (R-chat-3).
+- OpenRouter: set a credit limit of $5 on the key itself in the OpenRouter dashboard, so a harness bug cannot overspend (the brief's cap is enforced in code too).
+- Chat history on a shared stand tablet: decide whether it is cleared by the stand idle reset (my recommendation) and whether the chat screen uses FLAG_SECURE.
 - Decide: may the in-app site hand a user-tapped https link to the system browser (the WebView still loads riskmandate.ai only)? Play's privacy text already says so (R-ext-2).
 - Data safety answer for the in-app view: ask the live Play Console form (play's `data-safety.md`, three options) before the privacy page is hosted.
 - Before the website goes live: verify promptugal.ai in GitHub for Pages, consider a required reviewer on the `github-pages` environment, allow `dev` in its deployment branches (R-site-2, R-site-3).
