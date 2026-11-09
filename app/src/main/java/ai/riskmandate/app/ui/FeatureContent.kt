@@ -1,5 +1,6 @@
 package ai.riskmandate.app.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -37,6 +38,7 @@ fun FeatureContent(
     modifier: Modifier = Modifier,
     scrollable: Boolean = true,
     maxContentWidth: Dp = UiTokens.TextMaxWidth,
+    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -47,7 +49,7 @@ fun FeatureContent(
             var column = Modifier.fillMaxHeight()
             column = if (capped) column.widthIn(max = maxContentWidth).fillMaxWidth() else column.fillMaxWidth()
             if (scrollable) column = column.verticalScroll(rememberScrollState())
-            Column(column.padding(if (capped) pad else 0.dp), content = content)
+            Column(column.padding(if (capped) pad else 0.dp), verticalArrangement = verticalArrangement, content = content)
         }
     }
 }
