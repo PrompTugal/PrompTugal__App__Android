@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 59 (9 Nov 2026): dev.lab 091bbdc PASS and eval 9bcd670 PASS: R-lab-8, R-lab-9, R-lab-12, R-lab-13 and R-eval-7 closed (Kotlin and Python agree on 54 vectors and 400,000 generated strings). The Lab egress check is done. Still open: the design-pass article when it moves, the Lab export share path (R-lab-11). Waiting for the next wake.
+> Round 60 (9 Nov 2026): qa ea2ec14 PASS (R-qa-1 closed; R-qa-2 info on device_label). Everything queued is reviewed. Still open: the design-pass article when it moves, the Lab export share path (R-lab-11), R-app-2 for Dinis. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
