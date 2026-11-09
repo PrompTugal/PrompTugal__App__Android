@@ -51,6 +51,6 @@ class LicencesScreenTest {
         compose.onNodeWithTag(LicenceTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(LicenceTags.APACHE).assertExists()
         compose.onNodeWithTag(LicenceTags.BACK).performClick()
-        compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+        compose.onNodeWithTag(HomeTags.OPEN).performScrollTo().assertIsDisplayed()
     }
 }

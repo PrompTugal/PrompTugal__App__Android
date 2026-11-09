@@ -22,10 +22,23 @@
     <string name="licences_back_description">Back to the home screen</string>
     <string name="licences_apache_heading">Apache License, Version 2.0 (full text)</string>
 
+    <string name="nav_section_today">Today</string>
+    <string name="nav_section_explore">Explore</string>
+    <string name="nav_section_device">This device</string>
+    <string name="nav_collapse">Fold the sidebar to icons</string>
+    <string name="nav_expand">Open the sidebar</string>
+    <string name="shell_brand_mark" translatable="false">RM</string>
+    <string name="shell_brand_line">Web Summit</string>
     <string name="nav_menu">Open the navigation menu</string>
     <string name="nav_home">Home</string>
-    <string name="nav_section_now">Now</string>
-    <string name="nav_section_features">Features</string>
+    <string name="home_now_title">Now</string>
+    <string name="home_now_summary">What you can open on this device.</string>
+    <string name="home_stat_features">Features on</string>
+    <string name="home_stat_collected">Data this app collects</string>
+    <string name="home_stat_attention">Needs a look</string>
+    <string name="home_stat_attention_none">Nothing to check</string>
+    <string name="home_stat_attention_some">See the note above</string>
+    <string name="home_links_heading">This app</string>
     <string name="home_diagnostics">Diagnostics</string>
     <string name="message_failed">Something went wrong opening riskmandate.ai in a browser. Try again, or open it in your browser yourself.</string>
     <string name="message_pinned">Web pages are not opened in a browser while the app is pinned.</string>

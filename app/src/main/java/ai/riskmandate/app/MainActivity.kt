@@ -10,11 +10,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import ai.riskmandate.app.features.FEATURES
@@ -51,6 +48,28 @@ fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean): Str
     else -> Routes.HOME
 }
 
+/** Which sidebar section a feature sits in, by id (design spec table); unknown ids go to Explore. */
+fun sectionOf(id: String): Int = when (id) {
+    "site", "releases" -> R.string.nav_section_today
+    "mandate", "models" -> R.string.nav_section_device
+    else -> R.string.nav_section_explore
+}
+
+/** The order of features inside their sections (design spec table). */
+private val NAV_ORDER = listOf("site", "releases", "abpdemo", "lab", "chat", "mandate", "models")
+
+/** A line icon per known feature id, until each feature gives its own (Feature.icon). */
+fun iconFor(id: String): Int = when (id) {
+    "site" -> R.drawable.ic_nav_globe
+    "releases" -> R.drawable.ic_nav_news
+    "abpdemo" -> R.drawable.ic_nav_layers
+    "lab" -> R.drawable.ic_nav_lab
+    "chat" -> R.drawable.ic_nav_chat
+    "mandate" -> R.drawable.ic_nav_shield
+    "models" -> R.drawable.ic_nav_chip
+    else -> R.drawable.ic_nav_star
+}
+
 private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS, Routes.MODEL_BENCH)
 
 class MainActivity : ComponentActivity() {
@@ -68,7 +87,7 @@ class MainActivity : ComponentActivity() {
         refresh()
         setContent {
             RiskMandateTheme {
-                Surface(Modifier.fillMaxSize()) {
+                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     // Saved, so turning a tablet round does not drop the user back on the home screen.
                     var screen by rememberSaveable { mutableStateOf(Routes.HOME) }
                     val goHome = { screen = Routes.HOME }
@@ -84,30 +103,36 @@ class MainActivity : ComponentActivity() {
                     // reset off through this. HoldIdleWhile releases when the feature leaves the screen; the
                     // host does not clear holds itself (that wiped a feature's hold after rotation, A-app-7).
                     val idle = remember { IdleHolds() }
-                    // Destinations: Home, then each enabled feature (with its badge), then the about screens.
+                    // Destinations, grouped as in docs/design/android-theme.md. Features are grouped by id (a
+                    // `section` on Feature is the architect's to add) and use their own icon when they give one.
                     val featureItems = FEATURES.filter { it.enabled }.map { f ->
-                        NavItem(f.id, f.title, Icons.Filled.Star, f.homeBadge())
+                        NavItem(f.id, f.title, iconFor(f.id), f.homeBadge(), vector = f.icon)
                     }
+                    fun inSection(section: Int) = featureItems.filter { sectionOf(it.route) == section }
+                        .sortedBy { NAV_ORDER.indexOf(it.route).let { i -> if (i < 0) NAV_ORDER.size else i } }
                     val sections = listOf(
-                        NavSection(R.string.nav_section_now, listOf(NavItem(Routes.HOME, R.string.nav_home, Icons.Filled.Home))),
-                        NavSection(R.string.nav_section_features, featureItems),
                         NavSection(
-                            R.string.home_about_heading,
-                            listOfNotNull(
-                                if (standOn) null else NavItem(Routes.DIAGNOSTICS, R.string.home_diagnostics, Icons.Filled.Build),
-                                NavItem(Routes.LICENCES, R.string.home_licences, Icons.Filled.Info),
+                            R.string.nav_section_today,
+                            listOf(NavItem(Routes.HOME, R.string.home_now_title, R.drawable.ic_nav_home)) + inSection(R.string.nav_section_today),
+                        ),
+                        NavSection(R.string.nav_section_explore, inSection(R.string.nav_section_explore)),
+                        NavSection(
+                            R.string.nav_section_device,
+                            inSection(R.string.nav_section_device) + listOfNotNull(
+                                NavItem(Routes.LICENCES, R.string.home_licences, R.drawable.ic_nav_doc),
+                                if (standOn) null else NavItem(Routes.DIAGNOSTICS, R.string.home_diagnostics, R.drawable.ic_nav_pulse),
                             ),
                         ),
                     )
                     val currentTitle = when (route) {
-                        Routes.HOME -> R.string.nav_home
+                        Routes.HOME -> R.string.home_now_title
                         Routes.LICENCES -> R.string.home_licences
                         Routes.DIAGNOSTICS -> R.string.home_diagnostics
                         Routes.MODEL_BENCH -> R.string.feature_models_title
-                        else -> feature?.title ?: R.string.nav_home
+                        else -> feature?.title ?: R.string.home_now_title
                     }
-                    // standOn must follow stand mode: wire `onEnabledChange = { standOn = it }` here once StandHost reports it
-                    // (a small additive parameter owned by dev.stand; asked of the conductor). Until then it stays false.
+                    val prefs = remember { getSharedPreferences("shell", MODE_PRIVATE) }
+                    var sidebarCollapsed by remember { mutableStateOf(prefs.getBoolean("sidebar_collapsed", false)) }
                     StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome, idleHeld = idle.held) {
                         AppShell(
                             sections = sections,
@@ -116,6 +141,12 @@ class MainActivity : ComponentActivity() {
                             atHome = route == Routes.HOME,
                             onSelect = { screen = it },
                             onBackHome = goHome,
+                            brandLine = device.label ?: stringResource(R.string.shell_brand_line),
+                            sidebarCollapsed = sidebarCollapsed,
+                            onSidebarCollapsedChange = {
+                                sidebarCollapsed = it
+                                prefs.edit().putBoolean("sidebar_collapsed", it).apply()
+                            },
                         ) {
                             when {
                                 route == Routes.LICENCES -> LicencesScreen(
@@ -132,10 +163,10 @@ class MainActivity : ComponentActivity() {
                                         onModelBench = if (bench) ({ screen = Routes.MODEL_BENCH }) else null,
                                     )
                                 }
-                                route == Routes.MODEL_BENCH -> FeatureFrame(title = R.string.feature_models_title, onBack = goHome) {
+                                route == Routes.MODEL_BENCH -> FeatureFrame(title = R.string.feature_models_title, kicker = R.string.nav_section_device) {
                                     ModelBenchScreen()
                                 }
-                                feature != null -> FeatureFrame(title = feature.title, onBack = goHome) {
+                                feature != null -> FeatureFrame(title = feature.title, kicker = feature.kicker ?: sectionOf(feature.id)) {
                                     feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device, holdIdle = idle::hold) })
                                 }
                                 else -> HomeScreen(
@@ -146,7 +177,10 @@ class MainActivity : ComponentActivity() {
                                     onLicences = { screen = Routes.LICENCES },
                                     onDiagnostics = { screen = Routes.DIAGNOSTICS },
                                     showDiagnostics = !standOn,
-                                    features = featureItems.map { n -> FeatureButton(n.route, n.title, n.badge) { screen = n.route } },
+                                    attention = (if (config.startUrlRefused) 1 else 0) + (if (message != null) 1 else 0),
+                                    features = FEATURES.filter { it.enabled }.mapIndexed { i, f ->
+                                        FeatureButton(f.id, f.title, featureItems[i].badge, f.kicker, f.summary) { screen = f.id }
+                                    },
                                 )
                             }
                         }

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -27,7 +28,7 @@ class HomeScreenTest {
     @Test fun showsButtonAndOpens() {
         var clicks = 0
         show(DeviceStatus.from(false, false, null)) { clicks++ }
-        compose.onNodeWithText("Open riskmandate.ai").assertIsDisplayed().assertHasClickAction()
+        compose.onNodeWithText("Open riskmandate.ai").performScrollTo().assertIsDisplayed().assertHasClickAction()
         compose.onNodeWithTag(HomeTags.OPEN).performClick()
         assertEquals(1, clicks)
     }
@@ -62,7 +63,7 @@ class HomeScreenTest {
         compose.setContent {
             MaterialTheme { HomeScreen("0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {}, onDiagnostics = { opened++ }) }
         }
-        compose.onNodeWithTag(HomeTags.DIAGNOSTICS).performClick()
+        compose.onNodeWithTag(HomeTags.DIAGNOSTICS).performScrollTo().performClick()
         assertEquals(1, opened)
     }
 }
@@ -71,8 +72,8 @@ class HomeScreenTest {
 class HomeFeatureOrderTest {
     @get:Rule val compose = createComposeRule()
 
-    /** TalkBack reads in this order: title, Open, the message about opening, then the feature buttons. */
-    @Test fun messageComesRightAfterOpenAndBeforeFeatures() {
+    /** TalkBack reads in this order: header, the message about opening, the stats, then the feature cards. */
+    @Test fun messageComesBeforeTheStatsAndTheFeatureCards() {
         compose.setContent {
             MaterialTheme {
                 HomeScreen(
@@ -82,9 +83,9 @@ class HomeFeatureOrderTest {
                 )
             }
         }
-        fun top(tag: String) = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot.top
-        assert(top(HomeTags.OPEN) < top(HomeTags.MESSAGE))
-        assert(top(HomeTags.MESSAGE) < top(HomeTags.feature("site")))
+        fun top(tag: String) = compose.onNodeWithTag(tag).fetchSemanticsNode().positionInRoot.y
+        assert(top(HomeTags.MESSAGE) < top(HomeTags.STATS))
+        assert(top(HomeTags.STATS) < top(HomeTags.feature("site")))
     }
 }
 
@@ -92,8 +93,7 @@ class HomeFeatureOrderTest {
 class HomeCornerTest {
     @get:Rule val compose = createComposeRule()
 
-    /** Stand mode (features/stand) listens for a long press in the bottom-end 48dp corner: nothing clickable may sit there. */
-    @Test fun bottomEndCornerHasNoClickableControl() {
+    private fun checkCorner() {
         compose.setContent {
             MaterialTheme {
                 HomeScreen(
@@ -103,13 +103,22 @@ class HomeCornerTest {
                 )
             }
         }
-        val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val root = compose.onRoot().fetchSemanticsNode()
         val dp = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
-        val corner = androidx.compose.ui.geometry.Rect(root.right - 48 * dp, root.bottom - 48 * dp, root.right, root.bottom)
+        val w = root.size.width.toFloat(); val h = root.size.height.toFloat()
+        val corner = androidx.compose.ui.geometry.Rect(w - 48 * dp, h - 48 * dp, w, h)
         compose.onAllNodes(androidx.compose.ui.test.hasClickAction()).fetchSemanticsNodes().forEach {
-            assert(!it.boundsInRoot.overlaps(corner)) { "a control overlaps the bottom-end corner: ${it.boundsInRoot}" }
+            val pos = it.positionInRoot
+            val rect = androidx.compose.ui.geometry.Rect(pos.x, pos.y, pos.x + it.size.width, pos.y + it.size.height)
+            assert(!rect.overlaps(corner)) { "a control overlaps the bottom-end corner: $rect" }
         }
     }
+
+    /** Stand mode (features/stand) listens for a long press in the bottom-end 48dp corner: nothing clickable may sit there. */
+    @Test fun bottomEndCornerHasNoClickableControlOnAPhone() = checkCorner()
+
+    @Test @org.robolectric.annotation.Config(qualifiers = "w800dp-h1280dp")
+    fun bottomEndCornerHasNoClickableControlOnATablet() = checkCorner()
 }
 
 @RunWith(AndroidJUnit4::class)
@@ -142,7 +151,7 @@ class HomeBadgeTest {
                 )
             }
         }
-        compose.onNodeWithTag(HomeTags.feature("a")).performClick()
+        compose.onNodeWithTag(HomeTags.feature("a")).performScrollTo().performClick()
         assertEquals(1, clicks)
         val dp = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
         assert(compose.onNodeWithTag(HomeTags.feature("a")).fetchSemanticsNode().boundsInRoot.height >= 48 * dp - 1)
