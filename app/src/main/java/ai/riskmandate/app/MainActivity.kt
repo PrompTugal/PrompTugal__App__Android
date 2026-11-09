@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
+import ai.riskmandate.app.features.IdleHolds
 import ai.riskmandate.app.features.stand.StandHost
 
 /** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
@@ -56,6 +57,11 @@ class MainActivity : ComponentActivity() {
                     val feature = FEATURES.firstOrNull { it.id == screen && it.enabled }
                     val route = if (screen in BUILT_IN || feature != null) screen else Routes.HOME
                     LaunchedEffect(route, screen) { if (route != screen) screen = route }
+                    // Features that run unattended on purpose (abpdemo's auto-play) hold stand mode's idle
+                    // reset off through this; every hold is dropped when the route changes, as a safety net.
+                    val idle = remember { IdleHolds() }
+                    LaunchedEffect(route) { idle.clear() }
+                    // idle.held goes to StandHost as `idleHeld` once dev.stand's StandHost (idleHeld parameter) is on this branch.
                     StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome) {
                         if (route != Routes.HOME) BackHandler(onBack = goHome)
                         when {
@@ -69,7 +75,7 @@ class MainActivity : ComponentActivity() {
                                 DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = goHome)
                             }
                             feature != null -> FeatureFrame(title = feature.title, onBack = goHome) {
-                                feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device) })
+                                feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device, holdIdle = idle::hold) })
                             }
                             else -> HomeScreen(
                                 version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
