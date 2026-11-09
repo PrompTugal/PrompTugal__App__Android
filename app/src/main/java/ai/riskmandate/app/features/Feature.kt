@@ -99,6 +99,13 @@ class FeatureContext(
      * `location` is CLOUD), and send history only on an explicit, visible per-request choice.
      */
     val cloudLlm: LlmService? = null,
+    /**
+     * True while the app can use the cloud model at all: the cloud switch is on, a key is stored and stand mode
+     * is off. Given to every feature, cloud or not, so on-device screens can say honestly whether anything may
+     * leave the device (for example Model setup's "Nothing you type leaves the device" only while this is
+     * false). A fact only: it carries no service and no key. The host rebuilds the context when it changes.
+     */
+    val cloudOn: Boolean = false,
 )
 
 /**

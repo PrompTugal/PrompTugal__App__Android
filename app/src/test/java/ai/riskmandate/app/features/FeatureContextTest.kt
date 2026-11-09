@@ -189,3 +189,19 @@ class FeatureCloudTest {
         org.junit.Assert.assertTrue("cloud features: $cloud", cloud.all { it in setOf("workbench") })
     }
 }
+
+/** FeatureContext.cloudOn: a read-only fact for every feature, false by default, independent of cloudLlm. */
+@RunWith(AndroidJUnit4::class)
+class FeatureCloudOnTest {
+    private val device = DeviceStatus.from(hasDeviceOwner = false, inWorkProfile = false, label = null)
+
+    @Test fun falseByDefault() {
+        org.junit.Assert.assertFalse(FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = device).cloudOn)
+    }
+
+    @Test fun aNonCloudFeatureCanKnowTheCloudIsOnWithoutGettingTheService() {
+        val context = FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = device, cloudOn = true)
+        org.junit.Assert.assertTrue(context.cloudOn)
+        org.junit.Assert.assertNull(context.cloudLlm)
+    }
+}
