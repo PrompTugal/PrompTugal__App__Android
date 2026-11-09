@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 35 (9 Nov 2026): design 64b0e5b (with e2b96aa) PASS. Waiting for the next wake (qa 680c53d, eval harness, work/app after design lands).
+> Round 36 (9 Nov 2026): app f092853 PASS (R-llm-8 closed), dev.mandate 7061378 PASS, play f438a94 PASS (R-shell-1 closed; R-shell-2 still open, Low; R-play-10 info). Waiting for the next wake (qa 680c53d, eval harness, the LLM merge).
 
 ## Doing
 Nothing. Stopped until woken.
