@@ -46,6 +46,7 @@
   "Dinis: a Contact tab in the in-app site (its form posts to another host, so it would open in the browser)? A staff PIN for stand mode after the summit?",
   "Dinis: links tapped inside the in-app riskmandate.ai view to other https sites open in the device's own browser (never inside the app, never while pinned, only on a real tap). Today's default by the conductor, since the alternative is that such links do nothing; say if you want them blocked instead (security R-ext-2).",
   "Dinis: set a $5 credit limit on the OpenRouter key itself (eval also stops at $5 in code).",
+  "Dinis: should stand mode's idle reset also clear the chat history on a shared stand tablet? (security recommends yes; chat's ChatPolicy.WIPE_ON_LEAVE is false until you say)",
   "Dinis: when you try it on the tablet, the model download (2.6 GB for E2B) runs only while the Models screen is open; leaving pauses it and it resumes on return (no background service, no new permission). Start it on good Wi-Fi."
  ],
  "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
