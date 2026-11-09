@@ -22,16 +22,18 @@ enum class Verdict {
 /**
  * Where model files live, and the checks they pass before the runtime may open them.
  *
- * Two folders, both private to this app and both excluded from backup and device transfer
- * (data_extraction_rules.xml excludes every domain):
- * - `filesDir/feature_models/`: internal storage, where feature G's download will put files.
- * - `getExternalFilesDir("feature_models")`: `/sdcard/Android/data/ai.riskmandate.app/files/feature_models/`,
- *   the folder `adb push` can reach on a release build (internal storage needs a debuggable build).
+ * Two folders, both excluded from backup and device transfer:
+ * - `noBackupFilesDir/models/`: internal, app-private storage, where feature G's download will put files
+ *   (security G.3 and G.5: `noBackupFilesDir`, never backed up).
+ * - `getExternalFilesDir("models")`: `/sdcard/Android/data/ai.riskmandate.app/files/models/`, the folder
+ *   `adb push` can reach on a release build (internal storage needs a debuggable build). On Android 11 and
+ *   later only this app and adb can read or write it. Step 1's bench loads a verified file from here directly;
+ *   feature G (step 3) copies it into the internal folder and verifies it again before use.
  */
 object ModelFiles {
-    const val DIR = "feature_models"
+    const val DIR = "models"
 
-    fun internalDir(context: Context): File = File(context.filesDir, DIR)
+    fun internalDir(context: Context): File = File(context.noBackupFilesDir, DIR)
 
     /** Null when shared storage is not mounted. Calling it creates the folder, so adb can push into it. */
     fun adbDir(context: Context): File? = context.getExternalFilesDir(DIR)

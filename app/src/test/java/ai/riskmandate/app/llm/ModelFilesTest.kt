@@ -55,7 +55,7 @@ class ModelFilesTest {
     }
 
     @Test fun adbCommandNamesTheExactFileAndFolder() = assertEquals(
-        "adb push gemma-4-E2B-it.litertlm /sdcard/Android/data/ai.riskmandate.app/files/feature_models/",
-        ModelFiles.adbCommand(ModelCatalog.GEMMA4_E2B, "/sdcard/Android/data/ai.riskmandate.app/files/feature_models"),
+        "adb push gemma-4-E2B-it.litertlm /sdcard/Android/data/ai.riskmandate.app/files/models/",
+        ModelFiles.adbCommand(ModelCatalog.GEMMA4_E2B, "/sdcard/Android/data/ai.riskmandate.app/files/models"),
     )
 }

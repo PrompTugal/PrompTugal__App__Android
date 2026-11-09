@@ -5,7 +5,8 @@ package ai.riskmandate.app.llm
  * name, its size and its SHA-256. A file whose name, size or hash differ is never loaded.
  *
  * Sizes and hashes are the Hugging Face LFS values for that revision (the LFS object id is the SHA-256 of the
- * file's bytes); the two Gemma 4 files were also downloaded and hashed end to end on 9 Nov 2026.
+ * file's bytes). The two Gemma 4 files were also downloaded and hashed end to end once, on 9 Nov 2026, before
+ * Dinis said models are downloaded by the tablet only; the tablet confirms these values on first download.
  */
 data class ModelSpec(
     /** Stable id, lowercase letters and digits only. */
