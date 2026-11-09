@@ -93,4 +93,8 @@
     <string name="lab_stop_time">Stopped: the time limit was reached.</string>
     <string name="lab_stop_errors">Stopped: runs keep failing.</string>
     <string name="lab_stop_user">Stopped by you.</string>
+    <string name="lab_minus">-</string>
+    <string name="lab_plus">+</string>
+    <string name="lab_decrease">Decrease %1$s</string>
+    <string name="lab_increase">Increase %1$s</string>
 </resources>

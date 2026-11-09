@@ -123,14 +123,16 @@ internal fun SettingsPanel(
 @Composable
 private fun StepSlider(label: Int, valueText: String, value: Double, min: Double, max: Double, step: Double, tag: String, onValue: (Double) -> Unit) {
     val name = stringResource(label)
+    val less = stringResource(R.string.lab_decrease, name)
+    val more = stringResource(R.string.lab_increase, name)
     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(name, Modifier.widthIn(min = 120.dp), style = MaterialTheme.typography.titleMedium)
-        OutlinedButton({ onValue(SamplingChoice.snap(value - step, min, max, step)) }, Modifier.heightIn(min = 48.dp).semantics { contentDescription = "- $name" }.testTag(tag + "_minus")) { Text("-", fontSize = 22.sp) }
+        OutlinedButton({ onValue(SamplingChoice.snap(value - step, min, max, step)) }, Modifier.heightIn(min = 48.dp).semantics { contentDescription = less }.testTag(tag + "_minus")) { Text(stringResource(R.string.lab_minus), fontSize = 22.sp) }
         Slider(
             value = value.toFloat(), onValueChange = { onValue(SamplingChoice.snap(it.toDouble(), min, max, step)) },
             valueRange = min.toFloat()..max.toFloat(), modifier = Modifier.weight(1f).testTag(tag),
         )
-        OutlinedButton({ onValue(SamplingChoice.snap(value + step, min, max, step)) }, Modifier.heightIn(min = 48.dp).semantics { contentDescription = "+ $name" }.testTag(tag + "_plus")) { Text("+", fontSize = 22.sp) }
+        OutlinedButton({ onValue(SamplingChoice.snap(value + step, min, max, step)) }, Modifier.heightIn(min = 48.dp).semantics { contentDescription = more }.testTag(tag + "_plus")) { Text(stringResource(R.string.lab_plus), fontSize = 22.sp) }
         Text(valueText, Modifier.widthIn(min = 56.dp), style = MaterialTheme.typography.titleMedium, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
     }
 }
@@ -143,9 +145,11 @@ internal fun LoopControls(
     Column(Modifier.padding(top = UiTokens.Gap), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val runsLabel = stringResource(R.string.lab_loop_runs, runs)
-            OutlinedButton({ onRuns((runs - 5).coerceAtLeast(LoopRunner.MIN_RUNS)) }, Modifier.heightIn(min = 56.dp).semantics { contentDescription = "- $runsLabel" }.testTag(LabTags.LOOP_MINUS), enabled = !running) { Text("-", fontSize = 22.sp) }
+            val fewer = stringResource(R.string.lab_decrease, runsLabel)
+            val more = stringResource(R.string.lab_increase, runsLabel)
+            OutlinedButton({ onRuns((runs - 5).coerceAtLeast(LoopRunner.MIN_RUNS)) }, Modifier.heightIn(min = 56.dp).semantics { contentDescription = fewer }.testTag(LabTags.LOOP_MINUS), enabled = !running) { Text(stringResource(R.string.lab_minus), fontSize = 22.sp) }
             Text(runsLabel, style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag(LabTags.LOOP_RUNS))
-            OutlinedButton({ onRuns((runs + 5).coerceAtMost(LoopRunner.MAX_RUNS)) }, Modifier.heightIn(min = 56.dp).semantics { contentDescription = "+ $runsLabel" }.testTag(LabTags.LOOP_PLUS), enabled = !running) { Text("+", fontSize = 22.sp) }
+            OutlinedButton({ onRuns((runs + 5).coerceAtMost(LoopRunner.MAX_RUNS)) }, Modifier.heightIn(min = 56.dp).semantics { contentDescription = more }.testTag(LabTags.LOOP_PLUS), enabled = !running) { Text(stringResource(R.string.lab_plus), fontSize = 22.sp) }
             if (running) OutlinedButton(onStop, Modifier.heightIn(min = 56.dp).testTag(LabTags.LOOP_STOP)) { Text(stringResource(R.string.lab_stop), fontSize = 20.sp) }
             else Button(onRun, Modifier.heightIn(min = 56.dp).testTag(LabTags.LOOP_RUN), enabled = canRun) { Text(stringResource(R.string.lab_run), fontSize = 20.sp) }
         }

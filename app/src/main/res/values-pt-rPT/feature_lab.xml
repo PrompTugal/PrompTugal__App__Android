@@ -93,4 +93,8 @@
     <string name="lab_stop_time">Parou: o limite de tempo foi atingido.</string>
     <string name="lab_stop_errors">Parou: as execuções continuam a falhar.</string>
     <string name="lab_stop_user">Parou a seu pedido.</string>
+    <string name="lab_minus">-</string>
+    <string name="lab_plus">+</string>
+    <string name="lab_decrease">Diminuir %1$s</string>
+    <string name="lab_increase">Aumentar %1$s</string>
 </resources>
