@@ -29,6 +29,8 @@ Waiting for conductor review. design.android's shared components have not landed
 
 - Fifth round (security HOLD on two strings): the data line and the INTERNET reason now say what is true: the app itself connects only to riskmandate.ai and www.riskmandate.ai, only through the in-app site view; pages opened in the browser are the browser's own traffic; links to other sites are not loaded in the app. I did not write "handed to the browser on a tap": `work/dev.site`'s `SitePolicy` hands them to `Browser.open`, which refuses what `Links.isAllowed` refuses, so I claim only what holds. Re-check against dev.site's final code.
 
+- Seventh round (conductor): `MandateScreenshotTest` writes `app/build/screenshots/mandate-<size>-<theme>.png` for phone and 10" tablet, light and dark (viewport, and `-full` for the whole scrolling screen: 8 files). Fixed clean reach with the site view on, so the picture does not depend on the machine. Read them: no clipping at the tablet width, chip and sentence both say "no gap". The screen quotes riskmandate.ai's privacy page: "There is no analytics, no tag manager, no advertising pixel and no cookie set by this site." (riskmandate.ai/privacy, read 9 Nov 2026; verified on the page myself, not only from the relay). The page also says operators have "no log access"; I did not add that, since the app's own claim is only what the sentence above supports.
+
 ## Vocabulary (riskmandate.ai, https://riskmandate.ai/, read 9 Nov 2026)
 - Reach: "Everything the agent can actually access in this deployment, including what nobody thought to check."
 - Mandate: "The job, written down: what the business authorised it to do."

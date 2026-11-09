@@ -55,6 +55,7 @@
     <string name="mandate_reason_site_cache">cache da vista riskmandate.ai dentro da app; o Android pode limpá-la</string>
 
     <string name="mandate_mandate_data">Dados recolhidos por esta app: nenhuns. A vista dentro da app carrega páginas de riskmandate.ai por HTTPS, como um navegador. Esta app não acrescenta nenhum identificador.</string>
+    <string name="mandate_site_quote">As palavras do próprio site, em inglês: \"There is no analytics, no tag manager, no advertising pixel and no cookie set by this site.\" (riskmandate.ai/privacy, lido a 9 de novembro de 2026)</string>
     <string name="mandate_connects">Esta app liga-se a: %1$s (a vista do site dentro da app)</string>
     <string name="mandate_connects_none">Esta app não se liga a nada por si própria. As páginas abrem no seu navegador, que faz a sua própria ligação.</string>
     <string name="mandate_reason_site_view">a vista riskmandate.ai dentro da app carrega páginas deste anfitrião</string>

@@ -134,6 +134,7 @@ private fun MandateSection(state: MandateState) {
         }
         if (state.config.startUrlRefused) Line(stringResource(R.string.mandate_managed_refused, ManagedConfig.KEY_START_URL))
         Line(stringResource(R.string.mandate_mandate_data))
+        Line(stringResource(R.string.mandate_site_quote))
     }
 }
 
