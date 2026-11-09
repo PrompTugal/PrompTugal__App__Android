@@ -33,6 +33,7 @@
 
     <string name="diagnostics_title">Diagnostics</string>
     <string name="diagnostics_intro">For testers and device set-up. It holds no personal data and no device identifiers.</string>
+    <string name="diagnostics_model_bench">Model bench (on-device LLM test)</string>
     <string name="diagnostics_copy">Copy</string>
     <string name="diagnostics_copied">Copied to the clipboard.</string>
     <string name="diagnostics_copy_failed">Could not copy to the clipboard.</string>

@@ -31,6 +31,7 @@
 
     <string name="diagnostics_title">Diagnóstico</string>
     <string name="diagnostics_intro">Para testadores e configuração de dispositivos. Não contém dados pessoais nem identificadores do dispositivo.</string>
+    <string name="diagnostics_model_bench">Bancada do modelo (teste do LLM no dispositivo)</string>
     <string name="diagnostics_copy">Copiar</string>
     <string name="diagnostics_copied">Copiado para a área de transferência.</string>
     <string name="diagnostics_copy_failed">Não foi possível copiar para a área de transferência.</string>

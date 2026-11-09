@@ -148,3 +148,16 @@ class HomeBadgeTest {
         assert(compose.onNodeWithTag(HomeTags.feature("a")).fetchSemanticsNode().boundsInRoot.height >= 48 * dp - 1)
     }
 }
+
+@RunWith(AndroidJUnit4::class)
+class HomeDiagnosticsVisibilityTest {
+    @get:Rule val compose = createComposeRule()
+
+    @Test fun diagnosticsButtonIsHiddenWhenAsked() {
+        compose.setContent {
+            MaterialTheme { HomeScreen("0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {}, showDiagnostics = false) }
+        }
+        compose.onNodeWithTag(HomeTags.DIAGNOSTICS).assertDoesNotExist()
+        compose.onNodeWithTag(HomeTags.LICENCES).assertExists()
+    }
+}

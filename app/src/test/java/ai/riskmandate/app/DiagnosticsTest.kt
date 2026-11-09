@@ -1,5 +1,9 @@
 package ai.riskmandate.app
 
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import android.content.ClipboardManager
 import android.content.Context
 import android.provider.Settings
@@ -89,5 +93,19 @@ class DiagnosticsTest {
         val clip = context.getSystemService(ClipboardManager::class.java).primaryClip!!
         assertEquals(text, clip.getItemAt(0).text.toString())
         compose.onNodeWithTag(DiagnosticsTags.COPIED).assertTextContains("Copied", substring = true)
+    }
+
+    @Test fun modelBenchButtonOpensTheBenchAndIsHiddenWithoutIt() {
+        var opened = 0
+        var withBench by mutableStateOf(true)
+        compose.setContent {
+            MaterialTheme {
+                DiagnosticsScreen(text = "x", onCopy = { true }, onBack = {}, onModelBench = if (withBench) ({ opened++ }) else null)
+            }
+        }
+        compose.onNodeWithTag(DiagnosticsTags.MODEL_BENCH).performScrollTo().performClick()
+        assertEquals(1, opened)
+        withBench = false
+        compose.onNodeWithTag(DiagnosticsTags.MODEL_BENCH).assertDoesNotExist()
     }
 }

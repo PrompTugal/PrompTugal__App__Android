@@ -71,6 +71,8 @@ fun HomeScreen(
     onLicences: () -> Unit = {},
     onDiagnostics: () -> Unit = {},
     features: List<FeatureButton> = emptyList(),
+    /** False hides the Diagnostics button (stand mode: visitors do not see it). */
+    showDiagnostics: Boolean = true,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
         val twoPane = maxWidth >= TwoPaneMinWidth && maxWidth > maxHeight
@@ -93,7 +95,7 @@ fun HomeScreen(
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         PrimaryPane(onOpen, message, features)
                     }
-                    Column(Modifier.weight(1f)) { InfoPane(version, device, onLicences, onDiagnostics) }
+                    Column(Modifier.weight(1f)) { InfoPane(version, device, onLicences, onDiagnostics, showDiagnostics) }
                 }
             } else {
                 Column(Modifier.widthIn(max = ContentMaxWidth), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -101,7 +103,7 @@ fun HomeScreen(
                     Spacer(Modifier.height(32.dp))
                     HorizontalDivider()
                     Spacer(Modifier.height(16.dp))
-                    Column(Modifier.fillMaxWidth()) { InfoPane(version, device, onLicences, onDiagnostics) }
+                    Column(Modifier.fillMaxWidth()) { InfoPane(version, device, onLicences, onDiagnostics, showDiagnostics) }
                 }
             }
         }
@@ -172,7 +174,7 @@ private fun ColumnScope.PrimaryPane(
 }
 
 @Composable
-private fun ColumnScope.InfoPane(version: String, device: DeviceStatus, onLicences: () -> Unit, onDiagnostics: () -> Unit) {
+private fun ColumnScope.InfoPane(version: String, device: DeviceStatus, onLicences: () -> Unit, onDiagnostics: () -> Unit, showDiagnostics: Boolean) {
     Text(
         stringResource(R.string.home_device_heading),
         style = MaterialTheme.typography.titleSmall,
@@ -213,11 +215,13 @@ private fun ColumnScope.InfoPane(version: String, device: DeviceStatus, onLicenc
     ) {
         Text(stringResource(R.string.home_licences))
     }
-    TextButton(
-        onClick = onDiagnostics,
-        modifier = Modifier.heightIn(min = MinTouch).testTag(HomeTags.DIAGNOSTICS),
-    ) {
-        Text(stringResource(R.string.home_diagnostics))
+    if (showDiagnostics) {
+        TextButton(
+            onClick = onDiagnostics,
+            modifier = Modifier.heightIn(min = MinTouch).testTag(HomeTags.DIAGNOSTICS),
+        ) {
+            Text(stringResource(R.string.home_diagnostics))
+        }
     }
     Spacer(Modifier.height(8.dp))
     Text(

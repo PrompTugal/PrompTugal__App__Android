@@ -28,15 +28,30 @@ import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.IdleHolds
 import ai.riskmandate.app.features.stand.StandHost
+import ai.riskmandate.app.llm.ModelFiles
+import ai.riskmandate.app.llm.bench.ModelBenchScreen
 
 /** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
 object Routes {
     const val HOME = "home"
     const val LICENCES = "licences"
     const val DIAGNOSTICS = "diagnostics"
+
+    /** The on-device LLM bench (dev.llm), reached from Diagnostics only on a debuggable build or once a model file is pushed. */
+    const val MODEL_BENCH = "modelbench"
 }
 
-private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS)
+/**
+ * The route to show for a saved [screen]: itself if it is a built-in or an enabled feature, else Home;
+ * and Home for the staff-only screens (Diagnostics, the model bench) while stand mode is on.
+ */
+fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean): String = when {
+    standOn && (screen == Routes.DIAGNOSTICS || screen == Routes.MODEL_BENCH) -> Routes.HOME
+    screen in BUILT_IN || featureEnabled -> screen
+    else -> Routes.HOME
+}
+
+private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS, Routes.MODEL_BENCH)
 
 class MainActivity : ComponentActivity() {
     private var config by mutableStateOf(ManagedConfig.DEFAULT)
@@ -60,7 +75,10 @@ class MainActivity : ComponentActivity() {
                     // A route that no longer exists or is switched off (restored after an app update or
                     // process death) shows Home, and the saved route is reset after composition.
                     val feature = FEATURES.firstOrNull { it.id == screen && it.enabled }
-                    val route = if (screen in BUILT_IN || feature != null) screen else Routes.HOME
+                    // Stand mode (a visitor at a stand): Diagnostics and the model bench are staff tools, so they
+                    // are hidden and unreachable while it is on (R-shell-1). Set from StandHost, see standOn below.
+                    var standOn by remember { mutableStateOf(false) }
+                    val route = resolveRoute(screen, standOn, featureEnabled = feature != null)
                     LaunchedEffect(route, screen) { if (route != screen) screen = route }
                     // Features that run unattended on purpose (abpdemo's auto-play) hold stand mode's idle
                     // reset off through this. HoldIdleWhile releases when the feature leaves the screen; the
@@ -75,8 +93,8 @@ class MainActivity : ComponentActivity() {
                         NavSection(R.string.nav_section_features, featureItems),
                         NavSection(
                             R.string.home_about_heading,
-                            listOf(
-                                NavItem(Routes.DIAGNOSTICS, R.string.home_diagnostics, Icons.Filled.Build),
+                            listOfNotNull(
+                                if (standOn) null else NavItem(Routes.DIAGNOSTICS, R.string.home_diagnostics, Icons.Filled.Build),
                                 NavItem(Routes.LICENCES, R.string.home_licences, Icons.Filled.Info),
                             ),
                         ),
@@ -85,8 +103,11 @@ class MainActivity : ComponentActivity() {
                         Routes.HOME -> R.string.nav_home
                         Routes.LICENCES -> R.string.home_licences
                         Routes.DIAGNOSTICS -> R.string.home_diagnostics
+                        Routes.MODEL_BENCH -> R.string.feature_models_title
                         else -> feature?.title ?: R.string.nav_home
                     }
+                    // standOn must follow stand mode: wire `onEnabledChange = { standOn = it }` here once StandHost reports it
+                    // (a small additive parameter owned by dev.stand; asked of the conductor). Until then it stays false.
                     StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome, idleHeld = idle.held) {
                         AppShell(
                             sections = sections,
@@ -104,7 +125,15 @@ class MainActivity : ComponentActivity() {
                                 )
                                 route == Routes.DIAGNOSTICS -> {
                                     val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
-                                    DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = goHome)
+                                    // Only on a debuggable build or once a model file is pushed (architect A-llm-5).
+                                    val bench = remember { ModelFiles.benchAvailable(this@MainActivity, BuildConfig.DEBUG) }
+                                    DiagnosticsScreen(
+                                        text = text, onCopy = rememberCopyAction(text), onBack = goHome,
+                                        onModelBench = if (bench) ({ screen = Routes.MODEL_BENCH }) else null,
+                                    )
+                                }
+                                route == Routes.MODEL_BENCH -> FeatureFrame(title = R.string.feature_models_title, onBack = goHome) {
+                                    ModelBenchScreen()
                                 }
                                 feature != null -> FeatureFrame(title = feature.title, onBack = goHome) {
                                     feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device, holdIdle = idle::hold) })
@@ -116,6 +145,7 @@ class MainActivity : ComponentActivity() {
                                     onOpen = { message = open() },
                                     onLicences = { screen = Routes.LICENCES },
                                     onDiagnostics = { screen = Routes.DIAGNOSTICS },
+                                    showDiagnostics = !standOn,
                                     features = featureItems.map { n -> FeatureButton(n.route, n.title, n.badge) { screen = n.route } },
                                 )
                             }

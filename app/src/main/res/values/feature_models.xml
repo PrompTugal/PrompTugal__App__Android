@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Feature G (model setup), owner dev.llm. Step 1: the hidden bench. -->
+    <string name="models_bench_intro">Test bench for the on-device model. Push a model file with adb, pick it, run the fixed prompt, then copy the numbers. Everything runs on this device; nothing is sent anywhere.</string>
+    <string name="models_bench_none">No model file found yet. Push one with adb into the folder below, then tap Refresh.</string>
+    <string name="models_bench_pick">Model</string>
+    <string name="models_bench_model_line">%1$s, %2$s (%3$s)</string>
+    <string name="models_bench_backend">Runs on</string>
+    <string name="models_bench_gpu">GPU</string>
+    <string name="models_bench_cpu">CPU</string>
+    <string name="models_bench_run">Run</string>
+    <string name="models_bench_stop">Stop</string>
+    <string name="models_bench_refresh">Refresh</string>
+    <string name="models_bench_copy">Copy results</string>
+    <string name="models_bench_copied">Results copied.</string>
+    <string name="models_bench_copy_failed">Could not copy the results.</string>
+    <string name="models_bench_verifying">Checking the file\'s SHA-256: %1$d%%</string>
+    <string name="models_bench_loading">Loading the model. This can take a minute.</string>
+    <string name="models_bench_generating">Answering: %1$d pieces so far</string>
+    <string name="models_bench_done">Done. The numbers are under Results.</string>
+    <string name="models_bench_wrong_size">The file is not the expected size, so it was not loaded. If adb is still copying it, wait and tap Run again.</string>
+    <string name="models_bench_wrong_hash">The file\'s SHA-256 does not match, so it was deleted and not loaded. Push it again.</string>
+    <string name="models_bench_failed">The run failed: %1$s</string>
+    <string name="models_bench_output">Answer</string>
+    <string name="models_bench_results">Results</string>
+    <string name="models_bench_how">How to add a model</string>
+    <string name="models_bench_folder">Folder: %1$s</string>
+    <string name="models_bench_no_storage">Shared storage is not available, so adb cannot add a model right now.</string>
+    <string name="models_bench_files">Exact files (download them on a computer, then push):</string>
+</resources>
