@@ -1,11 +1,12 @@
 # architect.android status
 
-> 9 Nov 2026, about 02:00 UTC: on-device LLM side team started. Its architecture and dependency rules are in docs/architecture/README.md ("On-device LLM"). FeatureContext gets `llm: LlmService?` once dev.llm's interface lands. No side-team commits yet. Summit open items: A-app-8, A-app-9, P6.
+> 9 Nov 2026, about 02:10 UTC: P6 pushed (73b2c16, Feature.homeBadge). site 747b521 PASS (WebViewAssetLoader, rotation). app 62a5ee6 HOLD: A-app-8 is closed, but its What's new card imports feature packages into the host; rework onto P6. A-app-9 is approved and open. LLM side team: no commits yet.
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Reviews: site 747b521 PASS; app 62a5ee6 HOLD (A-app-10: the What's new card imports ReleasesNotice and StandSettings and reads disk in composition; rework onto homeBadge). A-app-8 closed.
 - P6 pushed: `Feature.homeBadge()` (default null) plus `FeatureBadgeTest` (default, override, every listed feature answers). Gate green. README: the host must not import feature packages except `StandHost`.
 - On-device LLM rules (README): one host-held `LlmHost` per process (the one sanctioned process-wide object), a serialised service, a Flow-based contract shape, tool calls proposed by the model and validated in Kotlin per feature, plain-text output, pinned downloads over HttpURLConnection with Range, and storage paths with backup exclusions. Dependencies: LiteRT-LM approved in principle; org.json for JSON; Room, WorkManager, kotlinx-serialization and ViewModel not without a reason.
 - Review round 6: app 95e7978 PASS (A-app-7 closed; A-app-8 still open; A-app-9 new: Browser.open ignores pinning); qa bdb73a5 PASS (guards precise); site ee25896 PASS (openExternal only on real main-frame taps); mandate 42f7a7b PASS (network wording true); releases 61d2b70 PASS (A-rel-1: the host must not call into the feature; proposal P6). Trial merge of all of them: green, 253 tests.
