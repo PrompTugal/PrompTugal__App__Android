@@ -45,6 +45,14 @@ object ModelFiles {
         ModelCatalog.ALL.mapNotNull { spec -> File(dir, spec.fileName).takeIf { it.isFile }?.let { FoundModel(spec, it) } }
     }
 
+    /**
+     * Whether Diagnostics shows the "Model bench" entry (architect A-llm-5): on a debuggable build, or when a
+     * catalogue file is already in the adb folder, so visitors on a stand tablet do not come across it.
+     * Reads one directory listing; cheap enough for the main thread when Diagnostics opens.
+     */
+    fun benchAvailable(context: Context, debuggable: Boolean): Boolean =
+        debuggable || find(listOfNotNull(adbDir(context))).isNotEmpty()
+
     /** The adb command that puts [spec]'s file where [find] looks. */
     fun adbCommand(spec: ModelSpec, dir: String): String = "adb push ${spec.fileName} $dir/"
 

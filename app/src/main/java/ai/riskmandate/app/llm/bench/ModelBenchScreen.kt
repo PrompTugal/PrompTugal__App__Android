@@ -1,4 +1,4 @@
-package ai.riskmandate.app.features.models
+package ai.riskmandate.app.llm.bench
 
 import ai.riskmandate.app.BuildConfig
 import ai.riskmandate.app.R
@@ -91,7 +91,8 @@ private sealed interface Status {
 }
 
 /**
- * The hidden bench (brief step 1): pick a model file pushed with adb, run the fixed prompt on GPU or CPU, and
+ * The hidden bench (brief step 1). Lives in llm/ (not features/models) so the host's Diagnostics route can show
+ * it without importing a feature package (architect A-llm-4): pick a model file pushed with adb, run the fixed prompt on GPU or CPU, and
  * copy load time, prefill and decode speed and memory. Content only: the host's frame draws title and Back.
  * Leaving the screen cancels a run; the engine is closed either way.
  */

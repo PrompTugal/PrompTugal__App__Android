@@ -1,10 +1,11 @@
-package ai.riskmandate.app.features.models
+package ai.riskmandate.app.llm.bench
 
 import ai.riskmandate.app.DeviceStatus
 import ai.riskmandate.app.ManagedConfig
 import ai.riskmandate.app.Management
 import ai.riskmandate.app.RiskMandateTheme
 import ai.riskmandate.app.features.FeatureContext
+import ai.riskmandate.app.features.models.ModelsFeature
 import ai.riskmandate.app.llm.ModelCatalog
 import ai.riskmandate.app.llm.ModelFiles
 import android.app.Application
@@ -48,6 +49,15 @@ class ModelBenchScreenTest {
     }
 
     @Test fun staysOffTheHomeScreenUntilItWorksOnTheTablet() = assertFalse(ModelsFeature.enabled)
+
+    @Test fun benchEntryOnlyWithAModelInTheBenchFolderOrOnADebugBuild() {
+        assertFalse(ModelFiles.benchAvailable(app, debuggable = false))
+        assertTrue(ModelFiles.benchAvailable(app, debuggable = true))
+        File(ModelFiles.adbDir(app)!!, "notes.txt").writeText("x")
+        assertFalse("only catalogue files count", ModelFiles.benchAvailable(app, debuggable = false))
+        File(ModelFiles.adbDir(app)!!, ModelCatalog.GEMMA4_E2B.fileName).writeBytes(ByteArray(1))
+        assertTrue(ModelFiles.benchAvailable(app, debuggable = false))
+    }
 
     @Test fun withNoModelItExplainsAdbAndCannotRun() {
         show()

@@ -22,8 +22,9 @@ import androidx.core.content.ContextCompat
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.IdleHolds
-import ai.riskmandate.app.features.models.ModelBenchScreen
 import ai.riskmandate.app.features.stand.StandHost
+import ai.riskmandate.app.llm.ModelFiles
+import ai.riskmandate.app.llm.bench.ModelBenchScreen
 
 /** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
 object Routes {
@@ -75,9 +76,11 @@ class MainActivity : ComponentActivity() {
                             )
                             route == Routes.DIAGNOSTICS -> {
                                 val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
+                                // Only on a debuggable build or once a model file is pushed (architect A-llm-5).
+                                val bench = remember { ModelFiles.benchAvailable(this@MainActivity, BuildConfig.DEBUG) }
                                 DiagnosticsScreen(
                                     text = text, onCopy = rememberCopyAction(text), onBack = goHome,
-                                    onModelBench = { screen = Routes.MODEL_BENCH },
+                                    onModelBench = if (bench) ({ screen = Routes.MODEL_BENCH }) else null,
                                 )
                             }
                             route == Routes.MODEL_BENCH -> FeatureFrame(title = R.string.feature_models_title, onBack = goHome) {
