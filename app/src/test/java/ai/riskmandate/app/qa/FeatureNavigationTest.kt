@@ -78,13 +78,41 @@ class FeatureNavigationTest {
         repeat(5) { shadowOf(Looper.getMainLooper()).idle(); compose.waitForIdle() }
     }
 
+    /**
+     * Presses Back once the screen can take it. With no enabled back callback the dispatcher finishes the activity,
+     * which is what a Back on Home does: so the test never presses Back until the host's own handler is registered
+     * (it is not, for an instant, in a freshly recreated activity), or the press would close the app and the test
+     * would wait for a Home that no longer exists.
+     */
     private fun back() {
+        val end = System.currentTimeMillis() + LIMIT_MS
+        while (true) {
+            shadowOf(Looper.getMainLooper()).idle()
+            compose.waitForIdle()
+            var ready = false
+            compose.runOnUiThread { ready = compose.activity.onBackPressedDispatcher.hasEnabledCallbacks() }
+            if (ready) break
+            if (System.currentTimeMillis() > end) throw AssertionError("no back callback is enabled on the feature screen")
+            Thread.sleep(5)
+        }
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         awaitHome()
     }
 
+    /**
+     * Recreates the activity (what a rotation does) and waits for the NEW activity: right after `recreate()` the old
+     * activity's tree can still be registered, so "exactly one title" alone could be satisfied by the old screen.
+     */
     private fun rotate() {
+        val old = compose.activity
         compose.activityRule.scenario.recreate()
+        val end = System.currentTimeMillis() + LIMIT_MS
+        while (compose.activity === old) {
+            shadowOf(Looper.getMainLooper()).idle()
+            compose.waitForIdle()
+            if (System.currentTimeMillis() > end) throw AssertionError("the activity was not recreated")
+            Thread.sleep(5)
+        }
         compose.waitForIdle()
     }
 
