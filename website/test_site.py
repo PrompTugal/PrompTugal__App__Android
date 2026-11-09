@@ -160,6 +160,25 @@ class SiteTest(unittest.TestCase):
         self.assertIn('fill="#1B2A41"', svg)
         self.assertNotIn('<g ', svg)
 
+    def test_icon_values_cannot_break_out_of_their_attributes(self):
+        from xml.etree import ElementTree as ET
+        res = self.tmp / 'res2'
+        for d in ('mipmap', 'drawable', 'values'):
+            (res / d).mkdir(parents=True, exist_ok=True)
+        (self.tmp / 'M2.xml').write_text('<manifest><application android:icon="@mipmap/ic"/></manifest>')
+        (res / 'mipmap' / 'ic.xml').write_text('<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/bg"/><foreground android:drawable="@drawable/fg"/></adaptive-icon>')
+        (res / 'values' / 'c.xml').write_text('<resources><color name="bg">#1B2A41</color></resources>')
+        evil = 'M0,0z" onload="alert(1)" x="'
+        (res / 'drawable' / 'fg.xml').write_text('<vector xmlns:android="http://schemas.android.com/apk/res/android" android:viewportWidth="108" android:viewportHeight="108">'
+                                                 '<group android:translateX="1&quot; onload=&quot;x" android:scaleX="2&gt;&lt;script&gt;">'
+                                                 f'<path android:fillColor="#FFF&quot; onclick=&quot;x" android:pathData="{evil.replace(chr(34), "&quot;")}"/></group></vector>')
+        svg = facts.icon_svg(self.tmp / 'M2.xml', res)
+        root = ET.fromstring(svg)  # still well-formed
+        for node in root.iter():
+            self.assertFalse({k for k in node.attrib if k.startswith('on')}, node.attrib)
+        self.assertNotIn('<script', svg)
+        self.assertIn('&quot;', svg)
+
     def test_icon_refuses_a_manifest_without_an_icon(self):
         (self.tmp / 'N.xml').write_text('<manifest><application/></manifest>')
         with self.assertRaises(SystemExit):
