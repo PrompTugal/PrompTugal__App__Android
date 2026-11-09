@@ -2,9 +2,7 @@ package ai.riskmandate.app.features.stand
 
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,11 +32,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -57,8 +59,8 @@ object StandTags {
 /**
  * Stand mode (feature D) wraps the whole app: screen pinning, keep-screen-on (view flag), return home when idle.
  *
- * Staff reach the controls with a long-press on the bottom-end corner (nothing is drawn there while
- * stand mode is off; a faint dot shows while it is on).
+ * Staff reach the controls with a long-press on the bottom-end corner of the home screen (nothing is drawn
+ * there while stand mode is off, a faint dot while it is on; taps and the other screens are never touched).
  *
  * @param atHome true while the home screen shows.
  * @param goHome takes the app back to the home screen (for the idle reset).
@@ -70,9 +72,10 @@ fun StandHost(activity: ComponentActivity, atHome: Boolean, goHome: () -> Unit, 
     StandHostContent(settings, lock, activity.lifecycle, SystemClock::elapsedRealtime, atHome, goHome, content)
 }
 
+private const val CORNER_DP = 48
+
 private enum class Panel { NONE, SETTINGS }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun StandHostContent(
     settings: StandSettings,
@@ -133,32 +136,60 @@ internal fun StandHostContent(
         }
     }
 
+    val layoutDirection = LocalLayoutDirection.current
+    val insets = WindowInsets.safeDrawing
+    val homeNow by rememberUpdatedState(atHome)
     Box(
-        Modifier.fillMaxSize().pointerInput(Unit) {
-            // Watches every touch without consuming it.
-            awaitPointerEventScope {
-                while (true) {
-                    awaitPointerEvent(PointerEventPass.Initial)
-                    timer.touch()
+        Modifier.fillMaxSize().pointerInput(layoutDirection) {
+            // Watches every touch on the way down without consuming any, so nothing underneath loses a tap.
+            // Also spots a long-press on the corner (home screen only): finger down there, still, for the timeout.
+            val cornerPx = CORNER_DP.dp.toPx()
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                timer.touch()
+                val endEdge = size.width - insets.getRight(this@pointerInput, layoutDirection)
+                val startEdge = insets.getLeft(this@pointerInput, layoutDirection)
+                val bottomEdge = size.height - insets.getBottom(this@pointerInput)
+                val inCorner = if (layoutDirection == LayoutDirection.Ltr) {
+                    down.position.x >= endEdge - cornerPx && down.position.x <= endEdge
+                } else {
+                    down.position.x <= startEdge + cornerPx && down.position.x >= startEdge
+                } && down.position.y >= bottomEdge - cornerPx && down.position.y <= bottomEdge
+                if (homeNow && inCorner) {
+                    val held = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            timer.touch()
+                            val c = event.changes.firstOrNull { it.id == down.id } ?: return@withTimeoutOrNull false
+                            if (!c.pressed || (c.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                return@withTimeoutOrNull false
+                            }
+                        }
+                        @Suppress("UNREACHABLE_CODE") true
+                    }
+                    if (held == null) panel = Panel.SETTINGS
                 }
+                // Rest of the gesture: keep counting it as activity.
+                do {
+                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                    timer.touch()
+                } while (event.changes.any { it.pressed })
             }
         },
     ) {
         content()
-        val label = stringResource(R.string.stand_corner_label)
-        Box(
-            Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).size(48.dp)
-                .testTag(StandTags.CORNER)
-                .combinedClickable(onClickLabel = null, onClick = {}, onLongClickLabel = label, onLongClick = {
-                    panel = Panel.SETTINGS
-                }),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (enabled) {
-                Box(
-                    Modifier.size(6.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f), CircleShape)
-                        .clearAndSetSemantics {},
-                )
+        if (atHome) {
+            // Draws and handles nothing: a faint dot while stand mode is on, and a tag for tests.
+            Box(
+                Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).size(CORNER_DP.dp)
+                    .testTag(StandTags.CORNER),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (enabled) {
+                    Box(
+                        Modifier.size(6.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f), CircleShape),
+                    )
+                }
             }
         }
     }

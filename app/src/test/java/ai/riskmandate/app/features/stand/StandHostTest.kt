@@ -2,7 +2,12 @@ package ai.riskmandate.app.features.stand
 
 import android.app.Application
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
@@ -63,7 +68,7 @@ class StandHostTest {
         lifecycle.currentState = Lifecycle.State.RESUMED
     }
 
-    private fun show(lock: ScreenLock, atHome: Boolean = false) = compose.setContent {
+    private fun show(lock: ScreenLock, atHome: Boolean = true) = compose.setContent {
         StandHostContent(settings, lock, lifecycle, { now }, atHome, { homeCalls++ }) {
             val v = androidx.compose.ui.platform.LocalView.current
             hostView = v
@@ -88,6 +93,44 @@ class StandHostTest {
     @Test fun aPlainTapOnTheCornerDoesNotOpenStaffControls() {
         show(FakeLock())
         compose.onNodeWithTag(StandTags.CORNER).performClick()
+        compose.onNodeWithTag(StandTags.SWITCH).assertDoesNotExist()
+    }
+
+    private fun showWithButtonInCorner(atHome: Boolean, onTap: () -> Unit) = compose.setContent {
+        StandHostContent(settings, FakeLock(), lifecycle, { now }, atHome, { homeCalls++ }) {
+            androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
+                androidx.compose.foundation.layout.Box(
+                    androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
+                        .size(48.dp).testTag("under").clickable { onTap() },
+                )
+            }
+        }
+    }
+
+    @Test fun aControlUnderTheCornerStillGetsItsTapOnTheHomeScreen() {
+        var taps = 0
+        showWithButtonInCorner(atHome = true) { taps++ }
+        compose.onNodeWithTag("under").performTouchInput { click(center) }
+        assertEquals(1, taps)
+        compose.onNodeWithTag(StandTags.SWITCH).assertDoesNotExist()
+    }
+
+    @Test fun aControlUnderTheCornerStillGetsItsTapOnOtherScreens() {
+        var taps = 0
+        showWithButtonInCorner(atHome = false) { taps++ }
+        compose.onNodeWithTag("under").performTouchInput { click(center) }
+        assertEquals(1, taps)
+    }
+
+    @Test fun longPressOutsideHomeOpensNothing() {
+        show(FakeLock(), atHome = false)
+        compose.onNodeWithText("app").performTouchInput { longClick(bottomRight) }
+        compose.onNodeWithTag(StandTags.SWITCH).assertDoesNotExist()
+    }
+
+    @Test fun longPressElsewhereOnHomeOpensNothing() {
+        show(FakeLock())
+        compose.onNodeWithText("app").performTouchInput { longClick(topLeft) }
         compose.onNodeWithTag(StandTags.SWITCH).assertDoesNotExist()
     }
 
@@ -160,7 +203,7 @@ class StandHostTest {
 
     @Test fun touchKeepsTheAppFromResetting() {
         settings.enabled = true
-        show(FakeLock())
+        show(FakeLock(), atHome = false)
         compose.waitForIdle()
         now += 2 * 60_000
         compose.onNodeWithText("app").performTouchInput { click() }

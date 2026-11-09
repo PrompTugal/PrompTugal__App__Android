@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stand_corner_label">Controlos da equipa</string>
     <string name="stand_title">Modo de bancada</string>
     <string name="stand_switch">Modo de bancada ativo</string>
     <string name="stand_status_pinned">O ecrã está fixado.</string>

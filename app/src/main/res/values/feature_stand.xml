@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="stand_corner_label">Staff controls</string>
     <string name="stand_title">Stand mode</string>
     <string name="stand_switch">Stand mode on</string>
     <string name="stand_status_pinned">The screen is pinned.</string>
