@@ -37,7 +37,7 @@ Limits, plainly:
 2. The tip's diff against `main` touches none of the trust paths (`board/keys.json`, `.github/`, the verifier and its library, the promotion selector `scripts/promote-select.sh`, `scripts/find-release-tag.sh`, `scripts/changed-build-paths.sh`, `docs/security/approvals/`, `CLAUDE.md`), apart from the approval record and the reviews. A change there is promoted by a person, not automatically.
 3. The approvals file on the tip extends the one on `main`.
 4. The latest valid line about the tip, or about an ancestor of it that is past `main`, is a PASS signed by an active security key, made against this `main`, with a `range` and `commits` equal to what `git` says now, dated not in the future, unexpired and issued for at most seven days.
-5. If that line names an ancestor `H` of the tip, the commits after `H` change only `board/security/approvals.jsonl`, `docs/security/reviews/*.md` and my status page (a hash cannot contain its own approval, so the record is committed after the commit it approves).
+5. If that line names an ancestor `H` of the tip, the commits after `H` change only `board/security/approvals.jsonl`, `docs/security/reviews/*.md` and plain status text that no build, test or workflow reads (`board/status.json`, `board/sessions.json`, `board/team/*/debriefs/*.md`, `briefs/*/status/*.md`). A hash cannot contain its own approval, so the record is committed after the commit it approves, and the conductor's status commits come after nearly every merge; code, keys, workflows and scripts never ride along.
 6. No later REVOKE covers any commit up to the tip.
 
 The workflow also needs, outside this check: the gate green for that commit, and (as the proposal says) the store build must be the AAB that the dev run built for that sha, with its SHA-256 checked.
@@ -62,3 +62,7 @@ Fingerprint: the first 8 bytes of the SHA-256 of the raw public key, in groups o
 ## 8. The review of each dev head
 
 From now on I review each `dev` head after it lands: `docs/security/reviews/<date>-dev-<short sha>.md` with `Verdict: PASS` or `HOLD`, covering the commits since the last dev head I approved. Because the conductor already merges only branch heads I passed, the dev review looks at what merging adds: conflict resolutions, the combined effect of two heads (the compile break of R-app-3 is that kind), a change in a trust path, and the secret scan over all refs. Then I sign the verdict.
+
+## 9. The first promotion (what happened, and what it means)
+
+`main` was the initial commit, with no `board/keys.json`, so nothing on `main` could verify the first promotion: it was Dinis's own merge (PR #1, merge commit 1f6adb3 of dev 0eaa827, an identical tree). I signed a PASS for 0eaa827 with `base` 0b299ae as an audit record: its signature verifies against the key now on `main`, and its range hash recomputes. A workflow that asks the check about 1f6adb3 with the old `main` as base still fails closed ("no board/keys.json on main"), by design: there was no key then. The first run the check can actually judge is the next promotion, with `main` = 1f6adb3 as its base. Dinis's dry run of `play.yml` (without the Play secret) is therefore that one.

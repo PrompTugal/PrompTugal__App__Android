@@ -58,7 +58,12 @@ export function parseLines(text) {
 }
 
 // Paths a commit after the approved head may touch: the approval record itself and the reviews (a hash cannot contain its own approval).
-export const TAIL_PATHS = [/^board\/security\/approvals\.jsonl$/, /^docs\/security\/reviews\/[A-Za-z0-9._-]+\.md$/, /^briefs\/[^/]+\/status\/security\.md$/];
+export const TAIL_PATHS = [
+  /^board\/security\/approvals\.jsonl$/, /^docs\/security\/reviews\/[A-Za-z0-9._-]+\.md$/, /^briefs\/[^/]+\/status\/security\.md$/,
+  // Plain status text that no build, test or workflow reads (the board's status and sessions files, the status pages and debriefs): the
+  // conductor commits these after nearly every merge, and they would otherwise stop every promotion. Never code, keys or workflows.
+  /^board\/(status|sessions)\.json$/, /^board\/team\/[^/]+\/debriefs\/[A-Za-z0-9._-]+\.md$/, /^briefs\/[^/]+\/status\/[A-Za-z0-9._-]+\.md$/,
+];
 const isAncestor = (repo, a, b) => gitOrNull(repo, 'merge-base', '--is-ancestor', a, b) !== null;
 
 /**
