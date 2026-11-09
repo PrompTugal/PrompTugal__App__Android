@@ -47,7 +47,7 @@ class CloudHost(dir: File, cipher: KeyCipher, standMode: () -> Boolean) {
      * Staff, after a confirmation that showed the amount (the only caller is the key screen's dialog): the total and
      * the session counter go back to zero. One place, so dev.chat's `reset(confirmed = true)` is a one-line change.
      */
-    fun resetSpend() = spend.reset()
+    fun resetSpend() = spend.reset(confirmed = true)
 
     /** Removes the key and its encryption key, and switches the cloud off. Needs no network. */
     fun removeKey() {
