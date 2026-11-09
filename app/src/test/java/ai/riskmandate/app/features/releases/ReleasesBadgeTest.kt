@@ -34,9 +34,16 @@ class ReleasesBadgeTest {
         // A bundled article exists, nothing seen yet.
         assertEquals(true, AssetArticleSource(app.assets).dirs().isNotEmpty())
         show()
-        compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("badge").assertTextEquals("New"); true }.getOrDefault(false) }
+        // No waiting: the badge is there on the first frame, so it cannot pop in and shift the card.
+        compose.onNodeWithTag("badge").assertTextEquals("New")
         ReleasesNotice.markSeen(app, BuildConfig.VERSION_CODE)
         assertEquals(false, ReleasesNotice.shouldOffer(app, BuildConfig.VERSION_CODE))
+    }
+
+    @Test fun noBadgeOnceTheVersionWasSeen() {
+        ReleasesNotice.markSeen(app, BuildConfig.VERSION_CODE)
+        show()
+        compose.onNodeWithTag("badge").assertTextEquals("none")
     }
 
     @Test fun badgeStringIsTranslated() = assertEquals("New", app.getString(R.string.feature_releases_badge))
