@@ -28,8 +28,8 @@ def _domain(addr):
     if "://" in a or a.startswith("//"):
         host = urlparse(a if "://" in a else "http:" + a).hostname or ""
     else:
-        if "@" in a and not a.split("@")[0]:
-            return ""
+        if re.search(r"[/?#]", a) or ("@" in a and not a.split("@")[0]):
+            return ""  # a bare address has no path, query or fragment
         host = a.rsplit("@", 1)[1] if "@" in a else a
     return host if _HOST.match(host) else ""
 

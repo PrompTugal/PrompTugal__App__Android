@@ -1270,6 +1270,111 @@
    }
   },
   {
+   "name": "egress: bare address with a slash",
+   "kind": "call",
+   "tools": [
+    {
+     "name": "send_message",
+     "effect": "egress"
+    }
+   ],
+   "rules": [
+    {
+     "id": "R1",
+     "check": "egress_recipients",
+     "tool": "send_message",
+     "arg": "to",
+     "allow_domains": [
+      "vendor.example"
+     ],
+     "on_violation": "block",
+     "reason": "x"
+    }
+   ],
+   "call": {
+    "name": "send_message",
+    "arguments": {
+     "to": "a@vendor.example/x",
+     "subject": "s",
+     "body": "b"
+    }
+   },
+   "expected": {
+    "action": "block",
+    "rule": "R1"
+   }
+  },
+  {
+   "name": "egress: bare address with a question mark",
+   "kind": "call",
+   "tools": [
+    {
+     "name": "send_message",
+     "effect": "egress"
+    }
+   ],
+   "rules": [
+    {
+     "id": "R1",
+     "check": "egress_recipients",
+     "tool": "send_message",
+     "arg": "to",
+     "allow_domains": [
+      "vendor.example"
+     ],
+     "on_violation": "block",
+     "reason": "x"
+    }
+   ],
+   "call": {
+    "name": "send_message",
+    "arguments": {
+     "to": "a@vendor.example?x=1",
+     "subject": "s",
+     "body": "b"
+    }
+   },
+   "expected": {
+    "action": "block",
+    "rule": "R1"
+   }
+  },
+  {
+   "name": "egress: bare address with a hash",
+   "kind": "call",
+   "tools": [
+    {
+     "name": "send_message",
+     "effect": "egress"
+    }
+   ],
+   "rules": [
+    {
+     "id": "R1",
+     "check": "egress_recipients",
+     "tool": "send_message",
+     "arg": "to",
+     "allow_domains": [
+      "vendor.example"
+     ],
+     "on_violation": "block",
+     "reason": "x"
+    }
+   ],
+   "call": {
+    "name": "send_message",
+    "arguments": {
+     "to": "a@vendor.example#x",
+     "subject": "s",
+     "body": "b"
+    }
+   },
+   "expected": {
+    "action": "block",
+    "rule": "R1"
+   }
+  },
+  {
    "name": "citations: supported and cited",
    "kind": "final",
    "rules": [
