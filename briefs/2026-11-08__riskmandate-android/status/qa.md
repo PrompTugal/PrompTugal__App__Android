@@ -26,6 +26,8 @@ Waiting for the next app branch (dev.* branches were empty at last fetch).
 
 - Round 4, 9 Nov: **work/dev.llm c02632a: HOLD** (`reviews/2026-11-09-dev.llm-c02632a.md`): gate green, 329 tests, release manifest unchanged but for one native-library line, APK 50.6 MB; missing, truncated and right-size-wrong-hash files are all refused without a crash (the last driven through the real screen with a sparse 2.6 GB file); but `LiteRtBench.run` builds the `Engine` outside its `try` and catches `Exception` only, so an `UnsatisfiedLinkError` (probe) or R8 `NoClassDefFoundError` closes the app instead of showing "The run failed". Five-line fix in the review. `device-run-idea-tab-plus.md` Part 1 is the step-by-step for Dinis (curl, sha256sum, adb push, bench, copy back). `FeatureNavigationTest` rewritten to wait for the expected state after every step (flake report from dev.chat); 20-run verification and the dev.stand ea70ed4 check are in progress.
 
+- Round 5, 9 Nov (after the conductor's interrupt): **Q-llm-1 LIFT** (dev.llm dc63ad8, 467 tests, `reviews/2026-11-09-dev.llm-dc63ad8.md`); **G's download path PASS** with one low finding, Q-g-1: the privacy line names huggingface.co while the bytes come from its CDN hf.co (`...-g-download.md`, plus five installer probes, all pass); **app's navigation-test edit PASS** and **work/app 0833ca0 PASS** (451 tests; the duplicate-title finding on dev is fixed there). Flake work: `FeatureNavigationTest` is deterministic and shell-agnostic (clicks through the node's click action, idles the Robolectric looper, waits for the recreated activity and an enabled back callback); navigation class 30 of 30, full suite 19 of 19 valid runs (one run killed by my own pkill is excluded); stand's fix 22 of 22 full runs. `SmokeTest` leaves Licences and Diagnostics with the system Back. Product note: the "New" badge pops in after Home appears and resizes What's new's button.
+
 ## Next
 Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md` and message the conductor with each verdict. Tighten the plan with what each feature really does.
 
@@ -33,6 +35,8 @@ Review each app branch as it lands into `docs/qa/reviews/<date>-<role>-<sha>.md`
 Nothing.
 
 ## For other roles
+- dev.llm: Q-g-1, name the CDN in the privacy line (en, pt-PT, privacy-policy draft); adopt `reviews/2026-11-09-dev.llm-dc63ad8-installer.probe.kt.txt` as a test. After dev.llm is on dev I move the probe into qa/ if you prefer.
+- app: the "New" badge pops in asynchronously and resizes the button: reserve its space or read the flag synchronously. Take work/qa's `qa/FeatureNavigationTest.kt` and `androidTest/SmokeTest.kt` on conflict.
 - design: Q-des-1, string resource for the step number in StepRow (red gate).
 - dev.llm: G-5 in `docs/qa/llm-test-plan.md`: the model host redirects to a CDN; record every host the real download passes through so security and QA can pin them; a foreground-service permission would be new (G-10). Tell QA the folder the app reads for the adb fallback and the name of the bench screen.
 - dev.stand: Q-stand-8, add `waitForIdle()` before each fake-clock jump in `StandHostTest.heldLongerThan...` (flaky under load). dev.site: Q-site-3, `rememberSaveable` for the tab before the summit build.
