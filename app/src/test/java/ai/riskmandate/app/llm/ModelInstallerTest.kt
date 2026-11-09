@@ -93,6 +93,21 @@ class ModelInstallerTest {
         assertEquals(bytes.toList(), i.finalFile(spec).readBytes().toList())
     }
 
+    @Test fun aServerThatKeepsSendingTheWrongRangeIsGivenUpOn() = runBlocking {
+        // Always answers 206 for bytes 0- whatever was asked: one restart from zero, then a clear failure.
+        val wrong: (URL) -> HttpURLConnection = { u ->
+            object : Fake(u, 206, mapOf("Content-Range" to "bytes 0-${bytes.size - 1}/${bytes.size}", "Content-Length" to "${bytes.size}"), { ByteArrayInputStream(bytes) }) {
+                override fun getHeaderField(name: String): String? = if (sent["Range"] == null && name.equals("Content-Range", true)) "bytes 5-9/10" else super.getHeaderField(name)
+            }.also { opened += it }
+        }
+        val i = installer(wrong)
+        i.partFile(spec).writeBytes(bytes.copyOfRange(0, 1000))
+        val r = i.download(spec) as InstallResult.Failed
+        assertEquals(InstallFailure.HTTP, r.reason)
+        assertTrue("bounded: ${opened.size} requests", opened.size <= 3)
+        assertFalse(i.partFile(spec).exists())
+    }
+
     @Test fun wrongBytesAreDeletedAndNeverInstalled() = runBlocking {
         val bad = bytes.copyOf().also { it[10] = (it[10] + 1).toByte() }
         val i = installer(hf(serve = { s -> 200 to bad.copyOfRange(s.toInt(), bad.size) }))

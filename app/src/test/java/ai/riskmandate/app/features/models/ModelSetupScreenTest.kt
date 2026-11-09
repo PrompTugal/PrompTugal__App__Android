@@ -5,6 +5,9 @@ import ai.riskmandate.app.ManagedConfig
 import ai.riskmandate.app.Management
 import ai.riskmandate.app.RiskMandateTheme
 import ai.riskmandate.app.features.FeatureContext
+import ai.riskmandate.app.features.HoldIdleWhile
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import ai.riskmandate.app.llm.ModelCatalog
 import ai.riskmandate.app.llm.ModelFiles
 import ai.riskmandate.app.llm.ModelInstaller
@@ -69,6 +72,25 @@ class ModelSetupScreenTest {
         }
         compose.onNodeWithTag(ModelSetupTags.PRIVACY)
             .assertTextEquals("Downloads a model file once from huggingface.co. Nothing you type leaves the device.")
+    }
+
+    @Test fun theIdleResetIsHeldWhileADownloadRuns() {
+        var holds = 0
+        var released = 0
+        val slow = ModelInstaller(ModelFiles.internalDir(app), open = { _: URL -> Thread.sleep(300); throw IOException("offline") }) { Long.MAX_VALUE }
+        compose.setContent {
+            RiskMandateTheme {
+                val ctx = FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), holdIdle = { holds++; { released++ } })
+                var busy by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                ctx.HoldIdleWhile(busy)
+                ModelSetupScreen(installer = slow, adbDir = { null }, onBusy = { busy = it }, io = Dispatchers.Unconfined)
+            }
+        }
+        waitFor(ModelSetupTags.download(e2b.id))
+        compose.onNodeWithTag(ModelSetupTags.download(e2b.id)).performClick()
+        waitFor(ModelSetupTags.message(e2b.id))
+        assertEquals(1, holds)
+        assertEquals(1, released)
     }
 
     @Test fun listsTheOfferedModelsWithSizeAndLicence() {

@@ -132,6 +132,7 @@ class ModelInstaller(
         var url = URL(spec.url)
         DownloadPolicy.refusal(url)?.let { return InstallResult.Failed(InstallFailure.REFUSED, it) }
         var hops = 0
+        var restarts = 0
         while (true) {
             coroutineContext.ensureActive()
             val conn = try {
@@ -159,9 +160,12 @@ class ModelInstaller(
                     code == 206 -> {
                         val range = conn.getHeaderField("Content-Range") ?: ""
                         if (!range.startsWith("bytes $have-") || !range.endsWith("/${spec.sizeBytes}")) {
-                            // The server did not resume where asked: start again from zero.
+                            // The server did not resume where asked: start again from zero, once (security R-llm-10).
                             part.delete()
+                            if (have == 0L || ++restarts > 1) return InstallResult.Failed(InstallFailure.HTTP, "the server answered with the wrong range")
                             have = 0
+                            hops = 0
+                            url = URL(spec.url)
                             continue
                         }
                     }

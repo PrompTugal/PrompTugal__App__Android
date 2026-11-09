@@ -88,6 +88,8 @@ fun ModelSetupScreen(
     installer: ModelInstaller,
     adbDir: () -> File?,
     onModelsChanged: suspend () -> Unit = {},
+    /** True while a download or import runs; the feature holds stand mode's idle reset off meanwhile (R-llm-9). */
+    onBusy: (Boolean) -> Unit = {},
     io: CoroutineDispatcher = Dispatchers.IO,
     models: List<ModelSpec> = ModelCatalog.ALL.filter { it.downloadable },
 ) {
@@ -101,6 +103,7 @@ fun ModelSetupScreen(
     var preferred by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf<ModelSpec?>(null) }
     val unmetered = remember { isUnmetered(context) }
+    LaunchedEffect(busy != null) { onBusy(busy != null) }
 
     LaunchedEffect(refresh) {
         val (r, p) = withContext(io) {
