@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_releases_empty">Ainda não há notas de versão.</string>
+    <string name="feature_releases_all">Todas as versões</string>
+    <string name="feature_releases_sample_badge">Exemplo</string>
+    <string name="feature_releases_sample_note">Este é um artigo de exemplo que mostra o formato. As notas de versão reais substituem-no.</string>
+    <string name="feature_releases_image_fallback">Captura de ecrã</string>
+    <string name="feature_releases_offer">Veja o que há de novo nesta versão</string>
+</resources>

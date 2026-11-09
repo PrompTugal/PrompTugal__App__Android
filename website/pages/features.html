@@ -8,16 +8,16 @@ order: 2
   <div class="wrap">
     <p class="kicker">Features</p>
     <h1>What exists today</h1>
-    <p class="lede">The app is small on purpose. Everything on this page is checked against the source when the site is built.</p>
+    <p class="lede">Everything on this page is checked against the source when the site is built.</p>
   </div>
 </section>
 
 <section class="band band-alt" id="today">
   <div class="wrap prose">
-    <h2>In the app now</h2>
+    <h2>The core of the app</h2>
     <ul>
       <li><strong>One button, “Open riskmandate.ai”.</strong> It opens the site in a Chrome Custom Tab, or in the browser the system picks if none supports Custom Tabs. If there is no browser, the app says so.</li>
-      <li><strong>An address check.</strong> The app opens only <code>https</code> addresses on <code>riskmandate.ai</code> or <code>www.riskmandate.ai</code>, on port 443 with no embedded user name. Anything else is refused with a message. (A security review found this check could be fooled; it was fixed. See <a href="articles/m1-ci-to-a-tablet-in-one-night.html">the article</a>.)</li>
+      <li><strong>An address check.</strong> The app opens only <code>https</code> addresses on <code>riskmandate.ai</code> or <code>www.riskmandate.ai</code>, on port 443 with no embedded user name. Anything else is refused with a message. (A security review found this check could be fooled; it was fixed. See <a href="articles/2026-11-09-m1-ci-to-a-tablet-in-one-night.html">the article</a>.)</li>
       <li><strong>A Device section.</strong> It says whether an organisation manages the device (fully managed, work profile, or not detected) and shows an optional device label.</li>
       <li><strong>Managed configuration.</strong> An organisation’s device management can set the page the app opens (<code>start_url</code>, checked by the same address rule) and the device label (<code>device_label</code>). This is groundwork for managed devices; no device has been enrolled yet.</li>
       <li><strong>A Diagnostics screen</strong> for testers: app and Android version, device model, management state, the managed configuration as received, and which app installed this one, with a Copy button. It holds no personal data and no device identifiers.</li>
@@ -31,8 +31,8 @@ order: 2
 
 <section class="band" id="summit">
   <div class="wrap">
-    <h2>Summit features: in progress</h2>
-    <p class="prose">A team of agent sessions is building four features in parallel for Web Summit. None is released. The status below comes from the source: a feature is “on” only when its owner has set <code>enabled = true</code>, and that has not happened. The descriptions are the plan, not a promise. Anything about RiskMandate in them is limited to what riskmandate.ai says.</p>
+    <h2>Summit features</h2>
+    <p class="prose">A team of agent sessions is building these features in parallel for Web Summit. The status below is read from the source when the site is built: a feature is “on” only when its owner has set <code>enabled = true</code> (stand mode has no switch of its own: it counts once its host is more than a placeholder). Anything else is “in progress”. The descriptions are the plan, not a promise. Anything about RiskMandate in them is limited to what riskmandate.ai says. What each shipped feature does, and how to use it at a stand, is in the <a href="articles/index.html">release articles</a>.</p>
     {{features_table}}
   </div>
 </section>

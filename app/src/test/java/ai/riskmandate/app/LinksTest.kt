@@ -1,6 +1,7 @@
 package ai.riskmandate.app
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -93,5 +94,10 @@ class LinksTest {
         extNo("https://example.org:99999999/")
         extNo("https://example.org:80a/")
         extNo("https://example.org/" + "a".repeat(2100))
+    }
+
+    @Test fun allowedHostsAreExposedReadOnlyAndDriveTheCheck() {
+        assertEquals(setOf("riskmandate.ai", "www.riskmandate.ai"), Links.ALLOWED_HOSTS)
+        for (h in Links.ALLOWED_HOSTS) ok("https://$h/")
     }
 }

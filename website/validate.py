@@ -6,7 +6,8 @@ Checks every page in the output directory:
   * every page has a Markdown twin listed in llms.txt and in sitemap.xml
   * JSON-LD parses; the home page's softwareVersion and the releases page match the git tags
   * the facts match the source: application ID, minSdk, targetSdk, the permissions in the manifest
-  * no summit feature is shown as "on" unless the source has switched it on
+  * every planned summit feature and every feature in the source is listed, and none is shown as "on" unless the source has switched it on
+  * every release article in the app's assets has a page, and the M1 article is there
   * the privacy page has no unfinished marker and still says the app collects nothing
   * no scripts other than JSON-LD, no external stylesheets, no inline event handlers, no http links
   * one <h1>, a lang, a title and a description; every <img> has alt, width and height
@@ -209,11 +210,13 @@ def check_facts(out, parsed):
 
     # Summit features: "on" only when the source says so
     on_in_source = {f['id'] for f in facts['features'] if f['enabled']}
-    rows = re.findall(r'<tr><td>([A-D])</td><td>.*?</td><td><span class="tag ([\w-]+)">', features, re.S)
-    if len(rows) != 4:
-        problems.append(f'features.html: lists {len(rows)} summit features, wants 4 (A to D)')
-    for letter, tag in rows:
-        ident = {s[0]: s[3] for s in build.SUMMIT_FEATURES}[letter]
+    rows = re.findall(r'<tr data-feature="(\w+)"><td>[^<]*</td><td>.*?</td><td><span class="tag ([\w-]+)">', features, re.S)
+    listed = {ident for ident, _ in rows}
+    wanted_ids = {s[3] for s in build.SUMMIT_FEATURES} | {f['id'] for f in facts['features']}
+    if listed != wanted_ids:
+        problems.append(f'features.html: lists features {sorted(listed)}, wants {sorted(wanted_ids)} (the plan and the source)')
+    for ident, tag in rows:
+        letter = ident
         claims_on = tag == 'tag-ok'
         source_on = ident in on_in_source if ident != 'stand' else (facts['stand_host'] and not facts['stand_placeholder'])
         if claims_on and not source_on:
@@ -242,9 +245,12 @@ def check_facts(out, parsed):
         if name.split('.')[-1] not in privacy:
             problems.append(f'privacy.html: does not mention the permission {name}')
 
-    article = out / 'articles' / 'm1-ci-to-a-tablet-in-one-night.html'
+    for a in facts['articles']:
+        if not (out / 'articles' / f'{a["dir"]}.html').exists():
+            problems.append(f'release article {a["dir"]} (from the app\'s assets) has no page')
+    article = out / 'articles' / '2026-11-09-m1-ci-to-a-tablet-in-one-night.html'
     if not article.exists():
-        problems.append('the article m1-ci-to-a-tablet-in-one-night is missing')
+        problems.append('the article 2026-11-09-m1-ci-to-a-tablet-in-one-night is missing')
     else:
         text = article.read_text()
         for need in ('Dinis', 'unverified', facts['app_id']):
