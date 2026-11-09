@@ -1,5 +1,6 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.llm.StrictJson
 import ai.riskmandate.app.R
 import ai.riskmandate.app.ui.ChipKind
 import androidx.annotation.StringRes
