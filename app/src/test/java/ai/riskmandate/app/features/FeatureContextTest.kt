@@ -65,3 +65,36 @@ class FeatureContextTest {
         context.holdIdle()() // no host: a no-op, never throws
     }
 }
+
+/** Feature.homeBadge (P6): optional, generic, null by default. */
+@RunWith(AndroidJUnit4::class)
+class FeatureBadgeTest {
+    @get:Rule val compose = createComposeRule()
+
+    private object Plain : Feature {
+        override val id = "plain"
+        override val title = ai.riskmandate.app.R.string.app_name
+        @androidx.compose.runtime.Composable override fun Content(context: FeatureContext) = Unit
+    }
+
+    private object Badged : Feature {
+        override val id = "badged"
+        override val title = ai.riskmandate.app.R.string.app_name
+        @androidx.compose.runtime.Composable override fun Content(context: FeatureContext) = Unit
+        @androidx.compose.runtime.Composable override fun homeBadge(): Int = ai.riskmandate.app.R.string.app_name
+    }
+
+    @Test fun defaultIsNoBadgeAndAFeatureCanOfferOne() {
+        var plain: Int? = -1
+        var badged: Int? = -1
+        compose.setContent { plain = Plain.homeBadge(); badged = Badged.homeBadge() }
+        compose.waitForIdle()
+        org.junit.Assert.assertNull(plain)
+        org.junit.Assert.assertEquals(ai.riskmandate.app.R.string.app_name, badged)
+    }
+
+    @Test fun everyListedFeatureAnswersWithoutThrowing() {
+        compose.setContent { FEATURES.filter { it.enabled }.forEach { it.homeBadge() } }
+        compose.waitForIdle()
+    }
+}
