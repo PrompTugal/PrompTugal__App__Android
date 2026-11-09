@@ -2,6 +2,8 @@
 
 Owner: design.android@promptugal.ai. Written 9 Nov 2026 from `briefs/2026-11-09__on-device-llm/README.md`. Reader: dev.llm (G), dev.chat (H), dev.lab (I), QA, security. Same ground rules as `summit.md` (tablet landscape first, phone second, light and dark, 48 dp touch targets, status never colour alone, English and pt-PT, no em-dashes, every screen scrolls so 200% font scale works, `FeatureContent` inside the host `FeatureFrame`, no second title bar). No brand change.
 
+**Replay and live look different, not just labelled differently** (security's request). A replay lane has a dashed 2 dp border (live: solid), a full-width strip at the top of the lane in the Held colours reading "REPLAY: recorded <date>, <backend>. Nothing is running now.", and the Run button reads **Replay** instead of **Run**. Both lanes are replays or both are live, never mixed in one run. The counters strip says "Replay" beside its title when any lane is a replay, and replay results are not added to live loop counters.
+
 **Honest labelling is a design rule here.** Every number, answer and verdict on these screens says what it is: which model, which backend (on this device, hosted, or recorded replay), which quantisation where known. A recorded replay is never shown as a live run: a `StatusChip("Replay of a recorded run", Held)` sits on every lane that is a replay, and `StatusChip("Live on this device", Allowed)` on every live one. Model output is shown as plain, selectable text: never HTML, never a link, never code that runs. The planted instructions and the Lab's tools are fixed, fictional and fake, and the screen says so.
 
 ## Shared pieces (all in `ai.riskmandate.app.ui`)
@@ -44,6 +46,7 @@ Purpose: prove that it is a real LLM, on the device.
 - **Composer.** Bottom, `OutlinedTextField` min 56 dp, max 4 lines, 2,000 characters, with **Send** to its right (56 dp). While generating, Send becomes **Stop** (same place, same size, Blocked-style outline), never both. Keyboard: `imePadding`, the conversation scrolls above it; on a landscape tablet the keyboard leaves at least the last bubble visible.
 - **Empty state.** The four preset prompts as large cards (two by two on a tablet, one column on a phone): "What is RiskMandate?", "Explain an ABP", "Summarise a risk", "Read a few triplets and explain them". Each is a button with the full prompt visible; touching it fills and sends. Answers from bundled riskmandate.ai text only; the screen does not paraphrase product claims itself.
 - **States.** No model installed: a `SectionCard` "No model yet" with a button to G. Model loading: "Loading <model>" with an indeterminate bar, composer disabled. Out of memory or error: a plain error `SectionCard` with Retry; never a stack trace.
+- **No share, no export.** The chat has no share, copy-all, export or send-to action anywhere; text selection and the system copy menu on one bubble are all there is (Android's own, user-initiated). **Clear history** (menu, confirm dialog) is the only data action.
 - **Privacy line.** Under the composer, bodySmall: "Chats stay on this tablet." and, in the menu, the same as an About entry. Clear history empties storage as well as the screen.
 - **Accessibility.** The streaming text is not a live region (it would read every token); on finish a polite announcement "Answer ready, 18 tokens per second". Stop is reachable by the first Tab from the composer. Reading order: top row, conversation, composer.
 
@@ -84,7 +87,7 @@ Phone and portrait: one lane at a time with a two-tab switch **Without ABP | Thr
 ### Loop mode
 
 - N runs of the selected scenario (default 20; a stepper, 56 dp, 5 to 100). **Run** starts, **Stop** ends after the current run. Counters as above; the "1 in X" headline is "X" rounded to one decimal, and "Never failed in N runs" if zero (not "1 in infinity"). If the sample is small (under 10 runs), a one-line caution "Small sample" Held chip sits next to the headline.
-- Results export is for staff, in the Settings panel (share sheet), with the same JSON as the eval harness; never on the main screen.
+- Results export is for staff, in the Settings panel (share sheet, loop results only; no model text is exported beyond the scenario's own fixed strings and the model's answers to them), with the same JSON as the eval harness; never on the main screen.
 - A loop run keeps the screen on (host's keep-screen-on) and, in stand mode, the idle reset is paused while a loop runs.
 
 ### Settings panel

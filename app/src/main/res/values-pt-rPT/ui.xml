@@ -4,4 +4,5 @@
     <string name="ui_layer_checking">A verificar agora</string>
     <string name="ui_layer_stopped">Travou a instrução aqui</string>
     <string name="ui_layer_passed">Já ultrapassada</string>
+    <string name="ui_step_number">%1$d.</string>
 </resources>
