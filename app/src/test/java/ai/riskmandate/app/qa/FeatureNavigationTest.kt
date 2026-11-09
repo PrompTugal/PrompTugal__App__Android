@@ -55,6 +55,18 @@ class FeatureNavigationTest {
         }
     }
 
+    /** The host's visible Back button (FeatureFrame, on work/app): needed in stand mode, where the back gesture may be pinned off. */
+    @Test fun frameBackButtonReturnsHomeAndTitleShowsOnce() {
+        for (f in enabled) {
+            compose.onNodeWithTag(tag(f)).performScrollTo().performClick()
+            compose.waitForIdle()
+            compose.onNodeWithTag("feature_title").assertIsDisplayed()
+            compose.onNodeWithTag("feature_back").assertIsDisplayed().performClick()
+            compose.waitForIdle()
+            assertHome()
+        }
+    }
+
     @Test fun rotationKeepsTheFeatureScreen() {
         for (f in enabled) {
             compose.onNodeWithTag(tag(f)).performScrollTo().performClick()
