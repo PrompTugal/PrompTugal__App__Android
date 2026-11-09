@@ -1,11 +1,12 @@
 # architect.android status
 
-> 9 Nov 2026, about 01:45 UTC: review round 3. app f317cf8 PASS (v2 applied), qa c0c10e8 PASS (3 test fixes needed before site); dev.site e6c92f0, design 3397228 and dev.stand 23d16f3 HOLD. abpdemo and mandate are still HOLD from round 2. One frame rule: FeatureFrame only.
+> 9 Nov 2026, about 01:35 UTC: FeatureContext v3 pushed (a feature can hold off stand's idle reset: holdIdle, HoldIdleWhile, IdleHolds), with a contract test. Gate green. Wiring is for app, stand and abpdemo. The deprecated constructor stays until app f317cf8 is on dev.
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- FeatureContext v3 (`features/Feature.kt`): `holdIdle` (default no-op), `HoldIdleWhile(active)` (DisposableEffect, releases on leave), `IdleHolds` (host-side token list, Compose state, `clear()`). `app/src/test/.../features/FeatureContextTest.kt` (4 tests; contract tests, architect-owned). Gate green. Secret scan: the working tree is clean; 2 history hits on origin/work/editor d722a6b (`website/validate.py`, `website/test_site.py`) are the validator's own detection patterns, not keys (for security to confirm).
 - Review round 3: app f317cf8 PASS; qa c0c10e8 PASS with A-qa-6 to A-qa-8 (static tests flag site's safe settings); dev.site e6c92f0 HOLD (does not compile against v2; own Back, title and insets; no onRenderProcessGone; offline copy under the real origin is for security to decide); design 3397228 HOLD (FeatureScaffold is a second frame: make it a content-only FeatureBody); dev.stand 23d16f3 HOLD (keep-screen-on fixed; corner still over every screen). Trial merge of all nine branches: site fails to compile; patched locally, 191 tests with 5 failing: abpdemo x2 (one cause), the URL-literal test x1 (mandate probes plus a false positive on site), site x2 (qa false positives).
 - Review round 2 (`docs/architecture/reviews/2026-11-09-*`): app 5afbb97 PASS (FeatureFrame accepted into the rules); qa a2a49c6 PASS (A-qa-1: exemption marker for mandate's probe URLs); dev.stand 94da82a HOLD (corner swallows taps on every screen); dev.abpdemo 38dfbf8 HOLD (own title and Home inside FeatureFrame; string template in a contentDescription fails two tests); dev.mandate 78ae8d6 HOLD (own Back, title and insets inside FeatureFrame; probe URLs fail qa's link test). Trial merge of dev + architect + app + qa + stand + abpdemo + mandate: no conflicts, compiles, lint passes, 157 tests with 3 failing (abpdemo x2, mandate x1).
 - README: FeatureFrame rule (features draw content only), string prefix `<id>_`, stand corner and idle-reset notes.

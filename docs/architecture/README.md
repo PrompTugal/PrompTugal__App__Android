@@ -71,7 +71,7 @@ No new dependency without the architect's OK (in your status page, then in a rev
 
 ## Stand mode and the other features
 - StandHost wraps every screen. Its staff corner (bottom-end, 48dp) shows on the home screen only, so it never covers a feature's controls.
-- The idle reset goes home after N minutes without a touch on the main window. Touches inside a feature's dialog (another window) do not count, so keep dialogs short. A feature that should run unattended (abpdemo's auto-play) has no way yet to hold the reset off; that is open (stand review A-stand-3) and is not to be worked around.
+- The idle reset goes home after N minutes without a touch on the main window. Touches inside a feature's dialog (another window) do not count, so keep dialogs short. A feature that runs unattended on purpose (abpdemo's auto-play) holds the reset off with `context.HoldIdleWhile(autoPlay)`, and only that way: it releases when the condition ends or the feature leaves the screen.
 
 ## Strings, assets, tests
 - Strings: `res/values/feature_<id>.xml` and `res/values-pt-rPT/feature_<id>.xml`, every name prefixed `<id>_` (for example `stand_title`, `abpdemo_next`), both files with the same names; names are unique across all files (LocalisationTest). No literal text in `Text(...)` or `contentDescription`. The title string (`feature_<id>_title`) stays in `features.xml` (conductor).
@@ -87,5 +87,9 @@ No new dependency without the architect's OK (in your status page, then in a rev
 
 ## `FeatureContext` history
 - **9 Nov, v2 (architect):** `activity` removed; `config` and `device` added (P1); `onBack` kept and means "go home" (P2). A deprecated `FeatureContext(activity, onBack)` constructor stays only so `MainActivity` compiles until app.android passes its own values, built with `remember(config, device)` (P3); then it is deleted.
-- **Open, P4:** stand mode's on/off switch on the home screen: a small `StandController` the host hoists and passes to `StandHost` and `HomeScreen` (app and stand agree it; not a `FeatureContext` field).
+- **P4 closed:** stand's switch is the long-press corner inside StandHost, shown on Home only.
+- **9 Nov, v3 (architect, approved by the conductor):** `holdIdle: () -> () -> Unit` (default no-op), `FeatureContext.HoldIdleWhile(active)` and the host-side `IdleHolds`. Wiring:
+  - app (MainActivity): `val idle = remember { IdleHolds() }`; `FeatureContext(..., holdIdle = idle::hold)`; `StandHost(..., idleHeld = idle.held)`; `LaunchedEffect(route) { idle.clear() }` as a safety net.
+  - stand (StandHost): new parameter `idleHeld: Boolean = false`; while true, do not reset; when it turns false, `timer.touch()` so the countdown starts again from that moment.
+  - abpdemo: `context.HoldIdleWhile(auto)` in `Content`.
 - Anything else a feature needs from the host: ask (above). A new field needs a reason and a test.
