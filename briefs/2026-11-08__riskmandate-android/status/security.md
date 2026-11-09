@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 45 (9 Nov 2026): app 02e8eb1 PASS (openFeature wired, refused in stand mode and for unknown or disabled ids; R-arch-1 closed). Next: dev.llm merge of dev (conflict resolution only) when it lands, and the design-pass article when it moves. Waiting for the next wake.
+> Round 46 (9 Nov 2026): app 7a9af40 PASS, play 2f01486 PASS (R-play-11 closed), editor 5590047 PASS (R-art-7 closed). dev.llm is on dev (25d9cb7), nothing new to read. Still to read: the design-pass article when it moves into assets. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
