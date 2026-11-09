@@ -39,6 +39,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 17. R-art-6: "Because the app collects nothing" is now "collects no personal data" in `privacy-policy.md` and `privacy.html`; the same overclaim fixed in `tester-guide-m3.md`.
 
+18. Icon: `listing.md` and `store-assets.md` now describe design's RM redraw (`mipmap/ic_launcher_rm`, approved by Dinis 9 Nov) and `docs/design/brand/play-icon-512.png` (512 x 512 RGBA, 7 KB; looked at, not run through Google's checker), with its limits (a redraw from a JPEG, not the original SVG); only the feature graphic remains for the designer. R-play-11: the internal line "result on the store page: No data collected" is gone from `data-safety.md`.
+
 ## Next
 Nothing until Dinis decides (below).
 
