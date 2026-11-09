@@ -10,7 +10,7 @@ Only Dinis adds secrets (repository settings, Secrets and variables, Actions). A
 | `release` | push to `dev` and manual runs on `dev`, after `check` passes, in the GitHub Environment `release` | release notes, release APK and AAB, signing, artifact `riskmandate-<version>`, distribution |
 | `smoke` | after `release`, same triggers | emulator smoke test of the release APK (below); nothing depends on it |
 
-Both jobs write a job summary: version, application ID (read from the built APK with `aapt2 dump badging`, never hardcoded, because it is provisional), signed or not, and each distribution step as ran, FAILED or skipped with the reason.
+Both jobs write a job summary: version, application ID (read from the built APK with `aapt2 dump badging`, never hardcoded, so a change of ID needs no workflow edit), signed or not, and each distribution step as ran, FAILED or skipped with the reason.
 
 ## Emulator smoke test (`smoke` job)
 

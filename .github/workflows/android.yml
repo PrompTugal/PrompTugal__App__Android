@@ -157,7 +157,7 @@ jobs:
           suffix=$([ "$HAS_UPLOAD_KEY" = true ] && echo "" || echo "-unsigned")
           cp app/build/outputs/apk/release/*.apk "out/riskmandate-$VERSION_NAME$suffix.apk"
           cp app/build/outputs/bundle/release/*.aab "out/riskmandate-$VERSION_NAME$suffix.aab"
-          # The application ID is provisional: read it from the built APK, never hardcode it.
+          # Read the application ID from the built APK, never hardcode it.
           aapt2=$(ls "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/aapt2 | sort -V | tail -1)
           app_id=$("$aapt2" dump badging "out/riskmandate-$VERSION_NAME$suffix.apk" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
           if [ -z "$app_id" ]; then echo "could not read the application ID" >&2; exit 1; fi
@@ -190,7 +190,8 @@ jobs:
         run: |
           # firebase-tools comes from .github/firebase/package-lock.json (integrity hashes), no install scripts.
           # GOOGLE_APPLICATION_CREDENTIALS comes from the auth step.
-          npm ci --ignore-scripts --no-audit --no-fund --prefix .github/firebase/node_modules/.bin/firebase appdistribution:distribute "out/riskmandate-$VERSION_NAME.apk" \
+          npm ci --ignore-scripts --no-audit --no-fund --prefix .github/firebase
+          .github/firebase/node_modules/.bin/firebase appdistribution:distribute "out/riskmandate-$VERSION_NAME.apk" \
             --app "$FIREBASE_APP_ID" --groups team \
             --release-notes-file "$RUNNER_TEMP/release-notes.md"
 
@@ -255,7 +256,7 @@ jobs:
           }
           {
             echo "## release (run ${{ github.run_number }})"
-            echo "- version: ${VERSION_NAME} (versionCode ${VERSION_CODE}), application ID: ${APP_ID:-unknown} (provisional)"
+            echo "- version: ${VERSION_NAME} (versionCode ${VERSION_CODE}), application ID: ${APP_ID:-unknown}"
             echo "- signing: $([ "$HAS_UPLOAD_KEY" = true ] && echo 'signed with the upload key' || echo 'UNSIGNED: UPLOAD_KEYSTORE_* and UPLOAD_KEY_* secrets missing')"
             echo "- Firebase App Distribution: $([ "$GAUTH_OUTCOME" = failure ] && echo 'FAILED at Google auth (Workload Identity Federation: check the provider, service account and the release environment)' || reason "$FIREBASE_OUTCOME" "$HAS_FIREBASE" 'variables GCP_WIF_PROVIDER, GCP_SERVICE_ACCOUNT or FIREBASE_APP_ID (variable or secret)' push))"
             echo "- Google Play (${PLAY_TRACK}, draft): $(reason "$PLAY_OUTCOME" "$HAS_PLAY" 'PLAY_SERVICE_ACCOUNT_JSON secret' any)"
