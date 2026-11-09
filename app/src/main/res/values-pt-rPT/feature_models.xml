@@ -25,6 +25,6 @@
     <string name="models_bench_results">Resultados</string>
     <string name="models_bench_how">Como adicionar um modelo</string>
     <string name="models_bench_folder">Pasta: %1$s</string>
-    <string name="models_bench_no_storage">O armazenamento partilhado não está disponível, por isso o adb não pode adicionar um modelo agora.</string>
+    <string name="models_bench_no_storage">A pasta do adb não está disponível: precisa do Android 11 ou posterior e do armazenamento partilhado montado.</string>
     <string name="models_bench_files">Ficheiros exatos (descarregue-os num computador e depois envie-os):</string>
 </resources>

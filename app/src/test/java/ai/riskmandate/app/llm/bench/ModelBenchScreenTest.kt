@@ -50,6 +50,11 @@ class ModelBenchScreenTest {
 
     @Test fun staysOffTheHomeScreenUntilItWorksOnTheTablet() = assertFalse(ModelsFeature.enabled)
 
+    @Test fun noAdbFolderBeforeScopedStorage() {
+        assertTrue(ModelFiles.adbDir(app, 29) == null)
+        assertTrue(ModelFiles.adbDir(app, 30) != null)
+    }
+
     @Test fun benchEntryOnlyWithAModelInTheBenchFolderOrOnADebugBuild() {
         assertFalse(ModelFiles.benchAvailable(app, debuggable = false))
         assertTrue(ModelFiles.benchAvailable(app, debuggable = true))

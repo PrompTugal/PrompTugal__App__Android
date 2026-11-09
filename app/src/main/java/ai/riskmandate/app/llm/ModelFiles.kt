@@ -1,6 +1,7 @@
 package ai.riskmandate.app.llm
 
 import android.content.Context
+import android.os.Build
 import java.io.File
 import java.io.InputStream
 import java.security.MessageDigest
@@ -35,8 +36,14 @@ object ModelFiles {
 
     fun internalDir(context: Context): File = File(context.noBackupFilesDir, DIR)
 
-    /** Null when shared storage is not mounted. Calling it creates the folder, so adb can push into it. */
-    fun adbDir(context: Context): File? = context.getExternalFilesDir(DIR)
+    /**
+     * The adb folder, or null when shared storage is not mounted or the device runs Android 10 or earlier:
+     * only scoped storage (API 30+) keeps other apps out of it (security R-llm-4). Calling it creates the
+     * folder, so adb can push into it.
+     */
+    fun adbDir(context: Context): File? = adbDir(context, Build.VERSION.SDK_INT)
+
+    fun adbDir(context: Context, sdk: Int): File? = if (sdk >= 30) context.getExternalFilesDir(DIR) else null
 
     /** Every catalogue file present in either folder, internal first. Other files are ignored. */
     fun find(context: Context): List<FoundModel> = find(listOfNotNull(internalDir(context), adbDir(context)))

@@ -25,6 +25,6 @@
     <string name="models_bench_results">Results</string>
     <string name="models_bench_how">How to add a model</string>
     <string name="models_bench_folder">Folder: %1$s</string>
-    <string name="models_bench_no_storage">Shared storage is not available, so adb cannot add a model right now.</string>
+    <string name="models_bench_no_storage">The adb folder is not available: it needs Android 11 or later and shared storage mounted.</string>
     <string name="models_bench_files">Exact files (download them on a computer, then push):</string>
 </resources>
