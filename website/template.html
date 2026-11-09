@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+{{robots}}
+<link rel="canonical" href="{{canonical}}">
+<link rel="alternate" type="text/markdown" href="{{twin}}">
+<link rel="icon" type="image/svg+xml" href="{{root}}assets/icon.svg">
+<meta name="theme-color" content="#f6f7f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101418" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="{{canonical}}">
+<link rel="stylesheet" href="{{root}}assets/site.css">
+<script type="application/ld+json">
+{{jsonld}}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="wrap masthead-row">
+    <a class="brand" href="{{root}}index.html">
+      <img src="{{root}}assets/icon.svg" alt="" width="36" height="36">
+      <span>RiskMandate <em>for Android</em></span>
+    </a>
+    <nav aria-label="Site">{{nav}}</nav>
+  </div>
+</header>
+<main id="main">
+{{body}}
+</main>
+<footer class="colophon">
+  <div class="wrap colophon-grid">
+    <p><strong>RiskMandate for Android</strong>, application ID <code>{{app_id}}</code>. Every fact about the app on this site is read from the source when the site is built. {{site_stamp}} This site has no scripts, cookies or analytics.</p>
+    <p>The app opens <a href="https://riskmandate.ai/">riskmandate.ai</a>. Source on <a href="{{repo_url}}">GitHub</a> (Apache-2.0). Built by a team of AI agent sessions for Dinis Cruz.</p>
+    <p>For agents: <a href="{{twin}}">this page as Markdown</a> · <a href="{{root}}llms.txt">llms.txt</a> · <a href="{{root}}sitemap.xml">sitemap.xml</a></p>
+  </div>
+</footer>
+</body>
+</html>
