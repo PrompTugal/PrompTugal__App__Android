@@ -75,6 +75,36 @@ class ScreenshotTest {
         val context = RuntimeEnvironment.getApplication()
         val text = readLicences(context)
         val apache = readApacheLicence(context)
-        shoot("licences") { LicencesScreen(text = text, apacheText = apache, onBack = {}) }
+        shoot("licences") { LicencesScreen(text = text, apacheText = apache) }
+    }
+
+    /** The whole shell (sidebar or top bar) around the Now page, with a sample set of destinations. */
+    @Test fun shellScreens() = shoot("shell") {
+        val sections = listOf(
+            NavSection(R.string.nav_section_today, listOf(
+                NavItem("home", R.string.home_now_title, R.drawable.ic_nav_home),
+                NavItem("site", R.string.home_open, R.drawable.ic_nav_globe),
+                NavItem("releases", R.string.home_about_heading, R.drawable.ic_nav_news, badge = R.string.home_stat_attention),
+            )),
+            NavSection(R.string.nav_section_explore, listOf(NavItem("abpdemo", R.string.home_device_heading, R.drawable.ic_nav_layers))),
+            NavSection(R.string.nav_section_device, listOf(
+                NavItem("licences", R.string.home_licences, R.drawable.ic_nav_doc),
+                NavItem("diagnostics", R.string.home_diagnostics, R.drawable.ic_nav_pulse),
+            )),
+        )
+        AppShell(
+            sections = sections, selected = "home", currentTitle = R.string.home_now_title, atHome = true,
+            onSelect = {}, onBackHome = {}, brandLine = "Web Summit",
+        ) {
+            HomeScreen(
+                version = "0.1.7 (7)",
+                device = DeviceStatus.from(hasDeviceOwner = true, inWorkProfile = false, label = "Lisbon tablet 3"),
+                onOpen = {},
+                features = listOf(
+                    FeatureButton("site", R.string.home_open, kicker = R.string.nav_section_today, summary = R.string.home_now_summary) {},
+                    FeatureButton("abpdemo", R.string.home_device_heading, badge = R.string.home_stat_attention, kicker = R.string.nav_section_explore, summary = R.string.home_now_summary) {},
+                ),
+            )
+        }
     }
 }

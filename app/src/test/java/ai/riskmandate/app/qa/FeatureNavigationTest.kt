@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -40,9 +41,10 @@ class FeatureNavigationTest {
         compose.waitForIdle()
     }
 
-    private fun assertHome() = compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+    // Home is the "Now" page of cards (shell step 2): its stat grid is the marker that Home shows.
+    private fun assertHome() = compose.onNodeWithTag(HomeTags.STATS).performScrollTo().assertIsDisplayed()
 
-    private fun assertNotHome() = compose.onNodeWithTag(HomeTags.OPEN).assertDoesNotExistOrNotDisplayed()
+    private fun assertNotHome() = compose.onNodeWithTag(HomeTags.STATS).assertDoesNotExistOrNotDisplayed()
 
     @Test fun everyEnabledFeatureOpensFromHomeAndBackReturns() {
         for (f in enabled) {
@@ -55,13 +57,20 @@ class FeatureNavigationTest {
         }
     }
 
-    /** The host's visible Back button (FeatureFrame, on work/app): needed in stand mode, where the back gesture may be pinned off. */
-    @Test fun frameBackButtonReturnsHomeAndTitleShowsOnce() {
+    /**
+     * Shell step 2: the frame no longer draws a Back button. On a phone (this test's window) the shell's
+     * top bar is the header and the menu opens the destinations, where Now is the way home; the system
+     * Back also goes home. (With the sidebar on a tablet the frame draws one ScreenHeader: HostTest.)
+     */
+    @Test fun frameHasNoBackButtonAndTheMenuLeadsHome() {
         for (f in enabled) {
             compose.onNodeWithTag(tag(f)).performScrollTo().performClick()
             compose.waitForIdle()
-            compose.onNodeWithTag("feature_title").assertIsDisplayed()
-            compose.onNodeWithTag("feature_back").assertIsDisplayed().performClick()
+            compose.onNodeWithTag("feature_back").assertDoesNotExist()
+            compose.onNodeWithTag("shell_top_title").assertIsDisplayed()
+            compose.onNodeWithTag("shell_menu").performClick()
+            compose.waitForIdle()
+            compose.onNodeWithTag("nav_home").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
             compose.waitForIdle()
             assertHome()
         }

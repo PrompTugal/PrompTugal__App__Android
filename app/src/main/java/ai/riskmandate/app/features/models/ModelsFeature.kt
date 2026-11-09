@@ -3,22 +3,19 @@ package ai.riskmandate.app.features.models
 import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
+import ai.riskmandate.app.llm.bench.ModelBenchScreen
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 
-/** Placeholder: the owning session replaces this file's contents (keep the object name and id). */
+/**
+ * Feature G, model setup (dev.llm). Step 1 of the on-device LLM brief: for now the screen is the hidden bench
+ * ([ModelBenchScreen]); the model list, download and checksum screen replaces it in step 3. Stays off the home
+ * screen (`enabled = false`) until it works end to end on the tablet; the bench (llm/bench) is reached from Diagnostics.
+ */
 object ModelsFeature : Feature {
     override val id = "models"
     override val title = R.string.feature_models_title
     override val enabled = false
 
     @Composable
-    override fun Content(context: FeatureContext) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(title)) }
-    }
+    override fun Content(context: FeatureContext) = ModelBenchScreen()
 }

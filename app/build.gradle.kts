@@ -49,7 +49,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
+    kotlinOptions {
+        jvmTarget = "17"
+        // SUMMIT ONLY. LiteRT-LM is built with Kotlin 2.4 metadata and we are on 2.0.21; Google's Edge Gallery uses
+        // the same flag. It switches off a safety check, so A-llm-2 removes it after a Kotlin/AGP bump.
+        freeCompilerArgs += "-Xskip-metadata-version-check"
+    }
     buildFeatures { compose = true; buildConfig = true }
     testOptions {
         unitTests.isIncludeAndroidResources = true
@@ -71,6 +76,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.browser:browser:1.8.0")
     implementation("androidx.webkit:webkit:1.12.1") // WebViewAssetLoader for the in-app site (features/site)
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.18.1") // on-device LLM runtime (llm/, features/models)
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     testImplementation("junit:junit:4.13.2")

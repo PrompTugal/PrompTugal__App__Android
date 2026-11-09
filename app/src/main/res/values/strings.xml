@@ -18,14 +18,26 @@
     <string name="message_refused">That address is not on riskmandate.ai, so the app will not open it.</string>
 
     <string name="licences_title">Open source licences</string>
-    <string name="licences_back">Back</string>
-    <string name="licences_back_description">Back to the home screen</string>
+    <string name="licences_models_heading">Model files (downloaded on request)</string>
+    <string name="licences_models_note">These files are not part of the app. The tablet downloads one only when asked to. The licence is the one the model\'s page states.</string>
     <string name="licences_apache_heading">Apache License, Version 2.0 (full text)</string>
 
+    <string name="nav_section_today">Today</string>
+    <string name="nav_section_explore">Explore</string>
+    <string name="nav_section_device">This device</string>
+    <string name="nav_collapse">Fold the sidebar to icons</string>
+    <string name="nav_expand">Open the sidebar</string>
+    <string name="shell_brand_line">Web Summit</string>
+    <string name="nav_home_action">Go to Now</string>
     <string name="nav_menu">Open the navigation menu</string>
-    <string name="nav_home">Home</string>
-    <string name="nav_section_now">Now</string>
-    <string name="nav_section_features">Features</string>
+    <string name="home_now_title">Now</string>
+    <string name="home_now_summary">What you can open on this device.</string>
+    <string name="home_stat_features">Features on</string>
+    <string name="home_stat_permissions">Permissions this app asks for</string>
+    <string name="home_stat_attention">Needs a look</string>
+    <string name="home_stat_attention_none">Nothing to check</string>
+    <string name="home_stat_attention_some">See the note above</string>
+    <string name="home_links_heading">This app</string>
     <string name="home_diagnostics">Diagnostics</string>
     <string name="message_failed">Something went wrong opening riskmandate.ai in a browser. Try again, or open it in your browser yourself.</string>
     <string name="message_pinned">Web pages are not opened in a browser while the app is pinned.</string>
@@ -33,6 +45,7 @@
 
     <string name="diagnostics_title">Diagnostics</string>
     <string name="diagnostics_intro">For testers and device set-up. It holds no personal data and no device identifiers.</string>
+    <string name="diagnostics_model_bench">Model bench (on-device LLM test)</string>
     <string name="diagnostics_copy">Copy</string>
     <string name="diagnostics_copied">Copied to the clipboard.</string>
     <string name="diagnostics_copy_failed">Could not copy to the clipboard.</string>
