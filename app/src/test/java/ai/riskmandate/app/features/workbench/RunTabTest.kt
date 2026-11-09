@@ -204,6 +204,23 @@ class RunTabTest {
         assertTrue(compose.onAllNodes(androidx.compose.ui.test.hasText("Cloud \u00b7 google/gemma-3-4b-it via openrouter.ai", substring = true)).fetchSemanticsNodes().size >= 2)
     }
 
+    @Test fun toolTestsRunOnTheDeviceEvenWhenCloudIsChosen() {
+        val local = FakeLlmService { FakeReply("local") }
+        val cloudInner = FakeLlmService { FakeReply("cloud") }
+        val cloud = object : ai.riskmandate.app.llm.LlmService by cloudInner { override val location = ai.riskmandate.app.llm.LlmLocation.CLOUD }
+        showWorkbench(cloud = cloud, local = local)
+        compose.onNodeWithTag(RunTags.CLOUD).performScrollTo().performClick()
+        compose.onNodeWithText("Tool tests").performClick()
+        waitFor(ai.riskmandate.app.features.workbench.tooltests.ToolTestTags.RUN)
+        compose.onNodeWithTag(ai.riskmandate.app.features.workbench.tooltests.ToolTestTags.RUN).performScrollTo().performClick()
+        val end = System.currentTimeMillis() + 10_000
+        while (local.requests.isEmpty() && System.currentTimeMillis() < end) {
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle(); compose.waitForIdle(); Thread.sleep(20)
+        }
+        assertTrue("tool tests ran on the device (R-wb-9)", local.requests.isNotEmpty())
+        assertTrue("nothing went to the cloud", cloudInner.requests.isEmpty())
+    }
+
     @Test fun withoutACloudServiceThereIsNoCloudChoice() {
         showWorkbench(cloud = null, local = FakeLlmService())
         assertTrue(compose.onAllNodes(hasTestTag(RunTags.CLOUD)).fetchSemanticsNodes().isEmpty())
