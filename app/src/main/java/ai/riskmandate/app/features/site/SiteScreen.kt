@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ object SiteTags {
     const val TRY_ONLINE = "site_try_online"
     const val MESSAGE = "site_message"
     const val WEBVIEW = "site_webview"
+    const val PRIVACY = "site_privacy"
     fun tab(id: String) = "site_tab_$id"
 }
 
@@ -62,6 +64,7 @@ fun SiteScreen(
     var loadKey by remember { mutableIntStateOf(0) }
     var message by remember { mutableStateOf<Int?>(null) }
     var webView by remember { mutableStateOf<WebView?>(null) }
+    var webViewKey by remember { mutableIntStateOf(0) }
 
     BackHandler { if (webView?.canGoBack() == true) webView?.goBack() else onBack() }
 
@@ -102,14 +105,14 @@ fun SiteScreen(
                         .semantics { liveRegion = LiveRegionMode.Polite },
                 ) {
                     Text(
-                        stringResource(R.string.site_offline_banner, stringResource(R.string.site_snapshot_date)),
+                        stringResource(R.string.feature_site_offline_banner, stringResource(R.string.feature_site_snapshot_date)),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f),
                     )
                     Button(
                         onClick = { if (switch.tryOnline(isSystemOffline(context))) loadKey++ },
                         modifier = Modifier.heightIn(min = 48.dp).testTag(SiteTags.TRY_ONLINE),
-                    ) { Text(stringResource(R.string.site_try_online)) }
+                    ) { Text(stringResource(R.string.feature_site_try_online)) }
                 }
             }
         }
@@ -123,8 +126,9 @@ fun SiteScreen(
             )
         }
 
-        val description = stringResource(R.string.site_webview_description)
-        val notInCopy = stringResource(R.string.site_not_in_copy)
+        val description = stringResource(R.string.feature_site_webview_description)
+        val notInCopy = stringResource(R.string.feature_site_not_in_copy)
+        key(webViewKey) {
         AndroidView(
             modifier = Modifier.weight(1f).fillMaxWidth().testTag(SiteTags.WEBVIEW),
             factory = { c ->
@@ -136,6 +140,7 @@ fun SiteScreen(
                         switch = switch,
                         onExternal = { url -> message = openExternal(c, url) },
                         onMainFrameError = { switch.onMainFrameError(); loadKey++ },
+                        onRenderGone = { webViewKey++ },
                         notInCopyHtml = { notInCopyPage(notInCopy) },
                     )
                     webView = wv
@@ -143,14 +148,21 @@ fun SiteScreen(
             },
             update = { wv ->
                 // Load the selected tab when it, or the online/offline mode, changed.
-                val wanted = "${SITE_TABS[tabIndex].url}|${switch.offline}|$loadKey"
+                val tab = SITE_TABS[tabIndex]
+                val wanted = "${tab.url}|${switch.offline}|$loadKey"
                 if (wv.tag != wanted) {
                     wv.tag = wanted
                     message = null
-                    wv.loadUrl(SITE_TABS[tabIndex].url)
+                    wv.loadUrl(if (switch.offline) OfflineCopy.assetUrl(tab) else tab.url)
                 }
             },
-            onRelease = { wv -> wv.stopLoading(); wv.destroy(); webView = null },
+            onRelease = { wv -> wv.disposeSite(); webView = null },
+        )
+        }
+        Text(
+            stringResource(R.string.feature_site_privacy),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).testTag(SiteTags.PRIVACY),
         )
     }
 }

@@ -29,7 +29,7 @@ class OfflineCopyTest {
 
     @Test fun bundledPagesAreRealHtmlFromRiskmandate() {
         for (tab in SITE_TABS) {
-            val html = app.resources.openRawResource(tab.raw).use { it.readBytes().toString(Charsets.UTF_8) }
+            val html = app.assets.open("feature_site/" + tab.file).use { it.readBytes().toString(Charsets.UTF_8) }
             assertTrue("${tab.id} is html", html.trimStart().startsWith("<!doctype html>", ignoreCase = true))
             assertTrue("${tab.id} names the product", html.contains("RiskMandate"))
             assertTrue("${tab.id} is more than a stub", html.length > 10_000)
@@ -44,6 +44,33 @@ class OfflineCopyTest {
         assertEquals("abp", OfflineCopy.pageFor("https://RISKMANDATE.ai/abp.html")?.id)
     }
 
+    @Test fun bundledPagesCarryNoFormAndNoRemoteScript() {
+        val remoteScript = Regex("<script[^>]+src=[\"']\\s*(https?:)?//", RegexOption.IGNORE_CASE)
+        for (tab in SITE_TABS) {
+            val html = app.assets.open("feature_site/" + tab.file).use { it.readBytes().toString(Charsets.UTF_8) }
+            assertFalse("${tab.id} has a form", html.contains("<form", ignoreCase = true))
+            assertFalse("${tab.id} loads a remote script", remoteScript.containsMatchIn(html))
+        }
+    }
+
+    @Test fun assetUrlsAreRecognisedStrictly() {
+        assertTrue(OfflineCopy.isAssetUrl("https://appassets.androidplatform.net/assets/feature_site/abp.html"))
+        assertFalse(OfflineCopy.isAssetUrl("http://appassets.androidplatform.net/assets/feature_site/abp.html"))
+        assertFalse(OfflineCopy.isAssetUrl("https://appassets.androidplatform.net/res/feature_site/abp.html"))
+        assertFalse(OfflineCopy.isAssetUrl("https://appassets.androidplatform.net/assets/other/abp.html"))
+        assertFalse(OfflineCopy.isAssetUrl("https://appassets.androidplatform.net.evil.example/assets/feature_site/abp.html"))
+        assertFalse(OfflineCopy.isAssetUrl("https://appassets.androidplatform.net@evil.example/assets/feature_site/abp.html"))
+        assertEquals("abp", OfflineCopy.pageFor("https://appassets.androidplatform.net/assets/feature_site/abp.html?x=1#y")?.id)
+        assertEquals("home", OfflineCopy.pageFor("https://appassets.androidplatform.net/assets/feature_site/")?.id)
+    }
+
+    @Test fun riskmandateUrlsMapToTheirCopy() {
+        assertEquals(OfflineCopy.ASSET_BASE + "pricing.html", OfflineCopy.assetUrlFor("https://riskmandate.ai/pricing.html?x#y"))
+        assertEquals(OfflineCopy.ASSET_BASE + "index.html", OfflineCopy.assetUrlFor("https://riskmandate.ai/"))
+        assertEquals(OfflineCopy.ASSET_BASE + "rules/", OfflineCopy.assetUrlFor("https://riskmandate.ai/rules/"))
+        assertNull(OfflineCopy.assetUrlFor("https://evil.example/pricing.html"))
+    }
+
     @Test fun pagesOutsideTheCopyAndForeignUrlsHaveNoCopy() {
         assertNull(OfflineCopy.pageFor("https://riskmandate.ai/contact.html"))
         assertNull(OfflineCopy.pageFor("https://riskmandate.ai/rules/"))
@@ -53,14 +80,14 @@ class OfflineCopyTest {
     }
 
     @Test fun theBannerDateMatchesTheSnapshotDate() {
-        assertEquals("9 November 2026", app.getString(R.string.site_snapshot_date))
+        assertEquals("9 November 2026", app.getString(R.string.feature_site_snapshot_date))
         assertEquals("2026-11-09", OfflineCopy.SNAPSHOT_DATE_ISO)
-        assertTrue(app.getString(R.string.site_offline_banner, app.getString(R.string.site_snapshot_date)).startsWith("Offline copy from 9 November 2026"))
+        assertTrue(app.getString(R.string.feature_site_offline_banner, app.getString(R.string.feature_site_snapshot_date)).startsWith("Offline copy from 9 November 2026"))
     }
 
     @Test @Config(qualifiers = "pt-rPT")
     fun theBannerIsInPortugueseToo() {
-        assertTrue(app.getString(R.string.site_offline_banner, app.getString(R.string.site_snapshot_date)).startsWith("Cópia offline de 9 de novembro de 2026"))
+        assertTrue(app.getString(R.string.feature_site_offline_banner, app.getString(R.string.feature_site_snapshot_date)).startsWith("Cópia offline de 9 de novembro de 2026"))
     }
 
     @Test fun theNotInCopyPageEscapesItsText() {

@@ -6,6 +6,7 @@ import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 
 /** riskmandate.ai inside the app: an in-app WebView limited to the allow-list, native tabs and an offline copy. */
 object SiteFeature : Feature {
@@ -15,7 +16,8 @@ object SiteFeature : Feature {
 
     @Composable
     override fun Content(context: FeatureContext) {
-        val switch = remember { OfflineSwitch(Browser.isOffline(context.activity)) }
+        val android = LocalContext.current
+        val switch = remember { OfflineSwitch(Browser.isOffline(android)) }
         SiteScreen(switch = switch, onBack = context.onBack)
     }
 }

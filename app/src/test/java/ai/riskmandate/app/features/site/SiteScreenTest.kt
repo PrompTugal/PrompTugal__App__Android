@@ -3,6 +3,8 @@ package ai.riskmandate.app.features.site
 import ai.riskmandate.app.RiskMandateTheme
 import android.app.Application
 import android.net.Uri
+import android.webkit.GeolocationPermissions
+import android.webkit.ValueCallback
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.compose.ui.test.assertIsDisplayed
@@ -35,7 +37,7 @@ class SiteScreenTest {
     }
 
     private fun client(switch: OfflineSwitch, external: MutableList<String> = mutableListOf()) =
-        SiteWebViewClient(app, switch, onExternal = { external += it }, onMainFrameError = {}, notInCopyHtml = { "<p>not in copy</p>" })
+        SiteWebViewClient(app, switch, onExternal = { external += it }, onMainFrameError = {}, onRenderGone = {}, notInCopyHtml = { "<p>not in copy</p>" })
 
     @Test fun theScreenRendersItsTabsOnline() {
         compose.setContent {
@@ -101,19 +103,74 @@ class SiteScreenTest {
         assertEquals(403, c.shouldInterceptRequest(wv, request("https://tracker.example/p.js", main = false))!!.statusCode)
     }
 
-    @Test fun offlineServesTheBundledPagesAndNothingFromTheNetwork() {
+    @Test fun theOfflineCopyIsServedFromTheAssetOriginOnly() {
         val c = client(OfflineSwitch(true))
         val wv = WebView(app)
-        val home = c.shouldInterceptRequest(wv, request("https://riskmandate.ai/"))!!
+        val base = OfflineCopy.ASSET_BASE
+        val home = c.shouldInterceptRequest(wv, request(base + "index.html"))!!
         assertEquals(200, home.statusCode)
+        assertEquals("text/html", home.mimeType)
         assertTrue(home.data.readBytes().toString(Charsets.UTF_8).contains("Give agents access. Not free rein."))
-        assertEquals(200, c.shouldInterceptRequest(wv, request("https://riskmandate.ai/pricing.html#x", main = false))!!.statusCode)
-        val missing = c.shouldInterceptRequest(wv, request("https://riskmandate.ai/contact.html"))!!
+        assertEquals(200, c.shouldInterceptRequest(wv, request(base + "pricing.html#x", main = false))!!.statusCode)
+        val missing = c.shouldInterceptRequest(wv, request(base + "contact.html"))!!
         assertEquals(404, missing.statusCode)
         assertTrue(missing.data.readBytes().toString(Charsets.UTF_8).contains("not in copy"))
+        assertEquals(404, c.shouldInterceptRequest(wv, request(base + "assets/fonts/geist-latin.woff2", main = false))!!.statusCode)
+        assertEquals(405, c.shouldInterceptRequest(wv, request(base + "index.html", method = "POST"))!!.statusCode)
+        // Nothing is fetched from riskmandate.ai or anywhere else while offline.
         assertEquals(404, c.shouldInterceptRequest(wv, request("https://riskmandate.ai/assets/fonts/geist-latin.woff2", main = false))!!.statusCode)
         assertEquals(403, c.shouldInterceptRequest(wv, request("https://evil.example/", main = false))!!.statusCode)
-        assertEquals(405, c.shouldInterceptRequest(wv, request("https://riskmandate.ai/", method = "POST"))!!.statusCode)
+    }
+
+    @Test fun assetPathsCannotEscapeTheFolder() {
+        for (bad in listOf("../AndroidManifest.xml", "a/../../b", "%2e%2e/x", "a//b", "/etc/passwd", "a\\b", ".hidden/..", "", "a b")) {
+            assertFalse(bad, SiteAssets.safe(bad))
+        }
+        for (ok in listOf("index.html", "assets/anim/embed.css", "how-it-works.html")) assertTrue(ok, SiteAssets.safe(ok))
+        val c = client(OfflineSwitch(true))
+        assertEquals(404, c.shouldInterceptRequest(WebView(app), request(OfflineCopy.ASSET_BASE + "../licences.txt"))!!.statusCode)
+        assertEquals(404, c.shouldInterceptRequest(WebView(app), request(OfflineCopy.ASSET_BASE + "%2e%2e/licences.txt"))!!.statusCode)
+    }
+
+    @Test fun offlineLinksToRiskmandateOpenTheirCopyAndTheAssetOriginIsAllowed() {
+        val c = client(OfflineSwitch(true))
+        val wv = WebView(app)
+        assertFalse(c.shouldOverrideUrlLoading(wv, request(OfflineCopy.ASSET_BASE + "abp.html")))
+        // A riskmandate.ai link while offline is handled here (it loads the copy), so the WebView never goes to the network.
+        assertTrue(c.shouldOverrideUrlLoading(wv, request("https://riskmandate.ai/pricing.html")))
+        assertEquals(Decision.OFFLINE_COPY, SitePolicy.decide(OfflineCopy.ASSET_BASE + "abp.html"))
+        assertEquals(Decision.EXTERNAL, SitePolicy.decide("https://appassets.androidplatform.net/assets/other/x.html"))
+        assertEquals(Decision.EXTERNAL, SitePolicy.decide("https://appassets.androidplatform.net/res/x.png"))
+    }
+
+    @Test fun certificateErrorsAreNeverProceededPast() {
+        val client = client(OfflineSwitch(false))
+        val handler = android.webkit.RecordingSslErrorHandler()
+        client.onReceivedSslError(WebView(app), handler, android.net.http.SslError(android.net.http.SslError.SSL_UNTRUSTED, android.net.http.SslCertificate("CN=test", "CN=test", "2026-01-01T00:00:00Z", "2027-01-01T00:00:00Z")))
+        assertTrue(handler.cancelled)
+        assertFalse(handler.proceeded)
+    }
+
+    @Test fun theRendererCrashDropsTheWebViewInsteadOfTheApp() {
+        var gone = 0
+        val c = SiteWebViewClient(app, OfflineSwitch(false), onExternal = {}, onMainFrameError = {}, onRenderGone = { gone++ }, notInCopyHtml = { "" })
+        val detail = object : android.webkit.RenderProcessGoneDetail() {
+            override fun didCrash() = true
+            override fun rendererPriorityAtExit() = 0
+        }
+        assertTrue(c.onRenderProcessGone(WebView(app), detail))
+        assertEquals(1, gone)
+    }
+
+    @Test fun theChromeClientDeniesEverythingAPageCanAsk() {
+        val chrome = SiteChromeClient()
+        var geo: Boolean? = null
+        chrome.onGeolocationPermissionsShowPrompt("https://riskmandate.ai", GeolocationPermissions.Callback { _, allow, _ -> geo = allow })
+        assertEquals(false, geo)
+        var chosen: Array<Uri>? = arrayOf(Uri.EMPTY)
+        assertTrue(chrome.onShowFileChooser(null, ValueCallback { chosen = it }, null))
+        assertNull(chosen)
+        assertFalse(chrome.onCreateWindow(WebView(app), false, true, null))
     }
 
     @Test fun theWebViewIsLockedDown() {
