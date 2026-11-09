@@ -13,6 +13,10 @@ import org.junit.Test
 class FakeLlmServiceTest {
     private val ask = LlmRequest(listOf(LlmMessage.system("Be brief."), LlmMessage.user("Hello there")))
 
+    @Test fun anOnDeviceServiceHasNoCost() {
+        assertEquals(null, FakeLlmService().maxCostMicros(RunSettings(userPrompt = "x").request()))
+    }
+
     @Test fun streamsTokensThenDone() = runBlocking {
         val events = FakeLlmService { FakeReply("One two three.") }.stream(ask).toList()
         assertEquals(listOf("One ", "two ", "three."), events.filterIsInstance<LlmEvent.Token>().map { it.text })
