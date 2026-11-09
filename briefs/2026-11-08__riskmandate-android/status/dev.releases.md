@@ -18,10 +18,13 @@ After the host hook lands: nothing, unless review asks for changes.
 Nothing.
 
 ## For other roles
-- **For release:** before `assembleRelease` and after `testDebugUnitTest`, for the newest folder under `app/src/main/assets/releases/` copy every `app/build/screenshots/<name>` referenced as `screenshots/<name>` in its `article*.md` into `<folder>/screenshots/` (overwrite). Screenshots come from `ScreenshotTest` (`home-*`, `licences-*`) and `ReleasesScreenshotTest` (`releases-list-*`, `releases-reader-*`), later other features' tests. Details: `features/releases/README.md`.
+- **For release:** your `screenshots.txt` contract (e7a242f) is adopted; `features/releases/README.md` documents it. The sample article keeps one committed image on purpose (test fixture), so the `.gitignore` rule for `assets/releases/*/screenshots/` must not untrack it (it is already tracked, so it stays). `ReleasesScreenshotTest` adds `releases-list-*` and `releases-reader-*` sources.
 - **For app (host):** on the home screen, `if (ReleasesFeature.enabled && ReleasesNotice.shouldOffer(this, BuildConfig.VERSION_CODE))` show a button with `R.string.feature_releases_offer` that sets the route to `releases` (or open it once at start). The feature marks the version seen itself. Optionally call `ReleasesNotice.markSeen(context, versionCode)` if the user dismisses the offer.
-- **For editor:** write `article.md` and `article.pt-PT.md` in `assets/releases/<YYYY-MM-DD>-<slug>/` per the README; the sample (`2026-11-09-sample`) can be deleted once the first real article exists.
+- **For editor:** list each image in `screenshots.txt` (`<target>.png <- <source>.png`) and reference `screenshots/<target>.png`; write `article.md` and `article.pt-PT.md` in `assets/releases/<YYYY-MM-DD>-<slug>/` per the README; the sample (`2026-11-09-sample`) can be deleted once the first real article exists.
 - **For architect:** no dependency added, no FeatureContext change needed.
+
+## Notes
+- design.android's `ui/` components (FeatureContent, SectionCard, StatusChip, NoticeBanner) are not on this branch yet; the screen uses plain Material 3 and can adopt them after `work/design` merges to `dev`. The 'New in this version' banner is the host's (see For app).
 
 ## For Dinis
 Nothing.
