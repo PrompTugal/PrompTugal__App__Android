@@ -113,7 +113,7 @@ Finding A-2 stays open until section 3 is done and the first release run waits f
 
 **What protects the secrets, whatever the default branch is: the Environment's branch rule.** Do this before any secret exists:
 1. Settings, Environments, New environment `promote`: Deployment branches and tags, **Selected branches and tags**, add `main` only (not "Protected branches only"). Add the App's id and private key (`PROMOTE_APP_ID`, `PROMOTE_APP_PRIVATE_KEY`) as **Environment secrets of `promote`**, never as repository or organisation secrets.
-2. The same for `play`: deployment branches `main` only, `PLAY_SERVICE_ACCOUNT_JSON` as an Environment secret of `play`. Add yourself as **Required reviewer** on `play` too: `play.yml`'s manual dispatch (the variant that accepts a trust-path change) can be started by anyone with write access, and your tap is what makes it a person's decision.
+2. The same for `play`: deployment branches `main` only, `PLAY_SERVICE_ACCOUNT_JSON` as an Environment secret of `play`. Adding yourself as **Required reviewer** on `play` is recommended for the first uploads and optional after Dinis's rule of 9 Nov 18:00 UTC that he is never the blocker: `play.yml`'s manual dispatch (the variant that accepts a trust-path change) can be started by anyone with write access, and a conductor now decides it on my signed PASS; the upload is a draft that a person completes in the Play Console either way.
 3. A run whose ref is `dev` cannot get an Environment limited to `main`, so a `dev` copy of a workflow can read nothing in those two Environments.
 4. `release` (the upload keystore) stays with deployment branches `dev` and a Required reviewer (section 3 above): a `dev` pusher who edits `android.yml` can otherwise use the upload key.
 

@@ -66,3 +66,16 @@ From now on I review each `dev` head after it lands: `docs/security/reviews/<dat
 ## 9. The first promotion (what happened, and what it means)
 
 `main` was the initial commit, with no `board/keys.json`, so nothing on `main` could verify the first promotion: it was Dinis's own merge (PR #1, merge commit 1f6adb3 of dev 0eaa827, an identical tree). I signed a PASS for 0eaa827 with `base` 0b299ae as an audit record: its signature verifies against the key now on `main`, and its range hash recomputes. A workflow that asks the check about 1f6adb3 with the old `main` as base still fails closed ("no board/keys.json on main"), by design: there was no key then. The first run the check can actually judge is the next promotion, with `main` = 1f6adb3 as its base. Dinis's dry run of `play.yml` (without the Play secret) is therefore that one.
+
+## 10. Who decides a trust-path change after 9 Nov 18:00 UTC
+
+Dinis's decision, as the conductor records it in `CLAUDE.md` (03e58f5) and `board/status.json`: "this needs to be done by you or one of the conductors here since I cannot be a blocker". Where this document says "a person promotes" (a head that changes a trust path, a `play.yml` dispatch with the human variant), a conductor now does it, always on my signed PASS and a green gate; Dinis keeps GitHub settings, Environment secrets and store accounts.
+
+What that changes, plainly: the human second look on trust-path changes (workflows, the verifier, keys, `CLAUDE.md`) is now two agents, me (the signed PASS) and a conductor (the promotion). The independent checks left are Dinis's own: the Environment rules (`main`-only deployment branches, secrets only at Environment level), the Play draft that a person completes in the Play Console, and the store accounts.
+
+So that the two agents are not the whole story, I keep these rules, and the conductor and release should expect them:
+1. **Keys.** I do not sign a PASS for a head that adds, revokes or rotates a key in `board/keys.json` until Dinis has confirmed the fingerprint on his own channel. `keys.json` is the root of trust; a conductor cannot make my key, and I will not vouch for another one on my own word.
+2. **Rules about who decides.** A change to `CLAUDE.md` that moves who may approve, promote or hold a secret is passed only when it quotes Dinis and is also in `board/status.json` for him to read, as 03e58f5 does; I list it on my status page so he sees it.
+3. **The signature stays mine.** A conductor does not sign approvals and I do not promote. A promotion without my signed PASS for exactly that head is refused by the verifier, whoever starts it.
+4. **Draft only.** `play.yml` uploads a draft; nothing goes live without a person completing it in the Play Console.
+5. **Reviewer on `play`** (Dinis as required reviewer) is now optional rather than required, because Dinis cannot be a blocker; with the draft rule it is a convenience. It stays recommended for the first uploads.
