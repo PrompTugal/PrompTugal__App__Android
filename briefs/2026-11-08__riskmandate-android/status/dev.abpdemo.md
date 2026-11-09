@@ -35,6 +35,7 @@ Nothing; pushed, waiting for the conductor.
 7. The banner says "DEMONSTRATION ... nothing is sent and nothing is at risk". That is true of this screen (it sends nothing, it has no network code), but it is my wording.
 
 ## Next
+- Architect's P7 (`Feature.icon`, `kicker`, `summary`, on work/architect c9233a0, not on dev yet): strings `abpdemo_kicker` and `abpdemo_summary` are in place (en, pt-PT; wording only restates what the screen already says). Once the members are on dev, add the three overrides in `AbpDemoFeature` (icon from material-icons-core, e.g. Icons.Filled.Lock, to be checked at compile time).
 - Swap in design's `LayerRow`/`FeatureContent` once `work/design` is on `dev` (not there yet, so the row stays private).
 - design.android's layer-row component (`app/.../ui/`) has not landed on this branch; the layer row here is private to the feature. When it lands, swap it in (small change in `LayerRow`).
 
