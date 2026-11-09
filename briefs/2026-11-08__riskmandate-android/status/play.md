@@ -45,6 +45,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 20. R-wb-5: the Workbench run log is in the policy and `privacy.html` (DRAFT bullet, staff only), the `data-safety.md` stored-data table, the tester guide (en and pt-PT, new "what the app keeps" paragraph) and the checklist (new row 21), checked against `RunLog.kt` and `WorkbenchFeature.kt` on `dev`.
 
+21. OpenRouter DRAFT: `privacy-policy.md`, `privacy.html` (dashed box) and `data-safety.md` carry a DRAFT cloud-model section written from `work/security` `summit-checklist.md` section M (what is sent, to whom, when, the key, spend, labels), **not from code, which does not exist**. Data safety: a build with the cloud model cannot say "no data collected" or "no data shared"; options for Dinis in `data-safety.md` (declare it, or keep the cloud model out of store builds; I recommend the latter for now). The on-device chat sentences are now conditional on the cloud being off.
+
 ## Next
 Nothing until Dinis decides (below).
 
