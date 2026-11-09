@@ -1,0 +1,24 @@
+<!--
+title: Open source · RiskMandate for Android
+description: RiskMandate for Android is open source under Apache 2.0. The licences of every library in the release build, listed from the licence report.
+nav: Open source
+order: 5
+-->
+<section class="band">
+  <div class="wrap prose">
+    <p class="kicker">Open source</p>
+    <h1>Apache 2.0, and what is inside</h1>
+    <p class="lede">The code is under the Apache License 2.0 (<a href="{{repo_url}}/blob/dev/LICENSE"><code>LICENSE</code></a>). Anyone may build it. What is meant to be sold, eventually, is the signed, supported build, not the code.</p>
+    <p>Names and icons are a separate matter: Apache 2.0 gives no trademark rights, and the project’s names and icons are not licensed by it. The copyright holder and a <code>NOTICE</code> file are still to be decided by Dinis Cruz.</p>
+    <p>No secret belongs in the repository or its history. A scan of every commit on every branch runs before each push (<a href="{{repo_url}}/blob/dev/scripts/secret-scan.sh"><code>scripts/secret-scan.sh</code></a>).</p>
+  </div>
+</section>
+<section class="band band-alt" id="licences">
+  <div class="wrap">
+    <h2>Libraries in the release build</h2>
+    <p class="prose">The release build contains {{licence_count}} libraries; {{licence_flagged}} are flagged. The list is generated from each library’s own metadata by <a href="{{repo_url}}/blob/dev/scripts/licences.sh"><code>scripts/licences.sh</code></a> into <a href="{{repo_url}}/blob/dev/docs/security/licences.md"><code>docs/security/licences.md</code></a>, and this page reads that file. CI fails the build if any library’s licence is not Apache-2.0, MIT or BSD, or is unknown. The same list is inside the app (Open source licences).</p>
+    {{licence_summary}}
+    {{licence_table}}
+    <p class="prose muted">Test dependencies and build tools are not in the release build and are not listed. A licence name here is what the library declares, not a legal opinion.</p>
+  </div>
+</section>
