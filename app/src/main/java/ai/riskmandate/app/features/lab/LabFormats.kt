@@ -41,18 +41,22 @@ object LabFormats {
     private inline fun <reified E : Enum<E>> enumOf(v: String, what: String): E =
         enumValues<E>().firstOrNull { it.name.equals(v, ignoreCase = true) } ?: fail("unknown $what '$v'")
 
-    fun parseScenario(text: String): Scenario {
-        val m = parseObject(text)
-        if (m["format"] != SCENARIO) fail("format must be $SCENARIO")
-        if (m["synthetic"] != true) fail("scenario data must be marked synthetic: true")
-        val id = m.str("id")
-        val tools = m.list("tools").map { t ->
+    /**
+     * Tools as eval writes them (name, description, flat JSON-schema parameters). [requireEffect] false lets a
+     * tool-test case leave `effect` out (it is then a plain read: functional tests have no policy). Refuses a
+     * tool the shared contract (llm.ToolSpec) would, one with more than [ToolProtocol.MAX_ARGS] parameters, and
+     * a duplicate name.
+     */
+    internal fun parseTools(list: List<Any?>, id: String, requireEffect: Boolean): List<ToolSpec> {
+        val tools = list.map { t ->
             val o = t.asObj("tool")
             val params = o.obj("parameters")
             val props = params.optObj("properties") ?: emptyMap()
             val required = params.strings("required").toSet()
             ToolSpec(
-                o.str("name"), enumOf(o.str("effect"), "effect"), o.str("description"),
+                o.str("name"),
+                if (requireEffect || "effect" in o) enumOf(o.str("effect"), "effect") else Effect.READ,
+                o.str("description"),
                 props.entries.map { (k, v) -> Param(k, v.asObj("parameter").optStr("type") ?: "string", k in required) },
             )
         }
@@ -60,16 +64,29 @@ object LabFormats {
         try { ToolProtocol.llmTools(tools) } catch (e: IllegalArgumentException) { fail("$id: ${e.message}") }
         val names = tools.map { it.name }
         if (names.size != names.toSet().size) fail("$id: duplicate tool")
-        val fakesRaw = m.obj("fake_tools")
-        val fakes = fakesRaw.mapValues { (_, v) ->
-            val o = v.asObj("fake tool")
-            FakeSpec(
-                hasReturns = "returns" in o, returns = o["returns"], by = o.optStr("by"),
-                table = o.optObj("table") ?: emptyMap(), default = if ("default" in o) o["default"] else "not found",
-                graph = o.optStr("graph"), limit = (o["limit"] as? Long)?.toInt() ?: 25,
-            )
-        }
-        for (n in names) if (n !in fakes) fail("$id: tool $n has no fake_tools entry")
+        return tools
+    }
+
+    internal fun parseFakes(raw: Map<String, Any?>): Map<String, FakeSpec> = raw.mapValues { (_, v) ->
+        val o = v.asObj("fake tool")
+        FakeSpec(
+            hasReturns = "returns" in o, returns = o["returns"], by = o.optStr("by"),
+            table = o.optObj("table") ?: emptyMap(), default = if ("default" in o) o["default"] else "not found",
+            graph = o.optStr("graph"), limit = (o["limit"] as? Long)?.toInt() ?: 25,
+        )
+    }
+
+    /** Public read access to the small JSON helpers for the sibling format readers in this package. */
+    internal fun obj(text: String): Map<String, Any?> = parseObject(text)
+
+    fun parseScenario(text: String): Scenario {
+        val m = parseObject(text)
+        if (m["format"] != SCENARIO) fail("format must be $SCENARIO")
+        if (m["synthetic"] != true) fail("scenario data must be marked synthetic: true")
+        val id = m.str("id")
+        val tools = parseTools(m.list("tools"), id, requireEffect = true)
+        val fakes = parseFakes(m.obj("fake_tools"))
+        for (t in tools) if (t.name !in fakes) fail("$id: tool ${t.name} has no fake_tools entry")
         val pol = m.obj("policy")
         val rules = pol.list("rules").map { r ->
             val o = r.asObj("rule")
