@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 46 (9 Nov 2026): app 7a9af40 PASS, play 2f01486 PASS (R-play-11 closed), editor 5590047 PASS (R-art-7 closed). dev.llm is on dev (25d9cb7), nothing new to read. Still to read: the design-pass article when it moves into assets. Waiting for the next wake.
+> Round 47 (9 Nov 2026): architect 5ad152e, app 19082ec, dev.llm 49378ab and design 83104e0 PASS. Still to read: the design-pass article when it moves into assets, and app passing llm into FeatureContext, and chat and lab switching to context.llm. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
