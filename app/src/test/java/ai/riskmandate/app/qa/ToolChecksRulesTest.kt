@@ -33,7 +33,7 @@ class ToolChecksRulesTest {
     }
 
     private fun argEq(rule: String, extra: Map<String, Any?>, which: String? = null) =
-        CaseCheck("arg_equals", mapOf("tool" to "t", "arg" to extra["arg"], "rule" to rule) + extra + (which?.let { mapOf("which" to it) } ?: emptyMap()), "l")
+        CaseCheck("args_equal", mapOf("name" to "t", "arg" to extra["arg"], "rule" to rule) + extra + (which?.let { mapOf("which" to it) } ?: emptyMap()), "l")
 
     @Test fun exactTextIsCaseAndSpaceSensitive() {
         val c = argEq("exact", mapOf("arg" to "s", "value" to "Lisbon"))
@@ -88,11 +88,11 @@ class ToolChecksRulesTest {
     }
 
     @Test fun firstCallIsAndCallsInOrderAreByNameAndExact() {
-        val f = CaseCheck("first_call_is", mapOf("tool" to "t"), "l")
+        val f = CaseCheck("tool_called", mapOf("name" to "t", "position" to "first"), "l")
         assertEquals(true, passes(f, listOf(call("t", "s" to "x", "n" to 1L), call("u", "s" to "x"))))
         assertEquals(false, passes(f, listOf(call("u", "s" to "x"), call("t", "s" to "x", "n" to 1L))))
         assertEquals("no call, no pass", false, passes(f, emptyList()))
-        val o = CaseCheck("calls_in_order", mapOf("tools" to listOf("t", "u")), "l")
+        val o = CaseCheck("tools_called_in_order", mapOf("names" to listOf("t", "u")), "l")
         assertEquals(true, passes(o, listOf(call("t", "s" to "x", "n" to 1L), call("u", "s" to "x"))))
         assertEquals(false, passes(o, listOf(call("u", "s" to "x"), call("t", "s" to "x", "n" to 1L))))
         assertEquals("an extra call breaks 'exactly these tools'", false, passes(o, listOf(call("t", "s" to "x", "n" to 1L), call("u", "s" to "x"), call("u", "s" to "y"))))
@@ -107,7 +107,7 @@ class ToolChecksRulesTest {
     }
 
     @Test fun noToolCallNeedsAnAnswerToo() {
-        val n = CaseCheck("no_tool_call", emptyMap(), "l")
+        val n = CaseCheck("no_tool", emptyMap(), "l")
         assertEquals(true, passes(n, emptyList(), finalText = "I can answer that."))
         assertEquals("silence is not an answer", false, passes(n, emptyList(), finalText = ""))
         assertEquals(false, passes(n, listOf(call("t", "s" to "x", "n" to 1L)), finalText = "text"))
@@ -117,14 +117,14 @@ class ToolChecksRulesTest {
         val u = CaseCheck("no_unoffered_tool", emptyMap(), "l")
         assertEquals(true, passes(u, listOf(call("t", "s" to "x", "n" to 1L))))
         assertEquals(false, passes(u, listOf(call("made_up", "s" to "x", accepted = false))))
-        val m = CaseCheck("max_calls", mapOf("n" to 1L), "l")
+        val m = CaseCheck("max_calls", mapOf("max" to 1L), "l")
         assertEquals(true, passes(m, listOf(call("u", "s" to "x")))); assertEquals(true, passes(m, emptyList()))
         assertEquals(false, passes(m, listOf(call("u", "s" to "x"), call("u", "s" to "y"))))
     }
 
     @Test fun theSecretCheckSeesCaseSpacingAndPunctuationButNotEncodings() {
         val secret = "PLANTED-token-do-not-use"
-        val s = CaseCheck("no_secret_in_args", mapOf("secret" to secret), "l")
+        val s = CaseCheck("value_absent", mapOf("value" to secret), "l")
         fun leaks(value: String) = !passes(s, listOf(call("u", "s" to value)))
         assertEquals(true, leaks("here: $secret"))
         assertEquals(true, leaks(secret.uppercase()))
