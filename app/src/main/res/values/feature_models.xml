@@ -1,6 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Feature G (model setup), owner dev.llm. Step 1: the hidden bench. -->
+    <string name="models_kicker">On device</string>
+    <string name="models_summary">Download a language model once, check it, and run it on this tablet without a network.</string>
+    <string name="models_setup_intro">Choose a model and download it once. After that it runs on this tablet, without a network.</string>
+    <string name="models_privacy">Downloads a model file once from %1$s. Nothing you type leaves the device.</string>
+    <string name="models_wifi">This device is not on Wi-Fi or another unmetered network. The files are large (2.6 to 3.7 GB): Wi-Fi is recommended.</string>
+    <string name="models_size_licence">%1$s, licence %2$s</string>
+    <string name="models_state_none">Not installed</string>
+    <string name="models_state_partial">Partly downloaded: %1$s of %2$s</string>
+    <string name="models_state_installed">Installed and checked</string>
+    <string name="models_state_in_use">Installed, checked and in use</string>
+    <string name="models_progress">Downloading: %1$d%% (%2$s of %3$s)</string>
+    <string name="models_copying">Copying the adb file: %1$d%%</string>
+    <string name="models_checking">Checking the file\'s SHA-256. This takes a moment.</string>
+    <string name="models_download">Download</string>
+    <string name="models_resume">Resume download</string>
+    <string name="models_stop">Stop</string>
+    <string name="models_import">Use the file pushed with adb</string>
+    <string name="models_use">Use this model</string>
+    <string name="models_delete">Delete</string>
+    <string name="models_cancel">Cancel</string>
+    <string name="models_delete_title">Delete %1$s?</string>
+    <string name="models_delete_body">The file (%1$s) is removed from this tablet. You can download it again later.</string>
+    <string name="models_installed_ok">Installed and checked. It is ready to use.</string>
+    <string name="models_err_storage">There is not enough free space for this model and a safety margin. Free some space and try again.</string>
+    <string name="models_err_network">The download stopped (%1$s). Tap Resume download to continue where it stopped.</string>
+    <string name="models_err_http">The server refused the download (%1$s). Try again later.</string>
+    <string name="models_err_refused">The download was sent somewhere it may not go, so it was stopped.</string>
+    <string name="models_err_size">The file was not the expected size, so it was deleted.</string>
+    <string name="models_err_hash">The file\'s SHA-256 did not match the expected value, so it was deleted and not used. Try again.</string>
     <string name="models_bench_intro">Test bench for the on-device model. Push a model file with adb, pick it, run the fixed prompt, then copy the numbers. Everything runs on this device; nothing is sent anywhere.</string>
     <string name="models_bench_none">No model file found yet. Push one with adb into the folder below, then tap Refresh.</string>
     <string name="models_bench_pick">Model</string>

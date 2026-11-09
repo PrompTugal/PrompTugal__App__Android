@@ -40,15 +40,6 @@ class ModelBenchScreenTest {
 
     private fun show() = compose.setContent { RiskMandateTheme { ModelBenchScreen(io = Dispatchers.Unconfined) } }
 
-    @Test fun theFeatureShowsTheBench() {
-        compose.setContent {
-            RiskMandateTheme {
-                ModelsFeature.Content(FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null)))
-            }
-        }
-        compose.onNodeWithTag(ModelsTags.COPY).performScrollTo().assertIsDisplayed()
-    }
-
     @Test fun staysOffTheHomeScreenUntilItWorksOnTheTablet() = assertFalse(ModelsFeature.enabled)
 
     @Test fun noAdbFolderBeforeScopedStorage() {

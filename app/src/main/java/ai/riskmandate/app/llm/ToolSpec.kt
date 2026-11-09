@@ -49,8 +49,8 @@ data class ToolSpec(val name: String, val description: String, val params: List<
     fun check(argsJson: String): ToolCheck {
         val obj = try {
             StrictJson.parseFlatObject(argsJson.ifBlank { "{}" })
-        } catch (e: StrictJson.Error) {
-            return ToolCheck.Rejected(name, "arguments are not a flat JSON object: ${e.message}")
+        } catch (e: StrictJson.JsonException) {
+            return ToolCheck.Rejected(name, "arguments are not a flat JSON object: ${category(e.message ?: "")}")
         }
         val known = params.associateBy { it.name }
         val extra = obj.keys.filter { it !in known }
@@ -76,6 +76,16 @@ data class ToolSpec(val name: String, val description: String, val params: List<
             args[p.name] = value
         }
         return ToolCheck.Accepted(name, args)
+    }
+
+    /** A fixed phrase for a parser error: the parser's own message can quote a key the model wrote. */
+    private fun category(message: String) = when {
+        "duplicate key" in message -> "repeated key"
+        "nested" in message || "nesting" in message -> "nested values are not allowed"
+        "longer than" in message -> "longer than $MAX_ARGS_CHARS characters"
+        "after the value" in message -> "text after the object"
+        "not a JSON object" in message -> "not a JSON object"
+        else -> "not valid JSON"
     }
 
     private fun wrongType(p: ToolParam) = ToolCheck.Rejected(name, "${p.name} should be ${p.type.name.lowercase()}")
