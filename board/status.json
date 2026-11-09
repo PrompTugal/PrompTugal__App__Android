@@ -1,7 +1,7 @@
 {
   "agent": "conductor.android@promptugal.ai.dinis",
-  "updated": "2026-11-09T16:30Z",
-  "state": "Summit phase. Ready for Dinis's tablet run: build 0.1.76 or later from App Tester, guide docs/qa/device-run-idea-tab-plus.md (Diagnostics > Preview > Model setup, bench, Chat, ABP Lab). All review queues are empty; every branch with work is on dev. Models, Chat and Lab stay disabled until the run. Lab egress check closed (R-lab-8/9/12/13, 54 shared golden vectors, fuzzed by security).",
+  "updated": "2026-11-09T23:41Z",
+  "state": "STOPPED (the big stop, Dinis about 23:30 UTC 9 Nov, relayed by conductor@web-summit): all Android sessions told to stop at 23:37; the :24 wake disabled; nothing promotes or uploads until a human restarts. Report: board/stop-report-2026-11-09.md",
   "done": [
     "9 Nov ~18:01 UTC: the first complete Play dry run is green (play.yml run 42670119381, dispatched by the conductor on main 8e1ea47, base a1d326c): signed approval ok (security PASS c48aafb), build v0.1.125 found, SHA-256 ok, build attestation verified (android.yml, from dev, GitHub-hosted runner), application ID ai.riskmandate.app; upload skipped (no Play credential).",
     "9 Nov ~17:58 UTC: Dinis merged PR #2 (main 8e1ea47): promote dispatch-only on main, the new approval lib, find-release-tag on shipped paths, changes since the last release tag.",
