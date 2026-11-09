@@ -13,8 +13,9 @@ interface ChatHistoryStore {
 }
 
 /**
- * History as one JSON file in `filesDir/feature_chat/`: app-private, excluded from cloud backup and device
- * transfer by the app's backup rules (every domain), never exported or shared. Written to a temporary file
+ * History as one JSON file in `noBackupFilesDir/feature_chat/`: app-private, never in cloud backup (the platform
+ * excludes that folder; the app's backup rules exclude every domain as well), never exported or shared. Written to a
+ * temporary file
  * and renamed, so a crash never leaves half a file. A damaged file reads as empty history.
  */
 class FileChatHistoryStore(private val dir: File) : ChatHistoryStore {

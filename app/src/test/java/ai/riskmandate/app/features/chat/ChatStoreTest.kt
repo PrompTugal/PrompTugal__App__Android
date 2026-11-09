@@ -59,10 +59,11 @@ class ChatStoreTest {
             val node = rules.getElementsByTagName(section).item(0) as Element
             assertTrue("$section must have no <include>", node.getElementsByTagName("include").length == 0)
             val excluded = (0 until node.getElementsByTagName("exclude").length).map { (node.getElementsByTagName("exclude").item(it) as Element).getAttribute("domain") }
-            assertEquals("$section excludes", domains.sorted(), excluded.sorted())
+            assertEquals("$section must exclude every required domain", emptySet<String>(), domains.toSet() - excluded.toSet())
         }
         val old = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(File("src/main/res/xml/backup_rules.xml")).documentElement
-        assertEquals(domains.sorted(), (0 until old.getElementsByTagName("exclude").length).map { (old.getElementsByTagName("exclude").item(it) as Element).getAttribute("domain") }.sorted())
+        val oldExcluded = (0 until old.getElementsByTagName("exclude").length).map { (old.getElementsByTagName("exclude").item(it) as Element).getAttribute("domain") }
+        assertEquals("backup_rules.xml must exclude every required domain", emptySet<String>(), domains.toSet() - oldExcluded.toSet())
         val manifest = File("src/main/AndroidManifest.xml").readText()
         assertTrue(manifest.contains("android:allowBackup=\"false\""))
     }
