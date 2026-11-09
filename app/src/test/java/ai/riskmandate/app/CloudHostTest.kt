@@ -222,6 +222,13 @@ class CloudWiringTest {
         assertNull("stand mode", cloudLlmFor(true, true, true, true, service))
     }
 
+    @Test fun cloudIsOnOnlyWithAKeyTheSwitchAndNoStandMode() {
+        assertTrue(cloudIsOn(keySet = true, switchOn = true, standOn = false))
+        assertFalse(cloudIsOn(false, true, false))
+        assertFalse(cloudIsOn(true, false, false))
+        assertFalse(cloudIsOn(true, true, true))
+    }
+
     @Test fun theServiceIsNotEvenBuiltWhenTheAnswerIsNull() {
         var built = 0
         cloudLlmFor(true, true, false, false) { built++; service() }
@@ -248,6 +255,24 @@ class CloudWiringTest {
 @RunWith(AndroidJUnit4::class)
 class CloudHostActivityTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test fun everyFeatureGetsTheCloudOnFactButOnlyUsesCloudFeaturesGetTheService() {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val svc: () -> ai.riskmandate.app.llm.LlmService = { ai.riskmandate.app.llm.FakeLlmService(reply = { ai.riskmandate.app.llm.FakeReply("x") }) }
+        fun ctx(on: Boolean, usesCloud: Boolean) = hostFeatureContext(
+            context, {}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null), { {} }, {},
+            cloudLlm = cloudLlmFor(usesCloud, on, on, false, svc), cloudOn = cloudIsOn(on, on, false),
+        )
+        // an on-device feature (no usesCloud) still learns that the cloud is on, and gets no service
+        assertTrue(ctx(on = true, usesCloud = false).cloudOn)
+        assertNull(ctx(on = true, usesCloud = false).cloudLlm)
+        // a cloud feature gets both
+        assertTrue(ctx(on = true, usesCloud = true).cloudOn)
+        assertTrue(ctx(on = true, usesCloud = true).cloudLlm != null)
+        // off: neither
+        assertFalse(ctx(on = false, usesCloud = true).cloudOn)
+        assertNull(ctx(on = false, usesCloud = true).cloudLlm)
+    }
 
     @Test fun theKeyIsNotInSavedStateAndTheDiagnosticsReportNeverHasIt() {
         val dir = java.nio.file.Files.createTempDirectory("cloud").toFile()

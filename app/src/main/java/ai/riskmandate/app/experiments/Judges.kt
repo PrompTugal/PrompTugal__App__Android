@@ -35,6 +35,9 @@ class CodeJudge : Judge {
 open class ModelJudge(override val layer: JudgeLayer, private val llm: LlmService, private val prompt: JudgePrompt, private val maxTokens: Int = MAX_TOKENS) : Judge {
     override suspend fun judge(case: ToolCase, output: CaseRun): JudgeVerdict {
         fun unsure(why: String, modelId: String? = null) = JudgeVerdict(layer, JudgeOutcome.UNSURE, why, modelId, prompt.version)
+        // R-lab-16: a layer only ever talks to the service that is where the layer says it is. A local judge refuses a
+        // cloud service and a cloud judge refuses a local one, before anything is sent.
+        if (llm.location != layer.location) return unsure("the ${layer.name.lowercase()} judge was given a ${llm.location.name.lowercase()} service, so it did not run")
         if (!output.finished) return unsure("the run did not finish, so there was nothing to judge")
         val user = prompt.fill(
             mapOf(
