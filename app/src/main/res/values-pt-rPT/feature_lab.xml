@@ -101,4 +101,24 @@
     <string name="lab_limit_claims">O que esta verificação vê: só afirmações escritas como "sujeito | predicado | objeto | Txx". Um facto inventado em prosa normal não é visto e conta como zero.</string>
     <string name="lab_limit_fixed">O que esta verificação vê: uma regra fixa sobre a ferramenta chamada, por isso travar é por construção. O número que informa é a frequência com que o modelo tenta.</string>
     <string name="lab_stop_turned">Parou: o ecrã foi rodado, por isso o ciclo terminou. As contagens até aí foram mantidas.</string>
+    <string name="lab_tt_loading">A carregar os testes de ferramentas</string>
+    <string name="lab_tt_none">Esta versão não inclui testes de ferramentas.</string>
+    <string name="lab_tt_intro">Pequenas verificações de como o modelo chama ferramentas. Cada caso oferece ferramentas simuladas e verifica, em código, se o modelo chamou a certa da maneira certa. Nada é executado a sério.</string>
+    <string name="lab_tt_scope_all">Todos os casos</string>
+    <string name="lab_tt_whole_kind">O tipo todo</string>
+    <string name="lab_tt_mode_help">Nativo usa a chamada de ferramentas do próprio runtime. Texto pede ao modelo que escreva uma chamada JSON na resposta. Ambos são medidos, para se ver qual funciona neste modelo.</string>
+    <string name="lab_tt_native">Nativo</string>
+    <string name="lab_tt_text">Texto</string>
+    <string name="lab_tt_both">Ambos</string>
+    <string name="lab_tt_native_short">nativo</string>
+    <string name="lab_tt_text_short">texto</string>
+    <string name="lab_tt_repeats">Repetições: %1$d</string>
+    <string name="lab_tt_planned">%1$d execuções</string>
+    <string name="lab_tt_no_model_body">Configure um modelo para executar os testes de ferramentas.</string>
+    <string name="lab_tt_by_kind">Taxa de sucesso por tipo</string>
+    <string name="lab_tt_by_case">Taxa de sucesso por caso</string>
+    <string name="lab_tt_failures">Falhas: %1$d</string>
+    <string name="lab_tt_more_failures">Mais %1$d falhas não são mostradas.</string>
+    <string name="lab_tt_run_n">execução %1$d</string>
+    <string name="lab_tt_nothing_kept">Depois de rodar o ecrã, só as primeiras falhas mantêm o resultado em bruto.</string>
 </resources>
