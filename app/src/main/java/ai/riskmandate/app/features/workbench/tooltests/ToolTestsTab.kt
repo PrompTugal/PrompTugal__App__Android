@@ -308,8 +308,9 @@ private fun ofText(s: PassStat) = stringResource(R.string.workbench_tt_stat_of, 
 
 @Composable
 private fun rateCell(s: PassStat): TableCell {
-    val text = if (s.finished == 0) "-" else ofText(s)
-    return TableCell(text) { if (s.finished == 0) Text("-", style = MaterialTheme.typography.bodyMedium, color = Pt.colors.muted) else PassRateBar(s.passed, s.finished, text, barWidth = 44.dp) }
+    val none = stringResource(R.string.workbench_tt_dash)
+    val text = if (s.finished == 0) none else ofText(s)
+    return TableCell(text) { if (s.finished == 0) Text(none, style = MaterialTheme.typography.bodyMedium, color = Pt.colors.muted) else PassRateBar(s.passed, s.finished, text, barWidth = 44.dp) }
 }
 
 @Composable

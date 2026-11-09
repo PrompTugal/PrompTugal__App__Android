@@ -80,4 +80,5 @@
     <string name="workbench_tt_stop_errors">Stopped: runs keep failing.</string>
     <string name="workbench_tt_stop_user">Stopped by you.</string>
     <string name="workbench_tt_stop_turned">Stopped: the screen was turned, so the loop ended. The counts so far are kept.</string>
+    <string name="workbench_tt_dash">-</string>
 </resources>

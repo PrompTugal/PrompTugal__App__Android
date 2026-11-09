@@ -80,4 +80,5 @@
     <string name="workbench_tt_stop_errors">Parado: as execuções continuam a falhar.</string>
     <string name="workbench_tt_stop_user">Parado por si.</string>
     <string name="workbench_tt_stop_turned">Parado: o ecrã foi rodado, por isso o ciclo terminou. As contagens até agora ficam guardadas.</string>
+    <string name="workbench_tt_dash">-</string>
 </resources>
