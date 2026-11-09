@@ -98,6 +98,13 @@
       "model": "Sonnet",
       "branch": "work/editor",
       "session": "session_018yvwtPFB77ucsaWrmqTX5g"
+    },
+    {
+      "role": "dev.releases",
+      "name": "dev.releases.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/dev.releases",
+      "session": "session_018yvwtQBKD8yLu9WUCZjuUT"
     }
   ]
 }
