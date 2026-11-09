@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 38 (9 Nov 2026): dev.llm dc63ad8 PASS (R-llm-9 and R-llm-10 closed, so the condition on enabling Models is met from my side), app 0833ca0 PASS (G.7 closed). Waiting for the next wake (qa 680c53d, eval harness).
+> Round 39 (9 Nov 2026): dev.releases ea5d6f8 PASS. Waiting for the next wake (qa 680c53d, eval harness).
 
 ## Doing
 Nothing. Stopped until woken.
