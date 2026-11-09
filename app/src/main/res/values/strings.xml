@@ -45,6 +45,8 @@
 
     <string name="diagnostics_title">Diagnostics</string>
     <string name="diagnostics_intro">For testers and device set-up. It holds no personal data and no device identifiers.</string>
+    <string name="diagnostics_preview_heading">Preview</string>
+    <string name="diagnostics_preview_note">These screens are being tested on this device. They are not switched on for everyone and may not work yet.</string>
     <string name="diagnostics_model_bench">Model bench (on-device LLM test)</string>
     <string name="diagnostics_copy">Copy</string>
     <string name="diagnostics_copied">Copied to the clipboard.</string>
