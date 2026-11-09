@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 66 (9 Nov 2026): dev.chat 01747de PASS (R-chat-6 closed). Everything queued is reviewed. Still open: Workbench heads (checklist L), the design-pass article, the Lab export share path (R-lab-11), R-app-2 for Dinis. Waiting for the next wake.
+> Round 67 (9 Nov 2026): checklist L checked against the Workbench brief (850a2dc) and extended with items 11 to 14; architect 02477e0 PASS (ruling inside L), qa 278cc01 PASS. Waiting for the Workbench heads from dev.llm and dev.lab. Still open: the design-pass article, the Lab export share path (R-lab-11), R-app-2 for Dinis.
 
 ## Doing
 Nothing. Stopped until woken.

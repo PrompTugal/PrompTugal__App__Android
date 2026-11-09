@@ -94,7 +94,7 @@ The app is about to download a multi-gigabyte file, load it into native code, ru
 
 ---
 
-## L. Workbench (staff-only, Preview, added 9 November 2026 from the conductor's description; `briefs/2026-11-09__on-device-llm/workbench.md` was not on `dev` when I wrote this, so check it against the brief when it lands)
+## L. Workbench (staff-only, Preview, added 9 November 2026; checked against `briefs/2026-11-09__on-device-llm/workbench.md` at 850a2dc, items 11 to 14 added after reading it)
 
 Each item is something I will check; the first three are conditions for any head.
 
@@ -108,3 +108,7 @@ Each item is something I will check; the first three are conditions for any head
 8. **Models.** Only files from `ModelCatalog` (pinned revision, size, SHA-256) and only through feature G; no import of an arbitrary file and no URL field.
 9. **Stats.** Memory and speed from the service and `/proc/self` only; no serial number, Android ID, account or other identifier; the device label is read before anything is pasted (R-qa-2).
 10. **Claims.** Nothing on screen says more than the check can see (the Lab's "what this check sees" lines), and nothing claims more for RiskMandate than riskmandate.ai says.
+11. **Copy run.** The only way out of the screen is a "Copy run" button: on a tap only, the run's own plain text (settings, numbers, answer, tool calls), no identifier, and the clipboard is never read. Nothing else is shared or written outside `noBackupFilesDir/feature_workbench`; the results JSON stays in memory and the log until an export path is reviewed.
+12. **Keep the screen on and the idle hold.** Through `view.keepScreenOn` and `HoldIdleWhile` only, as stand mode does; no `WAKE_LOCK` or other permission, no service, no foreground notification. Battery and thermal readings from `BatteryManager` and `PowerManager` as in the Lab, with no permission.
+13. **The tool-test catalogue (assets).** `synthetic: true`, parsed with the strict parser at load, limits on file size, case count, tools per case (2 to 5) and parameters (at most six), no external URL or contact detail, and the value a case must not share is an obvious fake that matches no scanner class (like `PLANTED-SECRET-7f3a-do-not-use`). A bad file is skipped and counted, never partly run.
+14. **Import-ban roots.** `features/workbench`, the shared `experiments/` package (architect 02477e0) and `llm/` stats code are added to the import-ban test and to qa's `LlmSandboxTest`; the loop and caps that move out of the Lab keep their behaviour and their tests (100 runs, 30 minutes, 15% battery, severe thermal, three failures).
