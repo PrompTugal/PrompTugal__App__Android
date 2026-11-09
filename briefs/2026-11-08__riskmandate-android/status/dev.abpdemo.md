@@ -15,6 +15,7 @@ Nothing; pushed, waiting for the conductor.
 - After conductor's note: merged origin/dev (fa5dfc4, FeatureContext v2); removed the last hardcoded text (a row content description and an animation label) from `AbpDemoFeature.kt`, now `abpdemo_layer_cd` in both languages. Full gate green with qa's `FeatureStringsTest` and `LocalisationTest`. The screen uses only `context.onBack`, no Activity.
 - Architect HOLD A-abp-1 and the medium finding: merged dev b535782 (FeatureFrame); removed my Home button and heading (content only). Layout adapts: two panes only on a landscape window at least 720dp wide and font scale up to 1.3; otherwise one scrolling column with stacked controls. Tests added for portrait phone and 200% font (everything reachable by scrolling). Gate green.
 - Merged work/architect b2da9cd (FeatureContext v3, not yet on dev: drops out of my branch's diff once dev has it). Auto-play now calls `context.HoldIdleWhile(auto)`; test checks the hold is taken when auto-play starts and released when it stops. The host must pass `holdIdle` (app.android) for it to have an effect; the default is a no-op.
+- P7 (merged dev 1202040): `AbpDemoFeature` overrides `icon` (Icons.Filled.Lock, material-icons-core), `kicker` ("Demonstration") and `summary`, en and pt-PT; gate green.
 - Sources read 9 Nov 2026: https://riskmandate.ai (v1.40.3) and https://sharness.ai (v0.6.35).
 - `enabled = true` is set in `AbpDemoFeature`. Reasoning: the screen works end to end under test; the conductor can revert if the gate or reviews say otherwise.
 
@@ -35,7 +36,6 @@ Nothing; pushed, waiting for the conductor.
 7. The banner says "DEMONSTRATION ... nothing is sent and nothing is at risk". That is true of this screen (it sends nothing, it has no network code), but it is my wording.
 
 ## Next
-- Architect's P7 (`Feature.icon`, `kicker`, `summary`, on work/architect c9233a0, not on dev yet): strings `abpdemo_kicker` and `abpdemo_summary` are in place (en, pt-PT; wording only restates what the screen already says). Once the members are on dev, add the three overrides in `AbpDemoFeature` (icon from material-icons-core, e.g. Icons.Filled.Lock, to be checked at compile time).
 - Swap in design's `LayerRow`/`FeatureContent` once `work/design` is on `dev` (not there yet, so the row stays private).
 - design.android's layer-row component (`app/.../ui/`) has not landed on this branch; the layer row here is private to the feature. When it lands, swap it in (small change in `LayerRow`).
 
