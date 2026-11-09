@@ -61,13 +61,12 @@ jobs:
           if [ "$EVENT" = push ]; then base=$BEFORE; sha=$PUSHED; verifier=scripts/verify-approval.mjs
           else
             base=$INPUT_BASE; sha=$INPUT_SHA; verifier=scripts/verify-approval-human.mjs
-            # A person types these: accept 7 to 40 hex digits and resolve each to the full commit (git refuses an
-            # ambiguous abbreviation). The verifier below always gets full 40-digit SHAs.
-            for v in base sha; do
-              [[ "${!v}" =~ ^[0-9a-f]{7,40}$ ]] || { echo "the $v input must be 7 to 40 hex digits (a commit SHA), got: ${!v}" >&2; exit 1; }
-              printf -v "$v" '%s' "$(git rev-parse --verify --quiet "${!v}^{commit}")" || true
-              [ -n "${!v}" ] || { echo "the $v input does not name one commit in this repository" >&2; exit 1; }
-            done
+            # A person types these: 7 to 40 hex digits, each resolved to exactly one full commit by object name
+            # (scripts/resolve-commit.sh: refs are ignored, so a branch or tag named like the digits cannot
+            # redirect them; ambiguous or unknown values are refused). The verifier gets full 40-digit SHAs.
+            base=$(bash scripts/resolve-commit.sh "$INPUT_BASE") || { echo "the base input is not one commit: $INPUT_BASE" >&2; exit 1; }
+            sha=$(bash scripts/resolve-commit.sh "$INPUT_SHA") || { echo "the sha input is not one commit: $INPUT_SHA" >&2; exit 1; }
+            echo "- dispatch inputs resolved by object name: sha ${INPUT_SHA} -> ${sha}, base ${INPUT_BASE} -> ${base}" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
           [[ "$base" =~ ^[0-9a-f]{40}$ && ! "$base" =~ ^0+$ ]] || { echo "no usable base (the main before this push): refusing" >&2; exit 1; }
           sha=$(git rev-parse "$sha^{commit}")

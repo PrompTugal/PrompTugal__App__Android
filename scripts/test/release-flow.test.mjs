@@ -140,3 +140,49 @@ test('changed-since-release: no release tag yet, or a tag that is not an ancesto
     assert.equal(bash(r.dir, 'changed-since-release.sh', [docs]).code, 0, 'a tag on another branch is not a release of this history');
   } finally { r.done(); }
 });
+
+test('resolve-commit: a typed prefix means the commit with that NAME, never a ref that looks like it (R-rel-9)', () => {
+  const r = repo(); try {
+    const a = r.commit('README.md', 'approved commit A'); const b = r.commit('app/x.txt', 'other commit B');
+    const short = a.slice(0, 9);
+    assert.equal(bash(r.dir, 'resolve-commit.sh', [short]).out.trim(), a, 'short form');
+    assert.equal(bash(r.dir, 'resolve-commit.sh', [a]).out.trim(), a, 'full form');
+    // a branch and a tag named like the short SHA, both pointing at B: plain `git rev-parse` would pick B
+    r.g('branch', short, b); r.g('tag', a.slice(0, 8), b);
+    assert.equal(r.g('rev-parse', short), b, 'precondition: git itself prefers the ref');
+    assert.equal(bash(r.dir, 'resolve-commit.sh', [short]).out.trim(), a, 'the ref cannot redirect the input');
+    assert.equal(bash(r.dir, 'resolve-commit.sh', [a.slice(0, 8)]).out.trim(), a, 'nor can the tag');
+    // refused: ref names, too short, upper case, unknown, shell metacharacters, empty
+    for (const bad of ['dev', 'main', 'HEAD', a.slice(0, 6), a.toUpperCase().slice(0, 12), 'deadbeefdeadbeef', `${short}; echo pwned`, '']) {
+      assert.equal(bash(r.dir, 'resolve-commit.sh', [bad]).code === 0, false, `refused: "${bad}"`);
+    }
+  } finally { r.done(); }
+});
+
+test('resolve-commit: an abbreviation that names more than one commit is refused; trees do not count', () => {
+  const r = repo(); try {
+    // 700 empty commits: two of them share their first 4 hex digits (birthday bound at 16 bits is about 300)
+    r.commit('README.md', 'base');
+    const seen = new Map(); let pair = null; const shas = [];
+    for (let i = 0; i < 700 && !pair; i++) {
+      r.g('commit', '-q', '--allow-empty', '-m', `empty ${i}`);
+      const h = r.g('rev-parse', 'HEAD'); shas.push(h);
+      const k = h.slice(0, 4);
+      if (seen.has(k)) pair = [seen.get(k), h]; else seen.set(k, h);
+    }
+    assert.ok(pair, 'precondition: two commits share a 4-digit prefix');
+    const k = pair[0].slice(0, 4);
+    // MIN_HEX=4 is a test-only override (git cannot disambiguate fewer than 4 digits); the workflow never sets it
+    const amb = bash(r.dir, 'resolve-commit.sh', [k], { MIN_HEX: '4' });
+    assert.equal(amb.code, 1); assert.match(amb.err, /names 2 commits/);
+    // a 4-digit prefix that only one commit has resolves; the same input is refused under the real minimum of 7
+    const unique = shas.find((h) => shas.filter((x) => x.startsWith(h.slice(0, 4))).length === 1);
+    assert.equal(bash(r.dir, 'resolve-commit.sh', [unique.slice(0, 4)], { MIN_HEX: '4' }).out.trim(), unique);
+    assert.equal(bash(r.dir, 'resolve-commit.sh', [unique.slice(0, 4)]).code, 1, 'real minimum is 7');
+    // the 7-digit prefix of either commit of the pair is almost certainly unique, and resolves to ITS commit
+    assert.equal(bash(r.dir, 'resolve-commit.sh', [pair[1].slice(0, 12)]).out.trim(), pair[1]);
+    // a tree id is an object with a name but not a commit: never accepted as one
+    const tree = r.g('rev-parse', `${shas[0]}^{tree}`);
+    assert.equal(bash(r.dir, 'resolve-commit.sh', [tree]).code, 1, 'a tree is not a commit');
+  } finally { r.done(); }
+});
