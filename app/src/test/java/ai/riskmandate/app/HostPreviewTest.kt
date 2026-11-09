@@ -50,6 +50,7 @@ class HostPreviewTest {
             // On a phone the top bar is the header: Diagnostics is gone and the title is the feature's.
             compose.onNodeWithTag(DiagnosticsTags.PREVIEW).assertDoesNotExist()
             compose.onNodeWithTag(ShellTags.TOP_TITLE).assertIsDisplayed()
+            compose.onNodeWithTag(FeatureFrameTags.PREVIEW, useUnmergedTree = true).assertIsDisplayed() // the "Preview" label
             compose.onNodeWithTag(ShellTags.HOME).performClick()
             compose.waitForIdle()
         }

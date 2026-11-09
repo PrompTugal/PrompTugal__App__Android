@@ -16,12 +16,17 @@ class RouteTest {
         assertEquals(Routes.HOME, resolveRoute("site", standOn = false, featureEnabled = false))
     }
 
-    @Test fun previewRoutesOpenOnlyForSwitchedOffFeaturesAndNeverInStandMode() {
-        val off = setOf("models", "chat", "lab")
-        assertEquals(Routes.preview("models"), resolveRoute(Routes.preview("models"), standOn = false, featureEnabled = false, previewIds = off))
-        assertEquals("a feature that is now on has no preview", Routes.HOME, resolveRoute(Routes.preview("site"), standOn = false, featureEnabled = false, previewIds = off))
-        assertEquals("a restored preview route without any switched-off feature", Routes.HOME, resolveRoute(Routes.preview("models"), standOn = false, featureEnabled = false))
-        assertEquals(Routes.HOME, resolveRoute(Routes.preview("models"), standOn = true, featureEnabled = false, previewIds = off))
+    @Test fun previewRoutesAreAcceptedForKnownFeaturesAndNeverInStandMode() {
+        val known = setOf("site", "models", "chat", "lab")
+        assertEquals("preview/models", resolveRoute(Routes.preview("models"), standOn = false, featureEnabled = false, knownFeatureIds = known))
+        assertEquals("enabled or not", "preview/site", resolveRoute(Routes.preview("site"), standOn = false, featureEnabled = false, knownFeatureIds = known))
+        assertEquals("unknown id", Routes.HOME, resolveRoute(Routes.preview("nope"), standOn = false, featureEnabled = false, knownFeatureIds = known))
+        assertEquals("no features known", Routes.HOME, resolveRoute(Routes.preview("models"), standOn = false, featureEnabled = false))
+        assertEquals("stand mode", Routes.HOME, resolveRoute(Routes.preview("models"), standOn = true, featureEnabled = false, knownFeatureIds = known))
+    }
+
+    @Test fun aPlainSwitchedOffIdStillGoesHome() {
+        assertEquals(Routes.HOME, resolveRoute("models", standOn = false, featureEnabled = false, knownFeatureIds = setOf("models")))
     }
 
     @Test fun routeAndIdRoundTrip() {

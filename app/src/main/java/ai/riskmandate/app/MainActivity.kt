@@ -38,8 +38,8 @@ object Routes {
     const val MODEL_BENCH = "modelbench"
 
     /** A feature that is not switched on yet, opened from Diagnostics > Preview (never on Home or in the sidebar). */
-    fun preview(id: String) = "preview_$id"
-    fun previewId(route: String): String? = if (route.startsWith("preview_")) route.removePrefix("preview_") else null
+    fun preview(id: String) = "preview/$id"
+    fun previewId(route: String): String? = if (route.startsWith("preview/")) route.removePrefix("preview/") else null
 }
 
 /**
@@ -92,11 +92,13 @@ fun requestedPermissionCount(context: android.content.Context): Int = try {
 /**
  * The route to show for a saved [screen]: itself if it is a built-in or an enabled feature, else Home;
  * and Home for the staff-only screens (Diagnostics, the model bench, every Preview screen) while stand mode
- * is on, and for a restored preview route whose feature is not in [previewIds] (now switched on, or gone).
+ * is on. A `preview/<id>` route (produced only by the Preview list in Diagnostics) is accepted for any known
+ * feature id, enabled or not; an unknown id goes Home. A plain `<id>` of a switched-off feature still goes Home,
+ * so a restored or guessed route cannot open it.
  */
-fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean, previewIds: Set<String> = emptySet()): String = when {
+fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean, knownFeatureIds: Set<String> = emptySet()): String = when {
     standOn && (screen == Routes.DIAGNOSTICS || screen == Routes.MODEL_BENCH || Routes.previewId(screen) != null) -> Routes.HOME
-    Routes.previewId(screen) != null -> if (Routes.previewId(screen) in previewIds) screen else Routes.HOME
+    Routes.previewId(screen) != null -> if (Routes.previewId(screen) in knownFeatureIds) screen else Routes.HOME
     screen in BUILT_IN || featureEnabled -> screen
     else -> Routes.HOME
 }
@@ -153,8 +155,8 @@ class MainActivity : ComponentActivity() {
                     // Features not switched on yet: reachable only from Diagnostics > Preview (hidden in stand mode).
                     val previewFeatures = FEATURES.filter { !it.enabled }
                     val previewIds = previewFeatures.map { it.id }.toSet()
-                    val route = resolveRoute(screen, standOn, featureEnabled = feature != null, previewIds = previewIds)
-                    val previewFeature = Routes.previewId(route)?.let { id -> previewFeatures.firstOrNull { it.id == id } }
+                    val route = resolveRoute(screen, standOn, featureEnabled = feature != null, knownFeatureIds = FEATURES.map { it.id }.toSet())
+                    val previewFeature = Routes.previewId(route)?.let { id -> FEATURES.firstOrNull { it.id == id } }
                     LaunchedEffect(route, screen) { if (route != screen) screen = route }
                     // Features that run unattended on purpose (abpdemo's auto-play) hold stand mode's idle
                     // reset off through this. HoldIdleWhile releases when the feature leaves the screen; the
@@ -249,7 +251,8 @@ class MainActivity : ComponentActivity() {
                                     val shown = (feature ?: previewFeature)!!
                                     FeatureFrame(
                                         title = shown.title,
-                                        kicker = if (feature == null) R.string.diagnostics_preview_heading else shown.kicker ?: sectionOf(shown.id),
+                                        kicker = shown.kicker ?: sectionOf(shown.id),
+                                        preview = feature == null,
                                     ) {
                                         shown.Content(
                                             remember(config, device, standOn, shown.id) {
