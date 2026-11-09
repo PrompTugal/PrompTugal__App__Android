@@ -20,6 +20,6 @@ object LabFeature : Feature {
 
     @Composable
     override fun Content(context: FeatureContext) {
-        LabScreen()
+        LabScreen(llm = context.llm, openFeature = context.openFeature)
     }
 }

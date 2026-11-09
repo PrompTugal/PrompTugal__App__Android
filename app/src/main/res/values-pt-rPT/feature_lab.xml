@@ -46,4 +46,16 @@
     <string name="lab_net_cellular">dados móveis</string>
     <string name="lab_net_ethernet">Ethernet</string>
     <string name="lab_net_other">outra</string>
+    <string name="lab_run">Executar</string>
+    <string name="lab_stop">Parar</string>
+    <string name="lab_running">A executar neste dispositivo</string>
+    <string name="lab_chip_live">Ao vivo neste dispositivo</string>
+    <string name="lab_run_error">Esta execução não terminou: %1$s</string>
+    <string name="lab_no_model_title">Ainda sem modelo</string>
+    <string name="lab_no_model_body">Configure um modelo para executar ao vivo, ou repita abaixo uma execução gravada.</string>
+    <string name="lab_open_models">Configurar um modelo</string>
+    <string name="lab_loading_model">A carregar %1$s</string>
+    <string name="lab_inject_label">Acrescente a sua própria instrução ao documento</string>
+    <string name="lab_inject_note">Fica neste dispositivo. Só é usada nas execuções ao vivo.</string>
+    <string name="lab_inject_shown">A sua instrução, acrescentada ao documento</string>
 </resources>
