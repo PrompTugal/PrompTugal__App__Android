@@ -5,6 +5,15 @@
 ## Doing
 Nothing. Stopped after this push.
 
+## Update: release articles (task from the conductor, 9 Nov ~01:46, Dinis's feature F)
+- **Web Summit build article**, English and pt-PT: `app/src/main/assets/releases/2026-11-09-web-summit-build/` (`article.md`, `article.pt-PT.md`, `screenshots.txt`). Written from the code: strings, the feature objects, `StandSettings`, `StandHost` (long press on the bottom-right 48 dp corner of Home, off by default, default 3 idle minutes, 1 to 30). The author has not run the app on a device; the article says so. The pt-PT text uses the app's own Portuguese strings and needs a native speaker before it is shown.
+- **M1 article moved** to `2026-11-09-m1-ci-to-a-tablet-in-one-night/article.md` as an older release: tables became lists, tokens became literals, no relative links (the app cannot fill tokens or open them).
+- **The site builds its articles from those files** (`facts.release_articles()`, same front matter as the app; the sample article is skipped; screenshots are copied when CI has produced them, otherwise the caption stays and says so). `website/pages/articles/` keeps only the index.
+- **screenshots.txt lists 8 images** from sources the existing tests write: `home-tablet10-landscape-light`, `abpdemo-step1/2/5/7-tablet-light`, `abpdemo-step5-tablet-dark`, `releases-list-phone-portrait-light`, `releases-reader-tablet10-landscape-light`. **Not verified:** there is no Android SDK in this session, so I could not run the tests or `release-screenshots.sh --verify`; I checked the names against the test code only. If CI's check job reports a missing source, edit that line. There are no screenshot tests for the in-app site, This app's mandate or stand mode; the article says so.
+- **The sample article is NOT removed:** `ReleasesScreenTest` needs it (`first { it.dir.endsWith("-sample") }`, and its `sample-home.png`). Removing it needs dev.releases to change those tests first.
+- The features page no longer says "in progress" in prose: it reads the flags (all four Feature objects are on in the source now).
+- Not done: the pt-PT article is not published on the site (the site is English only).
+
 ## Done (commit on work/editor)
 1. `website/` for android.app.promptugal.ai: `build.py` (standard library only, writes `website/_site/`), `facts.py` (reads the facts), `template.html`, `site.css` (light and dark, responsive, no scripts), `markdown.py` and `twin.py`, `validate.py`, `test_site.py`.
 2. Facts read at build time, never typed: application ID, minSdk, targetSdk, compileSdk (`app/build.gradle.kts`); permissions (`AndroidManifest.xml`); languages (`locales_config.xml`); summit-feature flags (`Features.kt` and each feature object); the latest release and the list (git tags `v0.1.N`, with CI run, commit, date); `@Test` counts (source count, not a pass result); licences (`docs/security/licences.md`); the privacy body (`docs/play/privacy.html`, its TODO markers turned into plain statements or the repository link); the icon (SVG from the launcher drawable).

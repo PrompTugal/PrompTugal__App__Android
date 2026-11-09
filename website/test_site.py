@@ -89,7 +89,8 @@ class SiteTest(unittest.TestCase):
     def test_required_pages_exist(self):
         paths = {p['path'] for p in self.pages}
         for need in ('index.html', 'features.html', 'install.html', 'privacy.html', 'open-source.html', 'releases.html',
-                     'articles/index.html', 'articles/m1-ci-to-a-tablet-in-one-night.html'):
+                     'articles/index.html', 'articles/2026-11-09-m1-ci-to-a-tablet-in-one-night.html',
+                     'articles/2026-11-09-web-summit-build.html'):
             self.assertIn(need, paths)
 
     # --- facts come from the source ------------------------------------------
@@ -225,14 +226,46 @@ class SiteTest(unittest.TestCase):
             build.fill('{{nope}}', {})
 
     def test_article_is_a_markdown_page_with_a_twin_that_is_its_source(self):
-        twin_text = (self.clean / 'articles' / 'm1-ci-to-a-tablet-in-one-night.md').read_text()
+        twin_text = (self.clean / 'articles' / '2026-11-09-m1-ci-to-a-tablet-in-one-night.md').read_text()
         self.assertIn('# M1: from an empty repository', twin_text)
         self.assertNotIn('{{', twin_text)
         self.assertIn(self.facts['app_id'], twin_text)
 
     def test_article_prose_has_no_em_dash(self):
-        source = (build.WEBSITE / 'pages' / 'articles' / 'm1-ci-to-a-tablet-in-one-night.md').read_text()
-        self.assertNotIn('—', source)
+        for path in facts.RELEASES_DIR.glob('*/article*.md'):
+            self.assertNotIn('\u2014', path.read_text(), path.name)
+
+    def test_the_sample_article_is_not_published_and_every_real_one_is(self):
+        paths = {p['path'] for p in self.pages}
+        for a in facts.release_articles():
+            self.assertIn(f'articles/{a["dir"]}.html', paths)
+        self.assertFalse(any(p.endswith('-sample.html') for p in paths))
+
+    def test_front_matter_matches_the_apps_format(self):
+        meta, body = facts.front_matter('---\ntitle: "Hello: world"\ndate: 2026-11-09\nsummary: \'Short.\'\nfeatures: [a, b]\nunknown: x\n---\n\n## Body\n')
+        self.assertEqual((meta['title'], meta['date'], meta['summary']), ('Hello: world', '2026-11-09', 'Short.'))
+        self.assertEqual(body.strip(), '## Body')
+        self.assertEqual(facts.front_matter('no front matter')[0], {})
+
+    def test_a_screenshot_is_published_when_present_and_a_caption_when_not(self):
+        folder = self.tmp / 'rel' / '2026-11-10-x'
+        (folder / 'screenshots').mkdir(parents=True)
+        png = b'\x89PNG\r\n\x1a\n' + b'\x00\x00\x00\rIHDR' + (640).to_bytes(4, 'big') + (400).to_bytes(4, 'big') + b'\x00' * 20
+        (folder / 'screenshots' / 'a.png').write_bytes(png)
+        (folder / 'article.md').write_text('---\ntitle: "X"\ndate: 2026-11-10\nsummary: S.\n---\n\n# X\n\n![Present](screenshots/a.png)\n\n![Missing](screenshots/b.png)\n')
+        with mock.patch.object(facts, 'RELEASES_DIR', self.tmp / 'rel'):
+            out = self.tmp / 'img'
+            build.build(out)
+        page = (out / 'articles' / '2026-11-10-x.html').read_text()
+        self.assertIn('width="640" height="400"', page)
+        self.assertTrue((out / 'articles' / '2026-11-10-x' / 'screenshots' / 'a.png').exists())
+        self.assertIn('Screenshot not in this build: Missing', page)
+        self.assertEqual(validate.validate(out) and [p for p in validate.validate(out) if 'articles/2026-11-10-x' in p], [])
+
+    def test_a_release_article_without_a_page_is_refused(self):
+        name = facts.release_articles()[0]['dir']
+        problems = self.broken(f'articles/{name}.html', None)
+        self.assertRefused(problems, f'release article {name}')
 
     # --- every validator rule has a negative control ------------------------
 
@@ -320,7 +353,7 @@ class SiteTest(unittest.TestCase):
         self.assertEqual(self.broken('index.md', lambda t: t + ' https://riskmandate.ai:x@evil.example/'), [])
 
     def test_article_without_unverified_marks_is_refused(self):
-        name = 'articles/m1-ci-to-a-tablet-in-one-night.html'
+        name = 'articles/2026-11-09-m1-ci-to-a-tablet-in-one-night.html'
         self.assertRefused(self.broken(name, lambda t: t.replace('unverified', 'checked')), 'unverified')
 
 

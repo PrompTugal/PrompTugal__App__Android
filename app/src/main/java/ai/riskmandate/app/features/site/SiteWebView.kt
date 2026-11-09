@@ -33,6 +33,8 @@ class SiteWebViewClient(
     private val onRenderGone: () -> Unit,
     private val notInCopyHtml: () -> String,
 ) : WebViewClient() {
+    private val loader = SiteAssets.newLoader(context)
+
 
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
         val url = request.url.toString()
@@ -60,7 +62,7 @@ class SiteWebViewClient(
     override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
         val url = request.url.toString()
         if (SitePolicy.blockSubresource(url)) return empty(403, "Blocked")
-        SiteAssets.serve(context, url, request.method, request.isForMainFrame, notInCopyHtml)?.let { return it }
+        SiteAssets.serve(loader, url, request.method, request.isForMainFrame, notInCopyHtml)?.let { return it }
         // Offline: nothing is fetched from riskmandate.ai either.
         if (switch.offline) return empty(404, "Offline")
         return null
