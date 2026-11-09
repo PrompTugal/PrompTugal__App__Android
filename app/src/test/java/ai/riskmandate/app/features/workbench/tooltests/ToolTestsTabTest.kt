@@ -91,6 +91,9 @@ class ToolTestsTabTest {
         pick("1", exact = true)
     }
 
+    /** The judge prompts load off the main thread, so the toggles appear a moment after the first frame. */
+    private fun waitForJudges(tag: String = ToolTestTags.JUDGE_LOCAL) = compose.waitUntil(30_000) { count(tag) > 0 }
+
     /** Done when both tiles show a count and the Run buttons are back. */
     private fun waitDone() = compose.waitUntil(30_000) {
         count(ToolTestTags.STOP) == 0 && compose.onAllNodes(hasTestTag(ToolTestTags.OVERALL_TEXT) and hasText(" of ", substring = true)).fetchSemanticsNodes().isNotEmpty()
@@ -122,6 +125,21 @@ class ToolTestsTabTest {
         compose.onNodeWithTag(ToolTestTags.RAW).assertTextContains("call set_timer", substring = true)
     }
 
+    @Test fun anAnswerOnlyCaseRunsOncePerRepeatAndIsCountedInItsOwnTile() {
+        val c = cat.case("format-three-lines")!!
+        show(model(c.wrong!!))
+        pick(c.id)
+        pick("1", exact = true)
+        click(ToolTestTags.RUN_CASE)
+        compose.waitUntil(30_000) { count(ToolTestTags.STOP) == 0 && compose.onAllNodes(hasTestTag(ToolTestTags.OVERALL_ANSWERS) and hasText(" of ", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag(ToolTestTags.OVERALL_ANSWERS).assertTextContains("0 of 1", substring = true)
+        // The two ways of asking were not compared: they have nothing to show.
+        assertEquals(0, compose.onAllNodes(hasTestTag(ToolTestTags.OVERALL_NATIVE) and hasText(" of ", substring = true)).fetchSemanticsNodes().size)
+        assertEquals(1, compose.onAllNodes(hasTestTag(ToolTestTags.run(0))).fetchSemanticsNodes().size)
+        assertEquals(0, compose.onAllNodes(hasTestTag(ToolTestTags.run(1))).fetchSemanticsNodes().size)
+        assertTrue(compose.onAllNodes(hasText("Wrong number of lines", substring = true)).fetchSemanticsNodes().isNotEmpty())
+    }
+
     @Test fun thePromptSizeIsShownBeforeAnyRun() {
         show(model(weather.reference!!))
         pick("right-tool-weather")
@@ -143,6 +161,7 @@ class ToolTestsTabTest {
         // The same fake answers the judge with something that is not a verdict: unsure, never a pass.
         show(model(weather.reference!!))
         pickWeatherCase()
+        waitForJudges()
         pick(app.getString(R.string.workbench_tt_judge_local))
         click(ToolTestTags.RUN_CASE)
         waitDone()
@@ -159,6 +178,7 @@ class ToolTestsTabTest {
         val local = model(weather.reference!!)
         val cloud = CloudFake(FakeLlmService(initial = LlmState.Ready("cloud-model", "cloud")))
         show(local, cloud = cloud)
+        waitForJudges(ToolTestTags.JUDGE_CLOUD)
         compose.onNodeWithTag(ToolTestTags.JUDGE_CLOUD).performScrollTo().assertIsDisplayed()
         assertEquals(0, count(ToolTestTags.CLOUD_ON))
         click(ToolTestTags.JUDGE_CLOUD)
@@ -170,6 +190,7 @@ class ToolTestsTabTest {
 
     @Test fun aServiceThatIsNotCloudIsNeverOfferedAsTheCloudJudge() {
         show(model(weather.reference!!), cloud = FakeLlmService())
+        waitForJudges()
         assertEquals(0, count(ToolTestTags.JUDGE_CLOUD))
     }
 

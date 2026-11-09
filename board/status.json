@@ -31,6 +31,7 @@
     "Dinis picks the summit features (A RiskMandate inside the app, B ABP-in-every-layer demo screen, C this app's own mandate live, D stand mode, E demo videos); the sessions build them and each merge reaches the tablets through the M1 pipeline"
   ],
   "asks": [
+    "Dinis: dev.llm, dev.chat, design, play and editor were each started with an instruction to push only to their own work branch, and will not push to dev on CLAUDE.md or a relay; if you want them on dev directly, tell each session yourself. Until then the conductor merges their green heads onto dev (the rule works either way).",
     "Dinis: for option B (the workflow merges dev to main after the gate), a GitHub App with contents write on this repository, its ID and private key added as repository secrets by you (agents never see them), and later the protection of main; until then a head ready for the store is reported to you.",
     "Dinis (security R-cloud-11): write the cloud caps on the board yourself (US$5 per tablet from you, US$1 per session dev.chat's) and set a credit limit on each tablet's OpenRouter key; sealed keys: who writes and runs the sender script (security: you alone hold the issuer key), and whether the payload carries a displayed-only spending hint.",
     "Dinis: when you can, the rest of the guide: Diagnostics > Preview > Model bench (load time, tokens/s on GPU and CPU, memory; Copy results), then the ABP Lab (replays, one live run, one loop of 20 on the charger). Paste the numbers here.",

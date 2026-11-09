@@ -88,7 +88,7 @@ object ToolTestRunner {
     /** The conversation the model starts from, in the way the mode wants it: the system prompt (with the text protocol in TEXT mode) and the case's messages. */
     fun initialMessages(case: ToolCase, mode: ToolMode): List<LlmMessage> {
         val native = mode == ToolMode.NATIVE
-        val system = if (native) case.system else listOf(case.system, ToolProtocol.textInstructions(case.tools)).filter { it.isNotBlank() }.joinToString("\n\n")
+        val system = if (native || case.tools.isEmpty()) case.system else listOf(case.system, ToolProtocol.textInstructions(case.tools)).filter { it.isNotBlank() }.joinToString("\n\n")
         return (if (system.isNotBlank()) listOf(LlmMessage.system(system)) else emptyList()) + case.messages.flatMap { history(it, native) }
     }
 

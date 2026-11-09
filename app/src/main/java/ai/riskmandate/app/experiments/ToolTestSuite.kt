@@ -27,7 +27,8 @@ object ToolTestSuite {
     /** The runs a request would make, capped: (case, mode, rep) in the order they run. */
     fun plan(cases: List<ToolCase>, modes: List<ToolMode>, repeats: Int): List<Triple<ToolCase, ToolMode, Int>> {
         val n = repeats.coerceIn(1, MAX_REPEATS)
-        return (0 until n).flatMap { rep -> cases.flatMap { c -> modes.distinct().map { m -> Triple(c, m, rep) } } }.take(MAX_RUNS)
+        // A case that offers no tools has no protocol to compare: it runs once per repeat, in the native mode.
+        return (0 until n).flatMap { rep -> cases.flatMap { c -> (if (c.tools.isEmpty()) listOf(ToolMode.NATIVE) else modes.distinct()).map { m -> Triple(c, m, rep) } } }.take(MAX_RUNS)
     }
 
     suspend fun run(

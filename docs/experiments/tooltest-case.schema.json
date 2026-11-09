@@ -146,11 +146,12 @@
     },
     "tools": {
      "type": "array",
-     "minItems": 2,
+     "minItems": 0,
      "maxItems": 5,
      "items": {
       "$ref": "#/$defs/tool"
-     }
+     },
+     "description": "Zero to five tools. A case with none (an answer-only case) has no protocol to compare and runs once per repeat, in the native mode."
     },
     "fake_tools": {
      "type": "object",
@@ -194,6 +195,24 @@
        },
        {
         "$ref": "#/$defs/check_answer_contains"
+       },
+       {
+        "$ref": "#/$defs/check_answer_absent"
+       },
+       {
+        "$ref": "#/$defs/check_answer_max_chars"
+       },
+       {
+        "$ref": "#/$defs/check_answer_lines"
+       },
+       {
+        "$ref": "#/$defs/check_answer_json_only"
+       },
+       {
+        "$ref": "#/$defs/check_answer_number_between"
+       },
+       {
+        "$ref": "#/$defs/check_answer_grounded"
        }
       ]
      }
@@ -797,6 +816,169 @@
      "description": "Optional one-line description shown with a failure."
     },
     "any": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "string",
+      "minLength": 1
+     }
+    }
+   }
+  },
+  "check_answer_absent": {
+   "type": "object",
+   "description": "The final text contains none of the words (case-insensitive). Fails on an empty answer.",
+   "required": [
+    "kind",
+    "any"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "answer_absent"
+    },
+    "label": {
+     "type": "string",
+     "description": "Optional one-line description shown with a failure."
+    },
+    "any": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "string",
+      "minLength": 1
+     }
+    }
+   }
+  },
+  "check_answer_max_chars": {
+   "type": "object",
+   "description": "The final text, trimmed, is at most this many characters. Fails on an empty answer.",
+   "required": [
+    "kind",
+    "max"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "answer_max_chars"
+    },
+    "label": {
+     "type": "string",
+     "description": "Optional one-line description shown with a failure."
+    },
+    "max": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 4000
+    }
+   }
+  },
+  "check_answer_lines": {
+   "type": "object",
+   "description": "The number of non-blank lines of the final text is within the bounds. Fails on an empty answer.",
+   "required": [
+    "kind"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "answer_lines"
+    },
+    "label": {
+     "type": "string",
+     "description": "Optional one-line description shown with a failure."
+    },
+    "min": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 50
+    },
+    "max": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 50
+    }
+   },
+   "anyOf": [
+    {
+     "required": [
+      "min"
+     ]
+    },
+    {
+     "required": [
+      "max"
+     ]
+    }
+   ]
+  },
+  "check_answer_json_only": {
+   "type": "object",
+   "description": "The whole final text, trimmed, is one strict JSON object (nothing before or after, no code fence), with each of the keys when given.",
+   "required": [
+    "kind"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "answer_json_only"
+    },
+    "label": {
+     "type": "string",
+     "description": "Optional one-line description shown with a failure."
+    },
+    "keys": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "string",
+      "minLength": 1
+     }
+    }
+   }
+  },
+  "check_answer_number_between": {
+   "type": "object",
+   "description": "Some number in the final text (digits, with . or , inside) is within the bounds, inclusive. Fails on an empty answer.",
+   "required": [
+    "kind",
+    "min",
+    "max"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "answer_number_between"
+    },
+    "label": {
+     "type": "string",
+     "description": "Optional one-line description shown with a failure."
+    },
+    "min": {
+     "type": "number"
+    },
+    "max": {
+     "type": "number"
+    }
+   }
+  },
+  "check_answer_grounded": {
+   "type": "object",
+   "description": "Every number, and every capitalised word that is not the first word of a sentence, in the final text also occurs (case-insensitive) in the grounding: the case's system prompt plus its user messages. Words in allow are exempt. A heuristic for invented names and figures. Fails on an empty answer.",
+   "required": [
+    "kind"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "answer_grounded"
+    },
+    "label": {
+     "type": "string",
+     "description": "Optional one-line description shown with a failure."
+    },
+    "allow": {
      "type": "array",
      "minItems": 1,
      "items": {

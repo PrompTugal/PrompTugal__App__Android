@@ -81,4 +81,11 @@
     <string name="workbench_tt_stop_user">Parado por si.</string>
     <string name="workbench_tt_stop_turned">Parado: o ecrã foi rodado, por isso o ciclo terminou. As contagens até agora ficam guardadas.</string>
     <string name="workbench_tt_dash">-</string>
+    <string name="workbench_tt_answers">Respostas</string>
+    <string name="workbench_tt_fail_forbidden_words">Usou uma palavra proibida</string>
+    <string name="workbench_tt_fail_too_long">Resposta demasiado longa</string>
+    <string name="workbench_tt_fail_wrong_line_count">Número de linhas errado</string>
+    <string name="workbench_tt_fail_not_json_only">Não é só JSON</string>
+    <string name="workbench_tt_fail_number_out_of_range">Número fora do intervalo</string>
+    <string name="workbench_tt_fail_ungrounded_claim">Nome ou valor que não está no texto de origem</string>
 </resources>

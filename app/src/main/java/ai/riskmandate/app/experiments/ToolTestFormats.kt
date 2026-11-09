@@ -10,7 +10,7 @@ import ai.riskmandate.app.llm.StrictJson
  */
 object ToolTestFormats {
     const val FORMAT = "abp-tooltest/1"
-    const val MIN_TOOLS = 2
+    const val MIN_TOOLS = 0
     const val MAX_TOOLS = 5
     const val MAX_CASES_PER_FILE = 40
     const val MAX_CHECKS = 8
@@ -70,7 +70,7 @@ object ToolTestFormats {
         val tests = c.str("tests")
         if (tests.isBlank() || tests.length > 200 || '\n' in tests) bad("'tests' is one line of at most 200 characters")
         val tools = ToolFormats.parseTools(c["tools"].list("tools"), id, requireEffect = false)
-        if (tools.size !in MIN_TOOLS..MAX_TOOLS) bad("offer $MIN_TOOLS to $MAX_TOOLS tools")
+        if (tools.size !in MIN_TOOLS..MAX_TOOLS) bad("offer at most $MAX_TOOLS tools")
         val fakes = ToolFormats.parseFakes(c["fake_tools"].obj("fake_tools"))
         for (t in tools) if (t.name !in fakes) bad("tool ${t.name} has no fake_tools entry")
         (fakes.keys - tools.map { it.name }.toSet()).firstOrNull()?.let { bad("fake_tools has '$it', which is not an offered tool") }
