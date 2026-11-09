@@ -21,11 +21,34 @@ import twin       # noqa: E402
 import validate   # noqa: E402
 
 ROOT = facts.ROOT
+REAL_FEATURES = facts.features  # the real parser, kept for the tests that parse fixture files
+
+# The summit features move every hour as branches land, so SiteTest runs against this fixed fixture
+# (nothing on, stand mode a placeholder). RealTreeTest checks the real tree, whatever state it is in.
+FIXTURE_FEATURES = [{'name': n, 'id': i, 'enabled': False, 'file': f'app/src/main/java/ai/riskmandate/app/features/{i}/{n}.kt'}
+                    for n, i in (('SiteFeature', 'site'), ('AbpDemoFeature', 'abpdemo'), ('MandateFeature', 'mandate'), ('ReleasesFeature', 'releases'))]
+
+
+def fixture_patches(features=FIXTURE_FEATURES, stand=(True, True)):
+    return [mock.patch.object(facts, 'features', return_value=features), mock.patch.object(facts, 'stand_host', return_value=stand)]
+
+
+class RealTreeTest(unittest.TestCase):
+    def test_the_real_tree_builds_and_validates_whatever_the_features_are(self):
+        out = Path(tempfile.mkdtemp())
+        try:
+            build.build(out / 'site')
+            self.assertEqual(validate.validate(out / 'site'), [])
+        finally:
+            shutil.rmtree(out)
 
 
 class SiteTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.patches = fixture_patches()
+        for patch in cls.patches:
+            patch.start()
         cls.tmp = Path(tempfile.mkdtemp())
         cls.clean = cls.tmp / 'clean'
         cls.facts, cls.pages = build.build(cls.clean)
@@ -33,6 +56,8 @@ class SiteTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(cls.tmp)
+        for patch in cls.patches:
+            patch.stop()
 
     def broken(self, name, edit):
         """A copy of the clean build with one file edited (or deleted when edit is None)."""
@@ -123,24 +148,51 @@ class SiteTest(unittest.TestCase):
     def test_summit_features_are_in_progress_today(self):
         enabled = [f for f in self.facts['features'] if f['enabled']]
         features = (self.clean / 'features.html').read_text()
-        self.assertEqual(features.count('tag-progress'), 4 - len(enabled) - (0 if self.facts['stand_placeholder'] else 1))
+        shown_ids = {s[3] for s in build.SUMMIT_FEATURES} | {f['id'] for f in self.facts['features']}
+        stand_on = 0 if self.facts['stand_placeholder'] else 1
+        self.assertEqual(features.count('tag-progress'), len(shown_ids) - len(enabled) - stand_on)
 
     def test_a_feature_switched_on_in_the_source_shows_as_on(self):
-        fake = [dict(f, enabled=True) for f in self.facts['features']]
-        with mock.patch.object(facts, 'features', return_value=fake):
-            out = self.tmp / 'on'
+        on = [dict(f, enabled=True) for f in FIXTURE_FEATURES]
+        out = self.tmp / 'on'
+        with mock.patch.object(facts, 'features', return_value=on):
             build.build(out)
-        self.assertEqual((out / 'features.html').read_text().count('tag-ok'), len(fake))
-        # validate.py reads the real source, which has not switched them on: it must refuse this build
+            self.assertEqual(validate.validate(out), [])  # the source (the patched one) says on, the page says on
+        # stand mode is a placeholder in the fixture, so only the flagged features are on
+        self.assertEqual((out / 'features.html').read_text().count('tag-ok'), len(on))
+        # the same page checked against a source where they are off must be refused
         self.assertRefused(validate.validate(out), 'shown as on but the source has not switched it on')
 
     def test_feature_claimed_on_but_not_in_the_source_is_refused(self):
         problems = self.broken('features.html', lambda t: t.replace('tag tag-progress">in progress', 'tag tag-ok">on', 1))
         self.assertRefused(problems, 'shown as on but the source has not switched it on')
 
-    def test_fewer_than_four_summit_features_is_refused(self):
-        problems = self.broken('features.html', lambda t: re.sub(r'<tr><td>D</td>.*?</tr>', '', t, count=1, flags=re.S))
-        self.assertRefused(problems, 'wants 4')
+    def test_a_missing_feature_row_is_refused(self):
+        problems = self.broken('features.html', lambda t: re.sub(r'<tr data-feature="stand">.*?</tr>', '', t, count=1, flags=re.S))
+        self.assertRefused(problems, 'lists features')
+
+    def test_a_feature_in_the_source_without_text_is_still_listed(self):
+        extra = {'name': 'NewThing', 'id': 'newthing', 'enabled': False, 'file': 'app/src/main/java/ai/riskmandate/app/features/newthing/NewThing.kt'}
+        with mock.patch.object(facts, 'features', return_value=self.facts['features'] + [extra]):
+            out = self.tmp / 'extra'
+            build.build(out)
+        self.assertIn('data-feature="newthing"', (out / 'features.html').read_text())
+
+    def test_enabled_forms_in_feature_objects(self):
+        def parse(line):
+            folder = self.tmp / 'ft'
+            shutil.rmtree(folder, ignore_errors=True)
+            (folder / 'x').mkdir(parents=True)
+            (folder / 'Features.kt').write_text('val FEATURES = listOf(X)')
+            (folder / 'x' / 'X.kt').write_text('object X : Feature {\n    override val id = "x"\n' + line + '\n}\n')
+            with mock.patch.object(facts, 'FEATURES_KT', folder / 'Features.kt'), mock.patch.object(facts, 'FEATURES_DIR', folder), mock.patch.object(facts, 'ROOT', folder):
+                return REAL_FEATURES()[0]['enabled']
+        self.assertFalse(parse('    override val enabled = false'))
+        self.assertTrue(parse('    override val enabled = true'))
+        self.assertTrue(parse('    override val enabled: Boolean = true'))
+        self.assertTrue(parse('    override val enabled get() = true'))
+        self.assertFalse(parse('    override val enabled get() = BuildConfig.DEBUG'))  # not provably on
+        self.assertTrue(parse(''))  # no override: the interface default is on
 
     # --- privacy ------------------------------------------------------------
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_releases_empty">No release notes yet.</string>
+    <string name="feature_releases_all">All releases</string>
+    <string name="feature_releases_sample_badge">Sample</string>
+    <string name="feature_releases_sample_note">This is a sample article that shows the format. The real release notes replace it.</string>
+    <string name="feature_releases_image_fallback">Screenshot</string>
+    <string name="feature_releases_offer">See what\'s new in this version</string>
+</resources>

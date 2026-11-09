@@ -1,11 +1,13 @@
 # architect.android status
 
-> 9 Nov 2026, about 01:45 UTC: review round 4. app b2ad8aa, design b61b5d1, dev.stand b9c9af3 PASS. dev.site ba979fc, dev.abpdemo 9bbfe59 and dev.mandate 5a35d4c HOLD, each now only for drawing its own frame inside FeatureFrame. Trial merge of everything: 213 tests, 3 failing, all qa static checks on correct site code (A-qa-6 to A-qa-9).
+> 9 Nov 2026, about 01:55 UTC: review round 5: everything PASS (app e914cc6, stand 9f207e8, site 13114fd, abpdemo b94232d, mandate 5a43197). Trial merge of all heads: only qa's 3 static checks on site fail (A-qa-6 to A-qa-9). Transitional FeatureContext constructor deleted (ffa3c6b). Open: A-app-7 (remove the idle.clear() I suggested) and A-app-8 (wire idleHeld).
 
 ## Doing
 Waiting for the first feature or app commits to review.
 
 ## Done
+- Deleted the transitional `FeatureContext(activity, onBack)` constructor (ffa3c6b), since app f317cf8 is on dev. Gate green.
+- Review round 5: app e914cc6 PASS (A-app-7: drop `LaunchedEffect(route) { idle.clear() }`, my own suggestion, which wipes a live hold after a rotation; A-app-8: pass idleHeld); stand 9f207e8 PASS; site 13114fd PASS (content only); abpdemo b94232d PASS (content only, adaptive layout, HoldIdleWhile); mandate 5a43197 PASS (content only, honest storage, off the main thread). README and IdleHolds.clear() doc corrected.
 - Review round 4: app b2ad8aa PASS (Browser.openExternal is the right shape; A-app-5: the privacy wording must change, for security and play); design b61b5d1 PASS (FeatureContent, content only); dev.stand b9c9af3 PASS (corner gesture consumes nothing and is on Home only; A-stand-7: wire idleHeld); dev.site ba979fc HOLD (only A-site-2, its own frame; renderer, asset origin and v2 all fixed); dev.abpdemo 9bbfe59 HOLD (only A-abp-1; wire HoldIdleWhile); dev.mandate 5a35d4c HOLD (only A-man-1; A-man-4 medium); qa note A-qa-6 to A-qa-9 for site, A-qa-1 withdrawn.
 - FeatureContext v3 (`features/Feature.kt`): `holdIdle` (default no-op), `HoldIdleWhile(active)` (DisposableEffect, releases on leave), `IdleHolds` (host-side token list, Compose state, `clear()`). `app/src/test/.../features/FeatureContextTest.kt` (4 tests; contract tests, architect-owned). Gate green. Secret scan: the working tree is clean; 2 history hits on origin/work/editor d722a6b (`website/validate.py`, `website/test_site.py`) are the validator's own detection patterns, not keys (for security to confirm).
 - Review round 3: app f317cf8 PASS; qa c0c10e8 PASS with A-qa-6 to A-qa-8 (static tests flag site's safe settings); dev.site e6c92f0 HOLD (does not compile against v2; own Back, title and insets; no onRenderProcessGone; offline copy under the real origin is for security to decide); design 3397228 HOLD (FeatureScaffold is a second frame: make it a content-only FeatureBody); dev.stand 23d16f3 HOLD (keep-screen-on fixed; corner still over every screen). Trial merge of all nine branches: site fails to compile; patched locally, 191 tests with 5 failing: abpdemo x2 (one cause), the URL-literal test x1 (mandate probes plus a false positive on site), site x2 (qa false positives).
@@ -16,7 +18,6 @@ Waiting for the first feature or app commits to review.
 - Review round 1 (01:35 UTC): `git log origin/dev..origin/work/<role>` empty for app, design, qa, dev.site, dev.abpdemo, dev.mandate, dev.stand. play has fb617fd (docs only, not app-touching, not reviewed).
 
 ## Next
-- Delete the deprecated `FeatureContext(activity, onBack)` constructor once app f317cf8 is on dev.
 At each wake: fetch, review every app-touching branch head into `docs/architecture/reviews/<date>-<role>-<sha>.md`, message the conductor with the verdict.
 
 ## Blocked

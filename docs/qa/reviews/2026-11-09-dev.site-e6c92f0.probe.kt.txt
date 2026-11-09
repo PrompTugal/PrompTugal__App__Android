@@ -1,0 +1,33 @@
+package ai.riskmandate.app.qa
+
+import ai.riskmandate.app.HomeTags
+import ai.riskmandate.app.MainActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class ProbeSiteTest {
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    @Test fun chrome() {
+        compose.onNodeWithTag(HomeTags.feature("site")).performScrollTo().performClick()
+        compose.waitForIdle()
+        val frameBack = compose.onAllNodesWithTag("feature_back").fetchSemanticsNodes().size
+        val siteBack = compose.onAllNodesWithTag("site_back").fetchSemanticsNodes().size
+        println("PROBE back buttons: frame=$frameBack site=$siteBack")
+        // select the 3rd tab, rotate, see which tab is selected
+        compose.onNodeWithTag("site_tab_how_it_works").performClick()
+        compose.waitForIdle()
+        compose.activityRule.scenario.recreate(); compose.waitForIdle()
+        val sel = compose.onNodeWithTag("site_tab_how_it_works").fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsProperties.Selected]
+        println("PROBE tab how_it_works selected after rotate: $sel")
+        assertEquals(1, frameBack + siteBack)
+    }
+}
