@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,7 +40,7 @@ object DiagnosticsTags {
     const val TEXT = "diagnostics_text"
     const val COPY = "diagnostics_copy"
     const val COPIED = "diagnostics_copied"
-    const val BACK = "diagnostics_back"
+    const val MODEL_BENCH = "diagnostics_model_bench"
 }
 
 /** Puts [text] on the clipboard as plain text. Returns false if the system refuses. */
@@ -52,23 +53,19 @@ fun copyToClipboard(context: Context, label: String, text: String): Boolean = tr
 }
 
 @Composable
-fun DiagnosticsScreen(text: String, onCopy: () -> Boolean, onBack: () -> Unit) {
+fun DiagnosticsScreen(
+    text: String,
+    onCopy: () -> Boolean,
+    /** Opens the on-device LLM bench (dev.llm, features/models). Null hides the button. */
+    onModelBench: (() -> Unit)? = null,
+) {
     var copied by rememberSaveable { mutableStateOf<Boolean?>(null) }
     Column(
         modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(Modifier.widthIn(max = 720.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = onBack, modifier = Modifier.heightIn(min = 48.dp).testTag(DiagnosticsTags.BACK)) {
-                Text(stringResource(R.string.licences_back))
-            }
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    stringResource(R.string.diagnostics_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.semantics { heading() },
-                )
                 Text(
                     stringResource(R.string.diagnostics_intro),
                     style = MaterialTheme.typography.bodyMedium,
@@ -94,6 +91,12 @@ fun DiagnosticsScreen(text: String, onCopy: () -> Boolean, onBack: () -> Unit) {
                         color = if (ok) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
                         modifier = Modifier.testTag(DiagnosticsTags.COPIED).semantics { liveRegion = LiveRegionMode.Polite },
                     )
+                }
+                onModelBench?.let { open ->
+                    OutlinedButton(
+                        onClick = open,
+                        modifier = Modifier.heightIn(min = 48.dp).testTag(DiagnosticsTags.MODEL_BENCH),
+                    ) { Text(stringResource(R.string.diagnostics_model_bench)) }
                 }
             }
         }

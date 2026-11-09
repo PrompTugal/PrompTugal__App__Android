@@ -1,7 +1,6 @@
 package ai.riskmandate.app
 
 import ai.riskmandate.app.features.FEATURES
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -24,8 +23,8 @@ class HostTest {
         compose.onNodeWithTag(DiagnosticsTags.TEXT).assertIsDisplayed()
         compose.activityRule.scenario.recreate() // what a tablet turn does
         compose.onNodeWithTag(DiagnosticsTags.TEXT).assertIsDisplayed()
-        compose.onNodeWithTag(DiagnosticsTags.BACK).performClick()
-        compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+        compose.onNodeWithTag(ShellTags.HOME).performClick() // the visible way home on a phone
+        compose.onNodeWithTag(HomeTags.OPEN).performScrollTo().assertIsDisplayed()
     }
 
     @Test fun featureIdsAreUniqueLowercaseAndDoNotClashWithBuiltInRoutes() {
@@ -43,14 +42,20 @@ class HostTest {
 class FeatureFrameTest {
     @get:Rule val compose = androidx.compose.ui.test.junit4.createComposeRule()
 
-    @Test fun frameShowsTitleContentAndABackButtonThatWorks() {
-        var back = 0
+    @Test fun withTheSidebarTheFrameDrawsOneHeaderAndNoBackButton() {
         compose.setContent {
-            MaterialTheme { FeatureFrame(title = R.string.home_diagnostics, onBack = { back++ }) { Text("inside") } }
+            androidx.compose.runtime.CompositionLocalProvider(LocalSidebarVisible provides true) {
+                RiskMandateTheme { FeatureFrame(title = R.string.home_diagnostics, kicker = R.string.nav_section_explore) { Text("inside") } }
+            }
         }
         compose.onNodeWithTag(FeatureFrameTags.TITLE).assertIsDisplayed()
-        compose.onNodeWithTag("feature_back").assertIsDisplayed().performClick()
-        assertEquals(1, back)
-        compose.onNodeWithTag(FeatureFrameTags.TITLE).fetchSemanticsNode()
+        compose.onNodeWithTag("feature_back").assertDoesNotExist()
+    }
+
+    @Test fun onAPhoneTheTopBarIsTheHeaderSoTheFrameDrawsNone() {
+        compose.setContent {
+            RiskMandateTheme { FeatureFrame(title = R.string.home_diagnostics, kicker = null) { Text("inside") } }
+        }
+        compose.onNodeWithTag(FeatureFrameTags.TITLE).assertDoesNotExist()
     }
 }

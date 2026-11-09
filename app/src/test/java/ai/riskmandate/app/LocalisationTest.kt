@@ -35,7 +35,7 @@ class LocalisationTest {
         compose.setContent {
             RiskMandateTheme { HomeScreen("0.1.7 (7)", DeviceStatus.from(true, false, null), onOpen = {}) }
         }
-        compose.onNodeWithText("Abrir riskmandate.ai").assertIsDisplayed()
+        compose.onNodeWithText("Abrir riskmandate.ai").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag(HomeTags.DEVICE_MANAGEMENT)
             .assertTextEquals("Gerido por uma organização (dispositivo totalmente gerido)")
     }
@@ -102,6 +102,7 @@ class LocalisationTest {
         }
         val dp = app.resources.displayMetrics.density
         for (tag in listOf(HomeTags.OPEN, HomeTags.LICENCES)) {
+            compose.onNodeWithTag(tag).performScrollTo()
             val bounds = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
             assertNotEquals(0f, bounds.height)
             assert(bounds.height >= 48 * dp - 1) { "$tag is ${bounds.height / dp}dp high" }
