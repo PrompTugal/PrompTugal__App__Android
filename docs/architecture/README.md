@@ -190,6 +190,8 @@ A feature with `enabled = false` is never on Home, in the sidebar, or reachable 
 - **Opt-in per feature:** `Feature.usesCloud: Boolean = false`. The host passes `cloudLlm` only when (a) the feature declares `usesCloud = true`, (b) a key is stored, and (c) stand mode is off. At first only the Workbench declares it. Chat stays on-device unless Dinis asks.
 - **Contract (architect, pushed with the conductor's OK):** `Feature.usesCloud = false` and `FeatureContext.cloudLlm: LlmService? = null`, plus `FeatureCloudTest` (only ids on the reviewed list may declare it; workbench today). The host wiring is app's.
 
+- **`FeatureContext.cloudOn: Boolean = false`** (architect, 9 Nov, at the conductor's request): a read-only fact given to **every** feature. It is true while the cloud switch is on, a key is stored and stand mode is off. No service and no key go with it. On-device screens use it to stay honest: Model setup shows "Nothing you type leaves the device" only while `cloudOn` is false. The host includes it in the `remember` keys that build the context, so screens update when it changes.
+
 ### The "Cloud" badge rule
 - Every answer, judgement or stat that came from the cloud carries a visible **"Cloud"** badge with the model id and "via openrouter.ai". On-device ones carry **"On device"**. Never an unlabelled mix on one screen.
 - While a screen can use the cloud, it shows a persistent "Cloud on" indicator. Screenshots must keep the badges.

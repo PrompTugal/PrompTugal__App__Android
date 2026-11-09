@@ -36,6 +36,8 @@ data class LogEntry(
     val accepted: Long,
     val prompt: String,
     val answer: String,
+    /** True when the cloud model answered (older entries without the field read as on the device). */
+    val cloud: Boolean = false,
 ) {
     fun toJson(): String = StrictJson.canonical(
         linkedMapOf(
@@ -44,7 +46,7 @@ data class LogEntry(
             "stop" to stop, "err" to error, "cold" to cold, "load" to loadMs, "ttft" to firstTokenMs, "total" to totalMs,
             "in" to inputTokens, "out" to outputTokens, "dec" to decodeTps, "pre" to prefillTps, "src" to sources,
             "calls" to toolCalls, "ok" to accepted, "prompt" to prompt, "answer" to answer,
-        ),
+        ).apply { if (cloud) put("cloud", true) }, // only on cloud entries: on-device lines stay as before
     )
 
     companion object {
@@ -55,7 +57,7 @@ data class LogEntry(
             val s = r.stats
             return LogEntry(
                 startedAtMs = r.startedAtMs, label = label.take(40),
-                model = s?.modelId ?: r.settings.modelId ?: "-", backend = s?.backend ?: (r.settings.backend?.name ?: "-"),
+                model = s?.modelId ?: "-", backend = s?.backend ?: r.settings.backend.name.lowercase(),
                 fellBack = s?.fellBackToCpu == true,
                 temperature = r.settings.sampling.temperature, topK = r.settings.sampling.topK.toLong(), topP = r.settings.sampling.topP,
                 maxTokens = r.settings.maxTokens.toLong(), systemChars = r.settings.systemPrompt.length.toLong(), tools = r.settings.tools.size.toLong(),
@@ -66,6 +68,7 @@ data class LogEntry(
                 sources = if (s == null) "" else "${s.countsFrom.name.lowercase()}/${s.speedsFrom.name.lowercase()}",
                 toolCalls = r.toolCalls.size.toLong(), accepted = r.toolCalls.count { it.verdict is ai.riskmandate.app.llm.ToolCheck.Accepted }.toLong(),
                 prompt = r.settings.userPrompt.take(PROMPT_CHARS), answer = r.text.take(ANSWER_CHARS),
+                cloud = s?.location == ai.riskmandate.app.llm.LlmLocation.CLOUD,
             )
         }
 
@@ -84,6 +87,7 @@ data class LogEntry(
                 lng("sys"), lng("tools"), str("stop"), str("err"), bool("cold"), lngOrNull("load"), lngOrNull("ttft"), lngOrNull("total"),
                 lngOrNull("in"), lngOrNull("out"), dblOrNull("dec"), dblOrNull("pre"), str("src"), lng("calls"), lng("ok"),
                 str("prompt").take(PROMPT_CHARS), str("answer").take(ANSWER_CHARS),
+                cloud = m["cloud"]?.let { it as? Boolean ?: throw IllegalArgumentException("cloud") } ?: false,
             )
         } catch (e: StrictJson.JsonException) {
             null

@@ -53,6 +53,7 @@ Device: ______________  Android: ______  Build number: ______  Date: ______  Tes
 | 18 | Install the **next** build over this one: updates without uninstalling, same Firebase signature | [ ] | [ ] | |
 | 19 | Uninstall: removes cleanly; reinstalling shows the defaults again (side menu expanded, stand mode off, What's new shown, chat history empty). The app keeps only those small settings | [ ] | [ ] | |
 | 20 | Anything else odd (battery, heat, slow start, wrong orientation lock) | [ ] | [ ] | |
+| 21 | **Workbench (staff, only if Diagnostics > Preview offers it):** run one test with a short prompt; the run log lists it with settings and figures; the prompt and answer are cut to 200 and 300 characters; **Clear** empties the log; nothing in the log looks like an account, a serial number or personal data. The Workbench is hidden in stand mode | [ ] | [ ] | |
 
 ### Per-device extras
 

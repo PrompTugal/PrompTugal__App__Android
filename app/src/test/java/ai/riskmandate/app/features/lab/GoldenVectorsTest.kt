@@ -1,5 +1,9 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.Effect
+import ai.riskmandate.app.experiments.ToolCall
+import ai.riskmandate.app.experiments.ToolSpec
+import ai.riskmandate.app.experiments.Triplet
 import ai.riskmandate.app.llm.StrictJson
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

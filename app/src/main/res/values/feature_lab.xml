@@ -101,24 +101,4 @@
     <string name="lab_limit_claims">What this check sees: only claims written as "subject | predicate | object | Txx". A fact invented in ordinary prose is not seen and counts as zero.</string>
     <string name="lab_limit_fixed">What this check sees: a fixed rule on the tool called, so stopping it is by construction. The number that carries information is how often the model tries.</string>
     <string name="lab_stop_turned">Stopped: the screen was turned, so the loop ended. The counts so far are kept.</string>
-    <string name="lab_tt_loading">Loading tool tests</string>
-    <string name="lab_tt_none">No tool tests are bundled with this build.</string>
-    <string name="lab_tt_intro">Small checks of how the model calls tools. Each case offers fake tools and checks, in code, whether the model called the right one the right way. Nothing runs for real.</string>
-    <string name="lab_tt_scope_all">All cases</string>
-    <string name="lab_tt_whole_kind">Whole kind</string>
-    <string name="lab_tt_mode_help">Native uses the runtime\'s own tool calling. Text asks the model to write a JSON call in its answer. Both are measured, so you can see which works on this model.</string>
-    <string name="lab_tt_native">Native</string>
-    <string name="lab_tt_text">Text</string>
-    <string name="lab_tt_both">Both</string>
-    <string name="lab_tt_native_short">native</string>
-    <string name="lab_tt_text_short">text</string>
-    <string name="lab_tt_repeats">Repeats: %1$d</string>
-    <string name="lab_tt_planned">%1$d runs</string>
-    <string name="lab_tt_no_model_body">Set up a model to run the tool tests.</string>
-    <string name="lab_tt_by_kind">Pass rate by kind</string>
-    <string name="lab_tt_by_case">Pass rate by case</string>
-    <string name="lab_tt_failures">Failures: %1$d</string>
-    <string name="lab_tt_more_failures">%1$d more failures are not shown.</string>
-    <string name="lab_tt_run_n">run %1$d</string>
-    <string name="lab_tt_nothing_kept">After a screen rotation only the first few failures keep their raw output.</string>
 </resources>

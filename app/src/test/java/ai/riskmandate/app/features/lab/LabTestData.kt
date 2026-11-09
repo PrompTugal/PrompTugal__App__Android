@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.Graph
+import ai.riskmandate.app.experiments.ToolCall
 import java.io.File
 
 /** Loads the bundled Lab files straight from the source tree, so pure JVM tests need no Android assets. */
@@ -18,14 +20,6 @@ object LabTestData {
         val recordings = File(root, "recordings").walkTopDown().filter { it.isFile && it.name.endsWith(".json") }
             .sortedBy { it.path }.map { LabFormats.parseRecording(it.readText()) }.toList()
         return LabData(scenarios, recordings, emptyList())
-    }
-
-    /** The tool-test catalogue straight from the source tree (the same files the app bundles). */
-    fun toolCatalogue(): ToolCatalogue {
-        val files = File(root, "tooltests").listFiles { f -> f.name.endsWith(".json") }!!.sortedBy { it.name }
-        val kinds = ArrayList<ToolKind>(); val cases = ArrayList<ToolCase>(); val texts = ArrayList<String>()
-        for (f in files) { val t = f.readText(); val (k, c) = ToolTestFormats.parse(t); kinds += k; cases += c; texts += t }
-        return ToolCatalogue(kinds, cases, emptyList(), ToolTestFormats.hash(texts))
     }
 
     fun scenario(id: String): Scenario = load().scenario(id)!!

@@ -29,9 +29,21 @@ class RunLogTest {
     }
 
     @Test fun promptAndAnswerAreKeptShort() {
-        val e = entry(prompt = "p".repeat(5000), answer = "a ".repeat(2000))
+        val e = entry(prompt = "p".repeat(2000), answer = "a ".repeat(2000))
         assertEquals(LogEntry.PROMPT_CHARS, e.prompt.length)
         assertEquals(LogEntry.ANSWER_CHARS, e.answer.length)
+    }
+
+    @Test fun aCloudRunIsLoggedAsCloudAndOldEntriesReadAsOnTheDevice() = runBlocking {
+        val cloudStats = ai.riskmandate.app.llm.LlmStats("google/gemma-3-4b-it", "cloud", 10, 3, null, 20.0, 400, 900, location = ai.riskmandate.app.llm.LlmLocation.CLOUD, costUsd = 0.0001)
+        val r = LlmRunner(FakeLlmService { FakeReply("a b c", stats = cloudStats) }).run(RunSettings(userPrompt = "x")) {}
+        val e = LogEntry.of("run", r)
+        assertTrue(e.cloud)
+        assertEquals(e, LogEntry.parse(e.toJson()))
+        assertTrue(logLine(e).contains("Cloud \u00b7 google/gemma-3-4b-it via openrouter.ai"))
+        val old = entry().toJson()
+        assertFalse("an on-device line has no cloud field (same as before the field existed)", old.contains("cloud"))
+        assertEquals(false, LogEntry.parse(old)?.cloud)
     }
 
     @Test fun badLinesAreDroppedNotHalfRead() {
