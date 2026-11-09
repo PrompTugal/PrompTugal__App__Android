@@ -4,13 +4,14 @@ import ai.riskmandate.app.HomeTags
 import ai.riskmandate.app.MainActivity
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.Feature
+import android.os.Looper
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -18,18 +19,25 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
-import android.os.Looper
 
 /**
- * Cross-feature navigation (QA owns this file). Every ENABLED feature must open from the home screen,
- * survive a rotation (activity recreation) on its own screen, and return home with Back.
- * A feature still disabled is not tested here; the owner turns it on when its screen works end to end,
- * and from then on this test covers it with no change.
+ * Cross-feature navigation (QA owns this file). Every ENABLED feature must open from the home screen, survive a
+ * rotation (activity recreation) on its own screen, and return home (system Back, and the visible way home).
+ * A disabled feature is not tested here; from the day its owner enables it, this test covers it with no change.
  *
- * Deterministic by construction: no step trusts that one `waitForIdle()` was enough. After every action the test
- * waits for the state it expects (exactly one node of the expected screen, none of the other), so a recreation or
- * a back press that is still settling on a loaded machine cannot make it flaky. The upper bound of each wait is
- * only a failure limit, never a delay the test depends on.
+ * Two properties on purpose:
+ *
+ * 1. **Deterministic.** No step trusts that one `waitForIdle()` was enough. After every action the test waits for the
+ *    state it expects and idles Robolectric's main looper as well (state that arrives from another thread resumes
+ *    there). Clicks are the node's own click action, not a touch at coordinates: a home screen whose layout changes a
+ *    moment after it appears (a badge that pops in after an asynchronous read) would send a coordinate click to the
+ *    wrong place. After `recreate()` the test waits for the NEW activity, and Back is only pressed once the host's back
+ *    callback is enabled (with none enabled the dispatcher finishes the activity, as a Back on Home does). The limits
+ *    are only failure bounds, never a delay the test depends on.
+ * 2. **Shell-agnostic.** The home marker is either the old home's Open button (`open`) or the new "Now" page's stats
+ *    grid (`home_stats`); the feature header is either the frame's (`feature_title`) or the shell's (`shell_top_title`);
+ *    the visible way home is the frame's Back button when there is one, else the shell's menu then Now. So the same
+ *    file passes before and after the app shell lands and covers both.
  */
 @RunWith(AndroidJUnit4::class)
 class FeatureNavigationTest {
@@ -41,79 +49,51 @@ class FeatureNavigationTest {
 
     private fun count(tag: String) = compose.onAllNodesWithTag(tag).fetchSemanticsNodes().size
 
-    /**
-     * Waits until exactly [n] nodes carry [tag]. Idles Robolectric's main looper as well as Compose, because state that
-     * arrives from another thread (for example the What's new badge, read on `Dispatchers.IO`) resumes on that looper.
-     * The limit is only a failure bound.
-     */
-    private fun await(tag: String, n: Int) {
+    private fun homeShown() = HOME_MARKERS.sumOf { count(it) } >= 1
+
+    private fun headerCount() = HEADER_TAGS.sumOf { count(it) }
+
+    /** Idles the looper and Compose until [done] holds, or fails with [what] after the limit. */
+    private fun until(what: String, done: () -> Boolean) {
         val end = System.currentTimeMillis() + LIMIT_MS
         while (true) {
             shadowOf(Looper.getMainLooper()).idle()
             compose.waitForIdle()
-            if (count(tag) == n) return
-            if (System.currentTimeMillis() > end) throw AssertionError("expected $n node(s) tagged '$tag' but found ${count(tag)}")
+            if (done()) return
+            if (System.currentTimeMillis() > end) throw AssertionError("timed out waiting for: $what")
             Thread.sleep(5)
         }
     }
 
-    private fun awaitHome() { await(HomeTags.OPEN, 1); await(FRAME_TITLE, 0) }
+    private fun awaitHome() = until("the home screen") { homeShown() && headerCount() == 0 }
 
-    private fun awaitFeatureScreen() { await(HomeTags.OPEN, 0); await(FRAME_TITLE, 1) }
+    private fun awaitFeatureScreen() = until("a feature screen with one header") { !homeShown() && headerCount() == 1 }
 
-    /**
-     * Opens a feature. The click is the node's own click action, not a touch at coordinates: a home screen whose layout
-     * changes a moment after it appears (a badge that pops in after an asynchronous read resizes a button and moves the
-     * ones below) would otherwise send a coordinate click to the wrong place. That shift is reported separately
-     * (docs/qa/reviews/2026-11-09-app-*). The button must still be on screen: that is asserted just before.
-     */
     private fun open(f: Feature) {
-        settle()
+        // Let pending main-looper work finish so the home screen is in its final layout, then click the node's own action.
+        repeat(5) { shadowOf(Looper.getMainLooper()).idle(); compose.waitForIdle() }
         compose.onNodeWithTag(tag(f)).performScrollTo().assertIsDisplayed().performSemanticsAction(SemanticsActions.OnClick)
         awaitFeatureScreen()
     }
 
-    /** Lets pending work on the main looper finish so the home screen is in its final layout. */
-    private fun settle() {
-        repeat(5) { shadowOf(Looper.getMainLooper()).idle(); compose.waitForIdle() }
-    }
+    private fun click(tag: String) = compose.onNodeWithTag(tag).performSemanticsAction(SemanticsActions.OnClick)
 
-    /**
-     * Presses Back once the screen can take it. With no enabled back callback the dispatcher finishes the activity,
-     * which is what a Back on Home does: so the test never presses Back until the host's own handler is registered
-     * (it is not, for an instant, in a freshly recreated activity), or the press would close the app and the test
-     * would wait for a Home that no longer exists.
-     */
+    /** Presses system Back once the screen can take it (see the class comment), then waits for Home. */
     private fun back() {
-        val end = System.currentTimeMillis() + LIMIT_MS
-        while (true) {
-            shadowOf(Looper.getMainLooper()).idle()
-            compose.waitForIdle()
+        until("an enabled back callback") {
             var ready = false
             compose.runOnUiThread { ready = compose.activity.onBackPressedDispatcher.hasEnabledCallbacks() }
-            if (ready) break
-            if (System.currentTimeMillis() > end) throw AssertionError("no back callback is enabled on the feature screen")
-            Thread.sleep(5)
+            ready
         }
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         awaitHome()
     }
 
-    /**
-     * Recreates the activity (what a rotation does) and waits for the NEW activity: right after `recreate()` the old
-     * activity's tree can still be registered, so "exactly one title" alone could be satisfied by the old screen.
-     */
+    /** Recreates the activity (what a rotation does) and waits for the NEW one: the old tree can stay registered for an instant. */
     private fun rotate() {
         val old = compose.activity
         compose.activityRule.scenario.recreate()
-        val end = System.currentTimeMillis() + LIMIT_MS
-        while (compose.activity === old) {
-            shadowOf(Looper.getMainLooper()).idle()
-            compose.waitForIdle()
-            if (System.currentTimeMillis() > end) throw AssertionError("the activity was not recreated")
-            Thread.sleep(5)
-        }
-        compose.waitForIdle()
+        until("a recreated activity") { compose.activity !== old }
     }
 
     @Test fun everyEnabledFeatureOpensFromHomeAndBackReturns() {
@@ -121,17 +101,22 @@ class FeatureNavigationTest {
         for (f in enabled) {
             open(f)
             back()
-            compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
         }
     }
 
-    /** The host's visible Back button (FeatureFrame): needed in stand mode, where the back gesture may be pinned off. */
-    @Test fun frameBackButtonReturnsHomeAndTitleShowsOnce() {
+    /** The visible way home: the frame's Back button on the old shell, the menu then Now on the new one. One header only. */
+    @Test fun theVisibleWayHomeWorksAndTheHeaderShowsOnce() {
         awaitHome()
         for (f in enabled) {
             open(f)
-            compose.onNodeWithTag(FRAME_TITLE).assertIsDisplayed()
-            compose.onNodeWithTag(FRAME_BACK).assertIsDisplayed().performSemanticsAction(SemanticsActions.OnClick)
+            assertEquals("exactly one header on a feature screen", 1, headerCount())
+            if (count("feature_back") > 0) {
+                click("feature_back")
+            } else {
+                click("shell_menu")
+                until("the navigation menu") { count("nav_home") >= 1 }
+                click("nav_home")
+            }
             awaitHome()
         }
     }
@@ -169,8 +154,8 @@ class FeatureNavigationTest {
     }
 
     private companion object {
-        const val FRAME_TITLE = "feature_title"
-        const val FRAME_BACK = "feature_back"
+        val HOME_MARKERS = listOf("open", "home_stats")
+        val HEADER_TAGS = listOf("feature_title", "shell_top_title")
         const val LIMIT_MS = 15_000L
     }
 }
