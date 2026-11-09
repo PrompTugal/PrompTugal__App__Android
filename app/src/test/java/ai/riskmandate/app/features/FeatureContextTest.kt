@@ -139,3 +139,24 @@ class FeatureContextOpenFeatureTest {
         org.junit.Assert.assertEquals(listOf("models"), asked)
     }
 }
+
+/** FeatureContext.llm: optional, null by default; a feature reaches the service only through it. */
+@RunWith(AndroidJUnit4::class)
+class FeatureContextLlmTest {
+    private val device = DeviceStatus.from(hasDeviceOwner = false, inWorkProfile = false, label = null)
+
+    @Test fun llmIsNullByDefault() {
+        val context = FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = device)
+        org.junit.Assert.assertNull(context.llm)
+    }
+
+    @Test fun aFeatureSeesTheServiceItIsGiven() = kotlinx.coroutines.runBlocking {
+        val fake = ai.riskmandate.app.llm.FakeLlmService(reply = { ai.riskmandate.app.llm.FakeReply("ok") })
+        val context = FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = device, llm = fake)
+        val result = context.llm!!.generate(
+            ai.riskmandate.app.llm.LlmRequest(listOf(ai.riskmandate.app.llm.LlmMessage.user("hi"))),
+        )
+        org.junit.Assert.assertEquals("ok", result.text)
+        org.junit.Assert.assertNull(result.error)
+    }
+}
