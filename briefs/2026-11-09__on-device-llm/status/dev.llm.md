@@ -8,6 +8,7 @@ Workbench (brief `briefs/2026-11-09__on-device-llm/workbench.md`, Dinis 9 Nov ~1
 ## R-wb-8 and R-wb-10 (low): cloud sweeps and the cloud choice
 - R-wb-8: on the cloud, Experiments shows "these N runs cost at most US$x" before Start (sum of CloudLlmService.worstCaseMicros per run; "cannot be estimated" if any run cannot be priced). A run ending with CAP_REACHED ends the sweep at once as "Stopped: the cloud spending cap was reached" (ExperimentStop.CLOUD_CAP), not as three failures.
 - R-wb-10: the cloud choice is never saved or restored (RunForm.save writes false, restore ignores it) and resets whenever the cloud service changes or goes away, so every cloud run follows a fresh choice.
+- Follow-up (security note): `LlmService.maxCostMicros(request)` (default null) so the Workbench can read the worst case without `as? CloudLlmService`. dev.chat overrides it in CloudLlmService with worstCaseMicros; the Workbench switches to it once that is on dev.
 - Tested: cost line shown only on the cloud, with the right total; the cap stop after the run that hit it; restore never gives cloud; the choice resets when the cloud service goes and returns.
 
 ## R-llm-14: Model setup's privacy line follows cloudOn
