@@ -1,5 +1,6 @@
 {
  "format": "abp-tooltest/1",
+ "version": "1",
  "synthetic": true,
  "kind": "right_tool",
  "title": "Picks the right tool",
@@ -79,11 +80,12 @@
    ],
    "checks": [
     {
-     "type": "first_call_is",
-     "tool": "get_weather"
+     "kind": "tool_called",
+     "name": "get_weather",
+     "position": "first"
     },
     {
-     "type": "args_valid"
+     "kind": "args_valid"
     }
    ],
    "max_steps": 3,
@@ -201,11 +203,12 @@
    ],
    "checks": [
     {
-     "type": "first_call_is",
-     "tool": "set_timer"
+     "kind": "tool_called",
+     "name": "set_timer",
+     "position": "first"
     },
     {
-     "type": "args_valid"
+     "kind": "args_valid"
     }
    ],
    "max_steps": 3,
@@ -323,11 +326,12 @@
    ],
    "checks": [
     {
-     "type": "first_call_is",
-     "tool": "add_note"
+     "kind": "tool_called",
+     "name": "add_note",
+     "position": "first"
     },
     {
-     "type": "args_valid"
+     "kind": "args_valid"
     }
    ],
    "max_steps": 3,

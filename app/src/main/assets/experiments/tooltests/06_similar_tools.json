@@ -1,5 +1,6 @@
 {
  "format": "abp-tooltest/1",
+ "version": "1",
  "synthetic": true,
  "kind": "similar_tools",
  "title": "Chooses between similar tools",
@@ -70,11 +71,12 @@
    ],
    "checks": [
     {
-     "type": "first_call_is",
-     "tool": "search_notes"
+     "kind": "tool_called",
+     "name": "search_notes",
+     "position": "first"
     },
     {
-     "type": "args_valid"
+     "kind": "args_valid"
     }
    ],
    "max_steps": 3,
@@ -181,11 +183,12 @@
    ],
    "checks": [
     {
-     "type": "first_call_is",
-     "tool": "list_notes"
+     "kind": "tool_called",
+     "name": "list_notes",
+     "position": "first"
     },
     {
-     "type": "args_valid"
+     "kind": "args_valid"
     }
    ],
    "max_steps": 3,
