@@ -2,7 +2,6 @@ package ai.riskmandate.app.features
 
 import ai.riskmandate.app.DeviceStatus
 import ai.riskmandate.app.ManagedConfig
-import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -48,18 +47,7 @@ class FeatureContext(
      * The default does nothing, for previews and tests.
      */
     val holdIdle: () -> () -> Unit = { {} },
-) {
-    /**
-     * Transitional, for the host only, so MainActivity keeps compiling until app.android passes
-     * the host's own values (`remember(config, device) { FeatureContext(goHome, config, device) }`).
-     * Features never call this.
-     */
-    @Deprecated("Host only: pass the host's config and device instead.")
-    constructor(activity: ComponentActivity, onBack: () -> Unit) : this(onBack, ManagedConfig.read(activity), activity)
-
-    private constructor(onBack: () -> Unit, config: ManagedConfig, activity: ComponentActivity) :
-        this(onBack, config, DeviceStatus.detect(activity, config.deviceLabel))
-}
+)
 
 /**
  * Keeps stand mode's idle reset off while [active] is true, and releases it when [active] turns false

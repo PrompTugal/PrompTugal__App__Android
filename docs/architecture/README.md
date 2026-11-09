@@ -86,7 +86,7 @@ No new dependency without the architect's OK (in your status page, then in a rev
 - Mandate (C) states what this app collects. If the site's pages load third-party resources, that statement must say so or site must block them: site and mandate agree the sentence, security checks it.
 
 ## `FeatureContext` history
-- **9 Nov, v2 (architect):** `activity` removed; `config` and `device` added (P1); `onBack` kept and means "go home" (P2). A deprecated `FeatureContext(activity, onBack)` constructor stays only so `MainActivity` compiles until app.android passes its own values, built with `remember(config, device)` (P3); then it is deleted.
+- **9 Nov, v2 (architect):** `activity` removed; `config` and `device` added (P1); `onBack` kept and means "go home" (P2). The transitional `FeatureContext(activity, onBack)` constructor was deleted once app passed its own values (`remember(config, device)`, P3; app f317cf8).
 - **P4 closed:** stand's switch is the long-press corner inside StandHost, shown on Home only.
 - **9 Nov, v3 (architect, approved by the conductor):** `holdIdle: () -> () -> Unit` (default no-op), `FeatureContext.HoldIdleWhile(active)` and the host-side `IdleHolds`. Wiring:
   - app (MainActivity): `val idle = remember { IdleHolds() }`; `FeatureContext(..., holdIdle = idle::hold)`; `StandHost(..., idleHeld = idle.held)`; `LaunchedEffect(route) { idle.clear() }` as a safety net.
