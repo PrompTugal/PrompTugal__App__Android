@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 49 (9 Nov 2026): app b47f17d PASS (llm reaches features through the host context; R-app-1 info), icon removals dev.releases 873dd24, dev.mandate e8823da and dev.lab 592cfac PASS, qa 622ac41 PASS. Still to read: the design-pass article when it moves, chat and lab live heads when they push. Waiting for the next wake.
+> Round 50 (9 Nov 2026): dev.chat 62f2798 PASS (checklist H met on the real path), dev.llm 5a1e858 PASS; work/app still b47f17d. Still to read: the design-pass article when it moves, the Lab live head when it pushes. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
