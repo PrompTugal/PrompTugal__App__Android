@@ -94,6 +94,7 @@ No new dependency without the architect's OK (in your status page, then in a rev
   - abpdemo: `context.HoldIdleWhile(auto)` in `Content`.
 - **9 Nov, P6 (architect, approved by the conductor):** `@Composable @StringRes fun homeBadge(): Int? = null` on `Feature`. The home screen asks every enabled feature for a badge and shows it on the button; the host never imports a feature package (releases' "New" after an update uses it). Disk reads inside it go off the main thread. The host must not call into a feature package for anything else either (`ReleasesNotice`, `StandSettings`, ...); `StandHost` is the one sanctioned host entry point into `features/stand/`.
 - **9 Nov, P7 (architect, approved by the conductor):** `icon: ImageVector?`, `@StringRes kicker: Int?`, `@StringRes summary: Int?` on `Feature`, all null by default, for the shell's sidebar and Home cards. Each feature fills its own (strings in its `feature_<id>.xml`, en and pt-PT); icons from `material-icons-core` or drawn in the feature, never `material-icons-extended`.
+- **9 Nov, `openFeature(id: String)` (architect, asked by the conductor):** a host-owned request to open another feature by its id (chat's no-model state opens `models`). Default no-op. The host ignores unknown or disabled ids and may refuse, for example in stand mode. Features name each other only by id string, never by package; ids are stable and tested (lowercase, unique).
 - Anything else a feature needs from the host: ask (above). A new field needs a reason and a test.
 
 ## On-device LLM (side team: dev.llm, dev.chat, dev.lab, eval; brief `briefs/2026-11-09__on-device-llm/`)
@@ -107,21 +108,16 @@ No new dependency without the architect's OK (in your status page, then in a rev
 - It unloads the model on `onTrimMemory` (background or critical) and after a few idle minutes, and reloads on the next request. Features see a "loading model" state, never a crash.
 - One request at a time: the service serialises (a `Mutex`). The Lab's "two paths at once" interleaves the two paths on one loaded model; it never loads a second copy.
 
-### The contract (shape I expect from dev.llm; adjust names, keep the shape)
-```kotlin
-interface LlmService {
-    val state: StateFlow<LlmState>                 // NoModel, Loading, Ready(modelId), Failed(reason)
-    val installed: StateFlow<List<InstalledModel>> // id, displayName (chat's model picker)
-    fun stream(request: LlmRequest): Flow<LlmEvent> // Token(text), ToolCallProposed(name, argsJson), Done(stats), Error
-    suspend fun generate(request: LlmRequest): LlmResult = /* collects stream */
-}
-data class LlmRequest(val modelId: String? = null /* null: the current model */, val system: String? = null,
-                      val messages: List<LlmMessage>, val tools: List<ToolSpec> = emptyList(),
-                      val settings: Sampling = Sampling.DEFAULT, val maxTokens: Int = 512)
-```
+### The contract (as built by dev.llm, step 2; `llm/LlmService.kt`)
+- `state: StateFlow<LlmState>`: NoModel, Idle(modelId), Loading(modelId), Ready(modelId, backend), Failed(modelId?, reason).
+- `stream(LlmRequest): Flow<LlmEvent>`, cold, ending with exactly one Done(stats) or Error(LlmError, message); `generate(request)` collects it. Events: Token(text), ToolCallProposed(name, argsJson), Done, Error.
+- `LlmRequest(messages, tools: List<ToolSpec>, settings: Sampling, maxTokens)`; system prompts are `LlmRole.SYSTEM` messages. Each request is a fresh runtime conversation: send the whole history each time.
+- Tool proposals are checked with `checkToolCall(tools, call)` / `ToolSpec.check(argsJson)` (strict flat JSON through `StrictJson`): use these, do not write another validator.
+- No `installed` list and no `modelId` or `system` on `LlmRequest` (conductor ruling on A-llm-12, 9 Nov): feature G owns the model choice; chat and other features show the active model read-only from `Ready(modelId, backend)` and send system prompts as `LlmRole.SYSTEM` messages.
+- **One strict JSON parser in the app: `llm/StrictJson` (dev.llm owns it).** Ruling of 9 Nov: dev.llm's stays, because every feature will use it; `features/lab/StrictJson.kt` goes. Lab's parser is the more general one (nested values, depth cap, `render`), so dev.llm takes over its general `parse(text, maxChars, maxDepth)` and `render` into `llm/StrictJson` (tests included), and `parseFlatObject` (tool arguments) is built on it. Lab keeps only Lab-specific helpers (`hash16`, `parseAt` for its text tool protocol) as functions over `llm/StrictJson`, and checks every proposal with `checkToolCall`. Fix forward, after dev.llm's contract is on dev.
 - Cancellation is coroutine cancellation (the screen's scope ends, or Stop cancels the collecting job). No separate `cancel()` needed.
 - Inference runs on the service's own dispatcher; every call is main-safe.
-- `FeatureContext` gains `llm: LlmService? = null` (no feature-owned CompositionLocal for the model; the host must not import a feature package to provide one): null when no model is installed or the host has no service yet. A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
+- `FeatureContext` gains `llm: LlmService? = null` (no feature-owned CompositionLocal for the model; the host must not import a feature package to provide one): null when the host has no service (state NoModel covers "no model installed"). A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
 
 ### Tool calls: the model proposes, code decides
 - The service **never executes** anything. It returns `ToolCallProposed(name, argsJson)`.
