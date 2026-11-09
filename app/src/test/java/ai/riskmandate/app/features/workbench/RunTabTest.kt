@@ -5,7 +5,7 @@ import ai.riskmandate.app.ManagedConfig
 import ai.riskmandate.app.Management
 import ai.riskmandate.app.RiskMandateTheme
 import ai.riskmandate.app.features.FeatureContext
-import ai.riskmandate.app.llm.BenchBackend
+import ai.riskmandate.app.llm.BackendPreference
 import ai.riskmandate.app.llm.FakeLlmService
 import ai.riskmandate.app.llm.FakeReply
 import ai.riskmandate.app.llm.LlmRunner
@@ -43,7 +43,7 @@ class RunTabTest {
     @get:Rule val compose = createComposeRule()
     private val app: Application = ApplicationProvider.getApplicationContext()
 
-    private fun show(fake: FakeLlmService?, selected: MutableList<Pair<String?, BenchBackend?>> = mutableListOf(), records: MutableList<RunRecord> = mutableListOf()) =
+    private fun show(fake: FakeLlmService?, records: MutableList<RunRecord> = mutableListOf(), opened: MutableList<Unit> = mutableListOf()) =
         compose.setContent {
             RiskMandateTheme {
                 ai.riskmandate.app.ui.FeatureContent {
@@ -51,8 +51,9 @@ class RunTabTest {
                 var last by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<RunRecord?>(null) }
                 RunTab(
                     form = form, onForm = { form = it }, last = last, onLast = { last = it },
-                    runner = fake?.let { LlmRunner(it, select = { m, b -> selected += m to b }) },
-                    models = listOf(ModelCatalog.GEMMA4_E2B, ModelCatalog.GEMMA4_E4B),
+                    runner = fake?.let { LlmRunner(it) },
+                    activeModel = if (fake == null) null else "gemma4e2b (GPU)",
+                    onOpenModels = { opened += Unit },
                     presets = WORKBENCH_PRESETS,
                     toolSets = emptyList(),
                     onRecord = { records += it },
@@ -90,20 +91,25 @@ class RunTabTest {
     }
 
     @Test fun aRunUsesTheSettingsShowsFiguresAndCanBeCopiedAndRepeated() {
-        val sel = mutableListOf<Pair<String?, BenchBackend?>>()
         val records = mutableListOf<RunRecord>()
+        val opened = mutableListOf<Unit>()
         val fake = FakeLlmService { FakeReply("Two short words.") }
-        show(fake, sel, records)
-        compose.onNodeWithTag(RunTags.model(ModelCatalog.GEMMA4_E4B.id)).performClick()
+        show(fake, records, opened)
+        compose.onNodeWithTag(RunTags.MODEL).assertTextContains("gemma4e2b (GPU)")
+        compose.onNodeWithTag(RunTags.OPEN_MODELS).performClick()
+        assertEquals(1, opened.size)
         compose.onNodeWithTag(RunTags.backend("CPU")).performClick()
+        compose.onNodeWithTag(RunTags.COLD).performClick()
         compose.onNodeWithTag(RunTags.systemPreset(1)).performScrollTo().performClick()
         compose.onNodeWithTag(RunTags.PROMPT).performScrollTo().performTextInput("Say two words")
         compose.onNodeWithTag(RunTags.TOP_K).performScrollTo().performTextClearance()
         compose.onNodeWithTag(RunTags.TOP_K).performTextInput("1")
         compose.onNodeWithTag(RunTags.RUN).performScrollTo().performClick()
         waitFor(RunTags.COPY)
-        assertEquals(ModelCatalog.GEMMA4_E4B.id to BenchBackend.CPU, sel.single())
         val req = fake.requests.single()
+        assertEquals(BackendPreference.CPU, req.backend)
+        assertEquals(1, fake.unloads)
+        compose.onNodeWithTag(RunTags.DONE).assertTextContains("Done. 3 tokens", substring = true)
         assertEquals(1, req.settings.topK)
         assertEquals("You are a helpful assistant. Answer briefly and plainly.", req.messages.first().text)
         compose.onNodeWithTag(RunTags.ANSWER).assertTextContains("Two short words.")
@@ -130,8 +136,18 @@ class RunTabTest {
         waitFor(RunTags.STOP)
         compose.onNodeWithTag(RunTags.STOP).performScrollTo().performClick()
         waitFor(RunTags.REPORT)
-        assertEquals(LlmStopReason.STOPPED, records.single().stopReason)
-        compose.onNodeWithTag(RunTags.REPORT).assertTextContains("Stop: stopped", substring = true)
+        assertEquals(LlmStopReason.CANCELLED, records.single().stopReason)
+        compose.onNodeWithTag(RunTags.REPORT).assertTextContains("Stop: cancelled", substring = true)
+    }
+
+    @Test fun promptsAreCappedAt2000Characters() {
+        show(FakeLlmService())
+        compose.onNodeWithTag(RunTags.PROMPT).performTextInput("x".repeat(2_100))
+        compose.onNodeWithTag(RunTags.PROMPT).assertTextContains("x".repeat(2_000))
+        val f = RunForm.restore(RunForm.save(RunForm(prompt = "y".repeat(3_000), backend = "NPU", toolSet = 999)))
+        assertEquals(2_000, f.prompt.length)
+        assertEquals("AUTO", f.backend)
+        assertEquals(50, f.toolSet)
     }
 
     @Test fun theFeatureIsOffAndShowsTheRunTab() {

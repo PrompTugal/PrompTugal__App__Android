@@ -55,7 +55,7 @@ data class LogEntry(
             val s = r.stats
             return LogEntry(
                 startedAtMs = r.startedAtMs, label = label.take(40),
-                model = s?.modelId ?: r.settings.modelId ?: "-", backend = s?.backend ?: (r.settings.backend?.name ?: "-"),
+                model = s?.modelId ?: "-", backend = s?.backend ?: r.settings.backend.name.lowercase(),
                 fellBack = s?.fellBackToCpu == true,
                 temperature = r.settings.sampling.temperature, topK = r.settings.sampling.topK.toLong(), topP = r.settings.sampling.topP,
                 maxTokens = r.settings.maxTokens.toLong(), systemChars = r.settings.systemPrompt.length.toLong(), tools = r.settings.tools.size.toLong(),

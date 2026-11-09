@@ -29,7 +29,7 @@ class RunLogTest {
     }
 
     @Test fun promptAndAnswerAreKeptShort() {
-        val e = entry(prompt = "p".repeat(5000), answer = "a ".repeat(2000))
+        val e = entry(prompt = "p".repeat(2000), answer = "a ".repeat(2000))
         assertEquals(LogEntry.PROMPT_CHARS, e.prompt.length)
         assertEquals(LogEntry.ANSWER_CHARS, e.answer.length)
     }
