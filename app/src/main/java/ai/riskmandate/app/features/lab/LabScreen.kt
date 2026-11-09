@@ -32,11 +32,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -74,6 +77,30 @@ object LabTags {
     const val OPEN_MODELS = "lab_open_models"
     const val INJECT = "lab_inject"
     const val RUN_ERROR = "lab_run_error"
+    const val MODE_INTERACTIVE = "lab_mode_interactive"
+    const val MODE_LOOP = "lab_mode_loop"
+    const val SETTINGS_BUTTON = "lab_settings_button"
+    const val SETTINGS = "lab_settings"
+    const val TEMPERATURE = "lab_temperature"
+    const val TOP_P = "lab_top_p"
+    const val SEED = "lab_seed"
+    const val RECORDED = "lab_recorded"
+    const val NOT_RECORDED = "lab_not_recorded"
+    const val EXPORT = "lab_export"
+    const val LOOP_RUN = "lab_loop_run"
+    const val LOOP_STOP = "lab_loop_stop"
+    const val LOOP_MINUS = "lab_loop_minus"
+    const val LOOP_PLUS = "lab_loop_plus"
+    const val LOOP_RUNS = "lab_loop_runs"
+    const val LOOP_PROGRESS = "lab_loop_progress"
+    const val COUNTERS = "lab_counters"
+    const val STAT_FAILED = "lab_stat_failed"
+    const val STAT_CAUGHT = "lab_stat_caught"
+    const val STAT_HEADLINE = "lab_stat_headline"
+    const val STAT_UNFINISHED = "lab_stat_unfinished"
+    const val SMALL_SAMPLE = "lab_small_sample"
+    const val STOP_REASON = "lab_stop_reason"
+    const val LIMIT = "lab_limit"
     fun scenario(id: String) = "lab_scenario_$id"
 }
 
@@ -94,6 +121,8 @@ fun LabScreen(
     network: NetworkState? = null,
     llm: LlmService? = null,
     openFeature: (String) -> Unit = {},
+    onBusy: (Boolean) -> Unit = {},
+    onExport: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val reduce = rememberReduceMotion()
@@ -112,7 +141,7 @@ fun LabScreen(
             return@FeatureContent
         }
         if (lab.problems.isNotEmpty()) Text(stringResource(R.string.lab_problems, lab.problems.size), Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodyMedium)
-        LabBody(lab, initialScenario, network ?: remember { NetworkReader.read(context) }, reduce, llm, openFeature)
+        LabBody(lab, initialScenario, network ?: remember { NetworkReader.read(context) }, reduce, llm, openFeature, onBusy, onExport)
     }
 }
 
@@ -129,10 +158,33 @@ private class LiveState {
     var job: Job? = null
 }
 
+/** Loop mode's state: the counters so far and how it ended. Compose state, dropped when the scenario changes. */
+private class LoopState {
+    var counters by mutableStateOf<LoopCounters?>(null)
+    var outcome by mutableStateOf<LoopRunner.Outcome?>(null)
+    var running by mutableStateOf(false)
+    var stop by mutableStateOf<StopReason?>(null)
+    var progress by mutableIntStateOf(1)
+    @Volatile var stopRequested = false
+}
+
+/**
+ * Rotation recreates the Activity: the counters of a finished loop must survive it, and a loop that was running
+ * is marked stopped because the screen was turned, keeping its counts (QA Q-loop-1). Saved as a checked string.
+ */
+private val loopSaver: Saver<LoopState, String> = Saver(
+    save = { LoopCountersCodec.encode(it.counters, if (it.running) StopReason.INTERRUPTED else it.stop) },
+    restore = { text -> LoopCountersCodec.decode(text)?.let { (c, stop) -> LoopState().also { st -> st.counters = c; st.stop = stop } } },
+)
+
 private enum class Source { NONE, LIVE, REPLAY }
 
 @Composable
-private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, reduce: Boolean, llm: LlmService?, openFeature: (String) -> Unit) {
+private fun LabBody(
+    lab: LabData, initialScenario: String?, net: NetworkState, reduce: Boolean, llm: LlmService?, openFeature: (String) -> Unit,
+    onBusy: (Boolean) -> Unit, onExport: ((String) -> Unit)?,
+) {
+    val context = LocalContext.current
     var scenarioId by rememberSaveable { mutableStateOf(initialScenario ?: lab.scenarios.first().id) }
     val scenario = lab.scenario(scenarioId) ?: lab.scenarios.first()
     val recording = lab.recordingsFor(scenario.id).firstOrNull()
@@ -142,8 +194,27 @@ private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, r
     var shown by remember(scenario.id) { mutableIntStateOf(0) }
     var typed by rememberSaveable { mutableStateOf("") }
     val st = remember(scenario.id) { LiveState() }
+    val loop = rememberSaveable(scenario.id, saver = loopSaver) { LoopState() }
     DisposableEffect(st) { onDispose { st.job?.cancel() } }
     val scope = rememberCoroutineScope()
+    var modeName by rememberSaveable { mutableStateOf("interactive") }
+    var settingsOpen by rememberSaveable { mutableStateOf(false) }
+    var temperature by rememberSaveable { mutableStateOf(SamplingChoice().temperature) }
+    var topP by rememberSaveable { mutableStateOf(SamplingChoice().topP) }
+    var seedText by rememberSaveable { mutableStateOf("") }
+    var loopRuns by rememberSaveable { mutableIntStateOf(LoopRunner.DEFAULT_RUNS) }
+    val choice = SamplingChoice(temperature, topP, seedText)
+    val recorded = recording?.settings?.let(RecordedSettings::of)
+
+    // A loop or a live run keeps the screen on and holds stand mode's idle reset off while it runs.
+    val busy = st.running || loop.running
+    val view = LocalView.current
+    DisposableEffect(busy) {
+        if (busy) view.keepScreenOn = true
+        onDispose { if (busy) view.keepScreenOn = false }
+    }
+    LaunchedEffect(busy) { onBusy(busy) }
+    DisposableEffect(Unit) { onDispose { onBusy(false) } }
 
     val llmState = llm?.state?.collectAsState()?.value
     val liveReady = llm != null && (llmState is LlmState.Ready || llmState is LlmState.Idle)
@@ -166,13 +237,14 @@ private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, r
         val l = llm ?: return
         st.job?.cancel()
         val sc = LiveRunner.withInjected(scenario, typed)
+        val settings = choice.toSettings()
         st.scenario = sc; st.raw = null; st.abp = null; st.rawDone = false; st.abpDone = false; st.error = null; st.running = true; st.model = null
         sourceName = Source.LIVE.name
         st.job = scope.launch {
             try {
                 coroutineScope {
-                    val a = async { LiveRunner.runPath(l, sc, abp = false) { st.raw = it } }
-                    val b = async { LiveRunner.runPath(l, sc, abp = true) { st.abp = it } }
+                    val a = async { LiveRunner.runPath(l, sc, abp = false, settings = settings) { st.raw = it } }
+                    val b = async { LiveRunner.runPath(l, sc, abp = true, settings = settings) { st.abp = it } }
                     for ((deferred, isAbp) in listOf(a to false, b to true)) {
                         when (val r = deferred.await()) {
                             is LiveRunner.Result.Done -> {
@@ -187,6 +259,46 @@ private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, r
                 st.running = false
             }
         }
+    }
+
+    fun startLoop() {
+        val l = llm ?: return
+        st.job?.cancel()
+        val sc = LiveRunner.withInjected(scenario, typed)
+        val settings = choice.toSettings()
+        val seed = choice.seed
+        st.scenario = sc; st.raw = null; st.abp = null; st.rawDone = false; st.abpDone = false; st.error = null; st.running = false; st.model = null
+        loop.counters = LoopCounters(loopRuns.coerceIn(1, LoopRunner.MAX_RUNS)); loop.outcome = null; loop.stop = null; loop.stopRequested = false; loop.progress = 1; loop.running = true
+        sourceName = Source.LIVE.name
+        val guard = AndroidDeviceGuard(context)
+        st.job = scope.launch {
+            try {
+                val out = LoopRunner.run(
+                    l, sc, loopRuns, settings, seed, guard, stopRequested = { loop.stopRequested },
+                    onLane = { isAbp, rec -> if (isAbp) st.abp = rec else st.raw = rec },
+                    onRun = { rec, c ->
+                        loop.counters = c; loop.progress = c.finished + 1
+                        st.raw = rec.raw; st.abp = rec.abp; st.rawDone = true; st.abpDone = true
+                        rec.modelId?.let { st.model = listOfNotNull(it, rec.backend).joinToString(", ") }
+                    },
+                )
+                loop.outcome = out; loop.counters = out.counters; loop.stop = out.stop
+            } finally {
+                loop.running = false
+            }
+        }
+    }
+
+    fun export() {
+        val out = loop.outcome ?: return
+        val sc = st.scenario ?: scenario
+        val info = runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull()
+        @Suppress("DEPRECATION")
+        val text = LoopExport.build(
+            sc, out, java.time.Instant.now().toString(), info?.versionName ?: "unknown", info?.versionCode ?: 0,
+            device = mapOf("os" to android.os.Build.VERSION.RELEASE),
+        )
+        onExport?.invoke(text)
     }
 
     Row(
@@ -205,6 +317,7 @@ private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, r
         if (scenario.description.isNotEmpty()) Text(scenario.description, style = MaterialTheme.typography.bodyLarge)
         Labeled(R.string.lab_task_label, scenario.user)
         Labeled(R.string.lab_system_label, scenario.system)
+        limitNote(scenario)?.let { Text(stringResource(it), Modifier.testTag(LabTags.LIMIT), style = MaterialTheme.typography.bodyMedium) }
     }
 
     if (scenario.failure.type == FailureType.CLAIMS_REMOTE) {
@@ -214,6 +327,22 @@ private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, r
             Text(stringResource(R.string.lab_net_note), style = MaterialTheme.typography.bodyMedium)
         }
     }
+
+    Row(Modifier.padding(top = UiTokens.Gap), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (liveReady) {
+            val interactive = modeName != "loop"
+            val a = Modifier.heightIn(min = 56.dp)
+            if (interactive) Button({ modeName = "interactive" }, a.testTag(LabTags.MODE_INTERACTIVE)) { Text(stringResource(R.string.lab_mode_interactive), fontSize = 20.sp) }
+            else OutlinedButton({ modeName = "interactive" }, a.testTag(LabTags.MODE_INTERACTIVE)) { Text(stringResource(R.string.lab_mode_interactive), fontSize = 20.sp) }
+            if (!interactive) Button({ modeName = "loop" }, a.testTag(LabTags.MODE_LOOP)) { Text(stringResource(R.string.lab_mode_loop), fontSize = 20.sp) }
+            else OutlinedButton({ modeName = "loop" }, a.testTag(LabTags.MODE_LOOP)) { Text(stringResource(R.string.lab_mode_loop), fontSize = 20.sp) }
+        }
+        OutlinedButton({ settingsOpen = !settingsOpen }, Modifier.heightIn(min = 56.dp).testTag(LabTags.SETTINGS_BUTTON)) {
+            Text(stringResource(if (settingsOpen) R.string.lab_settings_hide else R.string.lab_settings), fontSize = 20.sp)
+        }
+        if (recorded != null && !recorded.matches(choice)) StatusChip(stringResource(R.string.lab_not_recorded), ChipKind.Held, Modifier.testTag(LabTags.NOT_RECORDED))
+    }
+    if (settingsOpen) SettingsPanel(choice, recorded, { c -> temperature = c.temperature; topP = c.topP; seedText = c.seedText }, if (onExport != null) ({ export() }) else null, loop.outcome?.records?.isNotEmpty() == true)
 
     if (liveReady) {
         OutlinedTextField(
@@ -236,7 +365,7 @@ private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, r
     }
 
     Row(Modifier.padding(vertical = UiTokens.Gap), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (liveReady) {
+        if (liveReady && modeName != "loop") {
             if (st.running) OutlinedButton({ st.job?.cancel() }, Modifier.heightIn(min = 56.dp).testTag(LabTags.LIVE_STOP)) { Text(stringResource(R.string.lab_stop), fontSize = 20.sp) }
             else Button({ startLive() }, Modifier.heightIn(min = 56.dp).testTag(LabTags.LIVE_RUN)) { Text(stringResource(R.string.lab_run), fontSize = 20.sp) }
         }
@@ -247,6 +376,13 @@ private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, r
             if (liveReady) OutlinedButton(go, modifier) { Text(label, fontSize = 20.sp) } else Button(go, modifier) { Text(label, fontSize = 20.sp) }
         }
     }
+    if (liveReady && modeName == "loop") {
+        LoopControls(
+            runs = loopRuns, onRuns = { loopRuns = it }, running = loop.running, canRun = true, onRun = { startLoop() },
+            onStop = { loop.stopRequested = true }, stopping = loop.running && loop.stopRequested,
+            progressRun = loop.progress, counters = loop.counters,
+        )
+    }
     if (recording == null && !liveReady) {
         Text(stringResource(R.string.lab_no_recording), style = MaterialTheme.typography.titleMedium)
     }
@@ -256,6 +392,8 @@ private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, r
         LinearProgressIndicator(Modifier.fillMaxWidth().padding(bottom = 8.dp))
         Text(stringResource(R.string.lab_running), Modifier.semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.titleMedium)
     }
+    val loopShown = live && modeName == "loop" && loop.counters != null
+    if (loopShown) CountersStrip(loop.counters!!, loop.stop)
     Provenance(live, recording, scenario, st.model)
     st.error?.takeIf { live }?.let { StatusChip(stringResource(R.string.lab_run_error, it), ChipKind.Blocked, Modifier.padding(vertical = 8.dp).testTag(LabTags.RUN_ERROR)) }
 
@@ -272,8 +410,8 @@ private fun LabBody(lab: LabData, initialScenario: String?, net: NetworkState, r
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(UiTokens.Gap)) { lanes(Modifier, false); lanes(Modifier, true) }
         }
-        val finished = if (live) st.rawDone && st.abpDone && st.error == null else shown >= total
-        if (finished && rawRec != null && abpRec != null) Summary(rawRec, abpRec, rawRows, abpRows)
+        val finished = if (live) st.rawDone && st.abpDone && st.error == null && !loop.running else shown >= total
+        if (finished && !loopShown && rawRec != null && abpRec != null) Summary(rawRec, abpRec, rawRows, abpRows)
     }
 }
 
@@ -358,4 +496,16 @@ internal fun transportName(t: Transport): Int = when (t) {
     Transport.CELLULAR -> R.string.lab_net_cellular
     Transport.ETHERNET -> R.string.lab_net_ethernet
     Transport.OTHER, Transport.NONE -> R.string.lab_net_other
+}
+
+/**
+ * What the check in this scenario can and cannot see, in one line, so a number is never read as more than it
+ * is (QA Q-lab-1, Q-lab-2). Computed from the scenario's own rules and failure type.
+ */
+@androidx.annotation.StringRes
+internal fun limitNote(s: Scenario): Int? = when {
+    s.policy.rules.any { it.check == CheckType.SECRET_EGRESS } -> R.string.lab_limit_secret
+    s.failure.type == FailureType.UNSUPPORTED_CLAIM -> R.string.lab_limit_claims
+    s.policy.rules.any { it.check == CheckType.TOOL_ALLOWLIST || it.check == CheckType.READ_ONLY } -> R.string.lab_limit_fixed
+    else -> null
 }

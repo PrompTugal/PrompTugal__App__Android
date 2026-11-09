@@ -75,6 +75,25 @@ class ChatScreenTest {
     private fun tag(t: String) = compose.onNodeWithTag(t)
     private fun count(t: String) = compose.onAllNodesWithTag(t).fetchSemanticsNodes().size
 
+    /** QA's probe (Q-chat-1) as a test: a rotation (saved state restored, a new composition) keeps the open chat on screen. */
+    @Test fun rotationKeepsTheOpenConversationOnScreen() {
+        val store = MemoryChatHistoryStore()
+        val restoration = androidx.compose.ui.test.junit4.StateRestorationTester(compose)
+        restoration.setContent {
+            val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null))
+            CompositionLocalProvider(LocalChatStore provides store) { RiskMandateTheme { ChatContent(ctx, FakeChatLlm(pieces = listOf("An ", "answer."))) } }
+        }
+        compose.waitForIdle()
+        tag(ChatTags.INPUT).performTextInput("hello there")
+        tag(ChatTags.SEND).performClick()
+        compose.waitUntil(5_000) { count(ChatTags.STATS) == 1 }
+        restoration.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+        compose.waitUntil(5_000) { count(ChatTags.message(1)) == 1 }
+        assertEquals(1, count(ChatTags.message(0)))
+        compose.onNodeWithText("hello there").assertIsDisplayed()
+    }
+
     @Test fun featureStaysOffUntilItWorksOnTheTablet() {
         assertFalse(ChatFeature.enabled)
         assertTrue(FEATURES.any { it === ChatFeature })
@@ -94,6 +113,7 @@ class ChatScreenTest {
     @Test fun badgeAndNetworkChipShowWithAModel() {
         show(FakeChatLlm())
         compose.waitForIdle()
+        compose.onNodeWithText("Runs on this device").assertIsDisplayed() // never "offline" next to "Network: on"
         tag(ChatTags.BADGE).assertIsDisplayed()
         tag(ChatTags.NETWORK).assertIsDisplayed()
     }
@@ -109,6 +129,15 @@ class ChatScreenTest {
         // Markup in the output is shown literally, never rendered.
         compose.onNodeWithText("Hello <b>bold</b>").assertIsDisplayed()
         assertEquals(0, count(ChatTags.link(0))) // no allowed link in this answer
+    }
+
+    @Test fun boldMarkersAreNotShown() {
+        show(FakeChatLlm(pieces = listOf("**Portugal** is in ", "__Europe__.")))
+        compose.waitForIdle()
+        tag(ChatTags.INPUT).performTextInput("where?")
+        tag(ChatTags.SEND).performClick()
+        compose.waitUntil(5_000) { count(ChatTags.STATS) == 1 }
+        compose.onNodeWithText("Portugal is in Europe.").assertIsDisplayed()
     }
 
     @Test fun allowedLinksBecomeButtonsOthersStayText() {
@@ -186,7 +215,7 @@ class ChatScreenTest {
     fun portugueseBadge() {
         show(FakeChatLlm())
         compose.waitForIdle()
-        compose.onNodeWithText("No dispositivo, offline").assertIsDisplayed()
+        compose.onNodeWithText("Funciona neste dispositivo").assertIsDisplayed()
     }
 
     @Test fun largeFontStillReachesTheControls() {

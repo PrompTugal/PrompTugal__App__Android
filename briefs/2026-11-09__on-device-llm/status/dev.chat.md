@@ -19,6 +19,21 @@
 ## Screenshots (for Dinis)
 `ChatScreenshotTest` writes `app/build/screenshots/chat-{no-model,empty,answer}-tablet-light.png` (1280x800 dp landscape, light). The model in them is `FakeLlmService`: scripted words, and the speed line ("5000 tokens per second") is the fake's, not a device measurement.
 
+## Q-chat-1 (QA, rotation) fixed
+- The open chat's id is kept in `rememberSaveable` and reselected by `start(reopen)` when it was saved; otherwise a new empty chat opens.
+- The visitor's message is saved as soon as it is sent (no empty answer placeholder on disk); the partial answer is written from a `NonCancellable` block when the answer job ends, including when the scope is cancelled by a rotation, so it comes back marked "Stopped".
+- Tests: QA's probe is now `ChatScreenTest.rotationKeepsTheOpenConversationOnScreen`; controller tests for reopen, save-before-answer and save-on-scope-cancel.
+- Q-chat-2 (wipe on a shared stand) is still Dinis's call: `ChatPolicy.WIPE_ON_LEAVE` stays false.
+
+## Q-chat-4 and Q-chat-5 (grounding texts verbatim)
+`res/raw/feature_chat_riskmandate.txt` and `feature_chat_abp.txt` now contain only the pages' own sentences (checked by script against the bundled offline copy, v1.40.3: every sentence found, table cells joined with " | "). Removed my line "Only a boundary is a control." and my paraphrases of the barrier kinds and the inventory/finding passage, which are now the page's wording in full.
+
+## After Dinis's tablet run (build 0.1.78, E2B, about 5.5 tokens/s)
+1. Every request without a preset now carries a short base system block (`ChatPresets.BASE_SYSTEM`, about 85 tokens): this is the RiskMandate app, RiskMandate means the product at riskmandate.ai, and two sentences quoted verbatim from the bundled riskmandate.ai text. Presets keep their full grounding instead. **Not measured:** time to first token before and after; I have no tablet. The block is under 600 characters; Dinis or QA should compare TTFT with and without (dev.llm's bench reports it).
+2. Badge now "Runs on this device" (pt-PT "Funciona neste dispositivo"); the network chip stays.
+3. `PlainText.clean` drops `**` and paired `__` for display (history keeps the model's raw text). Nothing is rendered; `<b>` and markdown links still show as text.
+4. Sampling was `Sampling.DEFAULT`: temperature 1.0, top-k 64, top-p 0.95 (Gemma's recommended). Chat now asks for temperature 0.4, top-k 64, top-p 0.9 (`ChatSampling`), no seed. Easy to change in one place; the lab and eval keep their own settings.
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 

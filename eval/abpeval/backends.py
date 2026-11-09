@@ -33,6 +33,15 @@ def api_key():
     return k
 
 
+def scrub_text(text):
+    """Remove any OpenRouter key in the environment from text about to be printed."""
+    for name in ("OPEN_ROUTER_KEY", "OPENROUTER_API_KEY"):
+        k = os.environ.get(name)
+        if k:
+            text = text.replace(k, "[REDACTED]")
+    return text
+
+
 def scrub(obj, secret):
     """Replace the key in any structure we are about to write. Defence in depth: it should never appear."""
     s = json.dumps(obj, ensure_ascii=False)

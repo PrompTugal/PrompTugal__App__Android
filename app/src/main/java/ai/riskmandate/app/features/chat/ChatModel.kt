@@ -78,6 +78,20 @@ data class Preset(
     @StringRes val disabledNote: Int? = null,
 )
 
+/** The model's settings for chat. Lower than Gemma's default (temperature 1.0, top-k 64, top-p 0.95): fewer glitches and invented facts. */
+object ChatSampling {
+    const val TEMPERATURE = 0.4
+    const val TOP_K = 64
+    const val TOP_P = 0.9
+}
+
+/** Plain text for display: the markers a small model adds for bold are dropped, nothing is rendered. */
+object PlainText {
+    private val UNDERSCORES = Regex("""__(\S(?:.*?\S)?)__""")
+
+    fun clean(text: String): String = UNDERSCORES.replace(text.replace("**", ""), "$1")
+}
+
 object ChatPresets {
     val ALL: List<Preset> = listOf(
         Preset("riskmandate", R.string.chat_preset_rm_title, R.string.chat_preset_rm_prompt, PresetMode.SEND, R.raw.feature_chat_riskmandate),
@@ -86,6 +100,16 @@ object ChatPresets {
         // Needs the graph tools from the lab and eval roles. Stays off until they exist.
         Preset("triplets", R.string.chat_preset_triplets_title, R.string.chat_preset_triplets_prompt, PresetMode.SEND, null, false, R.string.chat_preset_triplets_note),
     )
+
+    /**
+     * On every request that has no preset text: who we are, in the page's own words, so "risk mandate" means the
+     * product and not the finance term. Small on purpose (prefill is slow on this chip). The two quoted sentences
+     * are verbatim from riskmandate.ai (a test checks them against the bundled text).
+     */
+    const val BASE_SYSTEM = "This is the RiskMandate app, running on this device. RiskMandate means the product at riskmandate.ai, " +
+        "not the general term. From riskmandate.ai: \"Give agents access. Not free rein.\" " +
+        "\"Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, " +
+        "what you authorised it to do, and the gap between the two.\" Answer briefly. If you do not know, say so."
 
     /** The instruction block for a grounded preset. Plain English: it is for the model, not shown. */
     fun system(groundingText: String): String =

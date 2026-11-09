@@ -42,14 +42,14 @@ class GoldenVectorsTest {
 
     @Test fun theFileIsTheFormatWeExpect() {
         assertEquals("abp-golden-vectors/1", doc["format"])
-        assertTrue("expected at least 29 vectors, found ${vectors.size}", vectors.size >= 29)
+        assertTrue("expected at least 54 vectors, found ${vectors.size}", vectors.size >= 54)
         assertTrue(vectors.all { it["kind"] == "call" || it["kind"] == "final" })
     }
 
     @Test @Suppress("UNCHECKED_CAST")
     fun everyCallVectorGetsTheExpectedVerdict() {
         val calls = vectors.filter { it["kind"] == "call" }
-        assertTrue(calls.size >= 20)
+        assertTrue(calls.size >= 45)
         for (v in calls) {
             val c = v["call"] as Map<String, Any?>
             val args = (c["arguments"] as? Map<String, Any?>).orEmpty().mapValues { it.value.toString() }

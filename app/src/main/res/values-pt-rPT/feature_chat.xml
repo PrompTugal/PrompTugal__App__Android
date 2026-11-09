@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="chat_badge">No dispositivo, offline</string>
+    <string name="chat_badge">Funciona neste dispositivo</string>
     <string name="chat_new">Nova conversa</string>
     <string name="chat_history">Histórico</string>
     <string name="chat_history_close">Voltar à conversa</string>

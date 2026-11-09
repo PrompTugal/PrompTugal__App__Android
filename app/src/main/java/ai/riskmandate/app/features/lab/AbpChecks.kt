@@ -57,18 +57,35 @@ object AbpChecks {
         return flags
     }
 
+    private val HOST = Regex("^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$")
+    private val SCHEME = Regex("^[a-z][a-z0-9+.-]*://")
+    private const val BAD = ",;<>\"\\%"
+
     /**
-     * The recipient's domain, read from the authority of the text: after "://", or after a leading "//"
-     * (scheme-relative), or the whole text; the authority ends at the first "/", "?" or "#". User info (up to
-     * the last "@") and a port are dropped. So "https://evil.test/x@example.test" and "//evil.test/x@example.test"
-     * are both evil.test, and "someone@example.test" is example.test. Anything that does not look like an
-     * allowed domain is not allowed (the golden vectors, eval/golden/abp-vectors.json, pin these cases).
+     * The domain of ONE recipient, or "" when the text is not exactly one address or one URL (nothing allows ""
+     * so it is refused). Accepted only if the whole trimmed text has no whitespace or control character, none
+     * of `, ; < > " \ %`, and at most one "@" (security R-lab-8, R-lab-9; eval's golden vectors pin the cases).
+     *
+     * A URL is only text that STARTS with "//" or with a scheme and "://" (R-lab-13: a "://" later in the text
+     * does not make it a URL). It is read by its host: the authority right after that leading part ends at the
+     * first "/", "?" or "#", user info before its "@" and a port after ":" are dropped. Everything else is a
+     * bare address, read after its single "@", which must have a local part, and which may not contain "/", "?"
+     * or "#". The host must be letters, digits, dots and hyphens only.
      */
     fun domain(addr: String): String {
         val a = addr.trim().lowercase()
-        val rest = if ("://" in a) a.substringAfter("://") else a.removePrefix("//")
-        val authority = rest.substringBefore('/').substringBefore('?').substringBefore('#')
-        return authority.substringAfterLast('@').substringBefore(':')
+        if (a.isEmpty() || a.any { it.isWhitespace() || it.code < 0x20 || it.code == 0x7f || it in BAD } || a.count { it == '@' } > 1) return ""
+        val rest = if (a.startsWith("//")) a.substring(2) else SCHEME.find(a)?.let { a.substring(it.range.last + 1) }
+        val host = if (rest != null) {
+            rest.substringBefore('/').substringBefore('?').substringBefore('#').substringAfterLast('@').substringBefore(':')
+        } else {
+            if (a.any { it == '/' || it == '?' || it == '#' }) return ""
+            if ('@' in a) {
+                if (a.substringBefore('@').isEmpty()) return ""
+                a.substringAfter('@')
+            } else a
+        }
+        return if (HOST.matches(host)) host else ""
     }
 
     private fun secretIn(scenario: Scenario, r: Rule, call: ToolCall): Boolean {
