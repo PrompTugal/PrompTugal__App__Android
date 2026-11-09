@@ -34,4 +34,26 @@ object Links {
         if (port != null && port != "443") return false
         return host.lowercase() in ALLOWED_HOSTS
     }
+
+    private const val MAX_EXTERNAL_LENGTH = 2048
+
+    /**
+     * For links the user taps inside the site view that leave riskmandate.ai (Browser.openExternal):
+     * https only, a host, no userinfo, no backslash, whitespace or control characters, no overlong URL.
+     * Any host is fine here because the system browser (not the app) loads it. Everything else
+     * (http, javascript:, intent:, file:, content:, data:, market:) is refused.
+     */
+    fun isExternalOk(url: String): Boolean {
+        val u = url.trim()
+        if (u.isEmpty() || u.length > MAX_EXTERNAL_LENGTH) return false
+        if (u.any { it == '\\' || it.isWhitespace() || it.isISOControl() }) return false
+        if (!u.regionMatches(0, PREFIX, 0, PREFIX.length, ignoreCase = true)) return false
+        val authority = u.substring(PREFIX.length).takeWhile { it != '/' && it != '?' && it != '#' }
+        if (authority.contains('@')) return false // userinfo: the real host would not be the one shown
+        if (authority.isEmpty() || authority.startsWith(':') || authority.startsWith('.')) return false
+        val host = authority.substringBefore(':')
+        val port = authority.substringAfter(':', "")
+        if (host.isEmpty() || !host.all { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it == '.' || it == '-' }) return false
+        return port.isEmpty() || port.all { it.isDigit() } && port.length <= 5
+    }
 }
