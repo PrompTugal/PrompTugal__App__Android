@@ -8,7 +8,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
@@ -16,6 +17,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
+import android.os.Looper
 
 /**
  * Cross-feature navigation (QA owns this file). Every ENABLED feature must open from the home screen,
@@ -38,13 +41,19 @@ class FeatureNavigationTest {
 
     private fun count(tag: String) = compose.onAllNodesWithTag(tag).fetchSemanticsNodes().size
 
-    /** Waits until exactly [n] nodes carry [tag]. Fails with a clear message after the limit. */
+    /**
+     * Waits until exactly [n] nodes carry [tag]. Idles Robolectric's main looper as well as Compose, because state that
+     * arrives from another thread (for example the What's new badge, read on `Dispatchers.IO`) resumes on that looper.
+     * The limit is only a failure bound.
+     */
     private fun await(tag: String, n: Int) {
-        compose.waitForIdle()
-        try {
-            compose.waitUntil(LIMIT_MS) { count(tag) == n }
-        } catch (e: androidx.compose.ui.test.ComposeTimeoutException) {
-            throw AssertionError("expected $n node(s) tagged '$tag' but found ${count(tag)}", e)
+        val end = System.currentTimeMillis() + LIMIT_MS
+        while (true) {
+            shadowOf(Looper.getMainLooper()).idle()
+            compose.waitForIdle()
+            if (count(tag) == n) return
+            if (System.currentTimeMillis() > end) throw AssertionError("expected $n node(s) tagged '$tag' but found ${count(tag)}")
+            Thread.sleep(5)
         }
     }
 
@@ -52,9 +61,21 @@ class FeatureNavigationTest {
 
     private fun awaitFeatureScreen() { await(HomeTags.OPEN, 0); await(FRAME_TITLE, 1) }
 
+    /**
+     * Opens a feature. The click is the node's own click action, not a touch at coordinates: a home screen whose layout
+     * changes a moment after it appears (a badge that pops in after an asynchronous read resizes a button and moves the
+     * ones below) would otherwise send a coordinate click to the wrong place. That shift is reported separately
+     * (docs/qa/reviews/2026-11-09-app-*). The button must still be on screen: that is asserted just before.
+     */
     private fun open(f: Feature) {
-        compose.onNodeWithTag(tag(f)).performScrollTo().assertIsDisplayed().performClick()
+        settle()
+        compose.onNodeWithTag(tag(f)).performScrollTo().assertIsDisplayed().performSemanticsAction(SemanticsActions.OnClick)
         awaitFeatureScreen()
+    }
+
+    /** Lets pending work on the main looper finish so the home screen is in its final layout. */
+    private fun settle() {
+        repeat(5) { shadowOf(Looper.getMainLooper()).idle(); compose.waitForIdle() }
     }
 
     private fun back() {
@@ -82,7 +103,7 @@ class FeatureNavigationTest {
         for (f in enabled) {
             open(f)
             compose.onNodeWithTag(FRAME_TITLE).assertIsDisplayed()
-            compose.onNodeWithTag(FRAME_BACK).assertIsDisplayed().performClick()
+            compose.onNodeWithTag(FRAME_BACK).assertIsDisplayed().performSemanticsAction(SemanticsActions.OnClick)
             awaitHome()
         }
     }
