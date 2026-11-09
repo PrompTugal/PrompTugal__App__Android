@@ -99,6 +99,7 @@ object LabTags {
     const val STAT_UNFINISHED = "lab_stat_unfinished"
     const val SMALL_SAMPLE = "lab_small_sample"
     const val STOP_REASON = "lab_stop_reason"
+    const val LIMIT = "lab_limit"
     fun scenario(id: String) = "lab_scenario_$id"
 }
 
@@ -306,6 +307,7 @@ private fun LabBody(
         if (scenario.description.isNotEmpty()) Text(scenario.description, style = MaterialTheme.typography.bodyLarge)
         Labeled(R.string.lab_task_label, scenario.user)
         Labeled(R.string.lab_system_label, scenario.system)
+        limitNote(scenario)?.let { Text(stringResource(it), Modifier.testTag(LabTags.LIMIT), style = MaterialTheme.typography.bodyMedium) }
     }
 
     if (scenario.failure.type == FailureType.CLAIMS_REMOTE) {
@@ -484,4 +486,16 @@ internal fun transportName(t: Transport): Int = when (t) {
     Transport.CELLULAR -> R.string.lab_net_cellular
     Transport.ETHERNET -> R.string.lab_net_ethernet
     Transport.OTHER, Transport.NONE -> R.string.lab_net_other
+}
+
+/**
+ * What the check in this scenario can and cannot see, in one line, so a number is never read as more than it
+ * is (QA Q-lab-1, Q-lab-2). Computed from the scenario's own rules and failure type.
+ */
+@androidx.annotation.StringRes
+internal fun limitNote(s: Scenario): Int? = when {
+    s.policy.rules.any { it.check == CheckType.SECRET_EGRESS } -> R.string.lab_limit_secret
+    s.failure.type == FailureType.UNSUPPORTED_CLAIM -> R.string.lab_limit_claims
+    s.policy.rules.any { it.check == CheckType.TOOL_ALLOWLIST || it.check == CheckType.READ_ONLY } -> R.string.lab_limit_fixed
+    else -> null
 }

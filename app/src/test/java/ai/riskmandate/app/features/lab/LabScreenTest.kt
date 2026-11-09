@@ -1,5 +1,6 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.R
 import ai.riskmandate.app.RiskMandateTheme
 import android.app.Application
 import androidx.compose.ui.test.assertIsDisplayed
@@ -222,5 +223,25 @@ class LabScreenTest {
         assertEquals(0, count(LabTags.MODE_LOOP))
         assertEquals(0, count(LabTags.LOOP_RUN))
         compose.onNodeWithTag(LabTags.SETTINGS_BUTTON).assertIsDisplayed()
+    }
+
+    @Test fun eachScenarioSaysWhatItsCheckCanSee() {
+        assertEquals(R.string.lab_limit_fixed, limitNote(data.scenario("sample-planted")!!))
+        assertEquals(R.string.lab_limit_claims, limitNote(data.scenario("sample-invented")!!))
+        assertEquals(R.string.lab_limit_fixed, limitNote(data.scenario("sample-overreach")!!))
+        assertEquals(R.string.lab_limit_secret, limitNote(data.scenario("sample-leakage")!!))
+        assertEquals(null, limitNote(data.scenario("sample-selfknowledge")!!))
+        show("sample-leakage")
+        compose.onNodeWithTag(LabTags.LIMIT).assertIsDisplayed()
+        assertTrue(app.getString(R.string.lab_limit_secret).contains("by construction"))
+        assertTrue(app.getString(R.string.lab_limit_claims).contains("counts as zero"))
+    }
+
+    @Test fun aLiveRunTellsTheHostItIsBusySoStandModeDoesNotReset() {
+        val busy = mutableListOf<Boolean>()
+        liveScreen(FakeLlmService(tokenDelayMs = 100, reply = ::obedient), onBusy = { busy += it })
+        click(LabTags.LIVE_RUN)
+        compose.waitUntil(30_000) { count(LabTags.SUMMARY_ABP) > 0 }
+        assertTrue(busy.contains(true)); assertEquals(false, busy.last())
     }
 }

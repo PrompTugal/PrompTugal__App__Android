@@ -247,6 +247,11 @@ class Security(unittest.TestCase):
         self.assertNotIn(self.KEY, json.dumps(scrub(rec, self.KEY)))
         self.assertNotIn(self.KEY, json.dumps(scrub({"error": f"x {self.KEY}", "n": [self.KEY]}, self.KEY)))
 
+    def test_exception_text_scrubbed_before_printing(self):
+        from abpeval.backends import scrub_text
+        os.environ["OPEN_ROUTER_KEY"] = self.KEY
+        self.assertNotIn(self.KEY, scrub_text(f"HTTP 401: bad key {self.KEY}"))
+
     def test_missing_cost_counts_at_least_the_reserve(self):
         import http.server
 

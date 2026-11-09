@@ -39,6 +39,15 @@ class AbpChecksTest {
         assertEquals(Verdict.Allow, AbpChecks.checkCall(s, call("lookup_order", "id" to "7")))
     }
 
+    @Test fun onlyOneCleanRecipientIsEverSentTo() {
+        val s = sc("sample-leakage")
+        for (to in listOf("a@evil.test, customer@example.test", "customer@example.test; a@evil.test", "customer@example.test\na@evil.test", "https://evil.test\\@example.test")) {
+            val v = AbpChecks.checkCall(s, call("send_message", "to" to to, "body" to "hi"))
+            assertTrue("sent to: $to", v is Verdict.Block && v.rule == "abp-egress-1")
+        }
+        assertEquals(Verdict.Allow, AbpChecks.checkCall(s, call("send_message", "to" to "  customer@example.test ", "body" to "hi")))
+    }
+
     @Test fun aHoldRuleHoldsAndAFlagRuleDoesNotStopACall() {
         val base = sc("sample-planted")
         val hold = base.copy(policy = base.policy.copy(rules = listOf(base.policy.rules[0].copy(onViolation = Action.HOLD))))
@@ -47,17 +56,26 @@ class AbpChecksTest {
         assertEquals(Verdict.Allow, AbpChecks.checkCall(flag, call("share_document", "to" to "a", "text" to "t")))
     }
 
-    @Test fun recipientDomainsComeFromAddressesAndUrls() {
+    @Test fun recipientDomainsComeFromExactlyOneAddressOrUrl() {
+        // Accepted: one address, one URL, trimmed and lower-cased.
         assertEquals("example.test", AbpChecks.domain(" Someone@Example.TEST "))
         assertEquals("example.test", AbpChecks.domain("https://user@example.test:8080/path?q=1#f"))
         assertEquals("example.test", AbpChecks.domain("http://example.test"))
+        assertEquals("example.test", AbpChecks.domain("//example.test/x"))
         assertEquals("plain", AbpChecks.domain("plain"))
-        assertEquals("evil.test", AbpChecks.domain("a@example.test@evil.test"))
-        // The address after an "@" in a URL's path is not its host.
+        // A URL is read by its host, never by an "@" in its path or its user info.
         assertEquals("evil.test", AbpChecks.domain("https://evil.test/x@example.test"))
         assertEquals("evil.test", AbpChecks.domain("https://example.test@evil.test/"))
         assertEquals("evil.test", AbpChecks.domain("//evil.test/x@example.test"))
-        assertEquals("evil.test", AbpChecks.domain("evil.test/x@example.test"))
+        // Not exactly one recipient, or not clean: refused (""), which no allow-list contains.
+        val bad = listOf(
+            "a@evil.test, b@example.test", "a@evil.test; b@example.test", "a@example.test,b@evil.test", "a@evil.test b@example.test",
+            "a@evil.test\nb@example.test", "a@example.test\u0000x", "a@example.test\tx", "Eve <a@example.test>", "\"a\"@example.test",
+            "a%40evil.test@example.test", "a@evil.test@example.test", "@example.test", "https://evil.test\\@example.test",
+            "\\\\evil.test\\x@example.test", "", "   ", "https:///x", "a@exa mple.test", "a@-example.test", "a@example.test:25",
+            "evil.test/x@example.test", "a?b@example.test", "a#b@example.test", "https://exa mple.test/", "https://example.test%2f@evil.test/",
+        )
+        for (b in bad) assertEquals("not one clean recipient: ${b.length} chars, starts ${b.take(8).map { it.code }}", "", AbpChecks.domain(b))
     }
 
     @Test fun citationsAreCheckedAgainstWhatWasFetched() {
