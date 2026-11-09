@@ -43,6 +43,9 @@ A Firebase build is signed with the **upload key**. A build from Google Play is 
 2. Then install the other one.
 The app keeps only a few small settings and, if you used it, the chat history, and an uninstall deletes them; nothing else is lost. The same applies the other way round, and when leaving a Play test (Play's help: to go back to the public build "you uninstall and reinstall the public version", https://support.google.com/googleplay/answer/15654751).
 
+### What the app keeps on your device
+A few small settings (side menu, stand mode, What's new, the chosen model), the chat history if you used the chat, and, only if staff use the Workbench (Diagnostics, Preview), a run log with the settings and figures of each test run and the first 200 characters of each prompt and 300 of each answer (500 runs at most; a Clear button in the Workbench deletes it). None of it is sent anywhere or backed up. An uninstall deletes it.
+
 ### If something goes wrong
 | Problem | Try |
 |---|---|
@@ -82,6 +85,9 @@ Uma versão do Firebase é assinada com a **chave de carregamento**. Uma versão
 1. Desinstale primeiro o RiskMandate (prima o ícone, Desinstalar; ou Definições, Aplicações, RiskMandate, Desinstalar).
 2. Depois instale a outra.
 A aplicação guarda apenas algumas definições pequenas e, se o usou, o histórico do chat, e a desinstalação apaga-os; não se perde mais nada. O mesmo vale no sentido inverso e ao sair de um teste da Play.
+
+### O que a aplicação guarda no seu dispositivo
+Algumas definições pequenas (menu lateral, modo de suporte, Novidades, o modelo escolhido), o histórico do chat se o usou e, só se a equipa usar o Workbench (Diagnóstico, Pré-visualização), um registo das execuções de teste com as definições e os números de cada uma e os primeiros 200 caracteres de cada pergunta e 300 de cada resposta (no máximo 500 execuções; o botão Limpar no Workbench apaga-o). Nada disto é enviado nem copiado para a nuvem. A desinstalação apaga tudo.
 
 ### Se algo correr mal
 | Problema | Experimente |
