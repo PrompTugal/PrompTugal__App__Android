@@ -85,6 +85,18 @@ Dinis (spoken, relayed by the conductor, 9 Nov about 13:25 UTC): a per-device se
 
 **Questions for Dinis, architect and security.** (1) Issuer trust: pinned in the build or pinned once on the tablet? (2) Is paste-only acceptable for the first version, or is QR scanning (CAMERA) wanted at the stand? (3) Where does the sender script live and who holds the issuer private key? (4) The accountant's per-tablet budgets: should the sealed payload carry a spending hint (`limit_usd`) that the app shows but never enforces, since the real limit is the key's own credit limit?
 
+**Security's decisions on this proposal (review of fb758ac, checklist M.8). They replace my open choices; nothing is built yet.**
+- **Issuer: pinned in the build**, up to two public keys as constants, not trust-on-first-use (with TOFU the first person to show the tablet a payload becomes the issuer). The issuer private key is Dinis's alone, outside the repository and every agent.
+- **Paste only first.** No CAMERA permission, no share-to-app intent, no exported component. A QR image needs an encoder library (a new dependency for security's review), so the device public key is shown as text first.
+- **Sender script** with the scripts owner; the key comes from the environment or stdin, never an argument; only Dinis runs it with a real key.
+- **Spending hint**, if any, sits inside the signed bytes, is shown as a hint, and never changes a cap.
+- **Added requirements:** one canonical byte string for the signature and the AAD (not re-serialised JSON); compare the full SHA-256 of the device public key (8 bytes only for reading aloud); expiry a day or less; the nonce recorded after a successful import and kept until the payload's expiry, in a bounded store that refuses rather than forgets; delete the device agreement key after a successful import and on Remove key (a sealed payload left in a chat lane is a bearer secret while that key exists); strict JSON and base64 with a few-KB bound and fixed refusal messages; HKDF checked against the RFC 5869 vectors; the nonce store listed in the mandate view by exact name; test keys made in memory, no committed private key.
+- **Caps (R-cloud-11, low):** Dinis writes the two numbers on the board; until then they stay US$1 a session and US$5 a tablet (the $1 is my inference from his $5). The credit limit on each key at OpenRouter remains the real backstop.
+
+## After dev.llm 6fd8731 (dev 9b24fed): CAP_REACHED, costUsd, prompt v2
+- The cloud service ends a call stopped by a spending cap or by a missing or damaged ledger with `LlmError.CAP_REACHED` (the message says which). Every completed answer carries `costUsd` (OpenRouter's `usage.cost`, or the estimate, never less than the reserve), `maxTokens`, `stopReason` (MAX_TOKENS when the provider says `length`) and `location = CLOUD`. `lastRun` stays for the running totals.
+- Chat sends `riskmandate_base.v1` (which says "running on this device") only for a local service, and `riskmandate_base.v2` (`RISKMANDATE_BASE_ANYWHERE`, no such claim) otherwise (`ChatBasePrompt`, tested against the two bundled files).
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 

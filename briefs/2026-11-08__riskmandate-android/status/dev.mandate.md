@@ -67,4 +67,6 @@ Also (A-man-5): make `Links.ALLOWED_HOSTS` public so `Mandate.HOSTS` can use it 
 Also: an icon for the `mandate` id in the host's line style (24 dp, 2 dp stroke), if the shell has none: it should show a check inside a shield or a gauge with a tick, as "this app's reach checked against its mandate"; design offered to draw it.
 
 ## For Dinis
+- Branch rule: `CLAUDE.md` on dev (9ab77ba) now says everybody pushes to `dev`. This session was started with the instruction "push only to `work/dev.mandate`, never to another branch without explicit permission", and that has not been withdrawn by Dinis to this session, so I keep pushing to `work/dev.mandate` (merging `origin/dev` into it, gate green) and do not push to `dev`. Dinis: if you want this session to push to `dev`, say so here or in the session and I will, with the new pre-push list (rebase on `origin/dev`, the full gate with `assembleDebugAndroidTest`, `scripts/secret-scan.sh`).
+
 Decision for the stand: leave the gap of 1 visible (it is true and makes the point of the feature), or have app.android remove the receiver so it reads none.

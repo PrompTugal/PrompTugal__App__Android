@@ -81,4 +81,11 @@
     <string name="workbench_tt_stop_user">Stopped by you.</string>
     <string name="workbench_tt_stop_turned">Stopped: the screen was turned, so the loop ended. The counts so far are kept.</string>
     <string name="workbench_tt_dash">-</string>
+    <string name="workbench_tt_answers">Answers</string>
+    <string name="workbench_tt_fail_forbidden_words">Used a forbidden word</string>
+    <string name="workbench_tt_fail_too_long">Answer too long</string>
+    <string name="workbench_tt_fail_wrong_line_count">Wrong number of lines</string>
+    <string name="workbench_tt_fail_not_json_only">Not only JSON</string>
+    <string name="workbench_tt_fail_number_out_of_range">Number out of range</string>
+    <string name="workbench_tt_fail_ungrounded_claim">Name or figure not in the source</string>
 </resources>
