@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 25 (9 Nov 2026, about 07:50 UTC): first LLM-team heads: dev.lab b67a7c5 PASS (pure ABP checks, fake tools, clean imports) and dev.chat 4c7161d PASS (text only, links via Links.isAllowed, history in noBackupFilesDir); app 5eac3ad PASS. Open decisions for Dinis: chat history on a shared stand tablet (R-chat-2). dev.llm and eval have no commits. Waiting for the next wake.
+> Round 26 (9 Nov 2026, about 08:05 UTC): confirmed post hoc: design 43dbe72 and editor 7433259 PASS. dev.chat is held by the conductor on a backup test; dev.llm and eval have no commits. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 26: post-hoc **PASS** design 43dbe72 (step number from a string; the Lab replay-vs-live and chat no-share requests are in the spec) and editor 7433259 (site screenshots with honest captions; pinned-stand paragraph matches the code).
 - Round 25: **PASS** dev.lab b67a7c5 (conditions for live runs: caps and strict parsing R-lab-1, an import-ban test R-lab-2), dev.chat 4c7161d (R-chat-2: history survives the stand idle reset on a shared tablet; do not enable chat on stand tablets until Dinis decides), app 5eac3ad (generic badge).
 - Round 24: **PASS** dev.mandate 7f5706d, qa b3181d9 (R-ext-3 closed), dev.releases c554cd4, editor 3a695d3.
 - Round 23: **PASS** dev.releases ffb2ccd, dev.site aaaf525.
