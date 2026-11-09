@@ -3,11 +3,15 @@ package ai.riskmandate.app.features.stand
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -249,31 +253,60 @@ private fun SettingsDialog(
     AlertDialog(
         onDismissRequest = onClose,
         title = { Text(stringResource(R.string.stand_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.stand_switch), Modifier.weight(1f))
-                    Switch(checked = enabled, onCheckedChange = onEnabled, modifier = Modifier.testTag(StandTags.SWITCH))
-                }
-                if (enabled) {
-                    Text(
-                        stringResource(if (pinned) R.string.stand_status_pinned else R.string.stand_status_not_pinned),
-                        Modifier.testTag(StandTags.STATUS),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { onMinutes(minutes - 1) }, modifier = Modifier.testTag(StandTags.LESS)) {
-                        Text(stringResource(R.string.stand_less))
-                    }
-                    Text(stringResource(R.string.stand_idle, minutes), Modifier.weight(1f))
-                    TextButton(onClick = { onMinutes(minutes + 1) }, modifier = Modifier.testTag(StandTags.MORE)) {
-                        Text(stringResource(R.string.stand_more))
-                    }
-                }
-                Text(stringResource(R.string.stand_unpin_hint), style = MaterialTheme.typography.bodySmall)
-            }
-        },
+        text = { SettingsBody(enabled, pinned, minutes, onEnabled, onMinutes) },
         confirmButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.stand_close)) } },
     )
+}
+
+/** The dialog's contents. Internal so a screenshot test can draw them in the activity window (a dialog is its own window). */
+@Composable
+internal fun SettingsBody(
+    enabled: Boolean,
+    pinned: Boolean,
+    minutes: Int,
+    onEnabled: (Boolean) -> Unit,
+    onMinutes: (Int) -> Unit,
+) {
+    Column(Modifier.verticalScroll(rememberScrollState())) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.stand_switch), Modifier.weight(1f))
+            Switch(checked = enabled, onCheckedChange = onEnabled, modifier = Modifier.testTag(StandTags.SWITCH))
+        }
+        if (enabled) {
+            Text(
+                stringResource(if (pinned) R.string.stand_status_pinned else R.string.stand_status_not_pinned),
+                Modifier.testTag(StandTags.STATUS),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = { onMinutes(minutes - 1) }, modifier = Modifier.testTag(StandTags.LESS)) {
+                Text(stringResource(R.string.stand_less))
+            }
+            Text(stringResource(R.string.stand_idle, minutes), Modifier.weight(1f))
+            TextButton(onClick = { onMinutes(minutes + 1) }, modifier = Modifier.testTag(StandTags.MORE)) {
+                Text(stringResource(R.string.stand_more))
+            }
+        }
+        Text(stringResource(R.string.stand_unpin_hint), style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/** The settings dialog drawn inline (title, body, button) for screenshots: same contents, in the activity window. */
+@Composable
+internal fun SettingsDialogPreview(enabled: Boolean, pinned: Boolean, minutes: Int) {
+    androidx.compose.material3.Surface(
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 6.dp,
+        modifier = Modifier.widthIn(max = 360.dp),
+    ) {
+        Column(Modifier.padding(24.dp)) {
+            Text(stringResource(R.string.stand_title), style = MaterialTheme.typography.headlineSmall)
+            Box(Modifier.padding(top = 16.dp, bottom = 24.dp)) { SettingsBody(enabled, pinned, minutes, {}, {}) }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = {}) { Text(stringResource(R.string.stand_close)) }
+            }
+        }
+    }
 }

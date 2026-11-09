@@ -1,5 +1,7 @@
 package ai.riskmandate.app.ui
 
+import ai.riskmandate.app.Pt
+import ai.riskmandate.app.RiskMandateStatus
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,21 +17,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * A full-width, always-visible note: screen B's "This is a demonstration, not a live capture" label.
- * Never collapsible, never dismissible, never colour-only (it is words). Put it above the diagram, not in
- * a corner.
+ * A full-width, always-visible note that says what the screen cannot show or what it is not (iOS `GapNote`):
+ * screen B's "This is a demonstration" label, the Lab's "tools are fakes" line, D's idle countdown. Amber on its
+ * own tint (the "held" tone), words only, never collapsible, never dismissible. Put it above the thing it
+ * qualifies, not in a corner. 20sp, so it also reads from a little way off at the stand.
  */
 @Composable
 fun NoticeBanner(text: String, modifier: Modifier = Modifier) {
-    val scheme = MaterialTheme.colorScheme
+    val tone = RiskMandateStatus.palette.held
     Text(
         text,
         style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 28.sp),
-        color = scheme.onPrimaryContainer,
+        color = Pt.colors.ink,
         modifier = modifier
             .fillMaxWidth()
-            .background(scheme.primaryContainer, RoundedCornerShape(UiTokens.CardRadius))
-            .border(BorderStroke(1.dp, scheme.primary), RoundedCornerShape(UiTokens.CardRadius))
+            .background(tone.container, RoundedCornerShape(UiTokens.CardRadius))
+            .border(BorderStroke(1.dp, tone.content.copy(alpha = 0.5f)), RoundedCornerShape(UiTokens.CardRadius))
             .padding(horizontal = 16.dp, vertical = 12.dp)
             .testTag(UiTags.BANNER),
     )
