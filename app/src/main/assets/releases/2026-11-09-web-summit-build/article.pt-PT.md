@@ -65,7 +65,7 @@ As palavras e os preços dessas páginas são do riskmandate.ai, não desta app.
 O modo de bancada serve para um tablet deixado a funcionar numa bancada. Está **desativado por defeito** e não tem botão. Quando está ativo:
 
 - o ecrã fica ligado;
-- o ecrã fica fixado, se o Android o permitir, para um visitante não sair da app;
+- o ecrã fica fixado, se o Android o permitir, o que dificulta a saída da app a um visitante. Dissuade, mas não bloqueia o tablet, porque o gesto do próprio Android para libertar o ecrã continua a funcionar (abaixo);
 - passado um número de minutos sem atividade, a app volta ao ecrã inicial. O valor por defeito é 3 minutos e pode definir de 1 a 30.
 
 **Para ativar ou desativar:** no ecrã inicial, **prima e mantenha o canto inferior direito** (um quadrado de cerca de 48 píxeis independentes da densidade, dentro da área segura). Abre o painel de definições. Use o interruptor "Modo de bancada ativo" e Menos e Mais para os minutos. Quando está ativo, vê-se um ponto discreto nesse canto.
