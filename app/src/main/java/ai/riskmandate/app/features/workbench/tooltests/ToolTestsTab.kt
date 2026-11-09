@@ -101,6 +101,7 @@ object ToolTestTags {
     const val PROGRESS = "tt_progress"
     const val OVERALL_NATIVE = "tt_overall_native"
     const val OVERALL_TEXT = "tt_overall_text"
+    const val OVERALL_ANSWERS = "tt_overall_answers"
     const val UNFINISHED = "tt_unfinished"
     const val STOP_REASON = "tt_stop_reason"
     const val NO_MODEL = "tt_no_model"
@@ -172,13 +173,13 @@ fun ToolTestsTab(
 ) {
     val context = LocalContext.current
     val loaded by produceState(catalogue) { if (catalogue == null) value = withContext(Dispatchers.IO) { ToolTestAssets.load(context.assets) } }
-    val prompts by produceState<Map<String, JudgePrompt>>(emptyMap()) { value = withContext(Dispatchers.IO) { ToolTestAssets.loadJudgePrompts(context.assets).first } }
+    val prompts by produceState<Map<String, JudgePrompt>?>(null) { value = withContext(Dispatchers.IO) { ToolTestAssets.loadJudgePrompts(context.assets).first } }
     val cat = loaded
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
         if (cat == null) { Text(stringResource(R.string.workbench_tt_loading), style = MaterialTheme.typography.titleMedium); return@Column }
         if (cat.cases.isEmpty()) { Text(stringResource(R.string.workbench_tt_none), style = MaterialTheme.typography.titleMedium); return@Column }
         if (cat.problems.isNotEmpty()) Text(stringResource(R.string.workbench_tt_problems, cat.problems.size), style = MaterialTheme.typography.bodyMedium)
-        Body(cat, llm, cloudLlm?.takeIf { it.location == LlmLocation.CLOUD }, prompts[JUDGE_PROMPT_ID], openFeature, onBusy, settings)
+        Body(cat, llm, cloudLlm?.takeIf { it.location == LlmLocation.CLOUD }, prompts?.get(JUDGE_PROMPT_ID), prompts != null, openFeature, onBusy, settings)
     }
 }
 
@@ -198,7 +199,7 @@ private fun caseSel(id: String) = "c:$id"
 
 @Composable
 private fun Body(
-    cat: ToolCatalogue, llm: LlmService?, cloud: LlmService?, judgePrompt: JudgePrompt?,
+    cat: ToolCatalogue, llm: LlmService?, cloud: LlmService?, judgePrompt: JudgePrompt?, promptsLoaded: Boolean,
     openFeature: (String) -> Unit, onBusy: (Boolean) -> Unit, settings: RunSettings,
 ) {
     val context = LocalContext.current
@@ -273,7 +274,7 @@ private fun Body(
         Right(
             cat, st, report, judgeReport, selCase, selKind, modeIndex, { modeIndex = it }, repeatIndex, { repeatIndex = it },
             pickedRun, { pickedRun = it }, judgeLocal, { judgeLocal = it }, judgeCloud, { judgeCloud = it },
-            cloud, cloudReady, cloudState, judgePrompt != null,
+            cloud, cloudReady, cloudState, judgePrompt != null, promptsLoaded,
         )
     }
     if (cloudOn) CloudOnBanner(modelIdOf(cloudState).orEmpty())
@@ -323,13 +324,25 @@ private fun Left(
     selCase: ToolCase?, selKind: String?, kindTitle: String?, start: (String) -> Unit,
 ) {
     val runsPerCase = stringResource(R.string.workbench_tt_runs_per_case, repeats)
-    // Overall, one tile per way of asking: the headline is which one works on this model.
+    // Overall, one tile per way of asking: the headline is which one works on this model. Cases with no tools have no
+    // way of asking to compare, so they are counted apart, in their own "Answers" tile.
+    val answerIds = remember(cat) { cat.cases.filter { it.tools.isEmpty() }.map { it.id }.toSet() }
+    val toolReport = remember(st.runs) { ToolTestReport(st.runs.filter { it.caseId !in answerIds }) }
+    val answerReport = remember(st.runs) { ToolTestReport(st.runs.filter { it.caseId in answerIds }) }
     Row(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }, horizontalArrangement = Arrangement.spacedBy(UiTokens.Gap)) {
         for (m in ToolMode.entries) {
-            val s = report.overall(m)
+            val s = toolReport.overall(m)
             StatTile(
-                if (s.finished == 0) "-" else ofText(s), stringResource(if (m == ToolMode.NATIVE) R.string.workbench_tt_native_calls else R.string.workbench_tt_text_protocol),
+                if (s.finished == 0) stringResource(R.string.workbench_tt_dash) else ofText(s), stringResource(if (m == ToolMode.NATIVE) R.string.workbench_tt_native_calls else R.string.workbench_tt_text_protocol),
                 Modifier.weight(1f).testTag(if (m == ToolMode.NATIVE) ToolTestTags.OVERALL_NATIVE else ToolTestTags.OVERALL_TEXT),
+                detail = if (s.finished == 0) null else "${pct(s)}, $runsPerCase", tone = toneOf(s),
+            )
+        }
+        if (answerIds.isNotEmpty()) {
+            val s = answerReport.overall()
+            StatTile(
+                if (s.finished == 0) stringResource(R.string.workbench_tt_dash) else ofText(s), stringResource(R.string.workbench_tt_answers),
+                Modifier.weight(1f).testTag(ToolTestTags.OVERALL_ANSWERS),
                 detail = if (s.finished == 0) null else "${pct(s)}, $runsPerCase", tone = toneOf(s),
             )
         }
@@ -410,7 +423,7 @@ private fun Right(
     cat: ToolCatalogue, st: SuiteState, report: ToolTestReport, judgeReport: JudgeReport, selCase: ToolCase?, selKind: String?,
     modeIndex: Int, onMode: (Int) -> Unit, repeatIndex: Int, onRepeat: (Int) -> Unit, picked: Int, onPick: (Int) -> Unit,
     judgeLocal: Boolean, onLocal: (Boolean) -> Unit, judgeCloud: Boolean, onCloud: (Boolean) -> Unit,
-    cloud: LlmService?, cloudReady: Boolean, cloudState: LlmState?, haveJudgePrompt: Boolean,
+    cloud: LlmService?, cloudReady: Boolean, cloudState: LlmState?, haveJudgePrompt: Boolean, promptsLoaded: Boolean,
 ) {
     val running = st.running
     // The two ways to ask, and how often: apply to the next run, whichever scope it has.
@@ -420,7 +433,7 @@ private fun Right(
         Text(stringResource(R.string.workbench_tt_repeats_label), style = MaterialTheme.typography.titleSmall, color = Pt.colors.muted)
         SegmentedControl(REPEAT_CHOICES.map { stringResource(R.string.workbench_tt_repeat_n, it) }, repeatIndex, { if (!running) onRepeat(it) }, Modifier.testTag(ToolTestTags.REPEATS))
     }
-    Judges(judgeLocal, onLocal, judgeCloud, onCloud, cloud, cloudReady, cloudState, haveJudgePrompt, running)
+    Judges(judgeLocal, onLocal, judgeCloud, onCloud, cloud, cloudReady, cloudState, haveJudgePrompt, promptsLoaded, running)
     when {
         selCase != null -> CaseDetail(selCase, cat.kinds.firstOrNull { it.id == selCase.kind }?.title.orEmpty(), st, report, judgeReport, picked, onPick)
         selKind != null -> KindDetail(cat.kinds.firstOrNull { it.id == selKind }?.title.orEmpty(), selKind, cat, report, judgeReport)
@@ -431,11 +444,11 @@ private fun Right(
 @Composable
 private fun Judges(
     local: Boolean, onLocal: (Boolean) -> Unit, cloudOn: Boolean, onCloud: (Boolean) -> Unit,
-    cloud: LlmService?, cloudReady: Boolean, cloudState: LlmState?, havePrompt: Boolean, running: Boolean,
+    cloud: LlmService?, cloudReady: Boolean, cloudState: LlmState?, havePrompt: Boolean, promptsLoaded: Boolean, running: Boolean,
 ) {
     TitledCard(stringResource(R.string.workbench_tt_judges), kicker = stringResource(R.string.workbench_tt_judges_kicker)) {
         Text(stringResource(R.string.workbench_tt_judges_help), style = MaterialTheme.typography.bodyMedium, color = Pt.colors.muted)
-        if (!havePrompt) { Text(stringResource(R.string.workbench_tt_judges_missing), style = MaterialTheme.typography.bodyMedium); return@TitledCard }
+        if (!havePrompt) { if (promptsLoaded) Text(stringResource(R.string.workbench_tt_judges_missing), style = MaterialTheme.typography.bodyMedium); return@TitledCard }
         SwitchRow(stringResource(R.string.workbench_tt_judge_local), local, onLocal, !running, ToolTestTags.JUDGE_LOCAL)
         if (cloud != null) {
             SwitchRow(stringResource(R.string.workbench_tt_judge_cloud), cloudOn, onCloud, !running && cloudReady, ToolTestTags.JUDGE_CLOUD)
@@ -548,6 +561,12 @@ private fun failureName(key: String?): String = stringResource(
         "no_answer_after_result" -> R.string.workbench_tt_fail_no_answer_after_result
         "too_many_calls" -> R.string.workbench_tt_fail_too_many_calls
         "answer_missing_words" -> R.string.workbench_tt_fail_answer_missing_words
+        "forbidden_words" -> R.string.workbench_tt_fail_forbidden_words
+        "too_long" -> R.string.workbench_tt_fail_too_long
+        "wrong_line_count" -> R.string.workbench_tt_fail_wrong_line_count
+        "not_json_only" -> R.string.workbench_tt_fail_not_json_only
+        "number_out_of_range" -> R.string.workbench_tt_fail_number_out_of_range
+        "ungrounded_claim" -> R.string.workbench_tt_fail_ungrounded_claim
         else -> R.string.workbench_tt_fail_check_failed
     },
 )

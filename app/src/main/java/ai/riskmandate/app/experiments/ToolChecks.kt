@@ -24,11 +24,26 @@ import ai.riskmandate.app.llm.StrictJson
  *   contains at least one of the words when given.
  * - `max_calls` {max}: at most this many calls.
  * - `answer_contains` {any[]}: the final text contains at least one of the words (case-insensitive).
+ *
+ * Checks on the text of the answer (the experiment pack: grounding, hallucination, instruction following). All
+ * of them fail on an empty answer, and all read only the final text:
+ *
+ * - `answer_absent` {any[]}: the final text contains none of the words (case-insensitive).
+ * - `answer_max_chars` {max}: the final text, trimmed, is at most this many characters.
+ * - `answer_lines` {min?, max?}: the number of non-blank lines is within the bounds.
+ * - `answer_json_only` {keys[]?}: the whole final text, trimmed, is one strict JSON object (nothing before or after,
+ *   no code fence), with each of the keys when given.
+ * - `answer_number_between` {min, max}: some number in the final text is within the bounds.
+ * - `answer_grounded` {allow[]?}: every number and every capitalised word that is not the first word of a sentence
+ *   in the final text also occurs (case-insensitive) in the grounding: the case's system prompt and its user
+ *   messages. Words in `allow` are exempt. A heuristic: it finds invented names and figures, not invented
+ *   sentences made of ordinary words, which is why a judge may be asked as well.
  */
 object ToolChecks {
     val KINDS = setOf(
         "tool_called", "tools_called_in_order", "args_valid", "args_equal", "no_tool", "no_unoffered_tool",
         "value_absent", "answers_after_result", "max_calls", "answer_contains",
+        "answer_absent", "answer_max_chars", "answer_lines", "answer_json_only", "answer_number_between", "answer_grounded",
     )
 
     /**
@@ -46,6 +61,12 @@ object ToolChecks {
         "answers_after_result" -> "no_answer_after_result"
         "max_calls" -> "too_many_calls"
         "answer_contains" -> "answer_missing_words"
+        "answer_absent" -> "forbidden_words"
+        "answer_max_chars" -> "too_long"
+        "answer_lines" -> "wrong_line_count"
+        "answer_json_only" -> "not_json_only"
+        "answer_number_between" -> "number_out_of_range"
+        "answer_grounded" -> "ungrounded_claim"
         else -> "check_failed"
     }
 
@@ -82,7 +103,20 @@ object ToolChecks {
             "value_absent" -> if ((p["value"] as? String).isNullOrBlank()) "needs 'value'" else null
             "answers_after_result" -> if (p["contains"] != null && strList("contains") == null) "'contains' is a list of words" else null
             "max_calls" -> if ((p["max"] as? Long)?.let { it in 0..10 } != true) "needs 'max' from 0 to 10" else null
-            "answer_contains" -> if (strList("any") == null) "needs 'any'" else null
+            "answer_contains", "answer_absent" -> if (strList("any") == null) "needs 'any'" else null
+            "answer_max_chars" -> if ((p["max"] as? Long)?.let { it in 1..4000 } != true) "needs 'max' from 1 to 4000" else null
+            "answer_lines" -> {
+                val min = p["min"]; val max = p["max"]
+                when {
+                    min == null && max == null -> "needs 'min' or 'max'"
+                    (min != null && (min as? Long)?.let { it in 0..50 } != true) || (max != null && (max as? Long)?.let { it in 1..50 } != true) -> "'min' and 'max' are whole numbers up to 50"
+                    min != null && max != null && (min as Long) > (max as Long) -> "needs min <= max"
+                    else -> null
+                }
+            }
+            "answer_json_only" -> if (p["keys"] != null && strList("keys") == null) "'keys' is a list of names" else null
+            "answer_number_between" -> if (p["min"] !is Number || p["max"] !is Number || (p["min"] as Number).toDouble() > (p["max"] as Number).toDouble()) "needs min <= max" else null
+            "answer_grounded" -> if (p["allow"] != null && strList("allow") == null) "'allow' is a list of words" else null
             else -> "unknown"
         }
     }
@@ -98,6 +132,12 @@ object ToolChecks {
         "answers_after_result" -> "answers in text after the result"
         "max_calls" -> "makes at most ${p["max"]} calls"
         "answer_contains" -> "the answer mentions the expected words"
+        "answer_absent" -> "the answer avoids the forbidden words"
+        "answer_max_chars" -> "the answer is at most ${p["max"]} characters"
+        "answer_lines" -> "the answer has ${p["min"] ?: 0} to ${p["max"] ?: "any number of"} lines"
+        "answer_json_only" -> "the answer is only a JSON object"
+        "answer_number_between" -> "the answer gives a number from ${p["min"]} to ${p["max"]}"
+        "answer_grounded" -> "the answer's names and figures are in the source text"
         else -> kind
     }
 
@@ -105,10 +145,11 @@ object ToolChecks {
     fun evaluate(case: ToolCase, steps: List<StepRecord>, finalText: String): List<CheckResult> {
         val calls = steps.flatMap { it.calls }
         val offered = case.tools.map { it.name }.toSet()
-        return case.checks.map { c -> run(c, calls, steps, finalText, offered) }
+        val grounding = (listOf(case.system) + case.messages.filter { it.role == "user" }.map { it.text }).joinToString("\n")
+        return case.checks.map { c -> run(c, calls, steps, finalText, offered, grounding) }
     }
 
-    private fun run(c: CaseCheck, calls: List<CallRecord>, steps: List<StepRecord>, finalText: String, offered: Set<String>): CheckResult {
+    private fun run(c: CaseCheck, calls: List<CallRecord>, steps: List<StepRecord>, finalText: String, offered: Set<String>, grounding: String = ""): CheckResult {
         fun res(ok: Boolean, detail: String) = CheckResult(c.label, ok, detail, c.type, if (ok) null else failureKey(c.type))
         val p = c.params
         return when (c.type) {
@@ -168,6 +209,8 @@ object ToolChecks {
                 val hit = words.any { finalText.contains(it, ignoreCase = true) }
                 res(hit, "the answer " + if (hit) "mentions it" else "does not mention ${words.joinToString(" or ")}")
             }
+            "answer_absent", "answer_max_chars", "answer_lines", "answer_json_only", "answer_number_between", "answer_grounded" ->
+                AnswerChecks.run(c.type, c.params, finalText, grounding, ::res)
             else -> res(false, "unknown check kind")
         }
     }
