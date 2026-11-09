@@ -88,6 +88,8 @@ object ShellTags {
     const val TOP_TITLE = "shell_top_title"
     const val COLLAPSE = "shell_collapse"
     const val HOME = "shell_home"
+    const val CLOUD_BADGE = "shell_cloud_badge"
+    const val CLOUD_MODEL = "shell_cloud_model"
     fun item(route: String) = "nav_$route"
     fun pill(route: String) = "nav_pill_$route"
 }
@@ -119,6 +121,10 @@ fun AppShell(
     brandLine: String = "",
     sidebarCollapsed: Boolean = false,
     onSidebarCollapsedChange: (Boolean) -> Unit = {},
+    /** True while the staff cloud switch is on: a badge on every screen says text can leave the device. */
+    cloudOn: Boolean = false,
+    /** The model id shown with the badge (security M.4.3: "Cloud: openrouter.ai" and the model). */
+    cloudModel: String? = null,
     content: @Composable () -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -135,7 +141,7 @@ fun AppShell(
                         .padding(start = PanelInset, top = PanelInset, bottom = PanelInset),
                 ) {
                     SidebarPanel(
-                        sections, selected, onSelect, brandLine, sidebarCollapsed,
+                        sections, selected, onSelect, brandLine, sidebarCollapsed, cloudOn, cloudModel,
                         onToggleCollapsed = { onSidebarCollapsedChange(!sidebarCollapsed) },
                         modifier = Modifier.testTag(ShellTags.SIDEBAR).fillMaxHeight(),
                     )
@@ -155,7 +161,7 @@ fun AppShell(
                         SidebarContent(
                             sections, selected,
                             onSelect = { route -> scope.launch { drawer.close() }; onSelect(route) },
-                            brandLine = brandLine, collapsed = false, onToggleCollapsed = null,
+                            brandLine = brandLine, collapsed = false, cloudOn = cloudOn, cloudModel = cloudModel, onToggleCollapsed = null,
                             modifier = Modifier.fillMaxHeight(),
                         )
                     }
@@ -167,6 +173,8 @@ fun AppShell(
                         title = currentTitle,
                         onMenu = { scope.launch { drawer.open() } },
                         onHome = if (atHome) null else onBackHome,
+                        cloudOn = cloudOn,
+                        cloudModel = cloudModel,
                         modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(edges)),
                     )
                     Box(Modifier.weight(1f).fillMaxWidth().consumeWindowInsets(WindowInsets.safeDrawing.only(edges))) {
@@ -179,7 +187,7 @@ fun AppShell(
 }
 
 @Composable
-private fun TopBar(@StringRes title: Int, onMenu: () -> Unit, onHome: (() -> Unit)?, modifier: Modifier = Modifier) {
+private fun TopBar(@StringRes title: Int, onMenu: () -> Unit, onHome: (() -> Unit)?, cloudOn: Boolean, cloudModel: String?, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onMenu, modifier = Modifier.heightIn(min = 48.dp).testTag(ShellTags.MENU)) {
             Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.nav_menu), tint = Pt.colors.ink)
@@ -190,6 +198,7 @@ private fun TopBar(@StringRes title: Int, onMenu: () -> Unit, onHome: (() -> Uni
             color = Pt.colors.ink,
             modifier = Modifier.padding(start = 4.dp).weight(1f).testTag(ShellTags.TOP_TITLE).semantics { heading() },
         )
+        if (cloudOn) CloudBadge(Modifier.padding(end = 4.dp), model = cloudModel)
         // A visible way home on every screen but Home itself (stand mode may pin the back gesture off).
         if (onHome != null) {
             IconButton(onClick = onHome, modifier = Modifier.heightIn(min = 48.dp).testTag(ShellTags.HOME)) {
@@ -207,6 +216,8 @@ private fun SidebarPanel(
     onSelect: (String) -> Unit,
     brandLine: String,
     collapsed: Boolean,
+    cloudOn: Boolean,
+    cloudModel: String?,
     onToggleCollapsed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -216,7 +227,7 @@ private fun SidebarPanel(
         color = Pt.colors.card,
         border = BorderStroke(1.dp, Pt.colors.rule.copy(alpha = 0.7f)),
     ) {
-        SidebarContent(sections, selected, onSelect, brandLine, collapsed, onToggleCollapsed, Modifier.fillMaxHeight())
+        SidebarContent(sections, selected, onSelect, brandLine, collapsed, cloudOn, cloudModel, onToggleCollapsed, Modifier.fillMaxHeight())
     }
 }
 
@@ -232,6 +243,8 @@ private fun SidebarContent(
     onSelect: (String) -> Unit,
     brandLine: String,
     collapsed: Boolean,
+    cloudOn: Boolean,
+    cloudModel: String?,
     onToggleCollapsed: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
@@ -250,6 +263,12 @@ private fun SidebarContent(
             ) { Icon(painterResource(R.drawable.ic_nav_panel), contentDescription = label, tint = Pt.colors.muted) }
         }
         SidebarBrand(brandLine, collapsed)
+        if (cloudOn) {
+            CloudBadge(Modifier.padding(top = 8.dp, start = 4.dp), short = collapsed, model = cloudModel)
+            if (!collapsed && cloudModel != null) {
+                Text(cloudModel, style = MaterialTheme.typography.bodySmall, color = Pt.colors.muted, modifier = Modifier.padding(top = 2.dp, start = 8.dp).testTag(ShellTags.CLOUD_MODEL))
+            }
+        }
         Spacer(Modifier.height(8.dp))
         for (section in sections) {
             if (section.items.isEmpty()) continue
@@ -320,5 +339,24 @@ internal fun BadgePill(text: String, modifier: Modifier = Modifier) {
         modifier = modifier
             .background(Pt.colors.accent.copy(alpha = 0.12f), androidx.compose.foundation.shape.CircleShape)
             .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
+/**
+ * "Cloud: openrouter.ai": on every screen while the staff cloud switch is on (security M.4.3), so nobody types
+ * into a screen without knowing text can leave the device. The short form ("Cloud") fits the rail.
+ */
+@Composable
+internal fun CloudBadge(modifier: Modifier = Modifier, short: Boolean = false, model: String? = null) {
+    val full = stringResource(R.string.cloud_badge) + (model?.let { ", $it" } ?: "")
+    Text(
+        stringResource(if (short) R.string.cloud_badge_short else R.string.cloud_badge),
+        style = MaterialTheme.typography.labelMedium,
+        color = Pt.colors.amber,
+        modifier = modifier
+            .testTag(ShellTags.CLOUD_BADGE)
+            .background(Pt.colors.amber.copy(alpha = 0.13f), androidx.compose.foundation.shape.CircleShape)
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .semantics { contentDescription = full },
     )
 }
