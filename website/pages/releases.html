@@ -17,6 +17,6 @@ order: 6
   <div class="wrap prose">
     <h2>How a build gets a number</h2>
     <p>CI owns the version. <code>versionCode</code> is the workflow’s run number and <code>versionName</code> is <code>0.1.</code> followed by that number. Nobody sets either by hand; a local build gets <code>0.0.0-local</code>. Each push to <code>dev</code> that passes the tests and lint is built as a release APK and AAB. When the signing secrets and Firebase settings are present, it is signed with the upload key, sent to the tester group on Firebase App Distribution, and published as a GitHub prerelease. (The first signed build, 0.1.26, was a GitHub release only; Firebase came with 0.1.27.) A short emulator smoke test then installs and launches the release APK.</p>
-    <p>Not every run reaches a tag: a run that fails or is cancelled by a newer push makes no release, so run numbers have gaps. The full pipeline is described in <a href="{{repo_url}}/blob/dev/docs/ci.md"><code>docs/ci.md</code></a> and <a href="articles/m1-ci-to-a-tablet-in-one-night.html">the article</a>.</p>
+    <p>Not every run reaches a tag: a run that fails or is cancelled by a newer push makes no release, so run numbers have gaps. The full pipeline is described in <a href="{{repo_url}}/blob/dev/docs/ci.md"><code>docs/ci.md</code></a> and <a href="articles/2026-11-09-m1-ci-to-a-tablet-in-one-night.html">the article</a>.</p>
   </div>
 </section>

@@ -7,6 +7,7 @@ Checks every page in the output directory:
   * JSON-LD parses; the home page's softwareVersion and the releases page match the git tags
   * the facts match the source: application ID, minSdk, targetSdk, the permissions in the manifest
   * every planned summit feature and every feature in the source is listed, and none is shown as "on" unless the source has switched it on
+  * every release article in the app's assets has a page, and the M1 article is there
   * the privacy page has no unfinished marker and still says the app collects nothing
   * no scripts other than JSON-LD, no external stylesheets, no inline event handlers, no http links
   * one <h1>, a lang, a title and a description; every <img> has alt, width and height
@@ -244,9 +245,12 @@ def check_facts(out, parsed):
         if name.split('.')[-1] not in privacy:
             problems.append(f'privacy.html: does not mention the permission {name}')
 
-    article = out / 'articles' / 'm1-ci-to-a-tablet-in-one-night.html'
+    for a in facts['articles']:
+        if not (out / 'articles' / f'{a["dir"]}.html').exists():
+            problems.append(f'release article {a["dir"]} (from the app\'s assets) has no page')
+    article = out / 'articles' / '2026-11-09-m1-ci-to-a-tablet-in-one-night.html'
     if not article.exists():
-        problems.append('the article m1-ci-to-a-tablet-in-one-night is missing')
+        problems.append('the article 2026-11-09-m1-ci-to-a-tablet-in-one-night is missing')
     else:
         text = article.read_text()
         for need in ('Dinis', 'unverified', facts['app_id']):
