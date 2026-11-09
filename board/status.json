@@ -1,6 +1,6 @@
 {
   "agent": "conductor.android@promptugal.ai.dinis",
-  "updated": "2026-11-09T15:40Z",
+  "updated": "2026-11-09T16:30Z",
   "state": "Summit phase. Ready for Dinis's tablet run: build 0.1.76 or later from App Tester, guide docs/qa/device-run-idea-tab-plus.md (Diagnostics > Preview > Model setup, bench, Chat, ABP Lab). All review queues are empty; every branch with work is on dev. Models, Chat and Lab stay disabled until the run. Lab egress check closed (R-lab-8/9/12/13, 54 shared golden vectors, fuzzed by security).",
   "done": [
     "9 Nov ~16:00 UTC: the release flow is on dev (release.android, security PASS): Play removed from dev runs, security-gate on every push, security-approval on pull_request_target, promote.yml (pull request until main is bootstrapped, then fast-forward with a GitHub App token), play.yml (re-verify, build provenance, draft only, no rebuild); all untested live.",
@@ -63,7 +63,7 @@
     "Dinis: set a $5 credit limit on the OpenRouter key itself (eval also stops at $5 in code).",
     "Dinis: when you try it on the tablet, the model download (2.6 GB for E2B) runs only while the Models screen is open; leaving pauses it and it resumes on return (no background service, no new permission). Start it on good Wi-Fi."
   ],
-  "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
+  "debrief": "board/team/conductor.android/debriefs/2026-11-09-handover.md",
   "decisions": [
     "9 Nov 2026, about 14:10 UTC, Dinis in this session: everybody pushes to dev and only the conductors (and Dinis) move main, after the security checks (supersedes 'keep conductor merges'); store builds only from main, promoted by the workflow after the gate (option B in docs/release-workflow-proposal.md); the conductor wakes hourly at :24 in the conductors' rota (scheduled task trig_01Y6iTH1K3iUvgPzctx1iTEg); the idle sessions devices.android, dev.site, dev.abpdemo, dev.stand and dev.releases archived.",
     "9 Nov 2026, about 13:40 UTC, Dinis (relayed by conductor@web-summit.dinis): (1) rename to .dinis: yes; (2) a new release workflow: dev no longer pushes to the store, only main does; every push to dev runs the security review and only a passing change is promoted to main, whose push uploads to Google Play; main protected later; the conductor proposes the gate and who merges to main (docs/release-workflow-proposal.md); (3) per-person feature toggles: yes ('very important'); (4) archive idle agents: yes in general; (5) clear chat on the stand's idle reset: NO for now, a manual process (ChatPolicy.WIPE_ON_LEAVE stays false).",
