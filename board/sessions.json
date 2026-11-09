@@ -1,11 +1,103 @@
 {
-  "note": "The RiskMandate Android sessions, started at Dinis's word on 8 Nov 2026 at about 23:07 UTC. One role, one session. Plan: briefs/2026-11-08__riskmandate-android/README.md.",
+  "note": "The RiskMandate Android sessions, started at Dinis's word on 8 Nov 2026 at about 23:07 UTC. One role, one session. Plan: briefs/2026-11-08__riskmandate-android/README.md. Summit-phase team added at Dinis's word on 9 Nov 2026 at about 01:03 UTC; devices is parked with M2.",
   "sessions": [
-    {"role": "conductor", "name": "conductor.android@promptugal.ai", "model": "Opus", "branch": "dev", "session": "session_018yvwtQQhNMeaU9tg3HgWnP"},
-    {"role": "app", "name": "app.android@promptugal.ai", "model": "Sonnet", "branch": "work/app", "session": "session_018yvwtLgnt1xeXPhQbaJ9uk"},
-    {"role": "release", "name": "release.android@promptugal.ai", "model": "Sonnet", "branch": "work/release", "session": "session_018yvwtQrryCdmM6VAmqnQvW"},
-    {"role": "devices", "name": "devices.android@promptugal.ai", "model": "Sonnet", "branch": "work/devices", "session": "session_018yvwtM4VMbzGS28k1PsAeB"},
-    {"role": "play", "name": "play.android@promptugal.ai", "model": "Sonnet", "branch": "work/play", "session": "session_018yvwtMCc2BNFpAGvjDRenv"},
-    {"role": "security", "name": "security.android@promptugal.ai", "model": "Sonnet", "branch": "work/security", "session": "session_018yvwtMEkVuWRqKhGm6yo4J"}
+    {
+      "role": "conductor",
+      "name": "conductor.android@promptugal.ai",
+      "model": "Opus",
+      "branch": "dev",
+      "session": "session_018yvwtQQhNMeaU9tg3HgWnP"
+    },
+    {
+      "role": "app",
+      "name": "app.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/app",
+      "session": "session_018yvwtLgnt1xeXPhQbaJ9uk"
+    },
+    {
+      "role": "release",
+      "name": "release.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/release",
+      "session": "session_018yvwtQrryCdmM6VAmqnQvW"
+    },
+    {
+      "role": "devices",
+      "name": "devices.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/devices",
+      "session": "session_018yvwtM4VMbzGS28k1PsAeB"
+    },
+    {
+      "role": "play",
+      "name": "play.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/play",
+      "session": "session_018yvwtMCc2BNFpAGvjDRenv"
+    },
+    {
+      "role": "security",
+      "name": "security.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/security",
+      "session": "session_018yvwtMEkVuWRqKhGm6yo4J"
+    },
+    {
+      "role": "architect",
+      "name": "architect.android@promptugal.ai",
+      "model": "Opus",
+      "branch": "work/architect",
+      "session": "session_018yvwtQ2bqKHfLzJ7Gvi8dR"
+    },
+    {
+      "role": "design",
+      "name": "design.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/design",
+      "session": "session_018yvwtQULeY1PiFvVaB4VTb"
+    },
+    {
+      "role": "qa",
+      "name": "qa.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/qa",
+      "session": "session_018yvwtM6rEYCqgLA3GqcJkk"
+    },
+    {
+      "role": "dev.site",
+      "name": "dev.site.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/dev.site",
+      "session": "session_018yvwtNT6RUqiLApfu3skSs"
+    },
+    {
+      "role": "dev.abpdemo",
+      "name": "dev.abpdemo.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/dev.abpdemo",
+      "session": "session_018yvwtNCP9pqhd42J3S9E8Y"
+    },
+    {
+      "role": "dev.mandate",
+      "name": "dev.mandate.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/dev.mandate",
+      "session": "session_018yvwtQeoBypWMyA9DnhE8i"
+    },
+    {
+      "role": "dev.stand",
+      "name": "dev.stand.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/dev.stand",
+      "session": "session_018yvwtQFeezHPsT8mXzd2Jx"
+    },
+    {
+      "role": "editor",
+      "name": "editor.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/editor",
+      "session": "session_018yvwtPFB77ucsaWrmqTX5g"
+    }
   ]
 }
