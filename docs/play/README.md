@@ -86,7 +86,7 @@ Then work down the Dashboard's "Set up your app" tasks: privacy policy URL (`pri
 
 Accept the Play App Signing terms (step 2). Use Google-generated app-signing key (the default and the recommendation: Google protects it in its key management service, and losing an upload key can be reset, losing an app-signing key cannot).
 
-Make the upload key on Dinis's own machine with `scripts/make-upload-key.sh`. It stays off the repository. Dinis then adds four repository secrets (`UPLOAD_KEYSTORE_BASE64`, `UPLOAD_KEYSTORE_PASSWORD`, `UPLOAD_KEY_ALIAS`, `UPLOAD_KEY_PASSWORD`, see `docs/ci.md`). Agents never see them.
+Make the upload key on Dinis's own machine with `scripts/make-upload-key.sh`. It stays off the repository. Dinis then adds four **environment secrets** in the GitHub environment `release` (Settings, Environments; since 9 November 2026, not repository secrets): `UPLOAD_KEYSTORE_BASE64`, `UPLOAD_KEYSTORE_PASSWORD`, `UPLOAD_KEY_ALIAS`, `UPLOAD_KEY_PASSWORD` (see `docs/ci.md`, "The `release` environment"). Agents never see them. Firebase needs no secret at all: CI signs in keylessly (Workload Identity Federation) from the variables `GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT` and `FIREBASE_APP_ID`.
 
 Consequence already recorded in `docs/lessons.md`: a build from Firebase App Distribution is signed with the upload key; a build from Play is signed by Google. A device must uninstall one before installing the other.
 
@@ -94,7 +94,7 @@ Consequence already recorded in `docs/lessons.md`: a build from Firebase App Dis
 
 Why by hand: the Play Developer API can only upload to an app that already exists, and for a new app the first release is usually made in the Console. The CI step in `docs/ci.md` says the same ("the Play app must already exist with the first upload done by hand if the Console requires it"). I did not find a Google page that says this is mandatory; do it by hand and the question does not matter.
 
-1. In CI, take the signed AAB from the `riskmandate-<version>` workflow artifact of a run on `dev` (it exists only once the four upload-key secrets are set; before that the AAB is `-unsigned` and Play will not accept it).
+1. In CI, take the signed AAB from the `riskmandate-<version>` workflow artifact of a run on `dev` (it exists only once the four upload-key environment secrets are set; before that the AAB is `-unsigned` and Play will not accept it).
 2. Console, Test and release, Testing, Internal testing, Create new release. Accept Play App Signing if asked, upload the AAB, release name (default is fine), release notes, Save, Review release, Start rollout to internal testing.
 3. The first upload registers the package name's signing: Play records the upload key's certificate. From now on every upload must be signed by that same upload key.
 4. `versionCode` is the CI run number, so every later upload is higher than the one before. A manual upload of a build that CI also uploads would waste a number only if you reuse one; do not re-upload the same code.
@@ -146,13 +146,18 @@ The policy's `__PACKAGE__` and the CI `PLAY` track upload read the package from 
 
 Purpose: let the workflow upload the signed AAB to the app's internal track as a draft. Nothing else.
 
+**Blocker found 9 November 2026 (conductor, `docs/ci.md`, "Follow-up, Play"):** the organisation (thecyberboardroom.com) enforces the policy `iam.disableServiceAccountKeyCreation`, so **step 2 below, "create one JSON key", will be refused**, and `PLAY_SERVICE_ACCOUNT_JSON` cannot be created. The Play upload step stays skipped until one of these is chosen (Dinis decides; I have not tested either):
+- **Keyless, as Firebase now is:** the same Workload Identity Federation route for the Play step. `docs/ci.md` says the `auth` step could serve both, if the upload action accepts the credentials file, or the upload moves to a small script against the Play Developer API. The Play Console side of steps 1 and 3 should be the same (the service account's email is invited and given app-level permissions); I did not find a Google page saying a federated identity needs anything different, and I did not look for one.
+- **A policy exception** for the Cloud project that holds the Play service account (an organisation-admin decision).
+- **Upload by hand** in the Console (step 4) until then: slower, safe, no key.
+
 1. Google Cloud Console: use or create a project; enable **Google Play Android Developer API**. No link between the Cloud project and the developer account is needed any more (verified, Google's getting-started page).
-2. Cloud, IAM and admin, Service accounts: create `play-ci` with **no Cloud IAM roles** (it does not need any). Create one JSON key. The download is the only copy.
+2. Cloud, IAM and admin, Service accounts: create `play-ci` with **no Cloud IAM roles** (it does not need any). **Do not create a JSON key** while the organisation policy applies (it is refused); use the keyless route above, or a policy exception first. If a key is ever created, the download is the only copy.
 3. Play Console, Users and permissions, Invite new users: the service account's email. Give **app-level permissions on RiskMandate only, not account-level**: the release permissions only (releasing to testing tracks; do not grant production release, financial data, orders, app access management or user management until needed). I did not find the exact permission labels today; the Console shows them as checkboxes under "App permissions" when the app exists, so add the user after step 2 of this file. Google says only "grant the necessary rights" for release actions; the Billing permissions (view financial data, manage orders and subscriptions) are only for the Billing APIs and are **not** needed here.
-4. Dinis adds the JSON file's whole content as the repository secret `PLAY_SERVICE_ACCOUNT_JSON`, then deletes the local copy or keeps it off the repository. `*service-account*.json` is gitignored but do not rely on it.
+4. Only if a key is allowed (a policy exception): Dinis adds the JSON file's whole content as the **environment secret** `PLAY_SERVICE_ACCOUNT_JSON` in the `release` environment, then deletes the local copy or keeps it off the repository. `*service-account*.json` is gitignored but do not rely on it. On the keyless route there is no file and no secret; CI uses variables instead (`docs/ci.md`).
 5. Permissions can take a short while to take effect (an older Google note says up to 24 hours; not verified today).
 
-Least privilege check: the CI draft release does not publish, so even a leaked key can only create draft releases on the internal track of this one app, not publish to production. Keep the Production release permission off the account until the app is public, and then think again.
+Least privilege check: the CI draft release does not publish, so even a leaked key (on the keyless route, a hijacked workflow identity) can only create draft releases on the internal track of this one app, not publish to production. Keep the Production release permission off the account until the app is public, and then think again.
 
 ## 10. First automated upload (CI)
 
@@ -179,7 +184,7 @@ All from the Console; I read none of these pages today, so check each against th
 | 0 | Decide the owning company, the package-name plan (A or B), free or paid | Dinis |
 | 1 | Get a D-U-N-S (organisation) and create the Play Console developer account, pay US$25, verify identity | Dinis |
 | 2 | Run `scripts/make-upload-key.sh` on his own machine | Dinis |
-| 3 | Add the four `UPLOAD_*` repository secrets | Dinis |
+| 3 | Add the four `UPLOAD_*` environment secrets in the GitHub environment `release` | Dinis |
 | 4 | Create the app in Play Console (ID, name, language, free or paid, contact email) | Dinis |
 | 5 | Host `privacy-policy.md` at a public URL; fill in the publisher name | Dinis |
 | 6 | Fill Data safety, content rating, audience, ads, app access from `data-safety.md` | Dinis (an agent can prepare, not submit) |
@@ -189,7 +194,7 @@ All from the Console; I read none of these pages today, so check each against th
 | 10 | Create the tester list and send the opt-in link | Dinis |
 | 11 | Decide the private-app route and, for option B, add the build flavour | Dinis decides, dev.android implements, CI builds |
 | 12 | Add the organisation ID (Managed Google Play tab) and publish privately | Dinis |
-| 13 | Create the Cloud service account and the Play Console permission; add `PLAY_SERVICE_ACCOUNT_JSON` | Dinis |
+| 13 | Create the Cloud service account and the Play Console permission; **no key** (org policy blocks it): choose keyless, a policy exception or manual upload (step 9) | Dinis |
 | 14 | Every later push to `dev` uploads a draft to the internal track | CI |
 | 15 | Complete each rollout in the Console | Dinis |
 | 16 | Personal account only: 12 testers for 14 days, apply for production | Dinis and testers |

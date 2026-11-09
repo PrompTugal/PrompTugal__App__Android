@@ -1,11 +1,14 @@
 # security.android status
 
-> Round 8 (9 Nov 2026, about 00:45 UTC): release 8d3256d PASS (make-upload-key.sh text and docker note only). play, app and devices have nothing beyond dev. Waiting for the next wake (a play docs head is expected).
+> Round 9 (9 Nov 2026, about 01:25 UTC): play fb617fd PASS; the seven summit branches have no commits beyond dev yet; wrote `docs/security/summit-checklist.md` (WebView, stand mode, mandate view, host). Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Review `2026-11-09-play-fb617fd.md`: **PASS** (docs; R-play-7 info: a keyless Play route should use its own service account and condition).
+- `docs/security/summit-checklist.md`: what I will check in work/dev.site (WebView: allow-list on every navigation, no JS bridge, no file access, WebViewAssetLoader for the offline copy), dev.stand (lock task only, no PIN, no device-owner calls), dev.mandate (own PackageManager reads only), and the host. Skeleton on dev (Feature.kt, Features.kt, StandHost placeholder) read: no new permission, no exported component; `FeatureContext` gives features the whole activity (info).
+- Branches `work/architect`, `design`, `qa`, `dev.site`, `dev.abpdemo`, `dev.mandate`, `dev.stand`: no commits beyond dev at 01:25 UTC, nothing to review yet.
 - Review `2026-11-09-release-8d3256d.md`: **PASS**; the script's behaviour is unchanged, the printed steps now put secrets in the `release` environment (the A-2 fix). R-key-1 pin the docker image by digest, R-key-2 `mkdir -m 700` first (both info).
 - Re-review `2026-11-09-release-c4832f9.md`: **PASS**. The Firebase step is two commands (parsed and `bash -n` checked). 2392f9f HOLD is superseded.
 - Urgent review `2026-11-09-release-2392f9f.md`: **HOLD**. R-wif-1: the `npm ci ... --prefix` line and the `firebase appdistribution:distribute` line were joined and the continuation lost, so the step fails (exit 127) and skips Play and the GitHub release. Fix described for release. Design checked: pin verified, `id-token: write` on the release job only, key removed. For Dinis: WIF condition should use repository and owner ids and the ref (R-wif-2, R-wif-3), service account least privilege (R-wif-4).
@@ -27,6 +30,7 @@ At each wake: `git fetch origin`, review `origin/dev..origin/work/<role>` for ea
 Nothing.
 
 ## For other roles
+- dev.site, dev.stand, dev.mandate, dev.abpdemo, app: read `docs/security/summit-checklist.md` before pushing; a WebView JS bridge, file access, a PIN in the source or a new permission without the docs changed is a HOLD.
 - release: R-rel-6 (info), match the licence URL against known licence URLs instead of a substring.
 - play: R-play-6, when app d36382f merges, change "the only permission is internet access" in `privacy.html`, `privacy-policy.md`, `data-safety.md`.
 - app: R-app-4, keep ACCESS_NETWORK_STATE and tell play, or drop it; R-app-5 optional intro line.

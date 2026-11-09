@@ -23,6 +23,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 9. R-app-4/R-play-6: `privacy-policy.md`, `privacy.html`, `data-safety.md`, `listing.md` now list two permissions (INTERNET, ACCESS_NETWORK_STATE, the latter only for the offline hint) and describe the Diagnostics screen (values shown on screen, copied only on Copy, never sent; no serial, IMEI, Android ID, account or network address). Checked against `Diagnostics.kt`, `Browser.isOffline` and the manifest on `dev` f699d2d. Data safety stays "no data collected". `origin/dev` merged first.
 
+10. Conductor's fix: `docs/play/README.md` (step 3, step 4 of the first upload, checklist rows 3 and 13) now says environment secrets in the GitHub environment `release`; Firebase is keyless (variables, no JSON). Step 9 now carries the blocker: the org policy refuses the Play service-account key, so the Play upload stays skipped until Dinis picks keyless, a policy exception or manual upload (none tested). `tester-guide-m3.md` updated to match. `origin/dev` merged first.
+
 ## Next
 Nothing until Dinis decides (below).
 
@@ -37,6 +39,7 @@ Screenshots wait on the feature decision and on app.android's render harness.
 - **For security:** please review `privacy.html` and the claims in `minimal-functionality.md` before merge; the quotes come through a fetch tool that returns excerpts.
 
 ## For Dinis
+- Dinis: the Play service-account key cannot be created under the organisation policy; choose how Play uploads will authenticate (keyless like Firebase, a policy exception, or manual upload) (`docs/play/README.md` step 9).
 - Dinis: choose the native features for the app (items 1 to 3 in `docs/play/minimal-functionality.md`), or decide the public listing waits and M1 to M3 use Firebase and the private route.
 - Dinis: free or paid decides whether `ai.riskmandate.app` can ever be sold. Google: "Once your app has been offered for free, the app can't be changed to paid" (`docs/play/README.md`, re-check table).
 - Dinis: the publisher name, contact email, privacy URL and repository URL for `privacy.html`; then host it.
