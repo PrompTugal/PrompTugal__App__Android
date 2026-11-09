@@ -22,6 +22,7 @@
 
     <string name="home_diagnostics">Diagnóstico</string>
     <string name="message_failed">Ocorreu um erro ao abrir riskmandate.ai num navegador. Tente novamente ou abra-o você mesmo no navegador.</string>
+    <string name="message_pinned">As ligações para outros sítios não são abertas enquanto a aplicação estiver fixada.</string>
     <string name="message_offline">Este dispositivo parece estar sem ligação. O navegador pode não conseguir carregar riskmandate.ai enquanto não estiver ligado.</string>
 
     <string name="diagnostics_title">Diagnóstico</string>

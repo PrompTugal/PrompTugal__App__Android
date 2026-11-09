@@ -1,6 +1,6 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-09T01:25Z",
+  "updated": "2026-11-09T01:35Z",
   "state": "Summit phase, 13 sessions. CI fixed (licence gate in its own job); 0.1.35/0.1.36 distributed to the tablets through Firebase (run 36). On dev: FeatureContext v2, qa tests, Pages deploy workflow. In review/fix: features A site, B ABP demo, C mandate, D stand, F What's new; design ui/; the site and M1 article.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
@@ -33,7 +33,8 @@
     "Dinis: the ABP demo's wording not found on riskmandate.ai or sharness.ai (browser and device-policy layers, the strength words, the scenario): keep as a labelled demonstration, or restrict to the sites' wording? pt-PT needs a native check.",
     "Dinis: brand for the app: move to riskmandate.ai's own palette and type (paper, ink, green; Geist), or keep the current neutral tokens (design.android's status page)?",
     "Dinis: read the M1 article (website/pages/articles/m1-ci-to-a-tablet-in-one-night.md on work/editor) before the site goes public; publisher details for the site.",
-    "Dinis: a Contact tab in the in-app site (its form posts to another host, so it would open in the browser)? A staff PIN for stand mode after the summit?"
+    "Dinis: a Contact tab in the in-app site (its form posts to another host, so it would open in the browser)? A staff PIN for stand mode after the summit?",
+    "Dinis: links tapped inside the in-app riskmandate.ai view to other https sites open in the device's own browser (never inside the app, never while pinned, only on a real tap). Today's default by the conductor, since the alternative is that such links do nothing; say if you want them blocked instead (security R-ext-2)."
   ],
   "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
   "decisions": [
@@ -47,6 +48,7 @@
     "Summit features A to D built in parallel by a full team of sessions (Dinis, 9 Nov 2026 ~01:00 UTC): architect, design, qa, dev.site, dev.abpdemo, dev.mandate, dev.stand added; plan in briefs/2026-11-08__riskmandate-android/README.md, Summit phase.",
     "A public Android site, android.app.promptugal.ai, built from website/ like the iOS app's site, with a first article on M1 (Dinis, 9 Nov 2026 ~01:10 UTC: nothing here is confidential). editor.android started; release.android adds the Pages deploy.",
     "Stand mode off by default; staff switch it on per tablet (Dinis, 9 Nov 2026 ~01:15 UTC).",
-    "In-app release articles ('What's new'): one Markdown article per release with CI-generated screenshots of the new screens, shared with the website (Dinis, 9 Nov 2026 ~01:15 UTC). dev.releases started."
+    "In-app release articles ('What's new'): one Markdown article per release with CI-generated screenshots of the new screens, shared with the website (Dinis, 9 Nov 2026 ~01:15 UTC). dev.releases started.",
+    "Conductor's default, pending Dinis (9 Nov ~01:35 UTC): user-tapped https links to other sites from the in-app riskmandate.ai view open in the system browser (Browser.openExternal), never in the app, never while pinned, only on a real tap."
   ]
 }

@@ -1,0 +1,56 @@
+<!--
+title: Install for testers · RiskMandate for Android
+description: How a tester installs RiskMandate for Android through Firebase App Distribution and the App Tester app, and how updates work.
+nav: Install
+order: 3
+-->
+<section class="band">
+  <div class="wrap prose">
+    <p class="kicker">For testers</p>
+    <h1>Install RiskMandate on Android</h1>
+    <p class="lede">The app is not on Google Play. Testers get it from Firebase App Distribution, through Google’s App Tester app. After the first install, each new build is one tap.</p>
+    <p class="notice">Testers are invited by the operator, Dinis Cruz, who adds your Google account to the tester group. Ask him; no address is published on this site. Use the same Google account everywhere below.</p>
+  </div>
+</section>
+
+<section class="band band-alt">
+  <div class="wrap prose">
+    <h2>Before you start</h2>
+    <ul>
+      <li>An Android phone or tablet, Android {{min_android}} or later.</li>
+      <li>A Google account that has been invited. Firebase emails the invitation; check spam. It expires after 30 days; ask for a new one if it has.</li>
+    </ul>
+    <h2>First time</h2>
+    <ol>
+      <li>On the device you will test on, open the invitation email and tap <strong>Get Started</strong>.</li>
+      <li>Sign in with the invited Google account and tap <strong>Accept invitation</strong>.</li>
+      <li>Tap <strong>Download App Tester</strong> and install it. If Android asks to allow installs from this source, allow it (see the first snag below).</li>
+      <li>Open App Tester, find RiskMandate, tap the latest build and tap <strong>Install</strong>. If Play Protect asks to scan the app, allow it.</li>
+      <li>Open RiskMandate. The bottom of the home screen shows “Build 0.1.” and a number. That is the number to quote when you report a problem.</li>
+    </ol>
+    <h2>Every later build</h2>
+    <p>Firebase emails you and App Tester shows the new build. Tap Install again. A build signed with the same upload key installs over the old one as an update, and the app keeps no data, so nothing is lost. Builds stay available for 150 days.</p>
+  </div>
+</section>
+
+<section class="band" id="snags">
+  <div class="wrap prose">
+    <h2>Two snags we hit on a real tablet</h2>
+    <h3>1. Chrome shows the desktop site</h3>
+    <p>Chrome on Android tablets asks for desktop sites by default, so Firebase’s invitation page says “open the invitation on your mobile device” even though you are on one. Turn off Chrome’s Desktop site (Settings, Site settings, Desktop site) or untick it for that tab, then reload.</p>
+    <h3>2. Install unknown apps</h3>
+    <p>The first APK from any app (Chrome, Files, App Tester) triggers “install unknown apps”. Allow it once per source (Settings, Apps, Special app access, Install unknown apps). Allow App Tester, so that updates are one tap. Menu names vary by maker and Android version.</p>
+    <h2>If you have a Google Play build</h2>
+    <p>A Firebase build is signed with the project’s upload key; a build from Google Play is signed by Google. Android refuses to install one over the other, so uninstall first. There is no Play build today, so this only matters later.</p>
+    <h2>If something goes wrong</h2>
+    <div class="table-wrap"><table><thead><tr><th scope="col">Problem</th><th scope="col">Try</th></tr></thead><tbody>
+      <tr><td>No email</td><td>Look in spam; ask for the invitation to be resent; check the invited address.</td></tr>
+      <tr><td>App Tester shows no apps</td><td>You are signed in with a different Google account from the invited one.</td></tr>
+      <tr><td>“App not installed”</td><td>Uninstall any older copy that was signed with a different key, then retry.</td></tr>
+      <tr><td>Install blocked</td><td>Allow installs from this source. A device managed by an organisation may block it.</td></tr>
+      <tr><td>Nothing happens on “Open riskmandate.ai”</td><td>No browser is installed or it is disabled; the app then shows a message.</td></tr>
+    </tbody></table></div>
+    <p>When you report: the build number, device model, Android version, what you did and what you saw. Never send a password, a key or a screenshot of an account page.</p>
+    <p class="muted">Source: <a href="{{repo_url}}/blob/dev/docs/play/tester-guide-firebase.md">docs/play/tester-guide-firebase.md</a> and <a href="{{repo_url}}/blob/dev/docs/lessons.md">docs/lessons.md</a>. The two snags are from the first install on a tablet on 9 November 2026. The rest of the flow follows Firebase’s documentation and has been confirmed on that tablet only.</p>
+  </div>
+</section>

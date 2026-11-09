@@ -24,6 +24,7 @@
 
     <string name="home_diagnostics">Diagnostics</string>
     <string name="message_failed">Something went wrong opening riskmandate.ai in a browser. Try again, or open it in your browser yourself.</string>
+    <string name="message_pinned">Links to other websites are not opened while the app is pinned.</string>
     <string name="message_offline">This device seems to be offline. Your browser may not be able to load riskmandate.ai until it is connected.</string>
 
     <string name="diagnostics_title">Diagnostics</string>

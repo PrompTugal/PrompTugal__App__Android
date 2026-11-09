@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+. The app stores nothing worth backing up (no accounts, no data), so every domain is
+     excluded by name, not only root: a domain added to the app later stays out of backups until someone
+     decides otherwise on purpose. -->
 <data-extraction-rules>
-    <cloud-backup><exclude domain="root" /></cloud-backup>
-    <device-transfer><exclude domain="root" /></device-transfer>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
 </data-extraction-rules>
