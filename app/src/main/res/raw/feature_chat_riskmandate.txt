@@ -1,7 +1,9 @@
-RiskMandate. Give agents access. Not free rein.
+RiskMandate (riskmandate.ai). Every sentence below is the page's own.
+
+Give agents access. Not free rein.
 Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two. Enforce them with the controls you already run, or with SHarness, the open-source secure harness we maintain. We are never in the request path.
-Know their reach. Define their mandate. Control the gap. An agent, everything it can reach, the mandate the business gave it, and the gap between the two. Then the same record for every agent, read by operations, leadership, security and the insurer.
-Reach: everything the agent can actually access in this deployment, including what nobody thought to check.
-Mandate: the job, written down: what the business authorised it to do.
-Gap: reach minus mandate. Never written by hand, and recomputed whenever either side moves.
-Source: riskmandate.ai, read 9 November 2026.
+
+Know their reach. Define their mandate. Control the gap.
+An agent, everything it can reach, the mandate the business gave it, and the gap between the two. Then the same record for every agent, read by operations, leadership, security and the insurer.
+
+Source: riskmandate.ai, v1.40.3, read 9 November 2026.
