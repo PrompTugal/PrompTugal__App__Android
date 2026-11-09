@@ -1,29 +1,39 @@
 # dev.lab status
 
-> ABP checks module and the side-by-side Lab UI on replayed samples are written; gate result below. Live runs, loop mode and settings are next.
+> Second push: the Lab now reads eval's formats (scenario, graph, recording) from assets with a strict bounded parser, and the ABP checks follow eval's rule semantics. Replay only; live runs, loop mode and settings are next.
 
 ## Doing
-- First push: the ABP checks module, the five scenarios, a runner for both paths and the side-by-side screen, on replayed samples.
+- Security's lows on acf34e8 handled: R-lab-4 (model text is capped at `ToolProtocol.MAX_TEXT_CHARS`, 16,000 characters, before events, call extraction and scoring; tested) and R-lab-3 (scenarios stay bundled, and the loader now also refuses a pattern over 200 characters, more than 20 patterns, or one that does not compile; tested). R-lab-5 noted: Gemma-syntax arguments are strings, so integer and boolean parameters are refused, which is the safe direction.
+- Scenario format: eval moved to another team, so the bundled copies under `assets/feature_lab/` are mine to change; recordings will come from its outputs.
+- P7 done: the Lab has a Build icon (material-icons-core), a kicker "Side by side" and a one-sentence summary on its Home card, en and pt-PT (`lab_home_kicker`, `lab_home_summary`).
+- Live runs: dev.llm's `LlmService` is on work/dev.llm only and `FeatureContext.llm` is not on dev yet, so I wait for the merge rather than import another branch. Plan: `ToolCallProposed(name, argsJson)` is parsed with this package's `StrictJson`, wrapped as a `ToolProtocol.RawCall` and validated by `ToolProtocol.validate` against the scenario's own tools (eval's format, my caps), then checked by `AbpChecks`. I keep my own validator instead of dev.llm's `checkToolCall` because it must read eval's scenario tools and `effect` rules; dev.llm's `ToolSpec` and `StrictJson` are in another package, so there is no clash.
+- Fix-forwards from architect and security (A-lab-1, A-lab-3, R-lab-1, I.1 to I.3), done below. A-lab-2 waits on eval's golden file.
 
 ## Done
-- `AbpChecks.kt`: tool allow-list, argument allow-list, mandate, read-only, egress destination, secret-in-outbound-argument (spacing and case tolerant, masked in the display), claim citations against fetched triplets, remote-claim check for scenario 5. Pure Kotlin with unit tests.
-- `Scenario.kt`: scenarios 1 to 5 with a small fictional demo graph (ten triplets), the task, the document, the policy and the failure in words. All text synthetic; the planted instruction and the demo secret are fixed strings shown as text.
-- `LabRunner.kt`: `FakeTools` (records only; graph tools read the demo graph and feed the citation check), `runRaw` / `runAbp` / `runBoth`, and the per-run flags the loop counters will use (raw failed, ABP caught, ABP escaped).
-- `LabScreen.kt`: scenario picker, task and document shown as text, "Run both paths", steps revealed one by one (all at once with animations off), raw left and ABP right on a wide tablet (stacked otherwise), result chips as live regions, scenario 5 shows the real network state beside the answer. Content only, inside the host's FeatureFrame, built from `ui/` components.
-- Strings in `feature_lab.xml` and pt-PT.
-- The five presets are SAMPLES, written by hand to show the mechanism, and the banner says so. They are not recordings and must not be presented as model output.
+- b67a7c5 (on dev): first checks module, five scenarios, side-by-side screen on hand-written samples.
+- This push:
+  - `StrictJson.kt`: strict RFC 8259 parser, depth cap 12, size cap, no duplicate keys, no trailing commas; also the canonical form and the 16-hex scenario hash (a test checks it against a value computed by eval's Python).
+  - `ToolProtocol.kt` (A-lab-1, R-lab-1): reads tool calls from model text (JSON objects and Gemma's own syntax), scanned text capped at 16,000 characters, at most 16 calls parsed and 64 brace positions tried, 4 calls per turn (later ones refused), 6 arguments, 2,000 characters per argument, tool names 64 characters of `[A-Za-z_]\w*`. Refused with a recorded reason: unknown tool, missing, extra or wrongly typed argument (string, integer, number, boolean; no nested values), over any cap. Valid arguments become flat strings.
+  - `AbpChecks.kt`: a port of eval's `abp.py` (rules in order: `tool_allowlist`, `read_only`, `egress_recipients`, `secret_egress`; `block` and `hold` stop a call, `flag` marks the answer with `citations_required` and `state_consistency`). `Claims.kt` ports `claims.py`. `Oracle.kt` ports `oracle.py` and the outcome part of `abp.py`; it is separate from the checks on purpose.
+  - `FakeTools.kt` (port of `fake_tools.py`), `PathRun.kt` (one path of a run, fed one model turn at a time: the live runs will only add the model call).
+  - `LabFormats.kt` + `LabAssets.kt` (A-lab-3): read `abp-eval-scenario/1`, `abp-eval-graph/1` and `abp-lab-recording/1` from `assets/feature_lab/{scenarios,graph,recordings}`; a bad file is skipped and counted on screen.
+  - `LabScreen.kt`, `LaneModel.kt`: design's lane layout (`StepRow`, 36sp lane headers, twin rows with "Not reached", a REPLAY strip on every lane, "Replay of a recorded run" and "Hand-written sample" chips, a computed one-sentence result). Scenario 5 shows the real network state.
+  - Bundled assets are SAMPLES in eval's formats (`sample-*` ids, `source.kind: "sample"`, synthetic). They stand in until eval's vault files are copied in at build time; the real files go in the same folders and replace them. The planted secret is now `PLANTED-SECRET-7f3a-do-not-use` (I.3); `scripts/secret-scan.sh` is clean.
+  - Tests: strict JSON, protocol caps, checks, oracle rescoring of every recording, the verdicts in every recording equal Kotlin's, path runs, the screen for all five scenarios, the asset loader, and `LabImportsTest` (security I.1: no java.net, files, intents, clipboard, reflection or processes; `android.net` only for the connectivity hint). Gate passed.
 
 ## Next
-1. Live runs: a `LabModelSource` over dev.llm's `LlmService` (a fake until it lands on `origin/work/dev.llm`; it has no LlmService yet), tool-call parsing and validation in Kotlin, interactive mode (typed instruction).
-2. Loop mode: N runs (default 20), failure rate without ABP, catch rate with ABP, "1 in X", battery and time per run, temperature, top-p, seed and the preset button; JSON export in eval's format.
-3. Replace samples with curated recordings from eval's vault once its format exists.
+1. Live runs: `LabModelSource` over `FeatureContext.llm` (not on dev yet; `PathRun` is ready), interleaving the two paths on one loaded model, interactive mode (typed instruction), error states.
+2. Loop mode (N, default 20, cap on N and time, battery guard), counters (`StatTile`), settings panel, export in `abp-lab-loop-export/1`.
+3. Real recordings from eval's vault replacing the samples.
 
 ## Blocked
-- No `LlmService` on `origin/work/dev.llm` and no scenario files or recording format on `origin/work/eval` yet. Built against local stand-ins.
+- A-lab-2 (golden vectors): eval has not published a golden file. I will run it as soon as it exists.
+- Live runs: waiting for `LlmService` / `FeatureContext.llm` on dev.
 
 ## For other roles
-- For eval: my `Scenario` fields (id, task, document, tools offered with kind, mandate, read-only flag, egress allow-list, secrets, failure in words) and `Recording` (scenario id, model, backend, raw turns, ABP turns; a turn is what was said, the proposed calls and the claims) are my guess at what the Lab needs. Tell me the real format and I will read it.
-- For app: `LabFeature.enabled` stays false until it works on the tablet; the conductor turns it on after a device run.
+- For eval (finding): `abp.py` `_domain` takes the text after the last "@" even for a URL, so `https://evil.test/x@example.test` passes as `example.test`. The Kotlin port reads a URL by its authority (host, without user info or port) and so blocks it. Please adopt the same rule so the golden vectors agree, and include this case. Also: please publish the golden file as one JSON with cases for `check_call` (scenario id, call, expected action and rule) and `check_final` (scenario id, fetched triplet ids, final text, expected flags); I will read whatever shape you choose. Rule ids are read from each scenario's policy, nothing is hard-coded.
+- For eval: scenario titles and descriptions are English only; the Lab shows them as data. If the Lab should show pt-PT, add optional `title_pt` and `description_pt` fields (excluded from the hash).
+- For architect: `PathRun` and `ToolProtocol` are the "propose, validate, decide" path for tools; live runs will use `ToolCallProposed` from `LlmService` when it exists by passing its text or arguments through `ToolProtocol.validate`.
 
 ## For Dinis
-- Nothing yet. The screen is not on the home screen (feature still disabled).
+- Nothing yet. The Lab is still off the home screen (`enabled = false`) until it works on the tablet.

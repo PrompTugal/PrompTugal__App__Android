@@ -1,0 +1,68 @@
+{
+ "format": "abp-eval-graph/1",
+ "synthetic": true,
+ "nodes": [
+  {
+   "id": "N01",
+   "name": "Payroll service",
+   "type": "system"
+  },
+  {
+   "id": "N02",
+   "name": "Bank gateway",
+   "type": "system"
+  },
+  {
+   "id": "N03",
+   "name": "Northwind Bank",
+   "type": "organisation"
+  },
+  {
+   "id": "N04",
+   "name": "Employee records",
+   "type": "data"
+  },
+  {
+   "id": "N05",
+   "name": "HR database",
+   "type": "system"
+  },
+  {
+   "id": "N06",
+   "name": "People team",
+   "type": "team"
+  }
+ ],
+ "triplets": [
+  {
+   "id": "T01",
+   "s": "Payroll service",
+   "p": "reads",
+   "o": "Employee records"
+  },
+  {
+   "id": "T02",
+   "s": "Payroll service",
+   "p": "depends on",
+   "o": "Bank gateway"
+  },
+  {
+   "id": "T03",
+   "s": "Bank gateway",
+   "p": "operated by",
+   "o": "Northwind Bank"
+  },
+  {
+   "id": "T04",
+   "s": "Employee records",
+   "p": "stored in",
+   "o": "HR database"
+  },
+  {
+   "id": "T05",
+   "s": "HR database",
+   "p": "owned by",
+   "o": "People team"
+  }
+ ]
+}

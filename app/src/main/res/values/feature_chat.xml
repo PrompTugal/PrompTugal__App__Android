@@ -41,4 +41,6 @@
     <string name="chat_preset_triplets_note">Needs the graph tools, which are not built yet.</string>
     <string name="chat_network_on">Network: on</string>
     <string name="chat_network_off">Network: off</string>
+    <string name="chat_kicker">On device</string>
+    <string name="chat_summary">Talk to a language model that runs on this tablet. Nothing you type leaves the device.</string>
 </resources>

@@ -30,6 +30,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -93,6 +96,9 @@ object ReleasesFeature : Feature {
     override val id = "releases"
     override val title = R.string.feature_releases_title
     override val enabled = true
+    override val icon: ImageVector get() = Icons.Filled.Info
+    override val kicker = R.string.feature_releases_kicker
+    override val summary = R.string.feature_releases_summary
 
     /** "New" on the home button while this version's notes are unseen; read off the main thread. */
     @Composable

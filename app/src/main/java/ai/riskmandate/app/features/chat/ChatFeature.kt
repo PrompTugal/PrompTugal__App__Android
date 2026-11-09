@@ -4,12 +4,15 @@ import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import java.io.File
 
@@ -49,6 +52,9 @@ object ChatFeature : Feature {
     override val id = "chat"
     override val title = R.string.feature_chat_title
     override val enabled = false
+    override val icon: ImageVector get() = Icons.Filled.Face
+    override val kicker = R.string.chat_kicker
+    override val summary = R.string.chat_summary
 
     @Composable
     override fun Content(context: FeatureContext) {
