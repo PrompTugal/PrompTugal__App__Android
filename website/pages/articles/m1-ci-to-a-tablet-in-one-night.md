@@ -113,7 +113,7 @@ The first APK from any source (Chrome, Files, App Tester) triggers Android's "in
 
 ### Still open
 
-The security reviews left findings that are Dinis's to act on and that were not closed when this was written: tighten the Workload Identity Federation condition to the repository's numeric IDs (names can be re-registered) and to the `dev` branch (R-wif-2, R-wif-3, both Medium); protect the `release` environment with a required reviewer and a branch limit; keep the service account to the one role it needs. Signed APKs are also public, because the repository and its releases are public (finding A-14, accepted as information). See `docs/security/reviews/` and `docs/security/github-settings.md`.
+A few hardening steps remain, tracked in the repository's security reviews (`docs/security/`). Dinis decides them. This article does not list them, so it does not describe gaps that are still open.
 
 ## The first install
 
