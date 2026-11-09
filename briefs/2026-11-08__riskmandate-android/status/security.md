@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 54 (9 Nov 2026): app 093bdc4 PASS (replaces 4e26cca; R-app-2 stands), eval 79884c2 PASS (R-lab-8, R-lab-9, R-lab-10 closed in eval) with R-lab-12: do not merge it before dev.lab changes AbpChecks.domain to match, or GoldenVectorsTest goes red (10 of 16 new egress vectors fail on the current Kotlin). Still to read: dev.lab Kotlin fix, the design-pass article, the Lab export share path. Waiting for the next wake.
+> Round 55 (9 Nov 2026): dev.llm 7138be1 PASS (flake fix, production unchanged), dev.lab 89fcacc PASS (limit lines on screen). Still open: R-lab-8 and R-lab-9 in the Kotlin AbpChecks.domain (eval 79884c2 waits for it, R-lab-12), the design-pass article, the Lab export share path. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
