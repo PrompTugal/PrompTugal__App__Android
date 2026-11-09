@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Feature H, chat with the local model. Owned by dev.chat. Claims about RiskMandate come only from the bundled riskmandate.ai text (res/raw/feature_chat_*.txt). -->
-    <string name="chat_badge">On device, offline</string>
+    <string name="chat_badge">Runs on this device</string>
     <string name="chat_new">New chat</string>
     <string name="chat_history">History</string>
     <string name="chat_history_close">Back to chat</string>

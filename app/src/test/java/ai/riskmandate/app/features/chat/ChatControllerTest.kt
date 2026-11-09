@@ -251,6 +251,36 @@ class ChatControllerTest {
         assertFalse(c.state.current.messages.any { it.text.contains("free rein") && it.role == ChatRole.USER })
     }
 
+    @Test fun everyRequestWithoutAPresetCarriesTheShortBaseBlockInThePagesOwnWords() {
+        val llm = FakeChatLlm()
+        val c = started(llm)
+        c.send("what is risk mandate?")
+        val system = llm.calls.single().system!!
+        assertEquals(ChatPresets.BASE_SYSTEM, system)
+        assertTrue(system.contains("riskmandate.ai"))
+        // The two quoted sentences are verbatim from the bundled riskmandate.ai text.
+        val page = java.io.File("src/main/res/raw/feature_chat_riskmandate.txt").readText()
+        for (quote in Regex("\"([^\"]+)\"").findAll(system).map { it.groupValues[1] }.filter { it.length > 20 || it.startsWith("Give") }) {
+            assertTrue("not verbatim from the page: $quote", page.contains(quote))
+        }
+        assertTrue("keep prefill small: about 4 characters a token", system.length < 600)
+    }
+
+    @Test fun aPresetGroundingReplacesTheBaseBlock() {
+        val llm = FakeChatLlm()
+        val c = started(llm)
+        c.send("What is RiskMandate?", groundingText = "PAGE TEXT")
+        assertTrue(llm.calls.single().system!!.contains("PAGE TEXT"))
+    }
+
+    @Test fun plainTextDropsBoldMarkersAndNothingElse() {
+        assertEquals("Portugal is nice", PlainText.clean("**Portugal** is __nice__"))
+        assertEquals("", PlainText.clean("**"))
+        assertEquals("a snake_case_name and __init", PlainText.clean("a snake_case_name and __init"))
+        assertEquals("<b>x</b> [l](https://evil.example)", PlainText.clean("<b>x</b> [l](https://evil.example)")) // not rendered, not stripped
+        assertEquals("half bold", PlainText.clean("half **bold"))
+    }
+
     @Test fun laterTurnsCarryTheEarlierOnes() {
         val llm = FakeChatLlm()
         val c = started(llm)
