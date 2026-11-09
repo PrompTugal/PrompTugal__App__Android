@@ -86,7 +86,10 @@ fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
         // Honest badges: "on device" only while a model is installed here; the network chip is the real state, read again after each answer.
         val offline = remember(state.generating) { Browser.isOffline(androidContext) }
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (state.modelId != null) StatusChip(stringResource(R.string.chat_badge), ChipKind.Allowed, Modifier.testTag(ChatTags.BADGE))
+            if (state.modelId != null) {
+                if (state.local) StatusChip(stringResource(R.string.chat_badge), ChipKind.Allowed, Modifier.testTag(ChatTags.BADGE))
+                else StatusChip(stringResource(R.string.chat_badge_cloud), ChipKind.Held, Modifier.testTag(ChatTags.BADGE_CLOUD))
+            }
             StatusChip(stringResource(if (offline) R.string.chat_network_off else R.string.chat_network_on), if (offline) ChipKind.Neutral else ChipKind.Held, Modifier.testTag(ChatTags.NETWORK))
         }
         FlowRow(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

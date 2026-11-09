@@ -69,3 +69,7 @@ Closing message now points to Settings > Environments > release > Environment se
 ## Update: R-llm-5 (security's dev.llm review)
 `docs/ci.md` "Toolchain pins and the Kotlin bump": the -Xskip-metadata-version-check state and risk, a plan to drop it (coordinated Kotlin + Compose BOM + AGP + Gradle bump, gate plus smoke job, check the model screen on a tablet), and the ABI-split notes (arm64 for testers, x86_64 for the smoke job; not done, needs app/build.gradle.kts and a size measurement; do not go arm64-only). `dependabot.yml` groups: `toolchain` (Kotlin, Compose, AGP together), `litertlm` (com.google.ai.edge.*), `testing`, `androidx`. No build files touched, so the Gradle gate was not re-run; litertlm is not on dev yet so the group is untested.
 - For architect/app.android: the bump plan needs your `build.gradle.kts`; I did not pick target versions.
+
+## Update: team rename (from conductor; checked against CLAUDE.md on dev at b3bea2b)
+I am release.android@promptugal.ai.dinis from this commit. `scripts/release-notes.sh` accepts both `@promptugal.ai: ` and `@promptugal.ai.dinis: ` subjects (role shown without the domain); new `scripts/test-release-notes.sh` (both forms, merges dropped, range since the tag, tag being released excluded; confirmed to fail on the old script) runs in the `check` job; `docs/ci.md` updated. actionlint and secret-scan pass.
+- Note for security.android: `scripts/secret-scan.sh` now takes about 3 minutes locally (full history, all refs); fine for a gate, slow to run often.

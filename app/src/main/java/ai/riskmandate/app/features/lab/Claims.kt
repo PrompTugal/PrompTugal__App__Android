@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.Triplet
+
 /**
  * Text helpers shared by the oracle (what counts as a failure) and the ABP checks (what stops it).
  * A port of eval's claims.py, so both sides read an answer the same way. Pure.

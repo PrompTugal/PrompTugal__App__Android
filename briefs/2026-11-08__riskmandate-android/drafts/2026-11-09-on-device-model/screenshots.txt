@@ -1,0 +1,5 @@
+# <target>.png <- <source>.png, files the Robolectric screenshot tests write to app/build/screenshots/.
+# chat-* come from ChatScreenshotTest with a fake model (canned text): they show the screen, not the model.
+chat-no-model.png <- chat-no-model-tablet-light.png
+chat-empty.png <- chat-empty-tablet-light.png
+chat-answer.png <- chat-answer-tablet-light.png

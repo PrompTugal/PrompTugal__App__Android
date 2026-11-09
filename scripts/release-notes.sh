@@ -17,12 +17,13 @@ else
   prev=""; range="HEAD"; since="(no earlier release tag: last $MAX_COMMITS commits)"
 fi
 
-# Subject format is "<role>@promptugal.ai: <what>": show "<what> (<role>, <sha>)". Git merges and the
+# Subject format is "<role>@promptugal.ai: <what>" (until 9 Nov 2026, about 11:00 UTC) or
+# "<role>@promptugal.ai.dinis: <what>" (after the rename; both are accepted): show "<what> (<role>, <sha>)". Git merges and the
 # conductor's "merge <branch>" commits are noise: the commits they bring in are listed themselves.
 lines=$(git log --no-merges --max-count="$MAX_COMMITS" --pretty='%h%x09%s' "$range" \
   | awk -F'\t' '
       { sha=$1; subj=$2; role=""
-        if (match(subj, /^[a-z0-9._-]+@promptugal\.ai: /)) {
+        if (match(subj, /^[a-z0-9._-]+@promptugal\.ai(\.dinis)?: /)) {
           role=substr(subj, 1, index(subj, "@")-1); subj=substr(subj, RLENGTH+1) }
         if (subj ~ /^merge /) next
         printf "- %s (%s%s)\n", subj, (role != "" ? role ", " : ""), sha }')

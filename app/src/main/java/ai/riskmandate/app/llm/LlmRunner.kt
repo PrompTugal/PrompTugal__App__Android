@@ -5,17 +5,20 @@ import kotlin.coroutines.cancellation.CancellationException
 
 /** Everything one Workbench run is set up with. Plain values, so a run can be repeated exactly. */
 data class RunSettings(
-    /** Null: the host's current choice. */
-    val modelId: String? = null,
-    /** Null: GPU first, CPU if the GPU cannot load. */
-    val backend: BenchBackend? = null,
+    /** The model is chosen in Model setup (architect: no model parameter); this is the backend only. */
+    val backend: BackendPreference = BackendPreference.AUTO,
     val systemPrompt: String = "",
     val userPrompt: String,
     val sampling: Sampling = Sampling.DEFAULT,
     val maxTokens: Int = 256,
     val tools: List<ToolSpec> = emptyList(),
+    /** Unload the model first, so the run measures a cold load (LlmService.unload; security R-wb-1). */
+    val coldStart: Boolean = false,
 ) {
-    fun request(): LlmRequest = LlmRequest(
+    fun request(): LlmRequest {
+        require(userPrompt.isNotBlank()) { "the prompt is empty" }
+        require(userPrompt.length <= MAX_TYPED_CHARS && systemPrompt.length <= MAX_TYPED_CHARS) { "a prompt is longer than $MAX_TYPED_CHARS characters" }
+        return LlmRequest(
         messages = buildList {
             if (systemPrompt.isNotBlank()) add(LlmMessage.system(systemPrompt))
             add(LlmMessage.user(userPrompt))
@@ -23,7 +26,14 @@ data class RunSettings(
         tools = tools,
         settings = sampling,
         maxTokens = maxTokens,
-    )
+        backend = backend,
+        )
+    }
+
+    companion object {
+        /** Typed prompts are capped (security checklist L). */
+        const val MAX_TYPED_CHARS = 2_000
+    }
 }
 
 /** One proposed tool call and what [checkToolCall] said about it. Nothing ran. */
@@ -54,17 +64,16 @@ sealed interface RunUpdate {
 }
 
 /**
- * Runs one Workbench experiment through the app's [LlmService]: selects the model and backend, reads the device
- * before and after, streams the answer, checks every proposed tool call against the offered tools (nothing
- * runs), and always ends with [RunUpdate.Finished], also when stopped (STOPPED) or failed (ERROR).
- * Shared by the Run tab and the sweeps; dev.lab's tool-test runner can call it too.
+ * Runs one Workbench experiment through the app's [LlmService]: unloads first for a cold start when asked, reads
+ * the device before and after, streams the answer (the backend goes on the request), checks every proposed tool
+ * call against the offered tools (nothing runs), and always ends with [RunUpdate.Finished], also when cancelled
+ * (CANCELLED) or failed (ERROR). Shared by the Run tab and the sweeps.
  *
- * [select] is LlmHost.select when the service is the real host; [probe] is DeviceProbe.sample; [clock] is a
- * monotonic millisecond clock (System.nanoTime based), [wallClock] the time of day for [RunRecord.startedAtMs].
+ * [probe] reads the device (DeviceProbe.sample in the app, a fake in tests); [clock] is a monotonic millisecond
+ * clock, [wallClock] the time of day for [RunRecord.startedAtMs]; both injectable for tests (QA).
  */
 class LlmRunner(
     private val service: LlmService,
-    private val select: suspend (String?, BenchBackend?) -> Unit = { _, _ -> },
     private val probe: () -> DeviceSample? = { null },
     private val clock: () -> Long = { System.nanoTime() / 1_000_000 },
     private val wallClock: () -> Long = { System.currentTimeMillis() },
@@ -92,13 +101,13 @@ class LlmRunner(
         }
 
         try {
-            select(settings.modelId, settings.backend)
             val request = try {
                 settings.request()
             } catch (e: IllegalArgumentException) {
                 error = LlmEvent.Error(LlmError.INFERENCE_FAILED, e.message ?: "bad settings")
                 return finish(LlmStopReason.ERROR)
             }
+            if (settings.coldStart) service.unload()
             onUpdate(RunUpdate.Progress("", 0, clock() - start, null))
             service.stream(request).collect { e ->
                 when (e) {
@@ -114,7 +123,7 @@ class LlmRunner(
                 }
             }
         } catch (e: CancellationException) {
-            finish(LlmStopReason.STOPPED)
+            finish(LlmStopReason.CANCELLED)
             throw e
         }
         return finish(
@@ -132,7 +141,8 @@ object RunReport {
         val s = r.settings
         val st = r.stats
         appendLine("RiskMandate Workbench run")
-        appendLine("Model: ${st?.modelId ?: s.modelId ?: "-"}  backend: ${st?.backend ?: "-"} (asked ${s.backend?.name ?: "GPU then CPU"})" + if (st?.fellBackToCpu == true) "  GPU failed, fell back to CPU" else "")
+        appendLine("Where: ${if ((st?.location ?: LlmLocation.LOCAL) == LlmLocation.LOCAL) "on this device" else "cloud"}" + (st?.costUsd?.let { String.format(Locale.ROOT, "  cost: %.5f USD", it) } ?: ""))
+        appendLine("Model: ${st?.modelId ?: "-"}  backend: ${st?.backend ?: "-"} (asked ${s.backend.name.lowercase(Locale.ROOT)})" + (if (st?.fellBackToCpu == true) "  GPU failed, fell back to CPU" else "") + if (s.coldStart) "  cold start asked" else "")
         appendLine("Sampling: temperature ${num(s.sampling.temperature)}, top-k ${s.sampling.topK}, top-p ${num(s.sampling.topP)}, seed ${s.sampling.seed ?: "-"}, max tokens ${s.maxTokens}")
         appendLine("Tools offered: ${if (s.tools.isEmpty()) "none" else s.tools.joinToString { it.name }}")
         appendLine("Stop: ${r.stopReason.name.lowercase(Locale.ROOT).replace('_', ' ')}" + (r.error?.let { "  (${it.reason.name}: ${it.message.take(200)})" } ?: ""))
