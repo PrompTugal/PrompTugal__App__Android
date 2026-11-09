@@ -50,6 +50,8 @@ class ChatScreenshotTest {
                     }
                 }
             }
+            // start() loads on a real IO thread: wait for the loaded state, not just for idle.
+            compose.waitUntil(15_000) { compose.onAllNodesWithTag(ChatTags.NO_MODEL).fetchSemanticsNodes().size == 1 || compose.onAllNodesWithTag(ChatTags.INPUT).fetchSemanticsNodes().size == 1 }
             compose.waitForIdle()
             interact()
             compose.waitForIdle()
@@ -74,7 +76,7 @@ class ChatScreenshotTest {
             "Source: riskmandate.ai, https://riskmandate.ai/abp"
         shoot("answer", FakeLlmService(reply = { FakeReply(text) })) {
             compose.onNodeWithTag(ChatTags.preset("riskmandate")).performClick()
-            compose.waitUntil(10_000) { compose.onAllNodesWithTag(ChatTags.STATS).fetchSemanticsNodes().size == 1 }
+            compose.waitUntil(15_000) { compose.onAllNodesWithTag(ChatTags.STATS).fetchSemanticsNodes().size == 1 }
         }
     }
 }
