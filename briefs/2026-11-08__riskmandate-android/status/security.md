@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 18 (9 Nov 2026, about 05:35 UTC): dev.mandate 0b29d55 PASS. Everything else unchanged since round 17. Waiting for the next wake.
+> Round 19 (9 Nov 2026, about 06:00 UTC): LLM side team: wrote sections F to K of `docs/security/summit-checklist.md` and the model table `docs/security/models.md`; scan now has OpenRouter and Hugging Face token classes. No dev.llm, dev.chat, dev.lab or eval commits yet. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 19: `docs/security/summit-checklist.md` sections G to K for the on-device LLM team (model download: pinned URLs and byte sizes, own redirect handling to a host suffix list, SHA-256 before load and after any copy, no load-any-file, LiteRT-LM merged-manifest and OSV/licence checks; chat: text output, history cleared on the stand idle reset, no content logging; Lab: fake tools, strict allow-listed parsing, planted secret must be an obvious fake that matches no pattern, FileProvider reviewed if used; eval: key only from the environment and redacted, $5 cap in code and on the key, results out of the repository, hashed dependencies); `docs/security/models.md` (the table a model must be in before it is offered); `scripts/secret-scan.sh` gained `OpenRouter key` and `Hugging Face token` classes (tested).
 - Round 18: **PASS** dev.mandate 0b29d55 (design components; the data sentence is shortened to what the code shows; the site's no-analytics statement is at https://riskmandate.ai/privacy if dev.mandate wants to quote it).
 - Round 17: **PASS** dev.releases 61d2b70 (What's new: reads only its own assets; links only through `Links.isAllowed` and `Browser.open`, other links plain text; image paths whitelisted; stores one int; committed PNG has no metadata), app 95e7978 (idle holds no longer cleared by the host), dev.mandate 42f7a7b (final strings, en and pt-PT, accurate), qa bdb73a5 (the asset-origin exemption is pinned to one host and folder; the SSL guard trips on `proceed()` only).
 - Round 16: **PASS** architect 0b521af (transitional Activity constructor deleted), app c68ed92, dev.mandate e552307 (R-site-1 closed: the screen now derives the app's own connections from the enabled features), dev.site ee25896 (openExternal wired with `hasGesture()` and not `isRedirect`: R-ext-1 met), editor 6e8845e (R-editor-1 closed). Open: R-ext-2 (Dinis, external-link rule), R-play-9 (Data safety answer), A-2 and R-wif-2 to R-wif-4 (Dinis, GitHub and Google Cloud settings), R-stand-4 (accepted).
@@ -41,6 +42,8 @@ At each wake: `git fetch origin`, review `origin/dev..origin/work/<role>` for ea
 Nothing.
 
 ## For other roles
+- dev.llm, dev.chat, dev.lab, eval: read `docs/security/summit-checklist.md` sections G to K before pushing; dev.llm fills `docs/security/models.md` size and SHA-256 per model.
+- play: the model download tells huggingface.co the device's IP address; privacy and Data safety change in the same merge as feature G.
 - dev.mandate (blocking): R-site-1, fix `mandate_mandate_data` and `mandate_reason_open_pages` in en and pt-PT.
 - dev.site: when wiring `Browser.openExternal`, only for `request.hasGesture()` and not `isRedirect` (R-ext-1); R-site-10 use design's FeatureContent.
 - play: R-play-8 reword the Contact page sentence.
@@ -69,6 +72,8 @@ Nothing.
 - conductor: `scripts/osv-check.sh` needs network to api.osv.dev; run it after `scripts/licences.sh` in the gate if wanted.
 
 ## For Dinis
+- OpenRouter: set a credit limit of $5 on the key itself in the OpenRouter dashboard, so a harness bug cannot overspend (the brief's cap is enforced in code too).
+- Chat history on a shared stand tablet: decide whether it is cleared by the stand idle reset (my recommendation) and whether the chat screen uses FLAG_SECURE.
 - Decide: may the in-app site hand a user-tapped https link to the system browser (the WebView still loads riskmandate.ai only)? Play's privacy text already says so (R-ext-2).
 - Data safety answer for the in-app view: ask the live Play Console form (play's `data-safety.md`, three options) before the privacy page is hosted.
 - Before the website goes live: verify promptugal.ai in GitHub for Pages, consider a required reviewer on the `github-pages` environment, allow `dev` in its deployment branches (R-site-2, R-site-3).

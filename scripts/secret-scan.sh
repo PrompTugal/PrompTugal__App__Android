@@ -24,6 +24,8 @@ classes=(
   'npm token|npm_[A-Za-z0-9]{36}'
   'Firebase CI token|1//[0-9A-Za-z_-]{40,}'
   'Anthropic or OpenAI key|sk-(ant-)?[A-Za-z0-9_-]{32,}'
+  'OpenRouter key|sk-or-v[0-9]+-[A-Za-z0-9]{20,}'
+  'Hugging Face token|hf_[A-Za-z0-9]{30,}'
   'password in a URL|[a-z]+://[^/[:space:]:@]+:[^/[:space:]@]{4,}@[a-z0-9.-]+'
   'keystore password assignment|(store|key)(Password|_password)[[:space:]]*[=:][[:space:]]*["'"'"'][^"'"'"'$ {]{4,}["'"'"']'
 )
