@@ -5,6 +5,7 @@ import ai.riskmandate.app.llm.LlmEvent
 import ai.riskmandate.app.llm.LlmLocation
 import ai.riskmandate.app.llm.LlmMessage
 import ai.riskmandate.app.llm.LlmRequest
+import ai.riskmandate.app.llm.LlmStopReason
 import ai.riskmandate.app.llm.LlmState
 import ai.riskmandate.app.llm.ParamType
 import ai.riskmandate.app.llm.Sampling
@@ -70,6 +71,8 @@ class CloudLlmServiceTest {
         assertEquals(12, done.stats.promptTokens); assertEquals(5, done.stats.outputTokens)
         assertTrue(done.stats.backend.contains("openrouter.ai"))
         assertEquals(LlmLocation.CLOUD, done.stats.location) // never "on this device"
+        assertEquals(0.0004, done.stats.costUsd!!, 1e-12) // OpenRouter's usage.cost
+        assertEquals(64, done.stats.maxTokens); assertEquals(LlmStopReason.DONE, done.stats.stopReason)
         assertEquals(400L, spend.snapshot().totalSpentMicros) // usage.cost, to the micro-dollar
         assertEquals(400L, spend.snapshot().sessionSpentMicros)
     }
@@ -153,7 +156,7 @@ class CloudLlmServiceTest {
         val t = ok(content("x"), FINISH)
         val e = run(service(transport = t))
         val error = err(e)
-        assertEquals(LlmError.INFERENCE_FAILED, error.reason)
+        assertEquals(LlmError.CAP_REACHED, error.reason)
         assertTrue(error.message.contains("cap", ignoreCase = true))
         assertFalse(allText(e).contains(TEST_KEY))
         assertTrue("nothing may be sent once the cap would be passed", t.calls.isEmpty())
@@ -181,10 +184,12 @@ class CloudLlmServiceTest {
         val t = ok(content("x"), FINISH)
         val missing = run(service(spend = newSpend(init = false), transport = t))
         assertTrue(err(missing).message.contains("ledger")); assertTrue(t.calls.isEmpty())
+        assertEquals(LlmError.CAP_REACHED, err(missing).reason)
         newSpend().record(1)
         File(dir, CloudSpend.FILE).writeText("{ not a ledger")
         val damaged = run(service(spend = newSpend(init = false), transport = t))
         assertTrue(err(damaged).message.contains("ledger")); assertTrue(t.calls.isEmpty())
+        assertEquals(LlmError.CAP_REACHED, err(damaged).reason)
         assertEquals(1, terminal(missing)); assertEquals(1, terminal(damaged))
     }
 
@@ -237,6 +242,18 @@ class CloudLlmServiceTest {
         val t = ok(content("x"), FINISH)
         val e = run(service(transport = t), LlmRequest(listOf(LlmMessage.user("y".repeat(CloudLimits.MAX_REQUEST_BYTES + 1)))))
         assertEquals(LlmError.TOO_LONG, err(e).reason); assertTrue(t.calls.isEmpty())
+    }
+
+    @Test fun anAnswerWithNoReportedCostStillCarriesAnEstimatedCostUsd() {
+        val e = run(service(transport = ok(content("hi"), FINISH, usage(1, 1, null))))
+        val cost = (e.last() as LlmEvent.Done).stats.costUsd!!
+        assertTrue("estimate is at least the reserve: $cost", cost >= CloudLimits.RESERVE_MICROS / 1_000_000.0)
+    }
+
+    @Test fun aReplyCutByTheTokenLimitSaysSo() {
+        val cut = """{"choices":[{"delta":{},"finish_reason":"length"}]}"""
+        val e = run(service(transport = ok(content("long answ"), cut, usage(3, 64, 0.001))))
+        assertEquals(LlmStopReason.MAX_TOKENS, (e.last() as LlmEvent.Done).stats.stopReason)
     }
 
     @Test fun lastRunReportsCostAndBothRunningTotals() {

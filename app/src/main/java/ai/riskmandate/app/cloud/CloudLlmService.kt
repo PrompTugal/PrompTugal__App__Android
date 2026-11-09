@@ -9,6 +9,7 @@ import ai.riskmandate.app.llm.LlmRole
 import ai.riskmandate.app.llm.LlmService
 import ai.riskmandate.app.llm.LlmState
 import ai.riskmandate.app.llm.LlmStats
+import ai.riskmandate.app.llm.LlmStopReason
 import ai.riskmandate.app.llm.ToolSpec
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -113,10 +114,10 @@ class CloudLlmService(
             val s = spend.snapshot()
             return emit(
                 if (!s.ledgerOk) {
-                    LlmEvent.Error(LlmError.INFERENCE_FAILED, "The cloud spending ledger is missing or damaged, so nothing is sent. Staff can reset it in Diagnostics.")
+                    LlmEvent.Error(LlmError.CAP_REACHED, "The cloud spending ledger is missing or damaged, so nothing is sent. Staff can reset it in Diagnostics.")
                 } else {
                     LlmEvent.Error(
-                        LlmError.INFERENCE_FAILED,
+                        LlmError.CAP_REACHED,
                         "Cloud spending cap reached: this session US$${CloudSpend.usd(s.sessionSpentMicros)} of US$${CloudSpend.usd(s.sessionCapMicros)}, " +
                             "this tablet US$${CloudSpend.usd(s.totalSpentMicros)} of US$${CloudSpend.usd(s.totalCapMicros)}.",
                     )
@@ -146,6 +147,8 @@ class CloudLlmService(
         var reportedCost: Long? = null
         var chars = 0
         var finished = false
+        var finishReason: String? = null
+        var settledCost: Long? = null
         var failure: LlmEvent.Error? = null
         val calls = linkedMapOf<Int, ToolAcc>()
         try {
@@ -165,7 +168,10 @@ class CloudLlmService(
                         if (c.isFinite() && c >= 0) reportedCost = Math.round(c * 1_000_000.0)
                     }
                     val choice = chunk.optJSONArray("choices")?.optJSONObject(0) ?: continue
-                    if (choice.optString("finish_reason", "").let { it.isNotEmpty() && it != "null" }) finished = true
+                    if (choice.optString("finish_reason", "").let { it.isNotEmpty() && it != "null" }) {
+                        finished = true
+                        finishReason = choice.optString("finish_reason")
+                    }
                     val delta = choice.optJSONObject("delta") ?: continue
                     if (!delta.isNull("content")) {
                         val text = delta.optString("content", "")
@@ -202,7 +208,7 @@ class CloudLlmService(
             abort?.dispose()
             runCatching { response.close() }
             lastEndedAt = clock()
-            settle(request, promptTokensEstimate, promptTokens, outputTokens, reportedCost, chars, response.status in 200..299)
+            settledCost = settle(request, promptTokensEstimate, promptTokens, outputTokens, reportedCost, chars, response.status in 200..299)
         }
         failure?.let { return emit(it) }
         if (!finished) return emit(LlmEvent.Error(LlmError.INFERENCE_FAILED, "The reply from openrouter.ai ended early."))
@@ -216,17 +222,21 @@ class CloudLlmService(
             prefillTokensPerSecond = null, decodeTokensPerSecond = null,
             timeToFirstTokenMs = if (firstAt > 0) firstAt - started else null, totalMs = ended - started,
             location = LlmLocation.CLOUD,
+            costUsd = settledCost?.let { it / 1_000_000.0 }, // the reported cost, or the estimate (never less than the reserve)
+            maxTokens = request.maxTokens,
+            stopReason = if (finishReason == "length") LlmStopReason.MAX_TOKENS else LlmStopReason.DONE,
         )))
     }
 
     /** Records what the call cost, once, whatever way it ended. Not billed when the server refused it. */
-    private fun settle(request: LlmRequest, promptEstimate: Int, promptTokens: Int?, outputTokens: Int?, reported: Long?, chars: Int, billable: Boolean) {
-        if (!billable) { _lastRun.value = null; return }
+    private fun settle(request: LlmRequest, promptEstimate: Int, promptTokens: Int?, outputTokens: Int?, reported: Long?, chars: Int, billable: Boolean): Long? {
+        if (!billable) { _lastRun.value = null; return null }
         val estimate = ((promptTokens ?: promptEstimate) * model.inputUsdPerMtok + (outputTokens ?: (chars / 3 + 1).coerceAtMost(request.maxTokens)) * model.outputUsdPerMtok)
         val cost = reported ?: maxOf(Math.ceil(estimate).toLong(), CloudLimits.RESERVE_MICROS) // never less than the reserve when no cost is reported
         try { spend.record(cost) } catch (e: Exception) { /* the next request's cap check reads the file and fails closed if it is damaged */ }
         val s = spend.snapshot()
         _lastRun.value = CloudRunInfo(model.id, promptTokens, outputTokens, cost, reported == null, s.sessionSpentMicros, s.sessionCapMicros, s.totalSpentMicros, s.totalCapMicros)
+        return cost
     }
 
     private fun errorFor(status: Int): LlmEvent.Error = when (status) {

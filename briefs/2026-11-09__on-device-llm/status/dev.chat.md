@@ -93,6 +93,10 @@ Dinis (spoken, relayed by the conductor, 9 Nov about 13:25 UTC): a per-device se
 - **Added requirements:** one canonical byte string for the signature and the AAD (not re-serialised JSON); compare the full SHA-256 of the device public key (8 bytes only for reading aloud); expiry a day or less; the nonce recorded after a successful import and kept until the payload's expiry, in a bounded store that refuses rather than forgets; delete the device agreement key after a successful import and on Remove key (a sealed payload left in a chat lane is a bearer secret while that key exists); strict JSON and base64 with a few-KB bound and fixed refusal messages; HKDF checked against the RFC 5869 vectors; the nonce store listed in the mandate view by exact name; test keys made in memory, no committed private key.
 - **Caps (R-cloud-11, low):** Dinis writes the two numbers on the board; until then they stay US$1 a session and US$5 a tablet (the $1 is my inference from his $5). The credit limit on each key at OpenRouter remains the real backstop.
 
+## After dev.llm 6fd8731 (dev 9b24fed): CAP_REACHED, costUsd, prompt v2
+- The cloud service ends a call stopped by a spending cap or by a missing or damaged ledger with `LlmError.CAP_REACHED` (the message says which). Every completed answer carries `costUsd` (OpenRouter's `usage.cost`, or the estimate, never less than the reserve), `maxTokens`, `stopReason` (MAX_TOKENS when the provider says `length`) and `location = CLOUD`. `lastRun` stays for the running totals.
+- Chat sends `riskmandate_base.v1` (which says "running on this device") only for a local service, and `riskmandate_base.v2` (`RISKMANDATE_BASE_ANYWHERE`, no such claim) otherwise (`ChatBasePrompt`, tested against the two bundled files).
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 
