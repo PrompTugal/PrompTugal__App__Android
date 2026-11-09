@@ -40,4 +40,10 @@ class ReleasesBadgeTest {
     }
 
     @Test fun badgeStringIsTranslated() = assertEquals("New", app.getString(R.string.feature_releases_badge))
+
+    @Test fun cardTextAndIconAreSet() {
+        org.junit.Assert.assertNotNull(ReleasesFeature.icon)
+        assertEquals("Release notes", app.getString(ReleasesFeature.kicker))
+        org.junit.Assert.assertTrue(app.getString(ReleasesFeature.summary).isNotBlank())
+    }
 }

@@ -26,12 +26,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * A count in a capsule (iOS `CountPill`): "9 new", "3 held". Red when [count] is above zero, muted at
+ * A count in a capsule (iOS `CountPill`): "9 new", "3 held". Accent-coloured when [count] is above zero, muted at
  * zero; background is the colour at 12%. Read as one item: "<count> <label>". Use it as the badge on a
  * sidebar destination or as a [TitledCard] accessory.
  */
 @Composable
-fun CountPill(count: Int, label: String, modifier: Modifier = Modifier, color: Color = Pt.colors.red) {
+fun CountPill(count: Int, label: String, modifier: Modifier = Modifier, color: Color = Pt.colors.accent) {
     val tone = if (count > 0) color else Pt.colors.muted
     Row(
         modifier = modifier

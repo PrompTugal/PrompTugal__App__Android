@@ -62,5 +62,7 @@
 
     <string name="mandate_chip_none">No gap</string>
     <string name="mandate_chip_some">Gap: %1$d</string>
+    <string name="mandate_card_kicker">Live on this device</string>
+    <string name="mandate_card_summary">This app\'s own reach, mandate and gap, read from the device as you open it.</string>
     <string name="mandate_gap_heading">Gap: reach minus mandate</string>
 </resources>

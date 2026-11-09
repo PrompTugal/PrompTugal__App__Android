@@ -71,4 +71,13 @@ class RecordingsTest {
             for (m in email.findAll(t)) assertTrue("${f.name} has a real-looking address: ${m.value}", m.value.endsWith(".test") || m.value.endsWith("example.test"))
         }
     }
+
+    @Test fun scenarioPatternsAreBoundedAndMustCompile() {
+        val base = LabTestData.text("scenarios/sample-leakage.json")
+        val ok = base.replace("\"patterns\": []", "\"patterns\": [\"sk-[a-z]{4}\"]")
+        LabFormats.parseScenario(ok)
+        val long = base.replace("\"patterns\": []", "\"patterns\": [\"" + "a".repeat(LabFormats.MAX_PATTERN_CHARS + 1) + "\"]")
+        val bad = base.replace("\"patterns\": []", "\"patterns\": [\"(\"]")
+        for (t in listOf(long, bad)) try { LabFormats.parseScenario(t); org.junit.Assert.fail("accepted") } catch (_: LabFormats.FormatException) {}
+    }
 }
