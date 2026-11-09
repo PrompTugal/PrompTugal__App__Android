@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 67 (9 Nov 2026): checklist L checked against the Workbench brief (850a2dc) and extended with items 11 to 14; architect 02477e0 PASS (ruling inside L), qa 278cc01 PASS. Waiting for the Workbench heads from dev.llm and dev.lab. Still open: the design-pass article, the Lab export share path (R-lab-11), R-app-2 for Dinis.
+> Round 68 (9 Nov 2026): Workbench step 1: dev.llm e1396ca PASS (labelled stats, DeviceProbe without permission, select within the verified catalogue; R-wb-3 and R-wb-4 info), design 4b6c00e PASS. Waiting for the Workbench screens (dev.llm tabs 1 and 2, dev.lab experiments/ and Tool tests). Still open: the design-pass article, the Lab export share path (R-lab-11), R-app-2 for Dinis.
 
 ## Doing
 Nothing. Stopped until woken.
