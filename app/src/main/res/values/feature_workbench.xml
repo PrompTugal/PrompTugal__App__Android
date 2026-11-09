@@ -90,6 +90,12 @@
     <string name="workbench_col_decode_short">tok/s</string>
     <string name="workbench_col_output_short">Out</string>
     <string name="workbench_error_detail">%1$s: %2$s</string>
+    <string name="workbench_on_device">On device</string>
+    <string name="workbench_cloud">Cloud</string>
+    <string name="workbench_cloud_note">Cloud: the prompt and system prompt go to openrouter.ai, and each run costs money within the app\'s spending cap.</string>
+    <string name="workbench_cloud_label">Cloud · %1$s via openrouter.ai</string>
+    <string name="workbench_stat_where">Where</string>
+    <string name="workbench_stat_cost">Cost (USD)</string>
     <string name="workbench_no_service">No model is set up yet. Download one in Model setup, then come back.</string>
     <string name="workbench_model">Model</string>
     <string name="workbench_backend">Runs on</string>

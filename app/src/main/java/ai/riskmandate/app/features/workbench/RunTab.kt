@@ -80,6 +80,9 @@ object RunTags {
     const val MODEL = "workbench_model"
     const val OPEN_MODELS = "workbench_open_models"
     const val COLD = "workbench_cold"
+    const val ON_DEVICE = "workbench_on_device"
+    const val CLOUD = "workbench_cloud"
+    const val WHERE = "workbench_where"
     const val DONE = "workbench_done"
     const val RESET = "workbench_reset"
     const val STATS = "workbench_stats"
@@ -97,6 +100,8 @@ object RunTags {
 
 /** The settings as typed: strings, so half-typed numbers do not fight the keyboard. Saved across rotation. */
 data class RunForm(
+    /** Run on the cloud model instead of the device; only honoured while the host passes a cloud service. */
+    val useCloud: Boolean = false,
     val backend: String = "AUTO",
     val coldStart: Boolean = false,
     val system: String = "",
@@ -129,15 +134,16 @@ data class RunForm(
 
     companion object {
         /** Saved as a list of strings in a rememberSaveable. */
-        fun save(f: RunForm): List<String> = listOf(f.backend, f.coldStart.toString(), f.system, f.prompt, f.temperature, f.topK, f.topP, f.seed, f.maxTokens, f.toolSet.toString())
+        fun save(f: RunForm): List<String> = listOf(f.useCloud.toString(), f.backend, f.coldStart.toString(), f.system, f.prompt, f.temperature, f.topK, f.topP, f.seed, f.maxTokens, f.toolSet.toString())
 
         /** Checked on the way back: wrong shape gives the defaults, text is cut to the caps (security L). */
-        fun restore(l: List<String>): RunForm = if (l.size != 10) RunForm() else RunForm(
-            backend = l[0].takeIf { b -> BackendPreference.entries.any { it.name == b } } ?: "AUTO",
-            coldStart = l[1] == "true",
-            system = l[2].take(RunSettings.MAX_TYPED_CHARS), prompt = l[3].take(RunSettings.MAX_TYPED_CHARS),
-            temperature = l[4].take(8), topK = l[5].take(8), topP = l[6].take(8), seed = l[7].take(10), maxTokens = l[8].take(8),
-            toolSet = l[9].toIntOrNull()?.coerceIn(-1, 50) ?: -1,
+        fun restore(l: List<String>): RunForm = if (l.size != 11) RunForm() else RunForm(
+            useCloud = l[0] == "true",
+            backend = l[1].takeIf { b -> BackendPreference.entries.any { it.name == b } } ?: "AUTO",
+            coldStart = l[2] == "true",
+            system = l[3].take(RunSettings.MAX_TYPED_CHARS), prompt = l[4].take(RunSettings.MAX_TYPED_CHARS),
+            temperature = l[5].take(8), topK = l[6].take(8), topP = l[7].take(8), seed = l[8].take(10), maxTokens = l[9].take(8),
+            toolSet = l[10].toIntOrNull()?.coerceIn(-1, 50) ?: -1,
         )
     }
 }
@@ -163,6 +169,8 @@ fun RunTab(
     /** The model in use, read from the service (Ready, Idle or Loading), or null. Chosen in Model setup. */
     activeModel: String?,
     onOpenModels: () -> Unit,
+    /** True when the host passes a cloud service: then the "On device / Cloud" choice is shown. */
+    cloudAvailable: Boolean = false,
     presets: List<SystemPreset>,
     toolSets: List<ToolSet>,
     /** The form and the last run are held by the Workbench, so they survive switching tabs. */
@@ -227,7 +235,7 @@ fun RunTab(
         copied?.let { Text(stringResource(if (it) R.string.workbench_copied else R.string.workbench_copy_failed), style = MaterialTheme.typography.bodyMedium) }
     }
     val settingsPane: @Composable ColumnScope.() -> Unit = {
-        RunSettingsCard(runner != null, activeModel, onOpenModels, presets, toolSets, form, edit, running, settings != null)
+        RunSettingsCard(runner != null, activeModel, onOpenModels, cloudAvailable, presets, toolSets, form, edit, running, settings != null)
     }
     val answerPane: @Composable ColumnScope.() -> Unit = { RunAnswerCards(live, last) }
     val statsPane: @Composable ColumnScope.() -> Unit = { RunStatsCard(live, last, running) }
@@ -257,6 +265,8 @@ private fun RunSettingsCard(
     hasService: Boolean,
     activeModel: String?,
     onOpenModels: () -> Unit,
+    /** True when the host passes a cloud service: then the "On device / Cloud" choice is shown. */
+    cloudAvailable: Boolean = false,
     presets: List<SystemPreset>,
     toolSets: List<ToolSet>,
     form: RunForm,
@@ -269,6 +279,15 @@ private fun RunSettingsCard(
             Text(stringResource(R.string.workbench_no_service), color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag(RunTags.NO_SERVICE))
         }
         Kicker(stringResource(R.string.workbench_model))
+        if (cloudAvailable) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = !form.useCloud, enabled = !running, onClick = { edit { it.copy(useCloud = false) } },
+                    label = { Text(stringResource(R.string.workbench_on_device)) }, modifier = Modifier.heightIn(min = 48.dp).testTag(RunTags.ON_DEVICE))
+                FilterChip(selected = form.useCloud, enabled = !running, onClick = { edit { it.copy(useCloud = true) } },
+                    label = { Text(stringResource(R.string.workbench_cloud)) }, modifier = Modifier.heightIn(min = 48.dp).testTag(RunTags.CLOUD))
+            }
+            if (form.useCloud) Text(stringResource(R.string.workbench_cloud_note), style = MaterialTheme.typography.bodySmall)
+        }
         Text(activeModel ?: stringResource(R.string.workbench_model_none), modifier = Modifier.testTag(RunTags.MODEL))
         TextButton(onClick = onOpenModels, enabled = !running, modifier = Modifier.heightIn(min = 48.dp).testTag(RunTags.OPEN_MODELS)) {
             Text(stringResource(R.string.workbench_model_change))
@@ -326,8 +345,9 @@ private fun RunSettingsCard(
 @Composable
 private fun RunAnswerCards(live: RunUpdate.Progress?, last: RunRecord?) {
     val answer = last?.text ?: live?.text ?: ""
+    val cloudLabel = last?.stats?.takeIf { it.location == ai.riskmandate.app.llm.LlmLocation.CLOUD }?.let { stringResource(R.string.workbench_cloud_label, it.modelId) }
     TitledCard(
-        stringResource(R.string.workbench_answer), kicker = stringResource(R.string.workbench_answer_kicker),
+        stringResource(R.string.workbench_answer), kicker = cloudLabel ?: stringResource(R.string.workbench_answer_kicker),
         accessory = { last?.let { StatusChip(stopWord(it), stopKind(it)) } },
     ) {
         if (live != null && last == null) {
@@ -353,7 +373,7 @@ private fun RunAnswerCards(live: RunUpdate.Progress?, last: RunRecord?) {
     }
     val calls = last?.toolCalls.orEmpty()
     if (calls.isNotEmpty()) {
-        TitledCard(stringResource(R.string.workbench_tool_calls), accessory = { CountPill(calls.size, stringResource(R.string.workbench_tool_calls)) }) {
+        TitledCard(stringResource(R.string.workbench_tool_calls), kicker = cloudLabel, accessory = { CountPill(calls.size, stringResource(R.string.workbench_tool_calls)) }) {
             calls.forEachIndexed { i, c ->
                 val (verdict, kind) = when (val v = c.verdict) {
                     is ai.riskmandate.app.llm.ToolCheck.Accepted -> stringResource(R.string.workbench_call_ok) to ChipKind.Allowed
@@ -399,6 +419,17 @@ private fun RunStatsCard(live: RunUpdate.Progress?, last: RunRecord?, running: B
         StatRow(stringResource(R.string.workbench_stat_output), (st?.outputTokens ?: live?.pieces)?.toString() ?: v(null), source = st?.let { src(it.countsFrom) } ?: if (live != null) app else null,
             modifier = Modifier.testTag(RunTags.STAT_OUTPUT))
         Kicker(stringResource(R.string.workbench_group_engine), color = Pt.colors.muted)
+        StatRow(
+            stringResource(R.string.workbench_stat_where),
+            when {
+                st == null -> v(null)
+                st.location == ai.riskmandate.app.llm.LlmLocation.CLOUD -> stringResource(R.string.workbench_cloud_label, st.modelId)
+                else -> stringResource(R.string.workbench_where_device)
+            },
+            source = runtime, tone = if (st?.location == ai.riskmandate.app.llm.LlmLocation.CLOUD) Tone.Warn else Tone.Neutral,
+            modifier = Modifier.testTag(RunTags.WHERE),
+        )
+        st?.costUsd?.let { StatRow(stringResource(R.string.workbench_stat_cost), String.format(java.util.Locale.ROOT, "%.5f", it), source = runtime) }
         StatRow(
             stringResource(R.string.workbench_stat_backend),
             if (st == null) v(null) else if (st.fellBack) stringResource(R.string.workbench_fell_back, st.backendUsed) else st.backendUsed,

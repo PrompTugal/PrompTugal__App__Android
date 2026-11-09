@@ -13,8 +13,14 @@ import kotlinx.coroutines.withContext
  * (security checks the text). Chat and the Workbench both read them here.
  */
 object Prompts {
-    /** The RiskMandate base system block (moved from chat's copy). */
+    /** The RiskMandate base system block (moved from chat's copy). Says "running on this device": on-device only. */
     val RISKMANDATE_BASE = PromptId("riskmandate_base", 1)
+
+    /**
+     * The same block without the device claim (security R-llm-13), for any request that may go to a cloud model;
+     * the two riskmandate.ai sentences are unchanged. The Workbench uses it for both, since a run can go either way.
+     */
+    val RISKMANDATE_BASE_ANYWHERE = PromptId("riskmandate_base", 2)
 
     const val MAX_CHARS = 8_000
 

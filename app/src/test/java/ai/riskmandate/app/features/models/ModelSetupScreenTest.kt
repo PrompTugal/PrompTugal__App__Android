@@ -123,6 +123,37 @@ class ModelSetupScreenTest {
         }
     }
 
+    @Test fun thePrivacyLineSaysWhatGoesToTheCloudWhileACloudModelIsInUse() {
+        var cloud by androidx.compose.runtime.mutableStateOf(false)
+        compose.setContent {
+            RiskMandateTheme { ModelSetupScreen(installer = offline, adbDir = { null }, cloudInUse = cloud, io = Dispatchers.Unconfined) }
+        }
+        compose.onNodeWithTag(ModelSetupTags.PRIVACY).assertTextContains("Nothing you type leaves the device.", substring = true)
+        cloud = true
+        compose.waitForIdle()
+        compose.onNodeWithTag(ModelSetupTags.PRIVACY).assertTextContains("goes to openrouter.ai", substring = true)
+        assertFalse(compose.onNodeWithTag(ModelSetupTags.PRIVACY).fetchSemanticsNode().config.toString().contains("Nothing you type leaves the device"))
+    }
+
+    @Test fun theFeatureFollowsTheHostsCloudOnSignalOnly() {
+        assertFalse("Model setup stays on-device", ModelsFeature.usesCloud)
+        var on by androidx.compose.runtime.mutableStateOf(false)
+        // A cloud service without cloudOn must not change the line: the line follows cloudOn only (R-llm-14).
+        val cloudService = ai.riskmandate.app.llm.FakeLlmService()
+        compose.setContent {
+            RiskMandateTheme {
+                ModelsContent(
+                    FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), cloudLlm = cloudService, cloudOn = on),
+                    io = Dispatchers.Unconfined,
+                )
+            }
+        }
+        compose.onNodeWithTag(ModelSetupTags.PRIVACY).performScrollTo().assertTextContains("Nothing you type leaves the device.", substring = true)
+        on = true
+        compose.waitForIdle()
+        compose.onNodeWithTag(ModelSetupTags.PRIVACY).performScrollTo().assertTextContains("goes to openrouter.ai", substring = true)
+    }
+
     @Test fun listsTheOfferedModelsWithSizeAndLicence() {
         show()
         waitFor(ModelSetupTags.row(e2b.id))

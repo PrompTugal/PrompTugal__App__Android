@@ -90,6 +90,8 @@ fun ModelSetupScreen(
     onModelsChanged: suspend () -> Unit = {},
     /** True while a download or import runs; the feature holds stand mode's idle reset off meanwhile (R-llm-9). */
     onBusy: (Boolean) -> Unit = {},
+    /** True while a cloud model is in use in the app: the privacy line then says what goes to the cloud (M.4.3). */
+    cloudInUse: Boolean = false,
     io: CoroutineDispatcher = Dispatchers.IO,
     models: List<ModelSpec> = ModelCatalog.ALL.filter { it.downloadable },
 ) {
@@ -145,7 +147,7 @@ fun ModelSetupScreen(
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(stringResource(R.string.models_setup_intro), style = MaterialTheme.typography.bodyLarge)
             Text(
-                stringResource(R.string.models_privacy, stringResource(R.string.models_privacy_host)),
+                stringResource(if (cloudInUse) R.string.models_privacy_cloud else R.string.models_privacy, stringResource(R.string.models_privacy_host)),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.testTag(ModelSetupTags.PRIVACY),
             )
