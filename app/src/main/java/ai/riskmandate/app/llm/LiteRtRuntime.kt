@@ -96,11 +96,11 @@ class LiteRtRuntime(private val cacheDir: File) : LlmRuntime {
                 val info = try { c.getBenchmarkInfo() } catch (_: Throwable) { null }
                 emit(
                     LlmEvent.Done(
-                        LlmStats(
-                            modelId = modelId, backend = backend.name,
-                            promptTokens = info?.lastPrefillTokenCount, outputTokens = info?.lastDecodeTokenCount ?: out,
-                            prefillTokensPerSecond = info?.lastPrefillTokensPerSecond, decodeTokensPerSecond = info?.lastDecodeTokensPerSecond,
-                            timeToFirstTokenMs = ttft, totalMs = SystemClock.elapsedRealtime() - start,
+                        LlmStats.from(
+                            modelId = modelId, backend = backend.name, maxTokens = request.maxTokens,
+                            runtimePromptTokens = info?.lastPrefillTokenCount, runtimeOutputTokens = info?.lastDecodeTokenCount,
+                            runtimePrefillTps = info?.lastPrefillTokensPerSecond, runtimeDecodeTps = info?.lastDecodeTokensPerSecond,
+                            pieces = out, timeToFirstTokenMs = ttft, totalMs = SystemClock.elapsedRealtime() - start,
                         ),
                     ),
                 )
