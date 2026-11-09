@@ -1,7 +1,7 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-09T01:35Z",
-  "state": "Summit phase, 13 sessions. CI fixed (licence gate in its own job); 0.1.35/0.1.36 distributed to the tablets through Firebase (run 36). On dev: FeatureContext v2, qa tests, Pages deploy workflow. In review/fix: features A site, B ABP demo, C mandate, D stand, F What's new; design ui/; the site and M1 article.",
+  "updated": "2026-11-09T02:15Z",
+  "state": "Summit features A, B, C, D, F on dev and on the tablets; LLM side team started: dev.lab (ABP checks, Lab on samples) and dev.chat (chat on a stand-in) pushed, disabled; dev.llm's LiteRT-LM bench ready pending its host changes; eval pending.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
@@ -17,6 +17,7 @@
     "Dinis picks the summit features (A RiskMandate inside the app, B ABP-in-every-layer demo screen, C this app's own mandate live, D stand mode, E demo videos); the sessions build them and each merge reaches the tablets through the M1 pipeline"
   ],
   "asks": [
+    "Dinis: the third (smallest) model: every small Google LiteRT model (Gemma 3 270M, Gemma 3 1B) is gated on Hugging Face (Gemma licence, login). Options: (a) you accept the licence and push the file to the tablet with adb (the bench accepts it, hashes pinned); (b) only E2B and E4B for now; (c) FunctionGemma 270M (ungated, but a function-calling fine-tune, not a chat model).",
     "Dinis: how the evidence vault's key reaches eval and dev.lab: the session's safety check refused to put the key into a message between sessions. Options: you send it to them yourself; or eval owns its own vault (key never leaves its session) and hands dev.lab curated recordings as files; or a CI secret for the build step that bundles presets.",
     "Dinis: the Play Console account (organisation, which company) and its D-U-N-S check: on the critical path for M2.",
     "Dinis: make dev the default branch of the repository, if you agree, so CI and readers land on it.",
@@ -35,7 +36,9 @@
     "Dinis: brand for the app: move to riskmandate.ai's own palette and type (paper, ink, green; Geist), or keep the current neutral tokens (design.android's status page)?",
     "Dinis: read the M1 article (website/pages/articles/m1-ci-to-a-tablet-in-one-night.md on work/editor) before the site goes public; publisher details for the site.",
     "Dinis: a Contact tab in the in-app site (its form posts to another host, so it would open in the browser)? A staff PIN for stand mode after the summit?",
-    "Dinis: links tapped inside the in-app riskmandate.ai view to other https sites open in the device's own browser (never inside the app, never while pinned, only on a real tap). Today's default by the conductor, since the alternative is that such links do nothing; say if you want them blocked instead (security R-ext-2)."
+    "Dinis: links tapped inside the in-app riskmandate.ai view to other https sites open in the device's own browser (never inside the app, never while pinned, only on a real tap). Today's default by the conductor, since the alternative is that such links do nothing; say if you want them blocked instead (security R-ext-2).",
+    "Dinis: set a $5 credit limit on the OpenRouter key itself (eval also stops at $5 in code).",
+    "Dinis: should stand mode's idle reset also clear the chat history on a shared stand tablet? (security recommends yes)"
   ],
   "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
   "decisions": [
