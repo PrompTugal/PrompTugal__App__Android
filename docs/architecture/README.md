@@ -196,7 +196,7 @@ A feature with `enabled = false` is never on Home, in the sidebar, or reachable 
 
 ### The key
 - Entered by staff in **Diagnostics** (host UI, app owns it): pasted once, never shown again (only the last 4 characters), with a delete button, and hidden in stand mode.
-- Stored by `cloud/CloudKey` (dev.chat): AES-GCM with a key in the **Android Keystore** (`javax.crypto` and `AndroidKeyStore`, no `security-crypto` dependency), ciphertext in `noBackupFilesDir/cloud/`, so never backed up. It is never logged, never in a crash or diagnostics text, never in results or screenshots, and never sent anywhere but `openrouter.ai` as `Authorization: Bearer`.
+- Stored by `cloud/CloudKey` (dev.chat): AES-GCM with a key in the **Android Keystore** (`javax.crypto` and `AndroidKeyStore`, no `security-crypto` dependency), ciphertext in `noBackupFilesDir/feature_cloud/`, so never backed up. It is never logged, never in a crash or diagnostics text, never in results or screenshots, and never sent anywhere but `openrouter.ai` as `Authorization: Bearer`.
 - Security reviews it before merge.
 
 ### Judges (experiments/, dev.lab)
