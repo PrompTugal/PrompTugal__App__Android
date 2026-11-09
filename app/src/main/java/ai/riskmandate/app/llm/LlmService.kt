@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.StateFlow
 interface LlmService {
     val state: StateFlow<LlmState>
 
+    /** Where answers are computed. Every "on this device" badge reads this (architect, cloud ruling). */
+    val location: LlmLocation get() = LlmLocation.LOCAL
+
     /** Streams one answer. Cold: nothing runs until collected. Ends with exactly one [LlmEvent.Done] or [LlmEvent.Error]. */
     fun stream(request: LlmRequest): Flow<LlmEvent>
 
@@ -36,6 +39,25 @@ interface LlmService {
         }
         return LlmResult(text.toString(), calls, stats, error)
     }
+
+    /**
+     * Drops the loaded model, so the next request loads it again: an honest cold-load measurement. Only the
+     * Workbench and the bench call it (security R-wb-1). The default does nothing (services without a model).
+     */
+    suspend fun unload() {}
+}
+
+/** Where a service runs the model. llm/ never imports the cloud package; a cloud service says CLOUD itself. */
+enum class LlmLocation { LOCAL, CLOUD }
+
+/** Which backend a request wants (architect: on the request, not a host setting). */
+enum class BackendPreference {
+    /** GPU first, CPU if the GPU cannot load (the default for every feature). */
+    AUTO,
+    /** GPU; still falls back to CPU if the GPU cannot load, and the stats say so. */
+    GPU,
+    /** CPU only. */
+    CPU,
 }
 
 sealed interface LlmState {
@@ -89,6 +111,8 @@ data class LlmRequest(
     val tools: List<ToolSpec> = emptyList(),
     val settings: Sampling = Sampling.DEFAULT,
     val maxTokens: Int = 512,
+    /** The host reloads the model when the loaded backend does not match (a cold start, reported). */
+    val backend: BackendPreference = BackendPreference.AUTO,
 ) {
     init {
         require(messages.isNotEmpty()) { "a request needs at least one message" }
@@ -139,7 +163,7 @@ enum class LlmStopReason {
     /** It reached the request's maxTokens. */
     MAX_TOKENS,
     /** The caller stopped it (cancelled the collector); set by the caller, since a cancelled stream emits nothing. */
-    STOPPED,
+    CANCELLED,
     /** It failed; the [LlmEvent.Error] carries the reason code. */
     ERROR,
 }
@@ -173,7 +197,14 @@ data class LlmStats(
     val stopReason: LlmStopReason = LlmStopReason.DONE,
     /** The request's maxTokens, so a reader can see why [stopReason] is MAX_TOKENS. */
     val maxTokens: Int? = null,
+    /** Where this answer was computed. */
+    val location: LlmLocation = LlmLocation.LOCAL,
 ) {
+    /** Architect's names for the same values. */
+    val backendUsed: String get() = backend
+    val fellBack: Boolean get() = fellBackToCpu
+    val coldLoad: Boolean get() = loadedModel
+
     companion object {
         /**
          * Builds stats from what the runtime reported ([runtime*], null or non-positive when it did not) and what

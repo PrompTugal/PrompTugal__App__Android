@@ -1,5 +1,13 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.FakeTools
+import ai.riskmandate.app.experiments.Effect
+import ai.riskmandate.app.experiments.FakeSpec
+import ai.riskmandate.app.experiments.FormatException
+import ai.riskmandate.app.experiments.Graph
+import ai.riskmandate.app.experiments.GraphNode
+import ai.riskmandate.app.experiments.ToolFormats
+import ai.riskmandate.app.experiments.Triplet
 import ai.riskmandate.app.llm.StrictJson
 
 /**
@@ -14,8 +22,6 @@ object LabFormats {
 
     /** Fields that do not change what the model sees or the policy, so editing them keeps the hash. */
     private val HASH_EXCLUDED = setOf("exposure", "title", "description", "brief_ref")
-
-    class FormatException(message: String) : Exception(message)
 
     /** Longest regex pattern a scenario may carry. Scenarios are bundled with the app; this bounds them if that ever changes. */
     const val MAX_PATTERN_CHARS = 200
@@ -41,51 +47,13 @@ object LabFormats {
     private inline fun <reified E : Enum<E>> enumOf(v: String, what: String): E =
         enumValues<E>().firstOrNull { it.name.equals(v, ignoreCase = true) } ?: fail("unknown $what '$v'")
 
-    /**
-     * Tools as eval writes them (name, description, flat JSON-schema parameters). [requireEffect] false lets a
-     * tool-test case leave `effect` out (it is then a plain read: functional tests have no policy). Refuses a
-     * tool the shared contract (llm.ToolSpec) would, one with more than [ToolProtocol.MAX_ARGS] parameters, and
-     * a duplicate name.
-     */
-    internal fun parseTools(list: List<Any?>, id: String, requireEffect: Boolean): List<ToolSpec> {
-        val tools = list.map { t ->
-            val o = t.asObj("tool")
-            val params = o.obj("parameters")
-            val props = params.optObj("properties") ?: emptyMap()
-            val required = params.strings("required").toSet()
-            ToolSpec(
-                o.str("name"),
-                if (requireEffect || "effect" in o) enumOf(o.str("effect"), "effect") else Effect.READ,
-                o.str("description"),
-                props.entries.map { (k, v) -> Param(k, v.asObj("parameter").optStr("type") ?: "string", k in required) },
-            )
-        }
-        for (t in tools) if (t.params.size > ToolProtocol.MAX_ARGS) fail("$id: tool ${t.name} has more than ${ToolProtocol.MAX_ARGS} parameters")
-        try { ToolProtocol.llmTools(tools) } catch (e: IllegalArgumentException) { fail("$id: ${e.message}") }
-        val names = tools.map { it.name }
-        if (names.size != names.toSet().size) fail("$id: duplicate tool")
-        return tools
-    }
-
-    internal fun parseFakes(raw: Map<String, Any?>): Map<String, FakeSpec> = raw.mapValues { (_, v) ->
-        val o = v.asObj("fake tool")
-        FakeSpec(
-            hasReturns = "returns" in o, returns = o["returns"], by = o.optStr("by"),
-            table = o.optObj("table") ?: emptyMap(), default = if ("default" in o) o["default"] else "not found",
-            graph = o.optStr("graph"), limit = (o["limit"] as? Long)?.toInt() ?: 25,
-        )
-    }
-
-    /** Public read access to the small JSON helpers for the sibling format readers in this package. */
-    internal fun obj(text: String): Map<String, Any?> = parseObject(text)
-
     fun parseScenario(text: String): Scenario {
         val m = parseObject(text)
         if (m["format"] != SCENARIO) fail("format must be $SCENARIO")
         if (m["synthetic"] != true) fail("scenario data must be marked synthetic: true")
         val id = m.str("id")
-        val tools = parseTools(m.list("tools"), id, requireEffect = true)
-        val fakes = parseFakes(m.obj("fake_tools"))
+        val tools = ToolFormats.parseTools(m.list("tools"), id, requireEffect = true)
+        val fakes = ToolFormats.parseFakes(m.obj("fake_tools"))
         for (t in tools) if (t.name !in fakes) fail("$id: tool ${t.name} has no fake_tools entry")
         val pol = m.obj("policy")
         val rules = pol.list("rules").map { r ->

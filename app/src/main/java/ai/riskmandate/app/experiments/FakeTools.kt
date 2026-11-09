@@ -1,4 +1,4 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.experiments
 
 import ai.riskmandate.app.llm.StrictJson
 
@@ -7,8 +7,6 @@ import ai.riskmandate.app.llm.StrictJson
  * clipboard or account). Graph tools read the scenario's bundled demo graph. A port of eval's fake_tools.py.
  */
 object FakeTools {
-    fun execute(scenario: Scenario, name: String, args: Map<String, String>): Any? = execute(scenario.fakeTools, scenario.graph, name, args)
-
     /** The same, for anything that carries fake specs and an optional graph (a scenario, a tool-test case). */
     fun execute(fakes: Map<String, FakeSpec>, graph: Graph?, name: String, args: Map<String, String>): Any? {
         val spec = fakes[name] ?: return "no such tool"
