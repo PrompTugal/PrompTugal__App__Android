@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- RiskMandate monogram, vector redraw from docs/design/brand/riskmandate-logo-reference.jpg (a proposal: not
+     referenced by the manifest, not the shipped icon; Dinis approves before it ships). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:translateX="23.066" android:translateY="29.215" android:scaleX="0.07591" android:scaleY="0.07591">
+        <path android:fillColor="#000000" android:pathData="M330,78 L750,78 L750,258 L712,290 L712,115 L295,115 Z" />
+        <path android:fillColor="#000000" android:pathData="M485,575 L65,575 L65,395 L103,363 L103,538 L520,538 Z" />
+        <path android:fillColor="#000000" android:pathData="M395,445 L395,205 L452,205 L527,322 L602,205 L660,205 L660,445 L605,445 L605,298 L545,395 L510,395 L450,298 L450,445 Z" />
+        <path android:fillColor="#000000" android:fillType="evenOdd" android:pathData="M155,445 L155,205 L300,205 C350,205 375,235 375,272 C375,308 355,332 320,340 L378,445 L318,445 L265,345 L210,345 L210,445 Z M210,250 L210,300 L290,300 C310,300 320,290 320,275 C320,260 310,250 290,250 Z" />
+    </group>
+</vector>
