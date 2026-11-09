@@ -33,6 +33,7 @@ SUMMIT_FEATURES = [  # (letter, name, what it will be, where it lives)
     ('B', 'ABP in every layer', 'A native, animated, clearly labelled demonstration of one Agent Behaviour Policy stopping a planted instruction at six layers.', 'abpdemo'),
     ('C', 'This app’s own mandate', 'A live view of this app on this device: its reach (permissions, address allow-list), its mandate and the gap, and what it collects (nothing).', 'mandate'),
     ('D', 'Stand mode', 'Screen pinning, screen kept on, and back to the home screen after a few idle minutes, switched on and off from the home screen.', 'stand'),
+    ('F', 'What\u2019s new', 'Release articles inside the app: what changed in each version, with screenshots. (E, demo videos, waits for the videos.)', 'releases'),
 ]
 
 
@@ -96,9 +97,19 @@ def features_table(facts):
             on = bool(f and f['enabled'])
             source = (f'<code>{esc(f["file"].split("ai/riskmandate/app/")[-1])}</code>: enabled = {str(f["enabled"]).lower()}' if f
                       else 'not in the feature list yet')
-        status = '<span class="tag tag-ok">on</span>' if on else '<span class="tag tag-progress">in progress</span>'
-        rows.append((letter, f'<strong>{esc(name)}.</strong> {esc(what)}', status, source))
-    return table(['', 'Feature', 'Status', 'What the source says'], rows)
+        rows.append(feature_row(ident, letter, f'<strong>{esc(name)}.</strong> {esc(what)}', on, source))
+    planned = {s[3] for s in SUMMIT_FEATURES}
+    for f in facts['features']:  # a feature in the source that this page has no text for yet is still listed, never hidden
+        if f['id'] not in planned:
+            rows.append(feature_row(f['id'], '+', f'<strong>{esc(f["name"])}.</strong> In the app\u2019s feature list; no description on this site yet.',
+                                    f['enabled'], f'<code>{esc(f["file"].split("ai/riskmandate/app/")[-1])}</code>: enabled = {str(f["enabled"]).lower()}'))
+    return ('<div class="table-wrap"><table><thead><tr><th scope="col"></th><th scope="col">Feature</th><th scope="col">Status</th>'
+            '<th scope="col">What the source says</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table></div>')
+
+
+def feature_row(ident, letter, text, on, source):
+    status = '<span class="tag tag-ok">on</span>' if on else '<span class="tag tag-progress">in progress</span>'
+    return f'<tr data-feature="{esc(ident)}"><td>{esc(letter)}</td><td>{text}</td><td>{status}</td><td>{source}</td></tr>'
 
 
 def licence_summary(facts):
