@@ -2,9 +2,11 @@
 
 Owner: design.android@promptugal.ai. Written 9 Nov 2026 at Dinis's word, relayed by the conductor ("the app doesn't look very good, it has a bunch of buttons... it should look as close as the iOS apps look, especially the early versions of the PrompTugal theme"). **This replaces the earlier navy tokens and answers the brand question: the Android app uses the PrompTugal iOS theme, not a new palette.** Source read: `PrompTugal/PrompTugal__App__iOS`, `Packages/PTCore/Sources/PTCore/Design/Theme.swift` and `Components.swift`, and `https://ios.app.promptugal.news/screens/ipad-news.home.png`. Before and after: `docs/design/theme/` (`before-*.png`, `after-*.png`).
 
+**Decision (Dinis, 9 Nov 2026): variant A ships.** The iOS structure with RiskMandate green as the accent and a navy-leaning dark mode; the red accent (B) stays in `Theme.kt` as a documented fallback, one line (`DefaultVariant`). The palette table and the contrast numbers below are the iOS Palette (variant B, the fallback and the source of the neutrals, status tones and light surfaces); variant A's differences are in the section "Two looks": accent `#177251` light and `#66B78F` dark, and the navy dark surfaces. The `after-*` images are variant A; `variants-*` show both.
+
 ## The look in one paragraph
 
-Warm paper (`#F5F1EA`, dark `#14161B`). Cards in a slightly lighter paper with a hairline rule and a 14 dp radius. Ink text, a muted grey for the second line. Red for the accent: a small uppercase kicker above every headline, the primary button, the selected item. Headlines in a bold serif. Green, amber and blue only to mean something (good, held, web). Sectioned navigation in a sidebar on a tablet. Lots of air. No decorative gradients, no shadows.
+Warm paper (`#F5F1EA`, dark `#14161B`). Cards in a slightly lighter paper with a hairline rule and a 14 dp radius. Ink text, a muted grey for the second line. The accent (red in the iOS apps; green here, variant A) marks: a small uppercase kicker above every headline, the primary button, the selected item. Headlines in a bold serif. Green, amber and blue only to mean something (good, held, web). Sectioned navigation in a sidebar on a tablet. Lots of air. No decorative gradients, no shadows.
 
 ## Palette (iOS `Palette` to `Theme.kt`)
 
@@ -64,6 +66,22 @@ Radius 14 dp for cards, menus and dialogs (`Shapes.medium` and `large`); buttons
 | (Android only) | `StatusChip`, `LayerRow`, `StepRow`, `SectionCard`, `FeatureContent` | from the summit specs; `SectionCard` is now a `TitledCard` |
 
 `FreshnessLabel` is not ported yet (no feature has a refresh time to show); add it when C or I needs "Updated 4 min ago".
+
+## Two looks (9 Nov 2026, from the logo): A chosen
+
+Dinis shared the RiskMandate logo (`docs/design/brand/riskmandate-logo-reference.jpg`). The conductor asked for two variants side by side; the accent is one switch (`DefaultVariant` in `Theme.kt`), so the choice costs one line.
+
+| | A: RiskMandate green accent | B: PrompTugal red (today's default) |
+|---|---|---|
+| Structure | the iOS structure: paper, cards, serif, kickers | identical |
+| Accent (kickers, primary button, selected row, count pills) | light `#177251`, dark `#66B78F` (the logo's green) | red `#AD222B` / `#FF868A` |
+| Red | only for blocked and errors | accent and "bad" |
+| Dark mode | navy-leaning: paper `#061224`, paper2 `#0C1C33`, card `#0F2038`, rule `#22344E`, ink `#E8EEF5`, muted `#9FB0C5` | the iOS charcoal `#14161B` |
+| Logo | icon, brand mark and wordmark, as redrawn | the icon only (the app is not recoloured by it) |
+
+Measured contrast for A (WCAG): light accent on card 5.8:1, on paper 5.2:1, on its tint (selected row, count pill) 4.8:1, white text on the accent button 5.9:1; dark accent on the navy card 6.8:1, on the navy paper 7.8:1, on its tint 5.4:1, navy text on the dark accent button 7.8:1; dark ink on card 14.0:1, muted on card 7.4:1; dark red, green, amber and blue on the navy card 7.0, 8.5, 9.7 and 7.9:1. **The site's own `#1A7F5A` is not used for text on paper**: it is 4.4:1 on paper and 4.1:1 on its own tint, under AA for small text; `#177251` is the nearest passing green. B's numbers are above. Both variants pass AA for text in light and dark.
+
+Side by side (left A, right B), tablet landscape: `docs/design/theme/variants-shell-light.png`, `variants-shell-dark.png`, `variants-lab-light.png`, `variants-lab-dark.png`. **Chosen: A** (Dinis, 9 Nov 2026). The brand pieces (approved redraw) are in `docs/design/brand/README-redraw.md`; the tagline "AI agent governance and security" is not shown on any screen.
 
 ## Shell (for app.android)
 

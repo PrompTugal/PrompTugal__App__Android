@@ -57,11 +57,11 @@ fun Card(
 
 /**
  * The small red uppercase label above a headline (iOS `Kicker`). Pass the text in its normal case, in the
- * user's language: it is upper-cased here. 12sp semibold with 1.4sp tracking; red is 6.8:1 on the card
- * colour in light and dark, so it is safe as text.
+ * user's language: it is upper-cased here. 12sp semibold with 1.4sp tracking, in the accent colour (at
+ * least 5.8:1 on the card colour in both variants and both themes, 4.7:1 on paper, so it is safe as text).
  */
 @Composable
-fun Kicker(text: String, modifier: Modifier = Modifier, color: Color = Pt.colors.red) {
+fun Kicker(text: String, modifier: Modifier = Modifier, color: Color = Pt.colors.accent) {
     Text(text.uppercase(), modifier = modifier, style = Pt.type.kicker, color = color)
 }
 
