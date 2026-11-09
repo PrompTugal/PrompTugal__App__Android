@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,6 +41,7 @@ object DiagnosticsTags {
     const val COPY = "diagnostics_copy"
     const val COPIED = "diagnostics_copied"
     const val BACK = "diagnostics_back"
+    const val MODEL_BENCH = "diagnostics_model_bench"
 }
 
 /** Puts [text] on the clipboard as plain text. Returns false if the system refuses. */
@@ -52,7 +54,13 @@ fun copyToClipboard(context: Context, label: String, text: String): Boolean = tr
 }
 
 @Composable
-fun DiagnosticsScreen(text: String, onCopy: () -> Boolean, onBack: () -> Unit) {
+fun DiagnosticsScreen(
+    text: String,
+    onCopy: () -> Boolean,
+    onBack: () -> Unit,
+    /** Opens the on-device LLM bench (dev.llm, features/models). Null hides the button. */
+    onModelBench: (() -> Unit)? = null,
+) {
     var copied by rememberSaveable { mutableStateOf<Boolean?>(null) }
     Column(
         modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -94,6 +102,12 @@ fun DiagnosticsScreen(text: String, onCopy: () -> Boolean, onBack: () -> Unit) {
                         color = if (ok) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
                         modifier = Modifier.testTag(DiagnosticsTags.COPIED).semantics { liveRegion = LiveRegionMode.Polite },
                     )
+                }
+                onModelBench?.let { open ->
+                    OutlinedButton(
+                        onClick = open,
+                        modifier = Modifier.heightIn(min = 48.dp).testTag(DiagnosticsTags.MODEL_BENCH),
+                    ) { Text(stringResource(R.string.diagnostics_model_bench)) }
                 }
             }
         }

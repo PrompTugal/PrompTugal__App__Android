@@ -32,6 +32,7 @@
     <string name="diagnostics_copy">Copy</string>
     <string name="diagnostics_copied">Copied to the clipboard.</string>
     <string name="diagnostics_copy_failed">Could not copy to the clipboard.</string>
+    <string name="diagnostics_model_bench">Model bench (on-device LLM test)</string>
 
     <string name="restriction_start_url_title">Start page</string>
     <string name="restriction_start_url_description">The riskmandate.ai page the app opens (HTTPS on riskmandate.ai only; anything else falls back to https://riskmandate.ai/).</string>

@@ -30,6 +30,7 @@
     <string name="diagnostics_copy">Copiar</string>
     <string name="diagnostics_copied">Copiado para a área de transferência.</string>
     <string name="diagnostics_copy_failed">Não foi possível copiar para a área de transferência.</string>
+    <string name="diagnostics_model_bench">Bancada do modelo (teste do LLM no dispositivo)</string>
 
     <string name="restriction_start_url_title">Página inicial</string>
     <string name="restriction_start_url_description">A página de riskmandate.ai que a aplicação abre (apenas HTTPS em riskmandate.ai; qualquer outra volta a https://riskmandate.ai/).</string>

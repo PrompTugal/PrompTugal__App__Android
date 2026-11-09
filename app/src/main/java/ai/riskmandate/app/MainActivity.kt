@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.IdleHolds
+import ai.riskmandate.app.features.models.ModelBenchScreen
 import ai.riskmandate.app.features.stand.StandHost
 
 /** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
@@ -29,9 +30,11 @@ object Routes {
     const val HOME = "home"
     const val LICENCES = "licences"
     const val DIAGNOSTICS = "diagnostics"
+    /** The on-device LLM bench (dev.llm), reached from Diagnostics only while feature G is switched off. */
+    const val MODEL_BENCH = "modelbench"
 }
 
-private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS)
+private val BUILT_IN = setOf(Routes.HOME, Routes.LICENCES, Routes.DIAGNOSTICS, Routes.MODEL_BENCH)
 
 class MainActivity : ComponentActivity() {
     private var config by mutableStateOf(ManagedConfig.DEFAULT)
@@ -72,7 +75,13 @@ class MainActivity : ComponentActivity() {
                             )
                             route == Routes.DIAGNOSTICS -> {
                                 val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
-                                DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = goHome)
+                                DiagnosticsScreen(
+                                    text = text, onCopy = rememberCopyAction(text), onBack = goHome,
+                                    onModelBench = { screen = Routes.MODEL_BENCH },
+                                )
+                            }
+                            route == Routes.MODEL_BENCH -> FeatureFrame(title = R.string.feature_models_title, onBack = goHome) {
+                                ModelBenchScreen()
                             }
                             feature != null -> FeatureFrame(title = feature.title, onBack = goHome) {
                                 feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device, holdIdle = idle::hold) })
