@@ -558,6 +558,23 @@ class ToolTestsTest {
         assertFalse("each line starts a sentence, later words still count", grounded("Access\nand Gartner").passed)
     }
 
+    @Test fun theGroundingCasesQuoteTheSharedBaseBlockV2AndTheGroundedCheckReadsABoundedAnswer() {
+        // R-lab-17: the grounding text is the app's base block v2 exactly (no "running on this device"), so it cannot drift.
+        val v2 = java.io.File("src/main/assets/prompts/riskmandate_base.v2.txt").readText()
+        val grounding = cat.casesOf("grounding")
+        assertEquals(5, grounding.size)
+        for (c in grounding) { assertEquals(c.id, v2, c.system); assertFalse(c.system.contains("running on this device")) }
+        // R-lab-18: an answer longer than the scan cap fails closed, so an unread tail cannot pass as grounded.
+        val g = grounding.first()
+        val long = "access ".repeat(AnswerChecks.MAX_SCAN_CHARS / 7 + 10)
+        assertTrue(long.length > AnswerChecks.MAX_SCAN_CHARS)
+        val r = text("answer_grounded", emptyMap(), long, g)
+        assertFalse(r.passed); assertTrue(r.detail, r.detail.contains("longer than"))
+        assertTrue(text("answer_grounded", emptyMap(), "access ".repeat(100), g).passed)
+        // Even a long answer with a clean head and an invented name in the tail does not pass.
+        assertFalse(text("answer_grounded", emptyMap(), "access ".repeat(AnswerChecks.MAX_SCAN_CHARS / 7) + "x ".repeat(100) + " by Gartner", g).passed)
+    }
+
     @Test fun theNewChecksValidateTheirParameters() {
         val t = cat.case("right-tool-weather")!!.tools
         fun bad(kind: String, p: Map<String, Any?>) = assertNotNull("$kind $p", ToolChecks.validateParams(kind, p, t))
