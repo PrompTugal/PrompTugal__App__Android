@@ -26,6 +26,14 @@ class PromptsTest {
         assertSame("cached", t, Prompts.load(assets, Prompts.RISKMANDATE_BASE))
     }
 
+    @Test fun v2DropsOnlyTheDeviceClaim() {
+        val v1 = Prompts.loadBlocking(assets, Prompts.RISKMANDATE_BASE)
+        val v2 = Prompts.loadBlocking(assets, Prompts.RISKMANDATE_BASE_ANYWHERE)
+        assertFalse("no device claim (R-llm-13)", v2.contains("device", ignoreCase = true))
+        assertEquals(v1.replace("This is the RiskMandate app, running on this device. ", "This is the RiskMandate app. "), v2)
+        listOf("\"Give agents access. Not free rein.\"", "and the gap between the two.\"").forEach { assertTrue(it, it in v2) }
+    }
+
     @Test fun idsAreSafeFileNames() {
         assertEquals("prompts/riskmandate_base.v1.txt", Prompts.RISKMANDATE_BASE.path)
         assertEquals("riskmandate_base.v1", Prompts.RISKMANDATE_BASE.toString())

@@ -86,7 +86,10 @@ internal fun cloudModel(state: LlmState): String = when (state) {
     LlmState.NoModel -> "-"
 }
 
-/** The fixed system-prompt presets; the RiskMandate base block is added from llm/prompts when it has loaded. */
+/**
+ * The fixed system-prompt presets; the RiskMandate base block is added from llm/prompts when it has loaded, as
+ * v2 (no "running on this device" claim), because a Workbench run may go to the cloud model (R-llm-13).
+ */
 val WORKBENCH_PRESETS = listOf(
     SystemPreset(R.string.workbench_system_none, ""),
     SystemPreset(R.string.workbench_system_brief, "You are a helpful assistant. Answer briefly and plainly."),
@@ -130,7 +133,7 @@ internal fun WorkbenchContent(
     }
     var presets by remember { mutableStateOf(WORKBENCH_PRESETS) }
     LaunchedEffect(Unit) {
-        withContext(io) { runCatching { Prompts.loadBlocking(app.assets, Prompts.RISKMANDATE_BASE) }.getOrNull() }?.let { base ->
+        withContext(io) { runCatching { Prompts.loadBlocking(app.assets, Prompts.RISKMANDATE_BASE_ANYWHERE) }.getOrNull() }?.let { base ->
             presets = WORKBENCH_PRESETS.take(1) + SystemPreset(R.string.workbench_system_riskmandate, base) + WORKBENCH_PRESETS.drop(1)
         }
     }

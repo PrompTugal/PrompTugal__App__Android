@@ -224,5 +224,7 @@ class RunTabTest {
         // The RiskMandate base block comes from llm/prompts once it has loaded.
         waitFor(RunTags.systemPreset(3))
         compose.onNodeWithTag(RunTags.systemPreset(1)).assertTextContains("RiskMandate base block")
+        compose.onNodeWithTag(RunTags.systemPreset(1)).performScrollTo().performClick()
+        compose.onNodeWithTag(RunTags.SYSTEM).performScrollTo().assertTextContains("This is the RiskMandate app. RiskMandate means", substring = true)
     }
 }
