@@ -97,6 +97,9 @@ Dinis (spoken, relayed by the conductor, 9 Nov about 13:25 UTC): a per-device se
 - The cloud service ends a call stopped by a spending cap or by a missing or damaged ledger with `LlmError.CAP_REACHED` (the message says which). Every completed answer carries `costUsd` (OpenRouter's `usage.cost`, or the estimate, never less than the reserve), `maxTokens`, `stopReason` (MAX_TOKENS when the provider says `length`) and `location = CLOUD`. `lastRun` stays for the running totals.
 - Chat sends `riskmandate_base.v1` (which says "running on this device") only for a local service, and `riskmandate_base.v2` (`RISKMANDATE_BASE_ANYWHERE`, no such claim) otherwise (`ChatBasePrompt`, tested against the two bundled files).
 
+## maxCostMicros (dev.llm 09c4d56)
+`CloudLlmService.maxCostMicros(request)` returns the same worst case the cap check uses (so a sweep shows the number a call is refused on), and null when the request cannot be priced because it cannot be sent: over the 32 KB request limit, or tools on a model that takes none. Tested, including that a spend one micro-dollar short of the figure refuses the call.
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 

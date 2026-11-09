@@ -274,6 +274,21 @@ class CloudLlmServiceTest {
         assertTrue(s.worstCaseMicros(LlmRequest(listOf(LlmMessage.user("y".repeat(CloudLlmService.MAX_PROMPT_CHARS + 1))))) > 1_000_000_000L)
     }
 
+    @Test fun maxCostIsTheCapChecksOwnWorstCaseAndNullWhenTheRequestCannotBeSent() {
+        val s = service(transport = ok())
+        val r = LlmRequest(listOf(LlmMessage.user("hi")), maxTokens = 100)
+        assertEquals(s.worstCaseMicros(r), s.maxCostMicros(r))
+        assertTrue(s.maxCostMicros(r)!! > 0)
+        assertEquals(null, s.maxCostMicros(LlmRequest(listOf(LlmMessage.user("y".repeat(CloudLimits.MAX_REQUEST_BYTES + 1))))))
+        val tools = listOf(ToolSpec("t", "d"))
+        assertEquals(null, service(model = CloudModels.GEMMA3, transport = ok()).maxCostMicros(LlmRequest(listOf(LlmMessage.user("hi")), tools = tools)))
+        // The number the sweep shows is the number a call is refused on: a spend one micro-dollar short refuses it.
+        val tight = newSpend(session = s.maxCostMicros(r)!! - 1, total = 50_000_000)
+        val t = ok(content("x"), FINISH)
+        run(service(spend = tight, transport = t), r)
+        assertTrue(t.calls.isEmpty())
+    }
+
     @Test fun toolCallsAreAssembledFromDeltasAndOnlyProposed() {
         fun tc(index: Int, name: String?, args: String) =
             """{"choices":[{"delta":{"tool_calls":[{"index":$index,"function":{${if (name != null) "\"name\":\"$name\"," else ""}"arguments":${JSONObject.quote(args)}}}]}}]}"""
