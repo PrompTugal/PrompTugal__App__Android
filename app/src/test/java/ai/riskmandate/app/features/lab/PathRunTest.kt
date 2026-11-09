@@ -111,4 +111,15 @@ class PathRunTest {
         val o = sc("sample-overreach")
         assertEquals("not found", FakeTools.execute(o, "read_item", mapOf("id" to "99")))
     }
+
+    @Test fun modelTextIsCappedBeforeItIsScored() {
+        val s = sc("sample-selfknowledge")
+        val huge = "I run on this tablet. ".repeat(5_000) + " cloud servers"
+        val r = PathRun(s, true)
+        assertNull(r.step(huge, 1))
+        val rec = r.finish(1)
+        val text = (rec.events.last() as LabEvent.Final).text
+        assertEquals(ToolProtocol.MAX_TEXT_CHARS, text.length)
+        assertFalse("text past the cap is never scored", rec.outcome.attempted)
+    }
 }
