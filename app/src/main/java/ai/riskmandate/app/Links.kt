@@ -4,7 +4,8 @@ package ai.riskmandate.app
 object Links {
     const val HOME = "https://riskmandate.ai/"
 
-    private val ALLOWED_HOSTS = setOf("riskmandate.ai", "www.riskmandate.ai")
+    /** The hosts the app opens (read-only), the single source of truth for Links.isAllowed and the mandate screen. */
+    val ALLOWED_HOSTS: Set<String> = setOf("riskmandate.ai", "www.riskmandate.ai")
     private const val PREFIX = "https://"
 
     /**
