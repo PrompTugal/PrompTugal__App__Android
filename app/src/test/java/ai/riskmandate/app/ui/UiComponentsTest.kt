@@ -9,11 +9,14 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
@@ -85,5 +88,42 @@ class UiComponentsTest {
         compose.onNodeWithText("Failed without ABP", substring = true).assertIsDisplayed()
         compose.onNodeWithText("1 in 3", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Proposed: share_document", substring = true).assertIsDisplayed()
+    }
+
+    @Test fun statGridWrapsAndStateViewSpeaks() {
+        compose.setContent {
+            RiskMandateTheme {
+                Column {
+                    StatGrid(minTile = 140.dp) {
+                        repeat(5) { n -> tile { StatTile("$n", "Tile $n") } }
+                    }
+                    StateView(LoadPhase.Failed("No connection."), hasData = false, title = "team", onRetry = {})
+                    StateView(LoadPhase.Loaded, hasData = false, title = "articles")
+                    StateView(LoadPhase.Loaded, hasData = true, title = "hidden")
+                }
+            }
+        }
+        for (n in 0..4) compose.onNodeWithText("Tile $n", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Team unavailable").assertIsDisplayed()
+        compose.onNodeWithText("Try again").assertIsDisplayed()
+        compose.onNodeWithText("The articles is empty.").fetchSemanticsNode()
+        compose.onAllNodesWithText("hidden", substring = true).assertCountEquals(0)
+    }
+
+    @Test fun cardIsAButtonOnlyWhenItHasAClickAndBadgesSpeak() {
+        var clicks = 0
+        compose.setContent {
+            RiskMandateTheme {
+                Column {
+                    TitledCard("Open me", kicker = "Kicker", accessory = { CountPill(2, "new") }, onClick = { clicks++ }) { androidx.compose.material3.Text("body") }
+                    KindBadge(SurfaceKind.Web)
+                }
+            }
+        }
+        compose.onNodeWithText("Open me").performClick()
+        assertEquals(1, clicks)
+        compose.onNodeWithText("KICKER").assertIsDisplayed()
+        compose.onNodeWithText("new").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Web screen").assertIsDisplayed()
     }
 }
