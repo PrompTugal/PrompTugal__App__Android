@@ -98,3 +98,27 @@ class FeatureBadgeTest {
         compose.waitForIdle()
     }
 }
+
+/** Feature.icon, kicker, summary (P7): optional, null by default; every listed feature's strings resolve. */
+@RunWith(AndroidJUnit4::class)
+class FeaturePresentationTest {
+    private object Plain : Feature {
+        override val id = "plain"
+        override val title = ai.riskmandate.app.R.string.app_name
+        @androidx.compose.runtime.Composable override fun Content(context: FeatureContext) = Unit
+    }
+
+    @Test fun defaultsAreNull() {
+        org.junit.Assert.assertNull(Plain.icon)
+        org.junit.Assert.assertNull(Plain.kicker)
+        org.junit.Assert.assertNull(Plain.summary)
+    }
+
+    @Test fun everyListedKickerAndSummaryResolvesAndIsNotBlank() {
+        val app = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>()
+        for (f in FEATURES) {
+            f.kicker?.let { org.junit.Assert.assertTrue("${f.id} kicker", app.getString(it).isNotBlank()) }
+            f.summary?.let { org.junit.Assert.assertTrue("${f.id} summary", app.getString(it).isNotBlank()) }
+        }
+    }
+}
