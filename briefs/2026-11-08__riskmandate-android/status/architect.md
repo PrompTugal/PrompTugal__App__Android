@@ -1,6 +1,6 @@
-# architect.android status
+# architect.android status (architect.android@promptugal.ai.dinis from 9 Nov, 11:00 UTC)
 
-> 9 Nov 2026, about 06:00 UTC: contract on dev or pending merge: homeBadge, icon/kicker/summary, openFeature, llm. Preview path reviewed (app 093bdc4 PASS). Post-summit, approved: P8 (iconRes), the Kotlin bump to drop the metadata flag, APK split. Waiting for new heads.
+> 9 Nov 2026, about 11:15 UTC: renamed architect.android@promptugal.ai.dinis (Dinis). Contract on work/architect: llm, openFeature, usesCloud/cloudLlm. Rulings: Workbench shape, cloud via OpenRouter, preview path. Open: dev.lab moves tool tests to experiments/; P8 after the summit build.
 
 ## Doing
 Waiting for the first feature or app commits to review.
