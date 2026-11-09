@@ -35,6 +35,7 @@ All of it is local and never transmitted, so none of it is "collected" (Google: 
 | In-app view | WebView cookies and cache | deleted when the view closes | `work/dev.site` |
 | Chat history (G/H, DRAFT) | `noBackupFilesDir/feature_chat/`, one JSON file | conversations | yes (feature flag state not checked) |
 | Model files (G, DRAFT) | `noBackupFilesDir/models/` (finished files, a `.part` file while downloading, a `.verified` marker); adb copy in `getExternalFilesDir("models")` on API 30+, deleted after import | model weights | `work/app`, `work/dev.llm` |
+| Workbench run log (staff only, DRAFT) | `noBackupFilesDir/feature_workbench/runs.jsonl` | per run: settings and figures, the first 200 characters of the prompt, the first 300 of the answer; at most 500 runs, 4 MB; Clear button; no identifiers; never sent or exported | `dev` (feature off; Diagnostics, Preview) |
 | Chosen model (G, DRAFT) | SharedPreferences `feature_models` | which downloaded model to use | `work/dev.llm` |
 
 `data_extraction_rules.xml` excludes every cloud-backup and device-transfer domain by name, `noBackupFilesDir` is never backed up by the platform, and `allowBackup` is false.

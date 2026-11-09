@@ -43,6 +43,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 19. Q-g-1: the privacy draft quotes dev.llm's exact on-screen sentence ("...from huggingface.co (and its download servers, hf.co). Nothing you type leaves the device."), from `work/dev.llm` `feature_models.xml`; the pt-PT sentence is recorded in the policy's notes (the hosted page is English only).
 
+20. R-wb-5: the Workbench run log is in the policy and `privacy.html` (DRAFT bullet, staff only), the `data-safety.md` stored-data table, the tester guide (en and pt-PT, new "what the app keeps" paragraph) and the checklist (new row 21), checked against `RunLog.kt` and `WorkbenchFeature.kt` on `dev`.
+
 ## Next
 Nothing until Dinis decides (below).
 

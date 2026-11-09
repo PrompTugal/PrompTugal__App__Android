@@ -57,6 +57,7 @@
   <p>The app keeps a few small items in its own private storage on your device. The app never sends them to us or to anyone else, other apps cannot read them, and Android removes them when you clear the app's data or uninstall the app. They are:</p>
   <ul>
     <li><strong>Stand mode's settings:</strong> whether stand mode is on and how many idle minutes you chose (a number).</li>
+    <li><strong>Workbench run log (staff only)</strong> <span class="todo">[DRAFT: only in a build where the Workbench is reachable]</span>: a file on the device, in the app's private storage that Android never backs up, with one line per test run in the Workbench (reached from Diagnostics, Preview; hidden in stand mode). Each line holds the run's settings and figures (model, backend, sampling settings, token counts, timings, tool-call counts, how it ended) plus the first 200 characters of the prompt and the first 300 characters of the answer. It keeps at most 500 runs (a file over 4 MB is ignored), is never sent, backed up or exported by the app, and a Clear button deletes it. Clearing the app's data or uninstalling the app deletes it too.</li>
     <li><strong>Which model is in use</strong> <span class="todo">[DRAFT: only in a build with the model setup]</span>: which of the downloaded models you chose to use.</li>
     <li><strong>Layout preference:</strong> whether the side menu is collapsed (a yes or no).</li>
     <li><strong>What's new:</strong> the number of the app version for which the What's new screen was last shown, so that it is shown once per version.</li>
