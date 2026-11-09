@@ -37,6 +37,15 @@ class LlmServiceChatTest {
         assertEquals(got!!.outputTokens != null, true)
     }
 
+    @Test fun chatAsksForLowerTemperatureThanGemmasDefault() = runBlocking {
+        val svc = FakeLlmService()
+        LlmServiceChat(svc).stream("m", null, turns.take(1)).toList()
+        val s = svc.requests.single().settings
+        assertTrue("temperature ${s.temperature}", s.temperature in 0.3..0.5)
+        assertEquals(0.9, s.topP, 1e-9)
+        assertEquals(64, s.topK)
+    }
+
     @Test fun noSystemBlockMeansNoSystemMessage() = runBlocking {
         val svc = FakeLlmService()
         LlmServiceChat(svc).stream("m", null, turns.take(1)).toList()
