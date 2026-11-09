@@ -84,12 +84,15 @@ Purpose: release articles, in the app, with screenshots, so the team and visitor
 - **Accessibility.** List cards read as "<date>, <title>, <summary>"; reader reading order is title, date, body; images with captions are one item each; works at 200% (the list becomes one column below 840 dp whatever the orientation); light and dark use the theme, screenshots are shown as taken (a note in the caption says which theme).
 - **Claims.** Article text may describe the app; claims about RiskMandate come only from riskmandate.ai.
 
+The on-device LLM screens G (model setup), H (chat) and I (ABP Lab) are in `llm-screens.md`.
+
 ## Shared component map
 
 | Need | Component (`ai.riskmandate.app.ui`) | Screens |
 |---|---|---|
 | Content area inside the host frame (scroll, width, wide flag) | `FeatureContent` | A to C, F |
-| Titled block | `SectionCard` | B (scene), C, F (article cards) |
+| Titled block | `SectionCard` | B (scene), C, F (article cards), G, I |
+| Step of a run, big counter | `StepRow`, `StatTile` | I (see `llm-screens.md`) |
 | Status word + glyph | `StatusChip`, `ChipKind` | A (offline), B, C, D |
 | One layer of the diagram | `LayerRow`, `LayerState` | B |
 | Always-visible note | `NoticeBanner` | B (label), D (idle) |

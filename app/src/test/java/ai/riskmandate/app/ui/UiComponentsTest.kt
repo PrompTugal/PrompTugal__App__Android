@@ -72,4 +72,18 @@ class UiComponentsTest {
         compose.onNodeWithText("body").assertIsDisplayed()
         assertEquals(false, wide) // the default Robolectric screen is a phone
     }
+
+    @Test fun statTileAndStepRowReadAsOneItem() {
+        compose.setContent {
+            RiskMandateTheme {
+                Column {
+                    StatTile("1 in 3", "Failed without ABP", large = true)
+                    StepRow(1, "Proposed: share_document", "Blocked", ChipKind.Blocked, detail = "to=outside@example.com", large = true)
+                }
+            }
+        }
+        compose.onNodeWithText("Failed without ABP", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("1 in 3", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Proposed: share_document", substring = true).assertIsDisplayed()
+    }
 }
