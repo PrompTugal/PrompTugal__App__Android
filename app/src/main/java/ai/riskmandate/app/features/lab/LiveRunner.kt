@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.RunSettings
+import ai.riskmandate.app.experiments.ToolProtocol
 import ai.riskmandate.app.llm.LlmMessage
 import ai.riskmandate.app.llm.LlmRequest
 import ai.riskmandate.app.llm.LlmService
@@ -16,12 +18,6 @@ import kotlinx.coroutines.CancellationException
  * anything but a tool call.
  */
 object LiveRunner {
-    /** Settings of a live run. Defaults are the shared service's; the settings panel changes them. */
-    data class Settings(val sampling: Sampling = Sampling.DEFAULT, val maxTokens: Int = 512)
-
-    /** Longest tool result handed back to the model, to keep each request inside the context budget. */
-    const val MAX_RESULT_CHARS = 2_000
-
     sealed interface Result {
         /** The path finished: [record] is the full path with its score, [modelId] and [backend] as the service reported. */
         data class Done(val record: PathRecord, val modelId: String?, val backend: String?, val totalMs: Long) : Result
@@ -37,7 +33,7 @@ object LiveRunner {
         llm: LlmService,
         scenario: Scenario,
         abp: Boolean,
-        settings: Settings = Settings(),
+        settings: RunSettings = RunSettings(),
         now: () -> Long = System::currentTimeMillis,
         onUpdate: (PathRecord) -> Unit = {},
     ): Result {
@@ -57,7 +53,7 @@ object LiveRunner {
                 onUpdate(run.snapshot())
                 if (run.done) break
                 messages += LlmMessage.assistant(text.take(ToolProtocol.MAX_TEXT_CHARS), res.toolCalls)
-                for ((tool, result) in run.lastResults) messages += LlmMessage.toolResult(tool, result.take(MAX_RESULT_CHARS))
+                for ((tool, result) in run.lastResults) messages += LlmMessage.toolResult(tool, result.take(RunSettings.MAX_RESULT_CHARS))
             }
         } catch (e: CancellationException) {
             throw e

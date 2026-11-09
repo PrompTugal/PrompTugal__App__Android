@@ -1,6 +1,6 @@
 package ai.riskmandate.app.features.workbench
 
-import ai.riskmandate.app.llm.BenchBackend
+import ai.riskmandate.app.llm.BackendPreference
 import ai.riskmandate.app.llm.DeviceSample
 import ai.riskmandate.app.llm.LlmRunner
 import ai.riskmandate.app.llm.LlmStopReason
@@ -11,8 +11,8 @@ import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.sqrt
 
-/** What a sweep varies. */
-enum class SweepVariable { TEMPERATURE, TOP_P, MAX_TOKENS, BACKEND, SYSTEM_PROMPT, MODEL }
+/** What a sweep varies. No model sweep (architect): compare models by switching in Model setup; the log keeps both. */
+enum class SweepVariable { TEMPERATURE, TOP_P, MAX_TOKENS, BACKEND, SYSTEM_PROMPT }
 
 /**
  * One experiment: a variable, its values (labels as typed), and repeats. A sweep has any number of values; an
@@ -24,27 +24,25 @@ data class ExperimentPlan(val variable: SweepVariable, val values: List<String>,
 
     /**
      * The runs in order, each with its value's label, built from [base]; or the reason the plan cannot run.
-     * [models] are the installed model ids (for MODEL).
      */
-    fun expand(base: RunSettings, models: List<String> = emptyList()): Result<List<Pair<String, RunSettings>>> {
+    fun expand(base: RunSettings): Result<List<Pair<String, RunSettings>>> {
         if (values.isEmpty()) return fail("give at least one value")
         if (repeats !in 1..ExperimentCaps.MAX_RUNS) return fail("repeats must be 1 to ${ExperimentCaps.MAX_RUNS}")
         if (total > ExperimentCaps.MAX_RUNS) return fail("at most ${ExperimentCaps.MAX_RUNS} runs per experiment")
-        val settings = values.map { v -> v to (apply(base, v, models) ?: return fail("not a valid value for ${variable.name.lowercase(Locale.ROOT)}: ${v.take(20)}")) }
+        val settings = values.map { v -> v to (apply(base, v) ?: return fail("not a valid value for ${variable.name.lowercase(Locale.ROOT)}: ${v.take(20)}")) }
         return Result.success((1..repeats).flatMap { settings })
     }
 
-    private fun apply(base: RunSettings, v: String, models: List<String>): RunSettings? = when (variable) {
+    private fun apply(base: RunSettings, v: String): RunSettings? = when (variable) {
         SweepVariable.TEMPERATURE -> v.toDoubleOrNull()?.takeIf { it in 0.0..2.0 }?.let { base.copy(sampling = base.sampling.copy(temperature = it)) }
         SweepVariable.TOP_P -> v.toDoubleOrNull()?.takeIf { it > 0.0 && it <= 1.0 }?.let { base.copy(sampling = base.sampling.copy(topP = it)) }
         SweepVariable.MAX_TOKENS -> v.toIntOrNull()?.takeIf { it in 1..ai.riskmandate.app.llm.LlmRequest.MAX_OUTPUT_TOKENS }?.let { base.copy(maxTokens = it) }
-        SweepVariable.BACKEND -> BenchBackend.entries.firstOrNull { it.name.equals(v, true) }?.let { base.copy(backend = it) }
+        SweepVariable.BACKEND -> BackendPreference.entries.firstOrNull { it.name.equals(v, true) }?.let { base.copy(backend = it) }
         SweepVariable.SYSTEM_PROMPT -> when (v.lowercase(Locale.ROOT)) {
             "on" -> base.takeIf { it.systemPrompt.isNotBlank() }
             "off" -> base.copy(systemPrompt = "")
             else -> null
         }
-        SweepVariable.MODEL -> v.takeIf { it in models }?.let { base.copy(modelId = it) }
     }
 
     private fun fail(why: String) = Result.failure<List<Pair<String, RunSettings>>>(IllegalArgumentException(why))
@@ -158,7 +156,7 @@ suspend fun runExperiment(
             if (stop != null) break
             onProgress(ExperimentProgress(results.size, plan.size, label, results.toList(), null, false))
             // A run stopped by cancelling still reaches the log through its Finished update.
-            val r = runner.run(settings) { u -> if (u is RunUpdate.Finished && u.record.stopReason == LlmStopReason.STOPPED) onRecord(label, u.record) }
+            val r = runner.run(settings) { u -> if (u is RunUpdate.Finished && u.record.stopReason == LlmStopReason.CANCELLED) onRecord(label, u.record) }
             results += label to r
             onRecord(label, r)
             failuresInARow = if (r.stopReason == LlmStopReason.ERROR) failuresInARow + 1 else 0
@@ -172,4 +170,47 @@ suspend fun runExperiment(
     val p = ExperimentProgress(results.size, plan.size, null, results.toList(), stop, true)
     onProgress(p)
     return p
+}
+
+/**
+ * Keeps an experiment's results table across a rotation (the Activity is recreated and a running experiment is
+ * cancelled with it). Only validated counters are saved (security L): the variable, the values (short labels),
+ * repeats, the stop, and per value the counts and the three spreads. No prompt, answer or setting text.
+ */
+object SummaryCodec {
+    private const val V = "s1"
+
+    fun encode(plan: ExperimentPlan, rows: List<ValueSummary>, stop: ExperimentStop?): String =
+        listOf(V, plan.variable.name, plan.repeats.toString(), stop?.name ?: "", rows.joinToString(";") { r ->
+            listOf(r.label, r.runs, r.failed, sp(r.firstTokenMs), sp(r.decodeTps), sp(r.outputTokens), r.passed ?: -1).joinToString(",")
+        }).joinToString("|")
+
+    fun decode(text: String): Triple<ExperimentPlan, List<ValueSummary>, ExperimentStop?>? = try {
+        val f = text.split("|")
+        require(f.size == 5 && f[0] == V)
+        val variable = SweepVariable.valueOf(f[1])
+        val repeats = f[2].toInt().also { require(it in 1..ExperimentCaps.MAX_RUNS) }
+        val stop = if (f[3].isEmpty()) null else ExperimentStop.valueOf(f[3])
+        val rows = if (f[4].isEmpty()) emptyList() else f[4].split(";").map { part ->
+            val c = part.split(",")
+            require(c.size == 4 + 3 * 5 && c[0].length in 1..20 && c[0].none { it == '|' || it == ';' })
+            val runs = c[1].toInt().also { require(it in 0..ExperimentCaps.MAX_RUNS) }
+            val failed = c[2].toInt().also { require(it in 0..runs) }
+            fun spread(i: Int): Spread? {
+                val n = c[i].toInt()
+                if (n == 0) return null
+                require(n in 1..runs)
+                val xs = (1..4).map { c[i + it].toDouble().also { d -> require(d.isFinite() && d >= 0) } }
+                return Spread(n, xs[0], xs[1], xs[2], xs[3])
+            }
+            val passed = c[18].toInt().let { if (it < 0) null else it.also { p -> require(p <= runs) } }
+            ValueSummary(c[0], runs, failed, spread(3), spread(8), spread(13), passed)
+        }
+        require(rows.size <= 20 && rows.sumOf { it.runs } <= ExperimentCaps.MAX_RUNS)
+        Triple(ExperimentPlan(variable, rows.map { it.label }, repeats), rows, stop)
+    } catch (e: RuntimeException) {
+        null
+    }
+
+    private fun sp(s: Spread?) = if (s == null) "0,0,0,0,0" else "${s.n},${s.mean},${s.min},${s.max},${s.sd}"
 }

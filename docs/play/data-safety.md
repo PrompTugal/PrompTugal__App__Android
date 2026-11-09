@@ -35,9 +35,20 @@ All of it is local and never transmitted, so none of it is "collected" (Google: 
 | In-app view | WebView cookies and cache | deleted when the view closes | `work/dev.site` |
 | Chat history (G/H, DRAFT) | `noBackupFilesDir/feature_chat/`, one JSON file | conversations | yes (feature flag state not checked) |
 | Model files (G, DRAFT) | `noBackupFilesDir/models/` (finished files, a `.part` file while downloading, a `.verified` marker); adb copy in `getExternalFilesDir("models")` on API 30+, deleted after import | model weights | `work/app`, `work/dev.llm` |
+| Workbench run log (staff only, DRAFT) | `noBackupFilesDir/feature_workbench/runs.jsonl` | per run: settings and figures, the first 200 characters of the prompt, the first 300 of the answer; at most 500 runs, 4 MB; Clear button; no identifiers; never sent or exported | `dev` (feature off; Diagnostics, Preview) |
+| Cloud key and spend ledger (DRAFT, planned) | `noBackupFilesDir/feature_cloud` | the OpenRouter key encrypted with an Android Keystore key; a cost ledger (a number) | not built |
 | Chosen model (G, DRAFT) | SharedPreferences `feature_models` | which downloaded model to use | `work/dev.llm` |
 
 `data_extraction_rules.xml` excludes every cloud-backup and device-transfer domain by name, `noBackupFilesDir` is never backed up by the platform, and `allowBackup` is false.
+
+## Update 9 November 2026: the cloud model through OpenRouter (DRAFT, from `docs/security/summit-checklist.md` section M; no code yet)
+
+Dinis's decision, owner dev.chat; staff-only, off by default, refused in stand mode. This changes the Data safety answer for any build that has it, and security's R-play-9 asks for it to be answered with that in mind.
+- **What leaves the device:** the staff member's prompt, the system text and the settings, to `openrouter.ai`, which passes it to a model provider. Chat history only if staff choose it for that request. No identifier, device label, app version or account. Planned: a key per tablet (encrypted with the Keystore in `noBackupFilesDir/feature_cloud`, with a cost ledger, a number), spend caps in code, one pinned host, no redirects, bounded request and response sizes.
+- **Collect and share (Google, read 9 November, `answer/10787469`):** "Collect" is transmitting data off the device; a prompt sent to OpenRouter is **collected**. Sharing with a third party (OpenRouter and the provider behind it) applies unless the transfer is "based on a specific user-initiated action, where the user reasonably expects the data to be shared", which a deliberate tap on a clearly labelled cloud option may meet; I cannot settle that from Google's pages, and a staff member is not necessarily the person whose data is in the prompt. **So a build with the cloud model cannot say "No data collected" or "No data shared".**
+- **Data type:** the prompt is whatever staff type (it could be a message, notes or anything). Which category the live form wants (for example user-generated content or messages) I could not confirm without sign-in; Dinis chooses from the form's wording. Purpose: app functionality. Processing: not ephemeral if OpenRouter or the provider keeps it; their policies apply.
+- **Options for Dinis, with the earlier A to C question:** (1) declare the collection and sharing in the form for a store build that has the cloud model; (2) keep the cloud model out of any store build and use it only in the Firebase builds for the team's tablets (the brief says Play waits); (3) as 2, and decide later. I recommend 2 for now: it keeps the store answer smaller and the cloud model is a team tool.
+- The on-device chat statements ("nothing you type leaves the device") become conditional on the cloud being off; the policy draft says so.
 
 ## Update 9 November 2026: on-device model download and chat (DRAFT; not for Play yet)
 

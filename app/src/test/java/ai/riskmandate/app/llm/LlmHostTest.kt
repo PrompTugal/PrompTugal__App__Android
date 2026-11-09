@@ -93,27 +93,50 @@ class LlmHostTest {
         install(specA, bytesA)
         val r = host(FakeRuntime(gpuFails = true)).generate(ask)
         assertEquals("CPU", r.stats?.backend)
-        assertEquals("GPU", r.stats?.requestedBackend)
+        assertEquals("AUTO", r.stats?.requestedBackend)
         assertEquals(true, r.stats?.fellBackToCpu)
         assertEquals(true, r.stats?.loadedModel)
     }
 
-    @Test fun selectChoosesTheBackendAndReloadsOnlyWhenItChanges() = runBlocking {
+    @Test fun theRequestsBackendIsHonouredAndReloadsOnlyWhenItMust() = runBlocking {
         install(specA, bytesA)
         val rt = FakeRuntime()
         val h = host(rt)
         h.generate(ask)
         assertEquals(listOf("a.litertlm" to BenchBackend.GPU), rt.loads)
-        h.select("modela", BenchBackend.GPU)
-        assertEquals(false, h.generate(ask).stats?.loadedModel)
-        h.select("modela", BenchBackend.CPU)
-        assertEquals(0, rt.open)
-        val r = h.generate(ask)
-        assertEquals(true, r.stats?.loadedModel)
-        assertEquals("CPU", r.stats?.backend)
-        assertEquals("CPU", r.stats?.requestedBackend)
-        assertEquals(false, r.stats?.fellBackToCpu)
-        assertEquals(BenchBackend.CPU, rt.loads.last().second)
+        assertEquals(false, h.generate(ask.copy(backend = BackendPreference.GPU)).stats?.loadedModel)
+        val cpu = h.generate(ask.copy(backend = BackendPreference.CPU))
+        assertEquals(true, cpu.stats?.coldLoad)
+        assertEquals("CPU", cpu.stats?.backendUsed)
+        assertEquals("CPU", cpu.stats?.requestedBackend)
+        assertEquals(false, cpu.stats?.fellBack)
+        assertEquals(1, rt.open)
+        // AUTO after an explicit CPU load tries the GPU again (no false "fell back").
+        val auto = h.generate(ask)
+        assertEquals(true, auto.stats?.coldLoad)
+        assertEquals("GPU", auto.stats?.backendUsed)
+        assertEquals(false, auto.stats?.fellBack)
+        assertEquals(listOf(BenchBackend.GPU, BenchBackend.CPU, BenchBackend.GPU), rt.loads.map { it.second })
+    }
+
+    @Test fun aFallenBackModelIsReusedAndStillSaysSo() = runBlocking {
+        install(specA, bytesA)
+        val rt = FakeRuntime(gpuFails = true)
+        val h = host(rt)
+        h.generate(ask)
+        val again = h.generate(ask.copy(backend = BackendPreference.GPU))
+        assertEquals(false, again.stats?.coldLoad)
+        assertEquals(true, again.stats?.fellBack)
+        assertEquals(2, rt.loads.size)
+    }
+
+    @Test fun unloadMakesTheNextRunCold() = runBlocking {
+        install(specA, bytesA)
+        val h = host(FakeRuntime())
+        h.generate(ask)
+        val service: LlmService = h
+        service.unload()
+        assertEquals(true, h.generate(ask).stats?.coldLoad)
     }
 
     @Test fun loadFailureIsAStateAndAnErrorNotACrash() = runBlocking {

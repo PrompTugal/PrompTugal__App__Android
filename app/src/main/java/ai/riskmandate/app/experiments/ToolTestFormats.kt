@@ -1,4 +1,4 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.experiments
 
 import ai.riskmandate.app.llm.StrictJson
 
@@ -6,7 +6,7 @@ import ai.riskmandate.app.llm.StrictJson
  * Reads tool-test files (`abp-tooltest/1`): one file per kind, {format, kind, title, synthetic, cases[]}.
  * A case: {id, tests, system?, messages[], tools[] (2 to 5), fake_tools{}, checks[], max_steps?, reference?, wrong?}.
  * Tools and fake tools use the same shapes as scenarios (see [LabFormats]); `effect` may be left out. Strict:
- * anything that does not fit is a [LabFormats.FormatException] and the file is skipped and counted.
+ * anything that does not fit is a [FormatException] and the file is skipped and counted.
  */
 object ToolTestFormats {
     const val FORMAT = "abp-tooltest/1"
@@ -16,7 +16,7 @@ object ToolTestFormats {
     const val MAX_CHECKS = 8
     const val MAX_MESSAGES = 12
 
-    private fun fail(msg: String): Nothing = throw LabFormats.FormatException(msg)
+    private fun fail(msg: String): Nothing = throw FormatException(msg)
 
     @Suppress("UNCHECKED_CAST")
     private fun Any?.obj(what: String): Map<String, Any?> = this as? Map<String, Any?> ?: fail("$what must be an object")
@@ -26,7 +26,7 @@ object ToolTestFormats {
 
     /** One kind's file: its [ToolKind] and cases. */
     fun parse(text: String): Pair<ToolKind, List<ToolCase>> {
-        val m = LabFormats.obj(text)
+        val m = ToolFormats.parseObject(text)
         if (m["format"] != FORMAT) fail("format must be $FORMAT")
         if (m["synthetic"] != true) fail("tool-test data must be marked synthetic: true")
         val kind = m.str("kind")
@@ -45,9 +45,9 @@ object ToolTestFormats {
         fun bad(msg: String): Nothing = fail("$id: $msg")
         val tests = c.str("tests")
         if (tests.isBlank() || tests.length > 200 || '\n' in tests) bad("'tests' is one line of at most 200 characters")
-        val tools = LabFormats.parseTools(c["tools"].list("tools"), id, requireEffect = false)
+        val tools = ToolFormats.parseTools(c["tools"].list("tools"), id, requireEffect = false)
         if (tools.size !in MIN_TOOLS..MAX_TOOLS) bad("offer $MIN_TOOLS to $MAX_TOOLS tools")
-        val fakes = LabFormats.parseFakes(c["fake_tools"].obj("fake_tools"))
+        val fakes = ToolFormats.parseFakes(c["fake_tools"].obj("fake_tools"))
         for (t in tools) if (t.name !in fakes) bad("tool ${t.name} has no fake_tools entry")
         (fakes.keys - tools.map { it.name }.toSet()).firstOrNull()?.let { bad("fake_tools has '$it', which is not an offered tool") }
         if (fakes.values.any { it.graph != null }) bad("graph fakes are not used in tool tests")

@@ -53,4 +53,11 @@ class LlmStatsTest {
         assertEquals(false, Thermal.MODERATE.severeOrWorse)
         assertEquals(true, Thermal.CRITICAL.severeOrWorse)
     }
+
+    @Test fun locationDefaultsToThisDevice() {
+        assertEquals(LlmLocation.LOCAL, stats(outT = 1, decT = 1.0).location)
+        assertEquals(LlmLocation.LOCAL, FakeLlmService().location)
+        val cloud = object : LlmService by FakeLlmService() { override val location = LlmLocation.CLOUD }
+        assertEquals(LlmLocation.CLOUD, cloud.location)
+    }
 }

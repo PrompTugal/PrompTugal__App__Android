@@ -1,4 +1,4 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.experiments
 
 /** Pass counts for a group of runs. Runs that did not finish are counted apart and are in no rate. */
 data class PassStat(val passed: Int, val finished: Int, val notFinished: Int, val meanMs: Long?) {

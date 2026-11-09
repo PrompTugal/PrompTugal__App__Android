@@ -1,4 +1,4 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.experiments
 
 import ai.riskmandate.app.llm.LlmEvent
 import ai.riskmandate.app.llm.LlmMessage
@@ -20,7 +20,7 @@ object ToolTestRunner {
         llm: LlmService,
         case: ToolCase,
         mode: ToolMode,
-        settings: LiveRunner.Settings = LiveRunner.Settings(),
+        settings: RunSettings = RunSettings(),
         rep: Int = 0,
         now: () -> Long = System::currentTimeMillis,
     ): CaseRun {
@@ -72,7 +72,7 @@ object ToolTestRunner {
                 steps += StepRecord(text, records)
                 messages += if (native) LlmMessage.assistant(text.take(ToolProtocol.MAX_TEXT_CHARS), res.toolCalls) else LlmMessage.assistant(text)
                 for (r in records) {
-                    val back = (r.result ?: "").take(LiveRunner.MAX_RESULT_CHARS)
+                    val back = (r.result ?: "").take(RunSettings.MAX_RESULT_CHARS)
                     messages += if (native) LlmMessage.toolResult(r.name, back) else LlmMessage.user("Tool result from ${r.name}: $back")
                 }
             }

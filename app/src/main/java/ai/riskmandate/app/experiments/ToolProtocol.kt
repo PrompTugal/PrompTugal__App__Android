@@ -1,4 +1,4 @@
-package ai.riskmandate.app.features.lab
+package ai.riskmandate.app.experiments
 
 import ai.riskmandate.app.llm.LlmEvent
 import ai.riskmandate.app.llm.ParamType

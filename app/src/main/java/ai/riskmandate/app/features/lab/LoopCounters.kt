@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.StopReason
+
 /** What one finished loop run says, from the scorer. Counted by code, never read from text. */
 data class RunScore(
     /** The raw path went outside the policy. */
