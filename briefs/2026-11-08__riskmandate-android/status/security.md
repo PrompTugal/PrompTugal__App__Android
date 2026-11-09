@@ -1,11 +1,13 @@
 # security.android status
 
-> Round 9 (9 Nov 2026, about 01:25 UTC): play fb617fd PASS; the seven summit branches have no commits beyond dev yet; wrote `docs/security/summit-checklist.md` (WebView, stand mode, mandate view, host). Waiting for the next wake.
+> Urgent review 9 Nov 2026 (about 01:50 UTC): release f0ee176 PASS (licence job, paths filter, per-job concurrency). work/editor appeared, no commits. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Urgent review `2026-11-09-release-f0ee176.md`: **PASS**. Licence gate still blocks the release (`needs: [check, licences]`) and no longer depends on a cold Gradle cache; the new job holds no secret; paths filter and concurrency checked. R-rel-8 (low): no CI runs for `devices/` or its policy tests; R-rel-9 (info): Gradle wrapper checksum.
+- Reviews `2026-11-09-app-2bbc37b.md` (PASS: host routing, FeatureFrame; stale saved routes now resolve to Home; no manifest or permission change) and `2026-11-09-architect-8ab334d.md` (PASS: docs; its WebView rules agree with my checklist; R-arch-1 restrict the asset loader to /feature_site/, R-arch-2 add SSL-cancel, no DownloadListener, safe browsing, cookie clearing).
 - Review `2026-11-09-play-fb617fd.md`: **PASS** (docs; R-play-7 info: a keyless Play route should use its own service account and condition).
 - `docs/security/summit-checklist.md`: what I will check in work/dev.site (WebView: allow-list on every navigation, no JS bridge, no file access, WebViewAssetLoader for the offline copy), dev.stand (lock task only, no PIN, no device-owner calls), dev.mandate (own PackageManager reads only), and the host. Skeleton on dev (Feature.kt, Features.kt, StandHost placeholder) read: no new permission, no exported component; `FeatureContext` gives features the whole activity (info).
 - Branches `work/architect`, `design`, `qa`, `dev.site`, `dev.abpdemo`, `dev.mandate`, `dev.stand`: no commits beyond dev at 01:25 UTC, nothing to review yet.
@@ -30,6 +32,7 @@ At each wake: `git fetch origin`, review `origin/dev..origin/work/<role>` for ea
 Nothing.
 
 ## For other roles
+- release: R-rel-8, add a `devices` job (`node --test devices/test/*.test.mjs`, read-only, no secrets) on `devices/**` and pull requests.
 - dev.site, dev.stand, dev.mandate, dev.abpdemo, app: read `docs/security/summit-checklist.md` before pushing; a WebView JS bridge, file access, a PIN in the source or a new permission without the docs changed is a HOLD.
 - release: R-rel-6 (info), match the licence URL against known licence URLs instead of a substring.
 - play: R-play-6, when app d36382f merges, change "the only permission is internet access" in `privacy.html`, `privacy-policy.md`, `data-safety.md`.

@@ -65,3 +65,24 @@ class HomeScreenTest {
         assertEquals(1, opened)
     }
 }
+
+@RunWith(AndroidJUnit4::class)
+class HomeFeatureOrderTest {
+    @get:Rule val compose = createComposeRule()
+
+    /** TalkBack reads in this order: title, Open, the message about opening, then the feature buttons. */
+    @Test fun messageComesRightAfterOpenAndBeforeFeatures() {
+        compose.setContent {
+            MaterialTheme {
+                HomeScreen(
+                    "0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {},
+                    message = R.string.message_offline,
+                    features = listOf(FeatureButton("site", R.string.home_diagnostics) {}),
+                )
+            }
+        }
+        fun top(tag: String) = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot.top
+        assert(top(HomeTags.OPEN) < top(HomeTags.MESSAGE))
+        assert(top(HomeTags.MESSAGE) < top(HomeTags.feature("site")))
+    }
+}

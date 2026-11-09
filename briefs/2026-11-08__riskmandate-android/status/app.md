@@ -1,6 +1,6 @@
 # app.android status
 
-> Second task list done (diagnostics screen, androidTest smoke test, offline behaviour, size and startup). Gate green. Stopped.
+> Lead dev. Skeleton review (13c47b4) done and fixed. Earlier: second task list done (diagnostics screen, androidTest smoke test, offline behaviour, size and startup). Gate green. Stopped.
 
 ## Doing
 Nothing.
@@ -21,6 +21,15 @@ Nothing.
 - No network: opening can no longer crash (all launch failures are caught; new `FAILED` result with its own message). If the system reports no validated internet, the home screen says so plainly under the button while the browser still opens and shows its own error. This adds the normal permission `ACCESS_NETWORK_STATE` (no network data read); say if you would rather not have it.
 - androidTest smoke test `app/src/androidTest/.../SmokeTest.kt` (home, licences, diagnostics). Compiles in the gate via `assembleDebugAndroidTest`; not run here (no emulator).
 - Size and start: release APK 929 KB (unsigned, minified and resource-shrunk), AAB 2.1 MB. R8 full mode is already the default in AGP 8.7 (no `fullMode=false` anywhere), so nothing to switch on and the gate is green. JVM start: `StartupTest` creates MainActivity in about 60 ms warm under Robolectric (printed as `STARTUP_JVM_MS`, asserted under 3 s). That is not a device cold start; measure that on a tablet.
+
+### Summit skeleton review (lead dev), fixed in this commit
+- Unknown or switched-off route (restored after an app update or process death) wrote state during composition and could show a disabled feature: now resolved before drawing (Home), saved route reset in a `LaunchedEffect`.
+- Features had no way back except the system gesture, which stand mode can pin off: new host `FeatureFrame` (Back button 48dp, title as heading, system-bar insets). **For feature devs: draw only your content; the host draws the title and Back, and applies insets. Do not add your own title or `safeDrawingPadding`.**
+- TalkBack order on Home: the "cannot open / offline" message came after the feature buttons; now title, Open, message, features, then Device, About, Licences, Diagnostics, Build.
+- Open and feature buttons share a minimum width (240dp).
+- Rotation: built-in screens and the route survive (tested with `recreate()`). A feature's own state (a WebView page, scroll) does not, since the activity is recreated: feature devs keep it in `rememberSaveable` or a ViewModel.
+- Tests: feature ids unique, lowercase, no clash with built-in routes; frame Back; message order.
+- Not changed: `Feature.kt` (architect's), `Features.kt` (conductor's), `StandHost` (stand's).
 
 ## Next
 Nothing that does not wait on others.
