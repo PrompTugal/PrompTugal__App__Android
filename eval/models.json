@@ -85,7 +85,7 @@
     {
       "id": "litert-community/gemma-4-E2B-it-litert-lm",
       "label": "Gemma 4 E2B IT (real weights)",
-      "closest_to": "the default on-device model",
+      "closest_to": "Gemma 4 E2B as built at the repo's current main (sha256 181938105e0e, 2,588,147,712 bytes); NOT the app's pinned file (7fa1d784 / ab7838cd, 2,583,085,056 bytes), so do not call these results the default on-device model until the files match",
       "backend": "local-litert-lm",
       "quantisation": "Gemma 4 mobile quantisation: a mix of 2, 4 and 8 bit weights (file gemma-4-E2B-it.litertlm, CPU build, 2.59 GB), LiteRT-LM on this Linux machine CPU",
       "enabled": false,
