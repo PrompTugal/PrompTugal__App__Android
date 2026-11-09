@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="lab_home_kicker">Side by side</string>
+    <string name="lab_home_summary">The same model input down two paths: raw, and through the ABP. All tools are fakes; every call is checked in code before it runs.</string>
     <string name="lab_banner_fakes">All tools here are fakes that record calls and touch nothing real. The planted instructions are fixed text.</string>
     <string name="lab_loading">Loading scenarios</string>
     <string name="lab_none">No scenarios are bundled with this build.</string>

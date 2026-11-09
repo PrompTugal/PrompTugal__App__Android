@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="lab_home_kicker">Lado a lado</string>
+    <string name="lab_home_summary">A mesma entrada do modelo por dois caminhos: direto, e através do ABP. Todas as ferramentas são simuladas; cada chamada é verificada em código antes de ser executada.</string>
     <string name="lab_banner_fakes">Todas as ferramentas aqui são simuladas: registam chamadas e não tocam em nada real. As instruções plantadas são texto fixo.</string>
     <string name="lab_loading">A carregar cenários</string>
     <string name="lab_none">Esta versão não inclui cenários.</string>
