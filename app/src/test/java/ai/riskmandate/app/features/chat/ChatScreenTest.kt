@@ -5,6 +5,10 @@ import ai.riskmandate.app.ManagedConfig
 import ai.riskmandate.app.RiskMandateTheme
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
+import ai.riskmandate.app.llm.FakeLlmService
+import ai.riskmandate.app.llm.FakeReply
+import ai.riskmandate.app.llm.LlmService
+import ai.riskmandate.app.llm.LlmState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -32,9 +36,40 @@ class ChatScreenTest {
 
     private fun show(llm: ChatLlm, store: ChatHistoryStore = MemoryChatHistoryStore()) = compose.setContent {
         val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null), openFeature = { opened += it })
-        CompositionLocalProvider(LocalChatLlm provides llm, LocalChatStore provides store) {
-            RiskMandateTheme { ChatFeature.Content(ctx) }
+        CompositionLocalProvider(LocalChatStore provides store) {
+            RiskMandateTheme { ChatContent(ctx, llm) }
         }
+    }
+
+    /** The production path: the host's LlmService through FeatureContext.llm, adapted inside chat. */
+    private fun showWithService(service: LlmService?) = compose.setContent {
+        val ctx = FeatureContext({}, ManagedConfig.DEFAULT, DeviceStatus.from(false, false, null), openFeature = { opened += it }, llm = service)
+        CompositionLocalProvider(LocalChatStore provides MemoryChatHistoryStore()) { RiskMandateTheme { ChatFeature.Content(ctx) } }
+    }
+
+    @Test fun nullServiceShowsTheNoModelStateWithOpenModels() {
+        showWithService(null)
+        compose.waitForIdle()
+        tag(ChatTags.NO_MODEL).assertIsDisplayed()
+        tag(ChatTags.OPEN_MODELS).performClick()
+        assertEquals(listOf("models"), opened)
+    }
+
+    @Test fun noModelStateFromTheServiceShowsTheSameState() {
+        showWithService(FakeLlmService(initial = LlmState.NoModel))
+        compose.waitForIdle()
+        tag(ChatTags.NO_MODEL).assertIsDisplayed()
+    }
+
+    @Test fun chatTalksToTheHostServiceAndShowsMarkupAsText() {
+        val svc = FakeLlmService(reply = { FakeReply("Hi <b>there</b> https://riskmandate.ai/abp") })
+        showWithService(svc)
+        compose.waitForIdle()
+        tag(ChatTags.INPUT).performTextInput("hello")
+        tag(ChatTags.SEND).performClick()
+        compose.waitUntil(5_000) { svc.requests.size == 1 && count(ChatTags.STATS) == 1 }
+        compose.onNodeWithText("Hi <b>there</b> https://riskmandate.ai/abp").assertIsDisplayed()
+        assertEquals(1, count(ChatTags.link(0)))
     }
 
     private fun tag(t: String) = compose.onNodeWithTag(t)

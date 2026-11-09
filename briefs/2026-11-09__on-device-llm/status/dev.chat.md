@@ -12,6 +12,10 @@
 - Errors now use the service's reason for the copy (NO_MODEL, LOAD_FAILED, TOO_LONG, INFERENCE_FAILED), kept on the message as `failure` (the reason name only, never content) and saved with the chat.
 - No colour literals in chat (design's ColourRulesTest).
 
+## Update (context.llm wired)
+- `ChatFeature.Content` now uses `LlmServiceChat(context.llm)`; null (or `LlmState.NoModel`) shows the no-model state with **Open Models** (`context.openFeature("models")`). `LocalChatLlm` is gone (`LocalChatStore` stays, tests only). Tests cover the production path with `FakeLlmService` (null, NoModel, streaming, markup shown as text, an allowed link as a button).
+- Still true: `enabled = false` until Dinis checks it on the tablet with a real model.
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 
