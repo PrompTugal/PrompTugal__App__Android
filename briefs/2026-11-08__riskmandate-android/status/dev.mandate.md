@@ -37,6 +37,10 @@ Waiting for conductor review. design.android's shared components have not landed
 
 - Tenth round (conductor, from dev.llm G): mandate entries for `shared_prefs/feature_models.xml` (the chosen model) and for the network to `huggingface.co`, `hf.co` and `*.hf.co` (reason: the model setup's Download button, only when tapped). The hosts are what dev.llm's `DownloadPolicy` accepts (read on `work/dev.llm`; the code is not on dev yet). Reach counts these hosts when the `models` feature is enabled in `FEATURES` (same mechanism as `site`). **Caveat:** dev.llm keeps `models` at `enabled = false` and reaches the setup screen through its own route, so until that changes the screen will not list the Hugging Face hosts as reach even though the code can connect. Once `llm/` is on dev I will look for a better signal (or the route being reachable) and switch to exact model file names; tell me if you would rather count the hosts as reach whenever the download code is in the build. Tests now take the mandate's size from the mandate instead of a hardcoded number.
 
+- Eleventh round (conductor ruling, llm/ on dev 25d9cb7): the mandate shows what the code can reach, not what is switched on. `modelDownloadReach()` asks the real `DownloadPolicy.hostAllowed` about seven candidate hosts (the three it accepts, and four look-alikes that must be refused), so Hugging Face (`huggingface.co`, `hf.co`, `*.hf.co`) is always reach, and if the policy ever accepts another host it shows as gap. Reason: "only when you tap Download in Model setup, to fetch a model from here" (en and pt-PT; the screen is titled "Model setup" / "Configurar modelo"). Model files are mandated by exact name from `ModelCatalog.ALL`: in `no_backup/models` the file, its `.part` and its `.<name>.verified` marker; in `external/models` the file and its marker. Any other file there is gap (tested). The collector lists the `models/` folders file by file. This changes the old caveat: the screen now lists the Hugging Face hosts on every build.
+
+- Twelfth round (design ruling, `docs/design/android-theme.md` "Icons", on `work/design`): `Feature.icon` is left null, so the host's id-based line icon applies; my `Icons.Filled.CheckCircle` override is removed. Kicker and summary stay.
+
 ## Vocabulary (riskmandate.ai, https://riskmandate.ai/, read 9 Nov 2026)
 - Reach: "Everything the agent can actually access in this deployment, including what nobody thought to check."
 - Mandate: "The job, written down: what the business authorised it to do."
@@ -53,6 +57,8 @@ Nothing.
 The release merged manifest exports `androidx.profileinstaller.ProfileInstallReceiver` (`exported="true"`, guarded by `android.permission.DUMP`, which only the shell and system hold). The mandate does not need it, so the screen's gap is **1** on a release build, shown plainly. Removing it is a manifest change outside my paths: `<receiver android:name="androidx.profileinstaller.ProfileInstallReceiver" tools:node="remove" />` (check first that dropping baseline-profile installation is acceptable). After that the gap reads none. Debug builds also export test activities from `ui-test-manifest`; those never ship.
 
 Also (A-man-5): make `Links.ALLOWED_HOSTS` public so `Mandate.HOSTS` can use it instead of copying it. The run-time probes catch drift meanwhile.
+
+Also: an icon for the `mandate` id in the host's line style (24 dp, 2 dp stroke), if the shell has none: it should show a check inside a shield or a gauge with a tick, as "this app's reach checked against its mandate"; design offered to draw it.
 
 ## For Dinis
 Decision for the stand: leave the gap of 1 visible (it is true and makes the point of the feature), or have app.android remove the receiver so it reads none.

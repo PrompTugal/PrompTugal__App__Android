@@ -5,8 +5,6 @@ import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
 import androidx.annotation.StringRes
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -59,7 +57,6 @@ object AbpDemoFeature : Feature {
     override val id = "abpdemo"
     override val title = R.string.feature_abpdemo_title
     override val enabled = true
-    override val icon = Icons.Filled.Lock
     override val kicker = R.string.abpdemo_kicker
     override val summary = R.string.abpdemo_summary
 

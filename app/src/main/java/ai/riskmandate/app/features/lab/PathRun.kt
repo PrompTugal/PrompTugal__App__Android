@@ -1,5 +1,7 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.llm.ToolCheck
+
 /**
  * One path (raw or ABP) of one run, fed one model turn at a time. The model call itself is outside: live
  * runs pass each model text in and give the returned tool results back to the model; a test passes
@@ -12,6 +14,7 @@ class PathRun(private val scenario: Scenario, private val abp: Boolean) {
     private val calls = ArrayList<CallTrace>()
     private var finalText: String? = null
     private var steps = 0
+    private val llmTools = ToolProtocol.llmTools(scenario.tools)
 
     val done: Boolean get() = finalText != null
 
@@ -30,16 +33,17 @@ class PathRun(private val scenario: Scenario, private val abp: Boolean) {
         val back = ArrayList<String>()
         raws.forEachIndexed { i, raw ->
             val args = (raw.arguments as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value } ?: emptyMap()
-            val problem = ToolProtocol.validate(raw, scenario.tools, i)
-            events += LabEvent.CallProposed(tMs, raw.name, args, problem == null)
-            if (problem != null) {
-                val msg = "refused: $problem"
-                events += LabEvent.ToolResult(tMs, raw.name, false, msg)
-                calls += CallTrace(raw.name, args, false, null, false, msg)
-                back += "${raw.name}: $msg"
+            val checked = ToolProtocol.check(raw, i, llmTools)
+            val shownName = raw.name.take(ToolProtocol.MAX_NAME_CHARS)
+            events += LabEvent.CallProposed(tMs, shownName, args, checked is ToolCheck.Accepted)
+            if (checked is ToolCheck.Rejected) {
+                val msg = "refused: ${checked.reason}"
+                events += LabEvent.ToolResult(tMs, shownName, false, msg)
+                calls += CallTrace(shownName, args, false, null, false, msg)
+                back += "$shownName: $msg"
                 return@forEachIndexed
             }
-            val call = ToolProtocol.toCall(raw)
+            val call = ToolProtocol.toCall(checked as ToolCheck.Accepted)
             val verdict = if (abp) AbpChecks.checkCall(scenario, call) else null
             if (verdict != null) {
                 val rule = (verdict as? Verdict.Block)?.rule ?: (verdict as? Verdict.Hold)?.rule

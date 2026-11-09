@@ -48,8 +48,8 @@ class ReleasesBadgeTest {
 
     @Test fun badgeStringIsTranslated() = assertEquals("New", app.getString(R.string.feature_releases_badge))
 
-    @Test fun cardTextAndIconAreSet() {
-        org.junit.Assert.assertNotNull(ReleasesFeature.icon)
+    @Test fun cardTextIsSetAndIconIsLeftToTheHost() {
+        org.junit.Assert.assertNull("design ruling: the host's line icon applies", ReleasesFeature.icon)
         assertEquals("Release notes", app.getString(ReleasesFeature.kicker))
         org.junit.Assert.assertTrue(app.getString(ReleasesFeature.summary).isNotBlank())
     }

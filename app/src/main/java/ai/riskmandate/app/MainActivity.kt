@@ -40,6 +40,22 @@ object Routes {
 }
 
 /**
+ * What the host hands every feature: the managed configuration, the device state, the idle hold, the
+ * `openFeature` request and the process's one on-device model service ([LlmProcess], created on first use).
+ */
+fun hostFeatureContext(
+    context: android.content.Context,
+    onBack: () -> Unit,
+    config: ManagedConfig,
+    device: DeviceStatus,
+    holdIdle: () -> () -> Unit,
+    openFeature: (String) -> Unit,
+): FeatureContext = FeatureContext(
+    onBack = onBack, config = config, device = device, holdIdle = holdIdle, openFeature = openFeature,
+    llm = LlmProcess.get(context),
+)
+
+/**
  * The route to open when a feature asks for [id] through `FeatureContext.openFeature`, or null when the host
  * refuses: an id that is unknown or switched off, or any request while stand mode is on (stand mode keeps a
  * visitor on the screens staff chose).
@@ -223,8 +239,9 @@ class MainActivity : ComponentActivity() {
                                 feature != null -> FeatureFrame(title = feature.title, kicker = feature.kicker ?: sectionOf(feature.id)) {
                                     feature.Content(
                                         remember(config, device, standOn) {
-                                            FeatureContext(
-                                                onBack = goHome, config = config, device = device, holdIdle = idle::hold,
+                                            hostFeatureContext(
+                                                context = this@MainActivity, onBack = goHome, config = config, device = device,
+                                                holdIdle = idle::hold,
                                                 // A feature asks for another by id (chat's "set up a model" opens "models"); the
                                                 // host decides: unknown or disabled ids and stand mode are refused.
                                                 openFeature = { id -> resolveOpenFeature(id, standOn, enabledFeatureIds)?.let { screen = it } },

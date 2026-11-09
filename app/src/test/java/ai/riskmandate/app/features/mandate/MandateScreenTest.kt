@@ -148,11 +148,12 @@ class MandateScreenTest {
         java.io.File(app.cacheDir, "c.bin").writeText("x")
         val chat = java.io.File(app.noBackupFilesDir, "feature_chat/history.json").also { it.parentFile!!.mkdirs(); it.writeText("x") }
         val stray = java.io.File(app.noBackupFilesDir, "stray.bin").also { it.writeText("x") }
-        val ext = java.io.File(app.getExternalFilesDir(null), "models/m.bin").also { it.parentFile!!.mkdirs(); it.writeText("x") }
+        val modelName = ai.riskmandate.app.llm.ModelCatalog.ALL.first().fileName
+        val ext = java.io.File(app.getExternalFilesDir(null), "models/$modelName").also { it.parentFile!!.mkdirs(); it.writeText("x") }
         try {
             val items = ReachCollector.storage(app).associateBy { it.id }
             assertEquals(
-                setOf("files/x.txt", "shared_prefs/stand_mode.xml", "app_webview", "cache", "no_backup/feature_chat", "no_backup/stray.bin", "external/models"),
+                setOf("files/x.txt", "shared_prefs/stand_mode.xml", "app_webview", "cache", "no_backup/feature_chat", "no_backup/stray.bin", "external/models/$modelName"),
                 items.keys,
             )
             assertEquals(2, items.getValue("app_webview").count)
