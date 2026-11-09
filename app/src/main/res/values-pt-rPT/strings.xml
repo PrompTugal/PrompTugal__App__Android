@@ -29,7 +29,7 @@
     <string name="home_now_title">Agora</string>
     <string name="home_now_summary">O que pode abrir neste dispositivo.</string>
     <string name="home_stat_features">Funcionalidades ativas</string>
-    <string name="home_stat_collected">Dados que esta aplicação recolhe</string>
+    <string name="home_stat_permissions">Permissões que esta aplicação pede</string>
     <string name="home_stat_attention">Precisa de atenção</string>
     <string name="home_stat_attention_none">Nada a verificar</string>
     <string name="home_stat_attention_some">Veja a nota acima</string>

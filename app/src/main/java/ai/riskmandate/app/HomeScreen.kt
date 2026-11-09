@@ -52,6 +52,7 @@ private val MinTouch = 48.dp
  * then the device card and the links for this app. Two columns at 840 dp of content width, one below.
  * TalkBack order: header, message, stats, feature cards, device, this app.
  *
+ * @param permissions how many permissions this app asks for, read from its manifest (not a claim).
  * @param attention how many things need a look (shown in the third tile; zero is good).
  * @param showDiagnostics false hides the Diagnostics link (stand mode: visitors do not see it).
  */
@@ -66,6 +67,8 @@ fun HomeScreen(
     features: List<FeatureButton> = emptyList(),
     showDiagnostics: Boolean = true,
     attention: Int = 0,
+    /** How many permissions the app asks for (derived from its manifest). */
+    permissions: Int = 0,
 ) {
     Page(Modifier.safeDrawingPadding()) {
         ScreenHeader(
@@ -86,7 +89,7 @@ fun HomeScreen(
         }
         StatGrid(Modifier.testTag(HomeTags.STATS)) {
             tile { StatTile(features.size.toString(), stringResource(R.string.home_stat_features)) }
-            tile { StatTile("0", stringResource(R.string.home_stat_collected), tone = Tone.Good) }
+            tile { StatTile(permissions.toString(), stringResource(R.string.home_stat_permissions)) }
             tile {
                 StatTile(
                     attention.toString(),

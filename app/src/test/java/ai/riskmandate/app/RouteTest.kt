@@ -28,4 +28,10 @@ class RouteTest {
         assertEquals(Routes.LICENCES, resolveRoute(Routes.LICENCES, standOn = true, featureEnabled = false))
         assertEquals(Routes.HOME, resolveRoute(Routes.HOME, standOn = true, featureEnabled = false))
     }
+
+    @Test fun ownCustomPermissionsDoNotCount() {
+        val pkg = "ai.riskmandate.app"
+        assertEquals(2, countRequestedPermissions(arrayOf("android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE", "$pkg.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"), pkg))
+        assertEquals(0, countRequestedPermissions(null, pkg))
+    }
 }

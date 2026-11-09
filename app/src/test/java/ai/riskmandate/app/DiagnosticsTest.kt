@@ -109,3 +109,13 @@ class DiagnosticsTest {
         compose.onNodeWithTag(DiagnosticsTags.MODEL_BENCH).assertDoesNotExist()
     }
 }
+
+@RunWith(AndroidJUnit4::class)
+class PermissionCountTest {
+    @Test fun theCountIsReadFromTheMergedManifestAndMatchesTheTwoWeDeclare() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        // INTERNET and ACCESS_NETWORK_STATE: the only permissions the app declares itself (a new one fails this
+        // test on purpose, so the Home tile and the mandate screen are looked at together).
+        assertEquals(2, requestedPermissionCount(context))
+    }
+}

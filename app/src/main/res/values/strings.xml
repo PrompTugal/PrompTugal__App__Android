@@ -31,7 +31,7 @@
     <string name="home_now_title">Now</string>
     <string name="home_now_summary">What you can open on this device.</string>
     <string name="home_stat_features">Features on</string>
-    <string name="home_stat_collected">Data this app collects</string>
+    <string name="home_stat_permissions">Permissions this app asks for</string>
     <string name="home_stat_attention">Needs a look</string>
     <string name="home_stat_attention_none">Nothing to check</string>
     <string name="home_stat_attention_some">See the note above</string>

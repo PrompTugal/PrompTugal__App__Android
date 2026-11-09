@@ -37,6 +37,24 @@ object Routes {
     const val MODEL_BENCH = "modelbench"
 }
 
+/** How many of an app's [requested] permissions are Android's own: the app's own custom ones (from `<packageName>.`) do not count. */
+fun countRequestedPermissions(requested: Array<String>?, packageName: String): Int =
+    requested.orEmpty().count { !it.startsWith("$packageName.") }
+
+/** The permissions this app asks for in its manifest (derived, shown on Home). A failure counts as zero. */
+fun requestedPermissionCount(context: android.content.Context): Int = try {
+    val pm = context.packageManager
+    val info = if (android.os.Build.VERSION.SDK_INT >= 33) {
+        pm.getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(android.content.pm.PackageManager.GET_PERMISSIONS.toLong()))
+    } else {
+        @Suppress("DEPRECATION")
+        pm.getPackageInfo(context.packageName, android.content.pm.PackageManager.GET_PERMISSIONS)
+    }
+    countRequestedPermissions(info.requestedPermissions, context.packageName)
+} catch (e: Exception) {
+    0
+}
+
 /**
  * The route to show for a saved [screen]: itself if it is a built-in or an enabled feature, else Home;
  * and Home for the staff-only screens (Diagnostics, the model bench) while stand mode is on, and for a restored
@@ -133,9 +151,22 @@ class MainActivity : ComponentActivity() {
                         Routes.MODEL_BENCH -> R.string.feature_models_title
                         else -> feature?.title ?: R.string.home_now_title
                     }
+                    val permissionCount = remember { requestedPermissionCount(this@MainActivity) }
                     val prefs = remember { getSharedPreferences("shell", MODE_PRIVATE) }
                     var sidebarCollapsed by remember { mutableStateOf(prefs.getBoolean("sidebar_collapsed", false)) }
-                    StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome, idleHeld = idle.held) {
+                    StandHost(
+                        activity = this@MainActivity,
+                        atHome = route == Routes.HOME,
+                        goHome = goHome,
+                        idleHeld = idle.held,
+                        // Called with the saved value at start, then on each change. In stand mode the sidebar
+                        // starts folded to the rail so the content is the screen (staff can open it; not saved,
+                        // so it does not stay folded after stand mode ends).
+                        onEnabledChange = { on ->
+                            standOn = on
+                            if (on) sidebarCollapsed = true
+                        },
+                    ) {
                         AppShell(
                             sections = sections,
                             selected = route,
@@ -181,6 +212,7 @@ class MainActivity : ComponentActivity() {
                                     onLicences = { screen = Routes.LICENCES },
                                     onDiagnostics = { screen = Routes.DIAGNOSTICS },
                                     showDiagnostics = !standOn,
+                                    permissions = permissionCount,
                                     attention = (if (config.startUrlRefused) 1 else 0) + (if (message != null) 1 else 0),
                                     features = FEATURES.filter { it.enabled }.mapIndexed { i, f ->
                                         FeatureButton(f.id, f.title, featureItems[i].badge, f.kicker, f.summary) { screen = f.id }
