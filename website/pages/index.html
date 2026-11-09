@@ -1,0 +1,48 @@
+<!--
+title: RiskMandate for Android
+description: The RiskMandate app for Android: opens riskmandate.ai, shows whether the device is managed, collects nothing. Open source, in testing.
+nav: Home
+order: 1
+-->
+<section class="band">
+  <div class="wrap">
+    <p class="kicker">Android app, in testing</p>
+    <h1>RiskMandate for Android</h1>
+    <p class="lede">An Android app for <a href="https://riskmandate.ai/">riskmandate.ai</a>. Today it opens the site, tells you whether an organisation manages the device, and collects nothing. It is open source and not yet on Google Play: testers install it through Firebase App Distribution.</p>
+    <p><a class="button" href="install.html">Install it as a tester</a> <a href="articles/2026-11-09-m1-ci-to-a-tablet-in-one-night.html">Read how it got to a tablet in one night</a></p>
+    <dl class="stats">
+      <div><dt>{{latest_version}}</dt><dd>latest release ({{latest_tag}})</dd></div>
+      <div><dt>Android {{min_android}}+</dt><dd>minimum (API {{min_sdk}}); built for API {{target_sdk}}</dd></div>
+      <div><dt>{{permission_count}}</dt><dd>permissions: {{permission_names}}</dd></div>
+      <div><dt>{{jvm_tests}}</dt><dd>unit tests in the source, plus {{device_tests}} on a device or emulator</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section class="band band-alt">
+  <div class="wrap prose">
+    <p class="kicker">What RiskMandate is</p>
+    <h2>In riskmandate.ai’s own words</h2>
+    <p>This site says nothing about RiskMandate beyond what <a href="https://riskmandate.ai/">riskmandate.ai</a> says. Quoted from that site (read on 8 November 2026, site version 1.40.3; check the site for what it says now):</p>
+    <blockquote>
+      <p>Give agents access. Not free rein.</p>
+      <p>Agent Behaviour Policies for the AI agents in Gmail, HR, payroll, CRM and meeting apps: what each one can reach, what you authorised it to do, and the gap between the two.</p>
+      <p>Know their reach. Define their mandate. Control the gap.</p>
+    </blockquote>
+    <p>The app is a way to reach that site from a phone or tablet, and a testbed for putting it in front of people on managed devices. It does not run policies and does not claim to.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <p class="kicker">Where to go</p>
+    <div class="cards">
+      <article class="card"><h3><a href="features.html">Features</a></h3><p>What the app does today, and the summit features that are still in progress.</p></article>
+      <article class="card"><h3><a href="install.html">Install</a></h3><p>The Firebase App Tester route for testers, including the two snags we hit on a tablet.</p></article>
+      <article class="card"><h3><a href="privacy.html">Privacy</a></h3><p>The app collects no personal data. The full policy, as it stands.</p></article>
+      <article class="card"><h3><a href="open-source.html">Open source</a></h3><p>Apache 2.0, and the licences of the {{licence_count}} libraries inside the release build.</p></article>
+      <article class="card"><h3><a href="releases.html">Releases</a></h3><p>Every tagged build, with its CI run and commit.</p></article>
+      <article class="card"><h3><a href="articles/index.html">Articles</a></h3><p>How the app and its pipeline were built, with commit hashes.</p></article>
+    </div>
+  </div>
+</section>

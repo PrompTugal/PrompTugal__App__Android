@@ -49,4 +49,57 @@ class BrowserTest {
     @Test fun askingTheSystemNeverThrows() {
         Browser.isOffline(app) // either answer is fine; it must not crash
     }
+
+    @Test fun externalOpensHttpsInTheSystemBrowserWithViewIntent() {
+        val result = Browser.openExternal(app, "https://example.org/page?x=1")
+        assertEquals(OpenResult.BROWSER, result)
+        val started = shadowOf(app).nextStartedActivity
+        assertEquals(Intent.ACTION_VIEW, started.action)
+        assertEquals("https://example.org/page?x=1", started.dataString)
+        assertNull("no explicit component: the system picks the browser, never this app", started.component)
+        assertEquals(setOf(Intent.CATEGORY_BROWSABLE), started.categories)
+    }
+
+    @Test fun externalRefusesOtherSchemesWithoutStartingAnything() {
+        for (u in listOf("http://example.org/", "javascript:alert(1)", "intent://x#Intent;end", "file:///x", "https://a@b.example/")) {
+            assertEquals(u, OpenResult.REFUSED, Browser.openExternal(app, u))
+        }
+        assertNull(shadowOf(app).nextStartedActivity)
+    }
+
+    @Test fun externalNeverOpensWhilePinned() {
+        val am = app.getSystemService(android.app.ActivityManager::class.java)
+        shadowOf(am).setLockTaskModeState(android.app.ActivityManager.LOCK_TASK_MODE_PINNED)
+        assertEquals(OpenResult.PINNED, Browser.openExternal(app, "https://example.org/"))
+        assertNull(shadowOf(app).nextStartedActivity)
+        assertNotNull(Browser.message(OpenResult.PINNED))
+        shadowOf(am).setLockTaskModeState(android.app.ActivityManager.LOCK_TASK_MODE_NONE)
+        assertEquals(OpenResult.BROWSER, Browser.openExternal(app, "https://example.org/"))
+    }
+
+    @Test fun externalWithNoBrowserDoesNotCrash() {
+        shadowOf(app).checkActivities(true)
+        assertEquals(OpenResult.NO_BROWSER, Browser.openExternal(app, "https://example.org/"))
+    }
+
+    @Test fun riskmandateOpenKeepsItsAllowList() {
+        assertEquals(OpenResult.REFUSED, Browser.open(app, "https://example.org/"))
+    }
+
+    @Test fun openRefusesWhilePinnedAndWorksAgainAfterwards() {
+        val am = app.getSystemService(android.app.ActivityManager::class.java)
+        shadowOf(am).setLockTaskModeState(android.app.ActivityManager.LOCK_TASK_MODE_PINNED)
+        assertEquals(OpenResult.PINNED, Browser.open(app, Links.HOME))
+        assertNull("nothing may start while pinned", shadowOf(app).nextStartedActivity)
+        shadowOf(am).setLockTaskModeState(android.app.ActivityManager.LOCK_TASK_MODE_LOCKED)
+        assertEquals(OpenResult.PINNED, Browser.open(app, Links.HOME))
+        shadowOf(am).setLockTaskModeState(android.app.ActivityManager.LOCK_TASK_MODE_NONE)
+        assertEquals(OpenResult.BROWSER, Browser.open(app, Links.HOME))
+    }
+
+    @Test fun openChecksTheAllowListBeforePinned() {
+        val am = app.getSystemService(android.app.ActivityManager::class.java)
+        shadowOf(am).setLockTaskModeState(android.app.ActivityManager.LOCK_TASK_MODE_PINNED)
+        assertEquals(OpenResult.REFUSED, Browser.open(app, "https://evil.example/"))
+    }
 }

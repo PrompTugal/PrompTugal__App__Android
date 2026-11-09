@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -77,12 +78,73 @@ class HomeFeatureOrderTest {
                 HomeScreen(
                     "0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {},
                     message = R.string.message_offline,
-                    features = listOf(FeatureButton("site", R.string.home_diagnostics) {}),
+                    features = listOf(FeatureButton("site", R.string.home_diagnostics, onClick = {})),
                 )
             }
         }
         fun top(tag: String) = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot.top
         assert(top(HomeTags.OPEN) < top(HomeTags.MESSAGE))
         assert(top(HomeTags.MESSAGE) < top(HomeTags.feature("site")))
+    }
+}
+
+@RunWith(AndroidJUnit4::class)
+class HomeCornerTest {
+    @get:Rule val compose = createComposeRule()
+
+    /** Stand mode (features/stand) listens for a long press in the bottom-end 48dp corner: nothing clickable may sit there. */
+    @Test fun bottomEndCornerHasNoClickableControl() {
+        compose.setContent {
+            MaterialTheme {
+                HomeScreen(
+                    "0.1.7 (7)", DeviceStatus.from(true, false, "Lisbon kiosk 3"), onOpen = {},
+                    message = R.string.message_offline,
+                    features = listOf(FeatureButton("a", R.string.home_diagnostics) {}, FeatureButton("b", R.string.home_licences) {}),
+                )
+            }
+        }
+        val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val dp = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
+        val corner = androidx.compose.ui.geometry.Rect(root.right - 48 * dp, root.bottom - 48 * dp, root.right, root.bottom)
+        compose.onAllNodes(androidx.compose.ui.test.hasClickAction()).fetchSemanticsNodes().forEach {
+            assert(!it.boundsInRoot.overlaps(corner)) { "a control overlaps the bottom-end corner: ${it.boundsInRoot}" }
+        }
+    }
+}
+
+@RunWith(AndroidJUnit4::class)
+class HomeBadgeTest {
+    @get:Rule val compose = createComposeRule()
+
+    @Test fun badgeShowsOnlyOnTheButtonThatHasOne() {
+        compose.setContent {
+            MaterialTheme {
+                HomeScreen(
+                    "0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {},
+                    features = listOf(
+                        FeatureButton("a", R.string.home_diagnostics, badge = R.string.home_licences) {},
+                        FeatureButton("b", R.string.home_diagnostics) {},
+                    ),
+                )
+            }
+        }
+        compose.onNodeWithTag(HomeTags.featureBadge("a"), useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag(HomeTags.featureBadge("b"), useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test fun badgedButtonStillClicksAndIsBigEnough() {
+        var clicks = 0
+        compose.setContent {
+            MaterialTheme {
+                HomeScreen(
+                    "0.1.7 (7)", DeviceStatus.from(false, false, null), onOpen = {},
+                    features = listOf(FeatureButton("a", R.string.home_diagnostics, badge = R.string.home_licences) { clicks++ }),
+                )
+            }
+        }
+        compose.onNodeWithTag(HomeTags.feature("a")).performClick()
+        assertEquals(1, clicks)
+        val dp = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
+        assert(compose.onNodeWithTag(HomeTags.feature("a")).fetchSemanticsNode().boundsInRoot.height >= 48 * dp - 1)
     }
 }

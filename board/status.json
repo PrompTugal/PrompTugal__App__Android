@@ -1,7 +1,7 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-09T01:25Z",
-  "state": "Summit phase, 13 sessions. CI fixed (licence gate in its own job); 0.1.35/0.1.36 distributed to the tablets through Firebase (run 36). On dev: FeatureContext v2, qa tests, Pages deploy workflow. In review/fix: features A site, B ABP demo, C mandate, D stand, F What's new; design ui/; the site and M1 article.",
+  "updated": "2026-11-09T02:15Z",
+  "state": "Summit features A, B, C, D, F on dev and on the tablets; LLM side team started: dev.lab (ABP checks, Lab on samples) and dev.chat (chat on a stand-in) pushed, disabled; dev.llm's LiteRT-LM bench ready pending its host changes; eval pending.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
@@ -17,6 +17,8 @@
     "Dinis picks the summit features (A RiskMandate inside the app, B ABP-in-every-layer demo screen, C this app's own mandate live, D stand mode, E demo videos); the sessions build them and each merge reaches the tablets through the M1 pipeline"
   ],
   "asks": [
+    "Dinis: the third (smallest) model: every small Google LiteRT model (Gemma 3 270M, Gemma 3 1B) is gated on Hugging Face (Gemma licence, login). Options: (a) you accept the licence and push the file to the tablet with adb (the bench accepts it, hashes pinned); (b) only E2B and E4B for now; (c) FunctionGemma 270M (ungated, but a function-calling fine-tune, not a chat model).",
+    "Dinis: how the evidence vault's key reaches eval and dev.lab: the session's safety check refused to put the key into a message between sessions. Options: you send it to them yourself; or eval owns its own vault (key never leaves its session) and hands dev.lab curated recordings as files; or a CI secret for the build step that bundles presets.",
     "Dinis: the Play Console account (organisation, which company) and its D-U-N-S check: on the critical path for M2.",
     "Dinis: make dev the default branch of the repository, if you agree, so CI and readers land on it.",
     "Dinis: AMAPI permissible usage: Google lists in-house-only solutions as not permitted; confirm the route (test on a Gmail-bound enterprise, or Workspace/Cloud Identity device management). See devices/README.md.",
@@ -31,9 +33,11 @@
     "Dinis: harden the WIF provider (repository_id, repository_owner_id, ref refs/heads/dev): the command is in the conversation of 9 Nov ~00:15 UTC and docs/ci.md.",
     "Dinis: for android.app.promptugal.ai: GitHub repo Settings > Pages > Source: GitHub Actions, custom domain android.app.promptugal.ai; and a DNS CNAME android.app -> promptugal.github.io at the promptugal.ai DNS host.",
     "Dinis: the ABP demo's wording not found on riskmandate.ai or sharness.ai (browser and device-policy layers, the strength words, the scenario): keep as a labelled demonstration, or restrict to the sites' wording? pt-PT needs a native check.",
-    "Dinis: brand for the app: move to riskmandate.ai's own palette and type (paper, ink, green; Geist), or keep the current neutral tokens (design.android's status page)?",
     "Dinis: read the M1 article (website/pages/articles/m1-ci-to-a-tablet-in-one-night.md on work/editor) before the site goes public; publisher details for the site.",
-    "Dinis: a Contact tab in the in-app site (its form posts to another host, so it would open in the browser)? A staff PIN for stand mode after the summit?"
+    "Dinis: a Contact tab in the in-app site (its form posts to another host, so it would open in the browser)? A staff PIN for stand mode after the summit?",
+    "Dinis: links tapped inside the in-app riskmandate.ai view to other https sites open in the device's own browser (never inside the app, never while pinned, only on a real tap). Today's default by the conductor, since the alternative is that such links do nothing; say if you want them blocked instead (security R-ext-2).",
+    "Dinis: set a $5 credit limit on the OpenRouter key itself (eval also stops at $5 in code).",
+    "Dinis: should stand mode's idle reset also clear the chat history on a shared stand tablet? (security recommends yes)"
   ],
   "debrief": "board/team/conductor.android/debriefs/2026-11-08-handover.md",
   "decisions": [
@@ -47,6 +51,10 @@
     "Summit features A to D built in parallel by a full team of sessions (Dinis, 9 Nov 2026 ~01:00 UTC): architect, design, qa, dev.site, dev.abpdemo, dev.mandate, dev.stand added; plan in briefs/2026-11-08__riskmandate-android/README.md, Summit phase.",
     "A public Android site, android.app.promptugal.ai, built from website/ like the iOS app's site, with a first article on M1 (Dinis, 9 Nov 2026 ~01:10 UTC: nothing here is confidential). editor.android started; release.android adds the Pages deploy.",
     "Stand mode off by default; staff switch it on per tablet (Dinis, 9 Nov 2026 ~01:15 UTC).",
-    "In-app release articles ('What's new'): one Markdown article per release with CI-generated screenshots of the new screens, shared with the website (Dinis, 9 Nov 2026 ~01:15 UTC). dev.releases started."
+    "In-app release articles ('What's new'): one Markdown article per release with CI-generated screenshots of the new screens, shared with the website (Dinis, 9 Nov 2026 ~01:15 UTC). dev.releases started.",
+    "Conductor's default, pending Dinis (9 Nov ~01:35 UTC): user-tapped https links to other sites from the in-app riskmandate.ai view open in the system browser (Browser.openExternal), never in the app, never while pinned, only on a real tap.",
+    "On-device LLM side team (Dinis's brief, 9 Nov 2026 ~01:45 UTC; briefs/2026-11-09__on-device-llm/README.md): features G model setup, H chat, I ABP Lab, and an eval harness; Google models only (Gemma 4 E2B default, E4B, smallest LiteRT model); OpenRouter cap $5 total; data in a separate vault, not this repository; chat history on the tablet only, excluded from backup. Sessions dev.llm, dev.chat, dev.lab, eval started.",
+    "LLM evidence vault created by the conductor with sgit and the environment's SG/Send access token (Dinis, 9 Nov ~02:00 UTC): server dev.send.sgraph.ai, vault ID aqzwjk95, layout graph/, scenarios/, results/, recordings/, reports/. The vault key is held only in the conductor's session, outside the repository.",
+    "Design pass (Dinis, 9 Nov ~02:20 UTC): the app must look like the PrompTugal iOS apps (early PrompTugal theme): PTCore palette (paper, ink, red, green on paper), serif headlines, red caps kickers, cards radius 14, a sidebar shell on tablets, Home as cards, not a list of buttons. This settles design's brand question: the PrompTugal iOS theme. Owners: design.android (theme, components, spec), app.android (shell), feature devs adopt."
   ]
 }

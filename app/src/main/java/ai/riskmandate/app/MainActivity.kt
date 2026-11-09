@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
+import ai.riskmandate.app.features.IdleHolds
 import ai.riskmandate.app.features.stand.StandHost
 
 /** Routes: the built-in screens, or a summit feature's id (features/Features.kt). */
@@ -56,7 +57,11 @@ class MainActivity : ComponentActivity() {
                     val feature = FEATURES.firstOrNull { it.id == screen && it.enabled }
                     val route = if (screen in BUILT_IN || feature != null) screen else Routes.HOME
                     LaunchedEffect(route, screen) { if (route != screen) screen = route }
-                    StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome) {
+                    // Features that run unattended on purpose (abpdemo's auto-play) hold stand mode's idle
+                    // reset off through this. HoldIdleWhile releases when the feature leaves the screen; the
+                    // host does not clear holds itself (that wiped a feature's hold after rotation, A-app-7).
+                    val idle = remember { IdleHolds() }
+                    StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome, idleHeld = idle.held) {
                         if (route != Routes.HOME) BackHandler(onBack = goHome)
                         when {
                             route == Routes.LICENCES -> LicencesScreen(
@@ -69,7 +74,7 @@ class MainActivity : ComponentActivity() {
                                 DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = goHome)
                             }
                             feature != null -> FeatureFrame(title = feature.title, onBack = goHome) {
-                                feature.Content(FeatureContext(activity = this@MainActivity, onBack = goHome))
+                                feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device, holdIdle = idle::hold) })
                             }
                             else -> HomeScreen(
                                 version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
@@ -78,7 +83,7 @@ class MainActivity : ComponentActivity() {
                                 onOpen = { message = open() },
                                 onLicences = { screen = Routes.LICENCES },
                                 onDiagnostics = { screen = Routes.DIAGNOSTICS },
-                                features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title) { screen = f.id } },
+                                features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title, f.homeBadge()) { screen = f.id } },
                             )
                         }
                     }

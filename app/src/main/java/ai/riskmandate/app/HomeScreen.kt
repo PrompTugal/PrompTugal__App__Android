@@ -1,6 +1,7 @@
 package ai.riskmandate.app
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +44,7 @@ object HomeTags {
     const val DEVICE_MANAGEMENT = "device_management"
     const val DEVICE_LABEL = "device_label"
     const val MESSAGE = "message"
+    fun featureBadge(id: String) = "feature_badge_$id"
     const val LICENCES = "licences"
     const val DIAGNOSTICS = "diagnostics"
     fun feature(id: String) = "feature_$id"
@@ -106,7 +109,11 @@ fun HomeScreen(
 }
 
 @Composable
-private fun ColumnScope.PrimaryPane(onOpen: () -> Unit, @StringRes message: Int?, features: List<FeatureButton>) {
+private fun ColumnScope.PrimaryPane(
+    onOpen: () -> Unit,
+    @StringRes message: Int?,
+    features: List<FeatureButton>,
+) {
     Text(
         stringResource(R.string.app_name),
         style = MaterialTheme.typography.headlineMedium,
@@ -144,7 +151,22 @@ private fun ColumnScope.PrimaryPane(onOpen: () -> Unit, @StringRes message: Int?
             onClick = f.onClick,
             modifier = Modifier.widthIn(min = ButtonMinWidth).heightIn(min = MinTouch).testTag(HomeTags.feature(f.id)),
         ) {
-            Text(stringResource(f.title))
+            val title = stringResource(f.title)
+            Text(title)
+            if (f.badge != null) {
+                val badge = stringResource(f.badge)
+                // A small label inside the button; TalkBack reads "<title>, <badge>".
+                Text(
+                    badge,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .testTag(HomeTags.featureBadge(f.id)),
+                )
+            }
         }
     }
 }
@@ -218,4 +240,4 @@ private fun HomePreview() = RiskMandateTheme {
 }
 
 /** A home-screen button for a summit feature. */
-data class FeatureButton(val id: String, @StringRes val title: Int, val onClick: () -> Unit)
+data class FeatureButton(val id: String, @StringRes val title: Int, @StringRes val badge: Int? = null, val onClick: () -> Unit)

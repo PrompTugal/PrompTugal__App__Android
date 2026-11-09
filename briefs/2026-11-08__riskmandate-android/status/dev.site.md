@@ -1,0 +1,31 @@
+# dev.site.android status
+
+> Feature A built and switched on (`enabled = true`), reworked to security's checklist A and architect's WebView rules (9 Nov, 01:20 UTC), then to architect's HOLD (FeatureFrame draws Back, title and insets; no Activity). **Gate green: 255 tests, 0 failures** (qa's guard fix arrived with the dev merge). Not yet run on a real device or a real WebView: the first check is on the team tablets.
+
+## Doing
+Waiting for the conductor's merge and for design.android's `ui/` components.
+
+## Done
+- `features/site/`: in-app WebView, six native tabs chosen from the site's own menu (Home, What an ABP is, How it works, Pricing, SHarness, About), plain Material 3 chrome as the fallback until `ui/` lands.
+- URL decision (`SitePolicy.decide`): `Links.isAllowed` -> loads in the WebView; anything else (other hosts, http, mailto, intent, file) never loads there and goes to `Browser.open`. Sub-resources to hosts off the allow-list are blocked (403), so a page cannot pull in third-party scripts or frames.
+- WebView settings: JavaScript on (the site's menu is a script; there is no JavaScript interface anywhere, and a test checks the sources), no file or content access, Safe Browsing on, mixed content never allowed, third-party cookies off, DOM storage off, no pop-up windows.
+- Offline copy: HTML of the six pages read from riskmandate.ai on **9 November 2026** (UTC), bundled in `app/src/main/assets/feature_site/` (about 450 KB) and served on `https://appassets.androidplatform.net/assets/feature_site/` by androidx.webkit `WebViewAssetLoader` with an `AssetsPathHandler` on `/assets/` only (https only; only URLs under `/assets/feature_site/` reach it, safe relative names only, GET only; never `file://`, never `loadDataWithBaseURL`). A missing file gets the native not-in-copy page (the loader returns an empty response for it, which is detected). When the system reports no connection, or the main page fails to load, the tabs load the copy; while offline a link to riskmandate.ai opens its copy, and a page outside the copy says so. The copy has no form and no remote script (a test checks).
+- Off-site links (security R-ext-1): `Browser.openExternal` (merged from dev), only for a real tap (`hasGesture` and not a redirect, main frame); scripts, redirects and frames open nothing. Refused while pinned: the message comes from `Browser.message`.
+- Rotation (qa): the selected tab and the online/offline mode are saved (`rememberSaveable`, tested with a state-restoration test). The WebView itself reloads the selected tab's start page after a rotation; its in-page position is not kept.
+- Cookies and storage (R-arch-2, for play's privacy text): cache, history, cookies and web storage are cleared **when the screen opens and when it closes**, so each visit starts clean even after a process kill. No prefs file is used.
+- Architect HOLD A-site-1..4: no Activity (LocalContext); content only (the host frame draws Back, title, insets); the renderer crash drops and recreates the WebView; the offline copy is on the asset origin from `assets/` (not the riskmandate.ai origin from `res/raw`, which is gone).
+- Security checklist A and architect WebView rules: main-frame navigation and redirects decided by `SitePolicy`; sub-resources off the allow-list blocked; `onReceivedSslError` cancels; `onRenderProcessGone` drops the WebView (it is recreated); permission, geolocation, file chooser and new-window requests denied; no DownloadListener; debugging not enabled; cache, cookies and web storage cleared when the screen closes; privacy small print on the screen (riskmandate.ai has its own privacy policy and may set its own cookies; the app collects nothing); strings named `feature_site_*`; no Activity cast (uses `LocalContext`, only `onBack` from `FeatureContext`, so FeatureContext v2 needs no change here). A banner "Offline copy from 9 November 2026" with a "Try online" button shows the mode. Strings in English and pt-PT.
+- 31 tests under `app/src/test/.../features/site/`: URL decision (in-app vs external, 40 cases), sub-resource block, offline page lookup, the offline switch, a Robolectric render of the screen (online, offline banner, try online, back), the client's navigation and intercept behaviour, WebView settings, no hardcoded text.
+- Gate `./gradlew testDebugUnitTest lintDebug assembleRelease bundleRelease`: green (195 tests, 0 failures, 0 lint errors; APK 1.1 MB unsigned, AAB 2.4 MB). `scripts/secret-scan.sh`: clean.
+
+## Next
+- Swap the plain chrome for design.android's components when they land.
+- Re-read the site and refresh the snapshot (and `site_snapshot_date`, `OfflineCopy.SNAPSHOT_DATE_ISO`) before the stand opens if the pages change.
+
+## Asks
+- Screenshots for the What's new article: `SiteScreenshotTest` writes `app/build/screenshots/site-{phone-portrait,tablet10-landscape}-{light,dark}.png` (offline state, inside the host FeatureFrame). Robolectric does not render web content, so the area under the tabs is blank in them: they show the tabs, the offline banner with its date and the privacy line, not the page. Real page shots need a device.
+- app.android: `Browser.open` calls `Links.isAllowed` first and returns `REFUSED` for any URL off the allow-list, so a tapped external link (for example the GitHub or web-summit links on the pages) shows "That address is not on riskmandate.ai, so the app will not open it." and nothing opens. That is safe, and it is what the brief's wording gives. If the stand should open such links in the system browser, `Browser` needs an explicit external-open method; I did not bypass the allow-list.
+- Dinis: the Contact page is not a tab: its intake form posts to another host, which the WebView blocks. Say if you want it in.
+
+## Blocked
+Nothing. Not checked: a real WebView on a device (no emulator here), Safe Browsing and the cookie settings on a real WebView (Robolectric's shadow does not keep Safe Browsing, so that one is checked in the source), how the home page's embedded animation frame looks offline (its frame is absent from the copy).

@@ -105,6 +105,38 @@
       "model": "Sonnet",
       "branch": "work/dev.releases",
       "session": "session_018yvwtQBKD8yLu9WUCZjuUT"
+    },
+    {
+      "role": "dev.llm",
+      "name": "dev.llm.android@promptugal.ai",
+      "model": "Opus",
+      "branch": "work/dev.llm",
+      "session": "session_018yvwtNmBbzWuXuBUfWVY46",
+      "team": "on-device LLM"
+    },
+    {
+      "role": "dev.chat",
+      "name": "dev.chat.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/dev.chat",
+      "session": "session_018yvwtLoJoLmNGomawqmHrU",
+      "team": "on-device LLM"
+    },
+    {
+      "role": "dev.lab",
+      "name": "dev.lab.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/dev.lab",
+      "session": "session_018yvwtQjYwpjPryaZAWSw6n",
+      "team": "on-device LLM"
+    },
+    {
+      "role": "eval",
+      "name": "eval.android@promptugal.ai",
+      "model": "Sonnet",
+      "branch": "work/eval",
+      "session": "session_018yvwtPjmKA3PviDk16vsYP",
+      "team": "on-device LLM"
     }
   ]
 }

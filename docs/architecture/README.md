@@ -12,7 +12,7 @@ MainActivity (app.android)                 one Activity, one Compose tree, no Fr
              ├─ "home"        HomeScreen    lists FEATURES.filter { enabled }
              ├─ "licences"    LicencesScreen
              ├─ "diagnostics" DiagnosticsScreen
-             └─ <feature.id>  feature.Content(FeatureContext)
+             └─ <feature.id>  FeatureFrame(title, onBack) { feature.Content(FeatureContext) }
 ```
 
 - **Host** (`MainActivity`, `HomeScreen`, `Browser`, `Links`, `ManagedConfig`, `DeviceStatus`, `Diagnostics*`): owned by app.android. Holds the only Activity-level state: `config` (managed configuration, re-read on resume and on `ACTION_APPLICATION_RESTRICTIONS_CHANGED`), `device`, the home message, and the current route.
@@ -22,7 +22,7 @@ MainActivity (app.android)                 one Activity, one Compose tree, no Fr
 
 ## Routing
 - A route is a string. Built-in routes are `Routes.HOME`, `LICENCES`, `DIAGNOSTICS`; a feature's route is its `id` (lowercase letters only, unique, never one of the built-in names).
-- The host owns the top level: it installs `BackHandler { goHome }` around every feature, and `FeatureContext.onBack` goes home. Leaving a feature removes its whole composition, so everything it `remember`ed or `rememberSaveable`d is dropped. That is also how stand mode's idle reset clears a feature.
+- The host owns the top level: it resolves the route before drawing (a saved route to a missing or disabled feature shows Home), installs one `BackHandler { goHome }` for every non-home route, and wraps each feature in `FeatureFrame` (Back button, title as heading, safe-drawing insets). **A feature draws content only: no title, no Back or Home button, no `safeDrawingPadding` of its own.** `FeatureFrame` is the only frame; design's `ui/` offers content-only layout (`FeatureBody`: padding, reading width, optional scroll, `LocalWideLayout`), never a second title bar. `FeatureContext.onBack` goes home. Leaving a feature removes its whole composition, so everything it `remember`ed or `rememberSaveable`d is dropped. That is also how stand mode's idle reset clears a feature.
 - **Navigation inside a feature is the feature's business**: hoist a small sealed class or enum of sub-screens in a `rememberSaveable`, and add your own `BackHandler(enabled = <not at your first sub-screen>)` inside `Content`. The innermost enabled `BackHandler` wins, so back steps through your sub-screens (or the WebView history) before the host's handler takes the user home.
 - No deep links, no new Activities, no Fragments, no Navigation-Compose.
 
@@ -51,7 +51,7 @@ MainActivity (app.android)                 one Activity, one Compose tree, no Fr
 | Read and write files in its own package, its own `res/values*/feature_<id>.xml`, its own raw assets (`res/raw/feature_<id>_*` or `app/src/main/assets/feature_<id>/`), its own tests under `app/src/test/java/ai/riskmandate/app/features/<id>/` | Edit another feature's package, `Feature.kt`, `Features.kt`, `MainActivity`, `HomeScreen`, the manifest, `build.gradle.kts`, `strings.xml`, `features.xml`, `Theme.kt`, `ui/` |
 | Use `FeatureContext`, `LocalContext`, `LocalLifecycleOwner`, `LocalView`, `MaterialTheme`, and the shared components in `ui/` (design) | Import another feature's package. Shared code goes to `ui/` (design) or to the host (app), via a request |
 | Call pure host helpers that already exist: `Links.isAllowed`, `ManagedConfig.fromMap`, `DeviceStatus.from`, `Browser.open` (allow-listed) | Call `ManagedConfig.read(...)` or `DeviceStatus.detect(...)` itself: use `context.config` and `context.device`, which the host keeps current |
-| Use `LocalContext` for resources and its own `PackageManager` entry, `LocalLifecycleOwner`, `LocalView` (`keepScreenOn`, which sets `FLAG_KEEP_SCREEN_ON` only while attached) | Cast `LocalContext` to an Activity or `MainActivity`; change the window, theme, orientation or system bars; call `finish()`, `recreate()`; start any Activity except an `ACTION_VIEW` for a URL that passed `Links.isAllowed` (through `Browser.open`). `startLockTask`/`stopLockTask` are stand's alone, through `StandHost`'s Activity parameter |
+| Use `LocalContext` for resources and its own `PackageManager` entry, `LocalLifecycleOwner`, `LocalView` (`keepScreenOn`, which sets `FLAG_KEEP_SCREEN_ON` only while attached) | Cast `LocalContext` to an Activity or `MainActivity`; change the window, theme, orientation or system bars; call `finish()`, `recreate()`; start any Activity except through the host: `Browser.open` (riskmandate.ai only) or, for site's main-frame taps on off-site links, `Browser.openExternal` (https only, refused while pinned). `startLockTask`/`stopLockTask` are stand's alone, through `StandHost`'s Activity parameter |
 | Ask for a new permission, manifest entry or dependency through the owner (below) | Add a permission, `<queries>`, service, receiver, provider or dependency itself |
 
 ### How a feature asks the host for something
@@ -69,8 +69,12 @@ No new dependency without the architect's OK (in your status page, then in a rev
 
 **Not approved without asking**: anything else, including `material-icons-extended` (draw the few vectors you need), Accompanist, Coil/Glide, a JSON library (abpdemo and mandate data is Kotlin code, not JSON), Hilt/Koin, Navigation-Compose, OkHttp/Retrofit (no feature makes its own network calls; site's WebView is the only network user).
 
+## Stand mode and the other features
+- StandHost wraps every screen. Its staff corner (bottom-end, 48dp) shows on the home screen only, so it never covers a feature's controls.
+- The idle reset goes home after N minutes without a touch on the main window. Touches inside a feature's dialog (another window) do not count, so keep dialogs short. A feature that runs unattended on purpose (abpdemo's auto-play) holds the reset off with `context.HoldIdleWhile(autoPlay)`, and only that way: it releases when the condition ends or the feature leaves the screen.
+
 ## Strings, assets, tests
-- Strings: `res/values/feature_<id>.xml` and `res/values-pt-rPT/feature_<id>.xml`, every name prefixed `feature_<id>_`, both files with the same names. No literal text in `Text(...)` or `contentDescription`. The title string (`feature_<id>_title`) stays in `features.xml` (conductor).
+- Strings: `res/values/feature_<id>.xml` and `res/values-pt-rPT/feature_<id>.xml`, every name prefixed `<id>_` (for example `stand_title`, `abpdemo_next`), both files with the same names; names are unique across all files (LocalisationTest). No literal text in `Text(...)` or `contentDescription`. The title string (`feature_<id>_title`) stays in `features.xml` (conductor).
 - Test tags: `<id>_<thing>` (for example `site_webview`, `abpdemo_layer_3`), declared in an `object <Id>Tags` in your package.
 - Tests: JVM (Robolectric and Compose UI test are available) under `app/src/test/java/ai/riskmandate/app/features/<id>/`. Keep the logic that matters pure and test it without Android: site's navigation decision, abpdemo's step sequence, mandate's reach-and-gap model, stand's idle timer. Then one Compose test that `Content` renders with a `FeatureContext` built from a Robolectric `ComponentActivity` and that `onBack` is reachable.
 - Turn `enabled = true` only when the screen works end to end on the gate and on a tablet.
@@ -82,6 +86,53 @@ No new dependency without the architect's OK (in your status page, then in a rev
 - Mandate (C) states what this app collects. If the site's pages load third-party resources, that statement must say so or site must block them: site and mandate agree the sentence, security checks it.
 
 ## `FeatureContext` history
-- **9 Nov, v2 (architect):** `activity` removed; `config` and `device` added (P1); `onBack` kept and means "go home" (P2). A deprecated `FeatureContext(activity, onBack)` constructor stays only so `MainActivity` compiles until app.android passes its own values, built with `remember(config, device)` (P3); then it is deleted.
-- **Open, P4:** stand mode's on/off switch on the home screen: a small `StandController` the host hoists and passes to `StandHost` and `HomeScreen` (app and stand agree it; not a `FeatureContext` field).
+- **9 Nov, v2 (architect):** `activity` removed; `config` and `device` added (P1); `onBack` kept and means "go home" (P2). The transitional `FeatureContext(activity, onBack)` constructor was deleted once app passed its own values (`remember(config, device)`, P3; app f317cf8).
+- **P4 closed:** stand's switch is the long-press corner inside StandHost, shown on Home only.
+- **9 Nov, v3 (architect, approved by the conductor):** `holdIdle: () -> () -> Unit` (default no-op), `FeatureContext.HoldIdleWhile(active)` and the host-side `IdleHolds`. Wiring:
+  - app (MainActivity): `val idle = remember { IdleHolds() }`; `FeatureContext(..., holdIdle = idle::hold)`; `StandHost(..., idleHeld = idle.held)`. **No** `LaunchedEffect(route) { idle.clear() }`: it runs after the feature's hold is taken and wipes it (app review A-app-7). `HoldIdleWhile` already releases when the feature leaves.
+  - stand (StandHost): new parameter `idleHeld: Boolean = false`; while true, do not reset; when it turns false, `timer.touch()` so the countdown starts again from that moment.
+  - abpdemo: `context.HoldIdleWhile(auto)` in `Content`.
+- **9 Nov, P6 (architect, approved by the conductor):** `@Composable @StringRes fun homeBadge(): Int? = null` on `Feature`. The home screen asks every enabled feature for a badge and shows it on the button; the host never imports a feature package (releases' "New" after an update uses it). Disk reads inside it go off the main thread. The host must not call into a feature package for anything else either (`ReleasesNotice`, `StandSettings`, ...); `StandHost` is the one sanctioned host entry point into `features/stand/`.
 - Anything else a feature needs from the host: ask (above). A new field needs a reason and a test.
+
+## On-device LLM (side team: dev.llm, dev.chat, dev.lab, eval; brief `briefs/2026-11-09__on-device-llm/`)
+
+### Where things live
+- `app/src/main/java/ai/riskmandate/app/llm/` (dev.llm): the `LlmService` interface, the LiteRT-LM implementation, `FakeLlmService` (in main, so previews, qa and other features' tests can use it), the model catalogue (pinned URLs and SHA-256) and the model manager. Feature G's screen is `features/models/`.
+- `features/chat/` (H), `features/lab/` (I, including the ABP checks module), `eval/` (the harness; not app code, never on the app's classpath).
+
+### The service: one per process, owned by the host
+- Loading a model costs seconds and gigabytes, so the service must not be per screen and must survive a rotation (the Activity is recreated). This is the **one sanctioned process-wide object**: an `LlmHost` in `llm/`, created lazily, held by app (an `Application` subclass or the host's own holder; app decides), and handed to features through `FeatureContext`. No feature, and no other package, keeps its own reference beyond its composition.
+- It unloads the model on `onTrimMemory` (background or critical) and after a few idle minutes, and reloads on the next request. Features see a "loading model" state, never a crash.
+- One request at a time: the service serialises (a `Mutex`). The Lab's "two paths at once" interleaves the two paths on one loaded model; it never loads a second copy.
+
+### The contract (shape I expect from dev.llm; adjust names, keep the shape)
+```kotlin
+interface LlmService {
+    val state: StateFlow<LlmState>                 // NoModel, Loading, Ready(modelId), Failed(reason)
+    fun stream(request: LlmRequest): Flow<LlmEvent> // Token(text), ToolCallProposed(name, argsJson), Done(stats), Error
+    suspend fun generate(request: LlmRequest): LlmResult = /* collects stream */
+}
+data class LlmRequest(val messages: List<LlmMessage>, val tools: List<ToolSpec> = emptyList(),
+                      val settings: Sampling = Sampling.DEFAULT, val maxTokens: Int = 512)
+```
+- Cancellation is coroutine cancellation (the screen's scope ends, or Stop cancels the collecting job). No separate `cancel()` needed.
+- Inference runs on the service's own dispatcher; every call is main-safe.
+- `FeatureContext` gains `llm: LlmService? = null`: null when no model is installed or the host has no service yet. A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
+
+### Tool calls: the model proposes, code decides
+- The service **never executes** anything. It returns `ToolCallProposed(name, argsJson)`.
+- Each feature declares its tools in Kotlin (`ToolSpec`: name, flat typed arguments, description), three to five per task. Its own registry parses every proposal against that allow-list: unknown name, missing, extra or wrongly typed argument, oversize string → rejected, shown, never run.
+- Executors in the Lab are fakes that record calls. No tool in any feature may reach a network, file outside its own folder, intent, clipboard or account.
+- Model output is shown as plain text. Never HTML or Markdown links; any URL goes through `Links.isAllowed` before it can be opened (`Browser.open`).
+
+### Network, storage, privacy
+- Model downloads are the only new network destination: exact URLs and SHA-256 pinned in `llm/`, a list separate from `Links`. Verified before first load and after any copy; a mismatch deletes the file.
+- Download with `HttpURLConnection` and HTTP `Range` (resumable) in a coroutine while G's screen is open. **No** foreground service, WorkManager or `DownloadManager` without a new review: each brings a permission or a public directory.
+- Files: models in `filesDir/models/`, chat history in `filesDir/feature_chat/`. Both excluded from backup and device transfer (app owns `data_extraction_rules.xml` and `backup_rules.xml`). Mandate lists both with their own reasons, in the same merge.
+
+### Dependencies for the side team
+- **Approved in principle:** LiteRT-LM's Android runtime from Google's Maven repository (maven.google.com), for `llm/` only. dev.llm names the exact coordinates and version in its status page. security runs the licence and OSV check, app adds the line and rebuilds the in-app licence list. llama.cpp through JNI only if LiteRT-LM blocks: say so first; it needs its own review (NDK build, native code).
+- **No new dependency for JSON:** scenario files, tool arguments and chat history use `org.json` (part of Android) or a small hand-written parser. kotlinx-serialization (a compiler plugin) and Moshi/Gson are not approved without a reason.
+- **Chat storage:** one JSON file per conversation (or one file) under `filesDir/feature_chat/`, written off the main thread. Room is not approved; ask with a reason if a file is not enough.
+- **ViewModel:** not needed (the service is host-held). Ask before adding `lifecycle-viewmodel-compose`.
