@@ -31,6 +31,9 @@ Nothing.
 - Tests: feature ids unique, lowercase, no clash with built-in routes; frame Back; message order.
 - Not changed: `Feature.kt` (architect's), `Features.kt` (conductor's), `StandHost` (stand's).
 
+- `LocalisationTest` now covers every `values/*.xml` against the same file in `values-pt-rPT` (so `feature_<id>.xml` pairs are checked, names unique across files) and scans all Kotlin under `src/main/java` (host, `features/`, `ui/`) for hardcoded `Text("`, contentDescription, title, placeholder and onClick label. Qa may extend it.
+- Waiting on architect's `Feature.kt` (work/architect) for the narrow host interface, `config`/`device` in `FeatureContext`, and a hoisted `StandController` (shape to agree with dev.stand); then merge origin/work/architect, change MainActivity/HomeScreen, gate, push, message @parent. As of now work/architect has not pushed it.
+
 ## Next
 Nothing that does not wait on others.
 

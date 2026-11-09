@@ -14,6 +14,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,25 +43,40 @@ class LocalisationTest {
     @Test @Config(qualifiers = "en")
     fun englishIsTheDefault() = assertEquals("Open riskmandate.ai", app.getString(R.string.home_open))
 
-    /** Every string has a pt-PT translation (lint's MissingTranslation is a warning; this makes it a failure). */
-    @Test fun everyStringIsTranslated() {
-        fun keys(path: String): Set<String> {
-            val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(java.io.File(path))
-            val nodes = doc.getElementsByTagName("string")
-            return (0 until nodes.length).map { nodes.item(it) as Element }
-                .filter { it.getAttribute("translatable") != "false" }
-                .map { it.getAttribute("name") }.toSet()
-        }
-        val en = keys("src/main/res/values/strings.xml")
-        val pt = keys("src/main/res/values-pt-rPT/strings.xml")
-        assertEquals(emptySet<String>(), en - pt)
-        assertEquals(emptySet<String>(), pt - en)
+    private val res = java.io.File("src/main/res")
+
+    private fun keys(file: java.io.File): Set<String> {
+        val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+        val nodes = doc.getElementsByTagName("string")
+        return (0 until nodes.length).map { nodes.item(it) as Element }
+            .filter { it.getAttribute("translatable") != "false" }
+            .map { it.getAttribute("name") }.toSet()
     }
 
+    private fun stringFiles(dir: String) =
+        java.io.File(res, dir).listFiles { f -> f.name.endsWith(".xml") }!!.associate { it.name to keys(it) }
+            .filterValues { it.isNotEmpty() }
+
+    /** Every string in every file of values (strings.xml, feature_ID.xml, and so on) has a pt-PT translation in the same file name, and no more. */
+    @Test fun everyStringIsTranslated() {
+        val en = stringFiles("values")
+        val pt = stringFiles("values-pt-rPT")
+        assertEquals("files differ between values and values-pt-rPT", en.keys, pt.keys)
+        for ((file, enKeys) in en) {
+            assertEquals("$file: missing in pt-PT", emptySet<String>(), enKeys - pt.getValue(file))
+            assertEquals("$file: extra in pt-PT", emptySet<String>(), pt.getValue(file) - enKeys)
+        }
+        // Names are unique across files, so a feature cannot shadow a host string.
+        val all = en.values.flatMap { it }
+        assertEquals("duplicate string names across files", all.distinct().size, all.size)
+    }
+
+    /** No Kotlin source anywhere under app/src/main (host, features, ui) hardcodes visible text. */
     @Test fun noScreenHardcodesText() {
-        val sources = java.io.File("src/main/java/ai/riskmandate/app").listFiles { f -> f.name.endsWith(".kt") }!!
-        val literal = Regex("""\bText\(\s*"|contentDescription\s*=\s*"""")
-        val offenders = sources.filter { literal.containsMatchIn(it.readText()) }.map { it.name }
+        val sources = java.io.File("src/main/java").walkTopDown().filter { it.isFile && it.name.endsWith(".kt") }.toList()
+        assertTrue("no sources found", sources.size > 5)
+        val literal = Regex("""\bText\(\s*"|contentDescription\s*=\s*"|onClick\(label\s*=\s*"|\btitle\s*=\s*"|\bplaceholder\s*=\s*"""")
+        val offenders = sources.filter { literal.containsMatchIn(it.readText()) }.map { it.path }
         assertEquals(emptyList<String>(), offenders)
     }
 
