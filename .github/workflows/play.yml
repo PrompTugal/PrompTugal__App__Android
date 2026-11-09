@@ -66,7 +66,11 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "## play (run ${{ github.run_number }}): ${sha:0:12}, approval checked against main ${base:0:12} with $verifier" >> "$GITHUB_STEP_SUMMARY"
           node "$verifier" --repo . --main "$base" --tip "$sha" | tee -a "$GITHUB_STEP_SUMMARY" || {
-            echo "- not uploaded: the signed approval check did not pass for this commit" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
+            {
+              echo "- not uploaded: the signed approval check did not pass for this commit (the reason is in the line above)."
+              echo "- Expected for the bootstrap merge and for any commit that changes a trust path (.github/, board/keys.json, the verifier, CLAUDE.md): a person promotes those, so nothing is uploaded automatically."
+              echo "- A person who decides to upload this commit anyway: Actions, play, Run workflow, from main, with sha=${sha} and base=${base} (the human-promotion variant of the check; it still needs a valid signed PASS made against that base)."
+            } | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
 
       - name: Find the dev build of this commit
         id: rel

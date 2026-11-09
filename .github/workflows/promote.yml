@@ -142,6 +142,11 @@ jobs:
                 -f description="signed PASS verified by promote.yml with the verifier from main" >/dev/null \
                 && echo "- status security-approval: success on ${SHA:0:12} (set by promote.yml after its own verification)" | tee -a "$GITHUB_STEP_SUMMARY"
             fi
+          elif grep -q "not permitted to create or approve pull requests" "$RUNNER_TEMP/pr-err.txt"; then
+            # A setting only Dinis can change (Settings, Actions, General). It is waiting on him, not broken: a
+            # warning with the reason and the branch to merge, not a red run on every android run.
+            echo "::warning title=promote: no pull request::GitHub Actions may not create pull requests here (Settings, Actions, General, 'Allow GitHub Actions to create and approve pull requests'). Branch $branch is at ${SHA:0:12}: open the pull request by hand or change the setting."
+            echo "- could NOT open the pull request: Actions is not permitted to create pull requests (Dinis: Settings, Actions, General, allow it; or open a pull request from $branch to main by hand). Not treated as a failure: it waits on a setting." | tee -a "$GITHUB_STEP_SUMMARY"
           else
             echo "- could NOT open the pull request: $(tr '\n' ' ' < "$RUNNER_TEMP/pr-err.txt") (Dinis: Settings, Actions, General, allow GitHub Actions to create pull requests; or merge the branch $branch by hand)" | tee -a "$GITHUB_STEP_SUMMARY"
             exit 1
