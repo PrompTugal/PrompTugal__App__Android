@@ -8,15 +8,6 @@
     <string name="stand_idle">Voltar ao início após %1$d min sem atividade</string>
     <string name="stand_less">Menos</string>
     <string name="stand_more">Mais</string>
-    <string name="stand_pin_prompt">PIN da equipa</string>
-    <string name="stand_pin_field">PIN (4 a 8 dígitos)</string>
-    <string name="stand_pin_set">Definir PIN</string>
-    <string name="stand_pin_remove">Remover PIN</string>
-    <string name="stand_pin_wrong">PIN errado.</string>
-    <string name="stand_pin_locked">Demasiadas tentativas. Aguarde um minuto.</string>
-    <string name="stand_pin_invalid">O PIN deve ter 4 a 8 dígitos.</string>
-    <string name="stand_pin_is_set">Está definido um PIN da equipa neste dispositivo.</string>
-    <string name="stand_pin_not_set">Sem PIN da equipa: quem mantiver premido este canto pode alterar o modo de bancada.</string>
     <string name="stand_unpin_hint">Para libertar o ecrã com o gesto do próprio Android: com navegação por três botões, mantenha premidos Voltar e Vista geral em simultâneo; com navegação por gestos, deslize para cima e mantenha. Se for pedido, introduza o PIN do ecrã de bloqueio.</string>
     <string name="stand_ok">OK</string>
     <string name="stand_cancel">Cancelar</string>

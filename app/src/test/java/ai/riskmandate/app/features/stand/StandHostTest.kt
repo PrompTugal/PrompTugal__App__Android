@@ -9,7 +9,6 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
 import androidx.lifecycle.Lifecycle
@@ -56,7 +55,6 @@ class StandHostTest {
     @Before fun setUp() {
         settings = StandSettings.of(app)
         settings.enabled = false
-        settings.clearPin()
         settings.idleMinutes = 3
         val owner = object : LifecycleOwner {
             override val lifecycle: Lifecycle get() = this@StandHostTest.lifecycle
@@ -192,20 +190,6 @@ class StandHostTest {
         assertEquals(5, settings.idleMinutes)
         compose.onNodeWithTag(StandTags.LESS).performClick()
         assertEquals(4, settings.idleMinutes)
-    }
-
-    @Test fun withAPinTheControlsStayBehindIt() {
-        settings.setPin("2468")
-        show(FakeLock())
-        openSettings()
-        compose.onNodeWithTag(StandTags.SWITCH).assertDoesNotExist()
-        compose.onNodeWithTag(StandTags.PIN_FIELD).performTextInput("1111")
-        compose.onNodeWithTag(StandTags.PIN_OK).performClick()
-        compose.onNodeWithTag(StandTags.SWITCH).assertDoesNotExist()
-        compose.onNodeWithText(app.getString(ai.riskmandate.app.R.string.stand_pin_wrong)).assertIsDisplayed()
-        compose.onNodeWithTag(StandTags.PIN_FIELD).performTextInput("2468")
-        compose.onNodeWithTag(StandTags.PIN_OK).performClick()
-        compose.onNodeWithTag(StandTags.SWITCH).assertIsDisplayed()
     }
 
     @Test @Config(qualifiers = "pt-rPT") fun staffControlsAreInPortuguese() {
