@@ -97,7 +97,7 @@ class ShellTest {
             RiskMandateTheme {
                 AppShell(
                     sections = sections, selected = "home", currentTitle = R.string.home_now_title, atHome = true,
-                    onSelect = {}, onBackHome = {}, cloudOn = cloud,
+                    onSelect = {}, onBackHome = {}, cloudOn = cloud, cloudModel = "google/gemma-4-26b-a4b-it",
                 ) { Text("content") }
             }
         }
@@ -105,6 +105,7 @@ class ShellTest {
         cloud = true
         compose.waitForIdle()
         compose.onNodeWithTag(ShellTags.CLOUD_BADGE).assertIsDisplayed()
+        compose.onNodeWithTag(ShellTags.CLOUD_MODEL).assertIsDisplayed() // the model is shown with the badge
     }
 
     @Test

@@ -245,7 +245,7 @@ fun CloudKeyScreen(host: CloudHost, standOn: Boolean, onChanged: () -> Unit) {
             },
             confirmButton = {
                 TextButton(
-                    onClick = { host.spend.reset(); snapshot = host.spend.snapshot(); confirmReset = false; onChanged() },
+                    onClick = { host.resetSpend(); snapshot = host.spend.snapshot(); confirmReset = false; onChanged() },
                     modifier = Modifier.heightIn(min = 48.dp).testTag(CloudKeyTags.RESET_CONFIRM),
                 ) { Text(stringResource(R.string.cloud_reset_confirm)) }
             },

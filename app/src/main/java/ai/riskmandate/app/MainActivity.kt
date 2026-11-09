@@ -235,6 +235,7 @@ class MainActivity : ComponentActivity() {
                             brandLine = device.label ?: stringResource(R.string.shell_brand_line),
                             sidebarCollapsed = sidebarCollapsed,
                             cloudOn = cloudOn && cloudKeySet && !standOn,
+                            cloudModel = cloud.model.id,
                             onSidebarCollapsedChange = {
                                 sidebarCollapsed = it
                                 prefs.edit().putBoolean("sidebar_collapsed", it).apply()

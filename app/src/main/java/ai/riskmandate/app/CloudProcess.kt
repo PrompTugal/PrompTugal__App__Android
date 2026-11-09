@@ -43,6 +43,12 @@ class CloudHost(dir: File, cipher: KeyCipher, standMode: () -> Boolean) {
     /** Saves a pasted key and creates the ledger; see [CloudKey.save]. */
     fun saveKey(pasted: String) = key.save(pasted).also { if (it == ai.riskmandate.app.cloud.KeyCheck.OK) { spend.initialise(); service?.refresh() } }
 
+    /**
+     * Staff, after a confirmation that showed the amount (the only caller is the key screen's dialog): the total and
+     * the session counter go back to zero. One place, so dev.chat's `reset(confirmed = true)` is a one-line change.
+     */
+    fun resetSpend() = spend.reset()
+
     /** Removes the key and its encryption key, and switches the cloud off. Needs no network. */
     fun removeKey() {
         switch.turnOff()
