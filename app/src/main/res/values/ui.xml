@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared components (ui/). Owned by design. -->
+    <string name="ui_back">Back</string>
+    <string name="ui_layer_waiting">Not reached yet</string>
+    <string name="ui_layer_checking">Checking now</string>
+    <string name="ui_layer_stopped">Stopped the instruction here</string>
+    <string name="ui_layer_passed">Already past</string>
+</resources>
