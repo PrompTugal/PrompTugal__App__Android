@@ -5,6 +5,8 @@ import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
 import ai.riskmandate.app.llm.DeviceProbe
+import ai.riskmandate.app.llm.DeviceSample
+import ai.riskmandate.app.llm.RunRecord
 import ai.riskmandate.app.llm.LlmHost
 import ai.riskmandate.app.llm.LlmRunner
 import ai.riskmandate.app.llm.ModelCatalog
@@ -24,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -35,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import java.io.File
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -69,19 +73,33 @@ val WORKBENCH_PRESETS = listOf(
 @Composable
 internal fun WorkbenchContent(context: FeatureContext, io: CoroutineDispatcher = Dispatchers.IO) {
     val app = LocalContext.current.applicationContext
+    val scope = rememberCoroutineScope()
     val service = context.llm
+    val probe: () -> DeviceSample? = remember { { DeviceProbe.sample(app) } }
     val runner = remember(service) {
-        service?.let { s ->
-            LlmRunner(s, select = { m, b -> (s as? LlmHost)?.select(m, b) }, probe = { DeviceProbe.sample(app) })
-        }
+        service?.let { s -> LlmRunner(s, select = { m, b -> (s as? LlmHost)?.select(m, b) }, probe = probe) }
     }
+    val store = remember { RunLogStore(File(app.noBackupFilesDir, RunLogStore.DIR)) }
     var models by remember { mutableStateOf<List<ModelSpec>>(emptyList()) }
+    var log by remember { mutableStateOf<List<LogEntry>>(emptyList()) }
     LaunchedEffect(Unit) {
-        models = withContext(io) {
+        val (m, l) = withContext(io) {
             val dir = ModelFiles.internalDir(app)
-            ModelCatalog.ALL.filter { it.downloadable && File(dir, it.fileName).isFile }
+            ModelCatalog.ALL.filter { it.downloadable && File(dir, it.fileName).isFile } to store.load()
         }
+        models = m
+        log = l
     }
+    fun record(label: String, r: RunRecord) {
+        val e = LogEntry.of(label, r)
+        log = (listOf(e) + log).take(RunLogStore.MAX_ENTRIES)
+        scope.launch { withContext(io) { store.append(e) } }
+    }
+
+    // The Run tab's form and last run live here, so switching tabs keeps them; the form survives rotation.
+    var savedForm by rememberSaveable { mutableStateOf(RunForm.save(RunForm())) }
+    val form = RunForm.restore(savedForm)
+    var last by remember { mutableStateOf<RunRecord?>(null) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var running by remember { mutableStateOf(false) }
     // A run holds stand mode's idle reset off and keeps the screen on, and releases both when it ends.
@@ -101,8 +119,17 @@ internal fun WorkbenchContent(context: FeatureContext, io: CoroutineDispatcher =
                 }
             }
             when (tab) {
-                0 -> RunTab(runner = runner, models = models, presets = WORKBENCH_PRESETS, toolSets = emptyList(), onRunning = { running = it })
-                1 -> Text(stringResource(R.string.workbench_experiments_soon))
+                0 -> RunTab(
+                    runner = runner, models = models, presets = WORKBENCH_PRESETS, toolSets = emptyList(),
+                    form = form, onForm = { savedForm = RunForm.save(it) }, last = last, onLast = { last = it },
+                    onRunning = { running = it }, onRecord = { record("run", it) },
+                )
+                1 -> ExperimentsTab(
+                    runner = runner, base = form.settings(emptyList()), models = models.map { it.id }, probe = probe, log = log,
+                    onRecord = ::record,
+                    onClearLog = { log = emptyList(); scope.launch { withContext(io) { store.clear() } } },
+                    onRunning = { running = it },
+                )
                 else -> Text(stringResource(R.string.workbench_tools_soon))
             }
         }

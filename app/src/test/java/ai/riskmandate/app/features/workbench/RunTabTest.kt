@@ -26,6 +26,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -45,7 +47,10 @@ class RunTabTest {
         compose.setContent {
             RiskMandateTheme {
                 ai.riskmandate.app.ui.FeatureContent {
+                var form by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(RunForm()) }
+                var last by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<RunRecord?>(null) }
                 RunTab(
+                    form = form, onForm = { form = it }, last = last, onLast = { last = it },
                     runner = fake?.let { LlmRunner(it, select = { m, b -> selected += m to b }) },
                     models = listOf(ModelCatalog.GEMMA4_E2B, ModelCatalog.GEMMA4_E4B),
                     presets = WORKBENCH_PRESETS,

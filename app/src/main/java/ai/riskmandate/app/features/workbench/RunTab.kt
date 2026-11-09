@@ -31,7 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -129,32 +128,34 @@ fun RunTab(
     models: List<ModelSpec>,
     presets: List<SystemPreset>,
     toolSets: List<ToolSet>,
+    /** The form and the last run are held by the Workbench, so they survive switching tabs. */
+    form: RunForm,
+    onForm: (RunForm) -> Unit,
+    last: RunRecord?,
+    onLast: (RunRecord?) -> Unit,
     onRunning: (Boolean) -> Unit = {},
     onRecord: (RunRecord) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var saved by rememberSaveable { mutableStateOf(RunForm.save(RunForm())) }
-    val form = RunForm.restore(saved)
-    fun edit(f: (RunForm) -> RunForm) { saved = RunForm.save(f(form)) }
+    fun edit(f: (RunForm) -> RunForm) = onForm(f(form))
 
     var job by remember { mutableStateOf<Job?>(null) }
     var live by remember { mutableStateOf<RunUpdate.Progress?>(null) }
-    var last by remember { mutableStateOf<RunRecord?>(null) }
     var copied by remember { mutableStateOf<Boolean?>(null) }
     val running = job != null
 
     fun start(settings: RunSettings) {
         val r = runner ?: return
         copied = null
-        last = null
+        onLast(null)
         live = null
         onRunning(true)
         val j = scope.launch {
             r.run(settings) { u ->
                 when (u) {
                     is RunUpdate.Progress -> live = u
-                    is RunUpdate.Finished -> { last = u.record; onRecord(u.record) }
+                    is RunUpdate.Finished -> { onLast(u.record); onRecord(u.record) }
                 }
             }
         }
