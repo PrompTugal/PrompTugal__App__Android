@@ -52,7 +52,14 @@ data class ToolCase(
 /** What a model judge is asked about a case's output, and the verdict a correct judge gives for the reference run. */
 data class JudgeSpec(val ask: String, val expect: String)
 
-data class ToolKind(val id: String, val title: String)
+/**
+ * A judge layer a file lists (file-level `judges[]`, beside each case's own `judges {ask, expect}`): [layer] is
+ * "code", "local" or "cloud"; [model] is an optional model id; [promptRef] names the judge prompt for the model layers
+ * (an id such as `tool-output`, or a path such as `prompts/judges/tool-output.json`) and is absent for code.
+ */
+data class JudgeRef(val layer: String, val model: String?, val promptRef: String?)
+
+data class ToolKind(val id: String, val title: String, val judges: List<JudgeRef> = emptyList())
 
 /** What the catalogue holds, and the files it could not read. [hash] ties results to this exact catalogue. */
 data class ToolCatalogue(val kinds: List<ToolKind>, val cases: List<ToolCase>, val problems: List<String>, val hash: String) {
