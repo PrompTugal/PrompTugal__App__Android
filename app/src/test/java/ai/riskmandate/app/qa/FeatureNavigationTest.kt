@@ -65,7 +65,8 @@ class FeatureNavigationTest {
         }
     }
 
-    private fun awaitHome() = until("the home screen") { homeShown() && headerCount() == 0 }
+    // Home is identified by its own marker only: the new shell's top bar shows a title on Home too.
+    private fun awaitHome() = until("the home screen") { homeShown() }
 
     private fun awaitFeatureScreen() = until("a feature screen with one header") { !homeShown() && headerCount() == 1 }
 
