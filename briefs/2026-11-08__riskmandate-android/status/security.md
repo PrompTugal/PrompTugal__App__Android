@@ -1,11 +1,12 @@
 # security.android status
 
-> Round 19 (9 Nov 2026, about 06:00 UTC): LLM side team: wrote sections F to K of `docs/security/summit-checklist.md` and the model table `docs/security/models.md`; scan now has OpenRouter and Hugging Face token classes. No dev.llm, dev.chat, dev.lab or eval commits yet. Waiting for the next wake.
+> Round 20 (9 Nov 2026, about 06:20 UTC): dev.site 747b521 PASS (WebViewAssetLoader), app 62a5ee6 PASS (What's new card, idleHeld), architect e2675d4 PASS (LLM architecture; R-llm-1 manual redirects, R-llm-2 noBackupFilesDir). No dev.llm, dev.chat, dev.lab or eval commits yet. Waiting for the next wake.
 
 ## Doing
 Nothing. Stopped until woken.
 
 ## Done
+- Round 20: **PASS** dev.site 747b521 (the asset loader serves `/assets/` but only `/assets/feature_site/` reaches it: two checks in front), app 62a5ee6, architect e2675d4 (docs; two lows for the download: do not let `HttpURLConnection` follow redirects, keep models and chat history in `noBackupFilesDir`).
 - Round 19: `docs/security/summit-checklist.md` sections G to K for the on-device LLM team (model download: pinned URLs and byte sizes, own redirect handling to a host suffix list, SHA-256 before load and after any copy, no load-any-file, LiteRT-LM merged-manifest and OSV/licence checks; chat: text output, history cleared on the stand idle reset, no content logging; Lab: fake tools, strict allow-listed parsing, planted secret must be an obvious fake that matches no pattern, FileProvider reviewed if used; eval: key only from the environment and redacted, $5 cap in code and on the key, results out of the repository, hashed dependencies); `docs/security/models.md` (the table a model must be in before it is offered); `scripts/secret-scan.sh` gained `OpenRouter key` and `Hugging Face token` classes (tested).
 - Round 18: **PASS** dev.mandate 0b29d55 (design components; the data sentence is shortened to what the code shows; the site's no-analytics statement is at https://riskmandate.ai/privacy if dev.mandate wants to quote it).
 - Round 17: **PASS** dev.releases 61d2b70 (What's new: reads only its own assets; links only through `Links.isAllowed` and `Browser.open`, other links plain text; image paths whitelisted; stores one int; committed PNG has no metadata), app 95e7978 (idle holds no longer cleared by the host), dev.mandate 42f7a7b (final strings, en and pt-PT, accurate), qa bdb73a5 (the asset-origin exemption is pinned to one host and folder; the SSL guard trips on `proceed()` only).
