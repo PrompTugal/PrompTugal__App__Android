@@ -20,6 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import ai.riskmandate.app.features.FEATURES
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.IdleHolds
@@ -203,7 +205,15 @@ class MainActivity : ComponentActivity() {
                                     FeatureFrame(title = R.string.diagnostics_title, kicker = R.string.nav_section_device) {
                                         DiagnosticsScreen(
                                             text = text, onCopy = rememberCopyAction(text),
-                                            onModelBench = if (benchAvailable) ({ screen = Routes.MODEL_BENCH }) else null,
+                                            onModelBench = if (benchAvailable) {
+                                                {
+                                                    // The bench loads its own copy of a model: free the app's one first.
+                                                    lifecycleScope.launch { LlmProcess.peek()?.unload() }
+                                                    screen = Routes.MODEL_BENCH
+                                                }
+                                            } else {
+                                                null
+                                            },
                                         )
                                     }
                                 }
@@ -253,6 +263,13 @@ class MainActivity : ComponentActivity() {
         }
         // The browser opens anyway and shows its own error page; this tells the user why it may fail.
         return Browser.message(result) ?: if (Browser.isOffline(this)) R.string.message_offline else null
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // Only tells an existing host (it unloads the model when the app is in the background or memory is
+        // critical); never creates one.
+        LlmProcess.peek()?.onTrimMemory(level)
     }
 
     override fun onResume() {
