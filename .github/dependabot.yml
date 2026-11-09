@@ -15,15 +15,19 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "deps"
+    # A dependency goes to the FIRST group whose pattern matches. The toolchain (Kotlin, Compose, AGP)
+    # moves together in one PR: bumping them one at a time fails the gate (Compose BOM, Kotlin and AGP
+    # must agree), see docs/ci.md "Toolchain pins". LiteRT-LM (the on-device model runtime) has its own
+    # group because it drags a newer Kotlin standard library into the app.
     groups:
-      androidx-compose:
-        patterns: ["androidx.*"]
-      kotlin:
-        patterns: ["org.jetbrains.kotlin*", "org.jetbrains.kotlin.*"]
-      android-gradle-plugin:
-        patterns: ["com.android.*"]
+      toolchain:
+        patterns: ["org.jetbrains.kotlin*", "androidx.compose*", "com.android.*"]
+      litertlm:
+        patterns: ["com.google.ai.edge.*"]
       testing:
-        patterns: ["junit*", "org.robolectric*"]
+        patterns: ["junit*", "org.robolectric*", "androidx.test*"]
+      androidx:
+        patterns: ["androidx.*"]
     labels: [dependencies]
 
   - package-ecosystem: github-actions

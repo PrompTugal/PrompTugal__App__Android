@@ -10,6 +10,11 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,30 +66,59 @@ class MainActivity : ComponentActivity() {
                     // reset off through this. HoldIdleWhile releases when the feature leaves the screen; the
                     // host does not clear holds itself (that wiped a feature's hold after rotation, A-app-7).
                     val idle = remember { IdleHolds() }
+                    // Destinations: Home, then each enabled feature (with its badge), then the about screens.
+                    val featureItems = FEATURES.filter { it.enabled }.map { f ->
+                        NavItem(f.id, f.title, Icons.Filled.Star, f.homeBadge())
+                    }
+                    val sections = listOf(
+                        NavSection(R.string.nav_section_now, listOf(NavItem(Routes.HOME, R.string.nav_home, Icons.Filled.Home))),
+                        NavSection(R.string.nav_section_features, featureItems),
+                        NavSection(
+                            R.string.home_about_heading,
+                            listOf(
+                                NavItem(Routes.DIAGNOSTICS, R.string.home_diagnostics, Icons.Filled.Build),
+                                NavItem(Routes.LICENCES, R.string.home_licences, Icons.Filled.Info),
+                            ),
+                        ),
+                    )
+                    val currentTitle = when (route) {
+                        Routes.HOME -> R.string.nav_home
+                        Routes.LICENCES -> R.string.home_licences
+                        Routes.DIAGNOSTICS -> R.string.home_diagnostics
+                        else -> feature?.title ?: R.string.nav_home
+                    }
                     StandHost(activity = this@MainActivity, atHome = route == Routes.HOME, goHome = goHome, idleHeld = idle.held) {
-                        if (route != Routes.HOME) BackHandler(onBack = goHome)
-                        when {
-                            route == Routes.LICENCES -> LicencesScreen(
-                                text = remember { readLicences(this@MainActivity) },
-                                apacheText = remember { readApacheLicence(this@MainActivity) },
-                                onBack = goHome,
-                            )
-                            route == Routes.DIAGNOSTICS -> {
-                                val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
-                                DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = goHome)
+                        AppShell(
+                            sections = sections,
+                            selected = route,
+                            currentTitle = currentTitle,
+                            atHome = route == Routes.HOME,
+                            onSelect = { screen = it },
+                            onBackHome = goHome,
+                        ) {
+                            when {
+                                route == Routes.LICENCES -> LicencesScreen(
+                                    text = remember { readLicences(this@MainActivity) },
+                                    apacheText = remember { readApacheLicence(this@MainActivity) },
+                                    onBack = goHome,
+                                )
+                                route == Routes.DIAGNOSTICS -> {
+                                    val text = remember { DiagnosticsInfo.collect(this@MainActivity, config, device).toText() }
+                                    DiagnosticsScreen(text = text, onCopy = rememberCopyAction(text), onBack = goHome)
+                                }
+                                feature != null -> FeatureFrame(title = feature.title, onBack = goHome) {
+                                    feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device, holdIdle = idle::hold) })
+                                }
+                                else -> HomeScreen(
+                                    version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                                    device = device,
+                                    message = message,
+                                    onOpen = { message = open() },
+                                    onLicences = { screen = Routes.LICENCES },
+                                    onDiagnostics = { screen = Routes.DIAGNOSTICS },
+                                    features = featureItems.map { n -> FeatureButton(n.route, n.title, n.badge) { screen = n.route } },
+                                )
                             }
-                            feature != null -> FeatureFrame(title = feature.title, onBack = goHome) {
-                                feature.Content(remember(config, device) { FeatureContext(onBack = goHome, config = config, device = device, holdIdle = idle::hold) })
-                            }
-                            else -> HomeScreen(
-                                version = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-                                device = device,
-                                message = message,
-                                onOpen = { message = open() },
-                                onLicences = { screen = Routes.LICENCES },
-                                onDiagnostics = { screen = Routes.DIAGNOSTICS },
-                                features = FEATURES.filter { it.enabled }.map { f -> FeatureButton(f.id, f.title, f.homeBadge()) { screen = f.id } },
-                            )
                         }
                     }
                 }

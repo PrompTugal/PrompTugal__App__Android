@@ -65,3 +65,7 @@ Closing message now points to Settings > Environments > release > Environment se
 - For dev.releases: either use that manifest (no CI change per release) or tell me your contract; the article screen must cope with missing screenshots (local builds).
 - For conductor: please add `app/src/main/assets/releases/*/screenshots/` to `.gitignore` (not my file).
 - For editor.android: the site build does not run the Robolectric tests, so it sees articles without their generated PNGs.
+
+## Update: R-llm-5 (security's dev.llm review)
+`docs/ci.md` "Toolchain pins and the Kotlin bump": the -Xskip-metadata-version-check state and risk, a plan to drop it (coordinated Kotlin + Compose BOM + AGP + Gradle bump, gate plus smoke job, check the model screen on a tablet), and the ABI-split notes (arm64 for testers, x86_64 for the smoke job; not done, needs app/build.gradle.kts and a size measurement; do not go arm64-only). `dependabot.yml` groups: `toolchain` (Kotlin, Compose, AGP together), `litertlm` (com.google.ai.edge.*), `testing`, `androidx`. No build files touched, so the Gradle gate was not re-run; litertlm is not on dev yet so the group is untested.
+- For architect/app.android: the bump plan needs your `build.gradle.kts`; I did not pick target versions.

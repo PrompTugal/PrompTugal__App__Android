@@ -93,6 +93,7 @@ No new dependency without the architect's OK (in your status page, then in a rev
   - stand (StandHost): new parameter `idleHeld: Boolean = false`; while true, do not reset; when it turns false, `timer.touch()` so the countdown starts again from that moment.
   - abpdemo: `context.HoldIdleWhile(auto)` in `Content`.
 - **9 Nov, P6 (architect, approved by the conductor):** `@Composable @StringRes fun homeBadge(): Int? = null` on `Feature`. The home screen asks every enabled feature for a badge and shows it on the button; the host never imports a feature package (releases' "New" after an update uses it). Disk reads inside it go off the main thread. The host must not call into a feature package for anything else either (`ReleasesNotice`, `StandSettings`, ...); `StandHost` is the one sanctioned host entry point into `features/stand/`.
+- **9 Nov, P7 (architect, approved by the conductor):** `icon: ImageVector?`, `@StringRes kicker: Int?`, `@StringRes summary: Int?` on `Feature`, all null by default, for the shell's sidebar and Home cards. Each feature fills its own (strings in its `feature_<id>.xml`, en and pt-PT); icons from `material-icons-core` or drawn in the feature, never `material-icons-extended`.
 - Anything else a feature needs from the host: ask (above). A new field needs a reason and a test.
 
 ## On-device LLM (side team: dev.llm, dev.chat, dev.lab, eval; brief `briefs/2026-11-09__on-device-llm/`)
@@ -110,15 +111,17 @@ No new dependency without the architect's OK (in your status page, then in a rev
 ```kotlin
 interface LlmService {
     val state: StateFlow<LlmState>                 // NoModel, Loading, Ready(modelId), Failed(reason)
+    val installed: StateFlow<List<InstalledModel>> // id, displayName (chat's model picker)
     fun stream(request: LlmRequest): Flow<LlmEvent> // Token(text), ToolCallProposed(name, argsJson), Done(stats), Error
     suspend fun generate(request: LlmRequest): LlmResult = /* collects stream */
 }
-data class LlmRequest(val messages: List<LlmMessage>, val tools: List<ToolSpec> = emptyList(),
+data class LlmRequest(val modelId: String? = null /* null: the current model */, val system: String? = null,
+                      val messages: List<LlmMessage>, val tools: List<ToolSpec> = emptyList(),
                       val settings: Sampling = Sampling.DEFAULT, val maxTokens: Int = 512)
 ```
 - Cancellation is coroutine cancellation (the screen's scope ends, or Stop cancels the collecting job). No separate `cancel()` needed.
 - Inference runs on the service's own dispatcher; every call is main-safe.
-- `FeatureContext` gains `llm: LlmService? = null`: null when no model is installed or the host has no service yet. A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
+- `FeatureContext` gains `llm: LlmService? = null` (no feature-owned CompositionLocal for the model; the host must not import a feature package to provide one): null when no model is installed or the host has no service yet. A feature without it shows "set up a model" and a button to G (through the host, not by importing `features/models`).
 
 ### Tool calls: the model proposes, code decides
 - The service **never executes** anything. It returns `ToolCallProposed(name, argsJson)`.
@@ -129,10 +132,19 @@ data class LlmRequest(val messages: List<LlmMessage>, val tools: List<ToolSpec> 
 ### Network, storage, privacy
 - Model downloads are the only new network destination: exact URLs and SHA-256 pinned in `llm/`, a list separate from `Links`. Verified before first load and after any copy; a mismatch deletes the file.
 - Download with `HttpURLConnection` and HTTP `Range` (resumable) in a coroutine while G's screen is open. **No** foreground service, WorkManager or `DownloadManager` without a new review: each brings a permission or a public directory.
-- Files: models in `filesDir/models/`, chat history in `filesDir/feature_chat/`. Both excluded from backup and device transfer (app owns `data_extraction_rules.xml` and `backup_rules.xml`). Mandate lists both with their own reasons, in the same merge.
+- Files: models in `noBackupFilesDir/models/`, chat history in `noBackupFilesDir/feature_chat/` (never backed up by construction). Both excluded from backup and device transfer (app owns `data_extraction_rules.xml` and `backup_rules.xml`). Mandate lists both with their own reasons, in the same merge.
 
 ### Dependencies for the side team
-- **Approved in principle:** LiteRT-LM's Android runtime from Google's Maven repository (maven.google.com), for `llm/` only. dev.llm names the exact coordinates and version in its status page. security runs the licence and OSV check, app adds the line and rebuilds the in-app licence list. llama.cpp through JNI only if LiteRT-LM blocks: say so first; it needs its own review (NDK build, native code).
+- **Approved:** `com.google.ai.edge.litertlm:litertlm-android:0.18.1` (Google Maven only, Apache 2.0), for `llm/` only. `-Xskip-metadata-version-check` is accepted for the summit only (dev.llm review A-llm-2: bump Kotlin, the Compose plugin and AGP afterwards and drop it); LiteRT-LM calls stay in `llm/`. dev.llm names the exact coordinates and version in its status page. security runs the licence and OSV check, app adds the line and rebuilds the in-app licence list. llama.cpp through JNI only if LiteRT-LM blocks: say so first; it needs its own review (NDK build, native code).
 - **No new dependency for JSON:** scenario files, tool arguments and chat history use `org.json` (part of Android) or a small hand-written parser. kotlinx-serialization (a compiler plugin) and Moshi/Gson are not approved without a reason.
 - **Chat storage:** one JSON file per conversation (or one file) under `filesDir/feature_chat/`, written off the main thread. Room is not approved; ask with a reason if a file is not enough.
 - **ViewModel:** not needed (the service is host-held). Ask before adding `lifecycle-viewmodel-compose`.
+
+## Design pass: the PrompTugal iOS look (Dinis, 9 Nov)
+- **Ownership:** design owns `Theme.kt` and `ui/` (tokens, components); app owns the shell (`MainActivity`, `HomeScreen`, `FeatureFrame`, navigation). Features adopt components; they do not restyle the shell.
+- **One frame still:** on tablets the shell may become a sidebar (feature list) plus a detail pane, but each feature is still drawn inside exactly one `FeatureFrame` (or its successor in the shell). A feature never draws a title bar, a Back button, a sidebar or insets. In the two-pane shell `onBack` still means "back to home" (the list), and on a tablet that may simply clear the selection.
+- **Navigation state** (the selected route) stays a `rememberSaveable` string in the host and survives rotation and the switch between phone (one pane) and tablet (two panes) layouts. Features keep their own sub-screen state as before.
+- **One title per screen:** the host's frame draws the feature's header (`ui/ScreenHeader` from `Feature.kicker/title/summary`, P7). Features never draw their own main title; `ScreenHeader` inside a feature is only for sub-screen headings.
+- **Home as cards:** cards come from `FEATURES` (title, `homeBadge()`, and an optional icon or summary only if added to `Feature` through the architect, with defaults). No per-feature code in the host.
+- **No new dependency without the architect's OK.** Material 3 and Compose foundation cover the shell (`ListDetailPaneScaffold` from material3-adaptive is a new dependency: ask first). A bundled font is allowed only as a `res/font` file with its licence recorded in `docs/security/licences.md` and the in-app licences, and an OFL or Apache licence. No downloadable fonts (a network call).
+- **When features switch:** once design's components and app's shell are on dev together, the conductor tells the feature devs. Until then features keep using `MaterialTheme` and the current `ui/` components, which keep working under the new theme.
