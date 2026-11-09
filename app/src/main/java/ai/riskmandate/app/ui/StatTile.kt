@@ -41,12 +41,7 @@ fun StatTile(
     tone: Tone = Tone.Neutral,
 ) {
     val c = Pt.colors
-    val color = when (tone) {
-        Tone.Neutral -> c.ink
-        Tone.Good -> c.green
-        Tone.Warn -> c.amber
-        Tone.Bad -> c.red
-    }
+    val color = toneColor(tone)
     Card(modifier.semantics(mergeDescendants = true) {}, padding = if (large) Space.L else Space.M) {
         Text(
             label,
@@ -68,6 +63,18 @@ fun StatTile(
         if (detail != null) {
             Text(detail, style = MaterialTheme.typography.bodySmall, color = c.muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
+    }
+}
+
+/** The text colour for a [Tone]; the one place `Tone.Bad` meets red (see ColourRulesTest). */
+@Composable
+internal fun toneColor(tone: Tone): androidx.compose.ui.graphics.Color {
+    val c = Pt.colors
+    return when (tone) {
+        Tone.Neutral -> c.ink
+        Tone.Good -> c.green
+        Tone.Warn -> c.amber
+        Tone.Bad -> c.red
     }
 }
 

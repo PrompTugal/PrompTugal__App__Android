@@ -126,7 +126,7 @@ fun ModelBenchScreen(
     }
 
     fun run(model: FoundModel) {
-        job = scope.launch {
+        val j = scope.launch {
             output = ""
             copied = null
             val key = "${model.file.absolutePath}:${model.file.length()}:${model.file.lastModified()}"
@@ -153,7 +153,10 @@ fun ModelBenchScreen(
             }
             reports = reports + BenchReport.result(reports.size + 1, result)
             status = result.error?.let { Status.Failed(it) } ?: Status.Done
-        }.also { it.invokeOnCompletion { job = null } }
+        }
+        // Assign first, then listen: a run that already finished calls the handler at once, after the assignment.
+        job = j
+        j.invokeOnCompletion { if (job === j) job = null }
     }
 
     val running = job != null
