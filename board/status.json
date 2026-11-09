@@ -1,7 +1,7 @@
 {
   "agent": "conductor.android@promptugal.ai",
-  "updated": "2026-11-09T02:15Z",
-  "state": "Summit features A, B, C, D, F on dev and on the tablets; LLM side team started: dev.lab (ABP checks, Lab on samples) and dev.chat (chat on a stand-in) pushed, disabled; dev.llm's LiteRT-LM bench ready pending its host changes; eval pending.",
+  "updated": "2026-11-09T02:25Z",
+  "state": "Summit features A, B, C, D, F shipping; design pass to the PrompTugal iOS look under way (theme, components, sidebar shell); logo for the icon waiting on Dinis's choice of accent; LLM team: Lab and chat groundwork on dev (disabled), dev.llm's model bench in review, then Dinis runs it on the Idea Tab Plus.",
   "done": [
     "dev branch; RiskMandate app (Kotlin, Compose): one screen, Custom Tab to riskmandate.ai with ACTION_VIEW fallback, managed configuration (start_url, device_label), device-managed status; 31 JVM tests; lint 0 errors",
     "CI: check and release jobs, pinned actions, Robolectric cache, run summary; signing, Firebase, Play internal track and GitHub release gated on secrets; CI green on dev (run 7, 9985eed)",
@@ -55,6 +55,7 @@
     "Conductor's default, pending Dinis (9 Nov ~01:35 UTC): user-tapped https links to other sites from the in-app riskmandate.ai view open in the system browser (Browser.openExternal), never in the app, never while pinned, only on a real tap.",
     "On-device LLM side team (Dinis's brief, 9 Nov 2026 ~01:45 UTC; briefs/2026-11-09__on-device-llm/README.md): features G model setup, H chat, I ABP Lab, and an eval harness; Google models only (Gemma 4 E2B default, E4B, smallest LiteRT model); OpenRouter cap $5 total; data in a separate vault, not this repository; chat history on the tablet only, excluded from backup. Sessions dev.llm, dev.chat, dev.lab, eval started.",
     "LLM evidence vault created by the conductor with sgit and the environment's SG/Send access token (Dinis, 9 Nov ~02:00 UTC): server dev.send.sgraph.ai, vault ID aqzwjk95, layout graph/, scenarios/, results/, recordings/, reports/. The vault key is held only in the conductor's session, outside the repository.",
-    "Design pass (Dinis, 9 Nov ~02:20 UTC): the app must look like the PrompTugal iOS apps (early PrompTugal theme): PTCore palette (paper, ink, red, green on paper), serif headlines, red caps kickers, cards radius 14, a sidebar shell on tablets, Home as cards, not a list of buttons. This settles design's brand question: the PrompTugal iOS theme. Owners: design.android (theme, components, spec), app.android (shell), feature devs adopt."
+    "Design pass (Dinis, 9 Nov ~02:20 UTC): the app must look like the PrompTugal iOS apps (early PrompTugal theme): PTCore palette (paper, ink, red, green on paper), serif headlines, red caps kickers, cards radius 14, a sidebar shell on tablets, Home as cards, not a list of buttons. This settles design's brand question: the PrompTugal iOS theme. Owners: design.android (theme, components, spec), app.android (shell), feature devs adopt.",
+    "Three apps, three lines (Dinis, 8 Nov ~23:45 UTC, PrompTugal.news board/guidance/2026-11-08-three-apps-three-lines.md, relayed by conductor@PrompTugal.dinis and checked): the RiskMandate app is public (demos, videos, workflows), handed to anyone, not in a store for now; Firebase App Distribution and direct links fit; a public Play listing (M3) moves further out; the Play Console account is still needed for M2 private apps."
   ]
 }
