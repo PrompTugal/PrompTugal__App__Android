@@ -68,6 +68,25 @@ class ChatStoreTest {
         assertTrue(manifest.contains("android:allowBackup=\"false\""))
     }
 
+    @Test fun theSourceAndCostOfAnAnswerSurviveTheFile() {
+        val m = ChatMessage(ChatRole.ASSISTANT, "yo", 9, 700, 40.0, via = ChatVia.cloud("cloud/model"), costUsd = 0.0004)
+        val back = FileChatHistoryStore.decode(FileChatHistoryStore.encode(listOf(Conversation("a", listOf(ChatMessage(ChatRole.USER, "q"), m)))))
+        val answer = back.single().messages.last()
+        assertEquals(ChatVia.cloud("cloud/model"), answer.via); assertEquals(0.0004, answer.costUsd!!, 1e-12)
+        assertEquals(null, back.single().messages.first().via)
+    }
+
+    @Test fun theCloudChoiceIsNeverWrittenToTheFile() {
+        val text = FileChatHistoryStore.encode(listOf(Conversation("a", listOf(ChatMessage(ChatRole.USER, "q"), ChatMessage(ChatRole.ASSISTANT, "a", via = ChatVia.cloud("m"))))))
+        assertFalse(text.contains("usecloud", ignoreCase = true)); assertFalse(text.contains("includeHistory", ignoreCase = true))
+    }
+
+    @Test fun messagesSavedBeforeTheCloudExistedCountAsNoSource() {
+        val old = """{"v":1,"c":[{"id":"x","m":[{"r":"USER","t":"hi","n":0,"ms":0,"tps":0,"s":false,"f":false},{"r":"ASSISTANT","t":"yo","n":1,"ms":5,"tps":1.0,"s":false,"f":false}]}]}"""
+        val m = FileChatHistoryStore.decode(old).single().messages
+        assertEquals(null, m[1].via); assertEquals(null, m[1].costUsd)
+    }
+
     @Test fun limitsAreEnforced() {
         val big = ChatMessage(ChatRole.USER, "z".repeat(ChatLimits.MAX_MESSAGE_CHARS + 10))
         val convs = (1..40).map { Conversation("c$it", listOf(big)) }
