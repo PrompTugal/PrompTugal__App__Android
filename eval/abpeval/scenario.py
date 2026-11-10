@@ -12,7 +12,7 @@ ACTIONS = {"block", "hold", "flag"}
 
 
 # fields that do not change what the model sees or the policy, so editing them keeps the hash
-HASH_EXCLUDED = {"exposure", "title", "description", "brief_ref"}
+HASH_EXCLUDED = {"exposure", "title", "description", "brief_ref", "i18n"}
 
 
 class ScenarioError(ValueError):

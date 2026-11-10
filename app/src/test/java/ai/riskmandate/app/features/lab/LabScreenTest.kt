@@ -9,6 +9,8 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -54,6 +56,27 @@ class LabScreenTest {
         compose.onNodeWithTag(LabTags.SUMMARY_ABP).performScrollTo().assertIsDisplayed()
     }
 
+    @Test fun outreachCaseStudyReplays() = replays("case-outreach")
+    @Test fun securityHoldCaseStudyReplays() = replays("case-security-hold")
+    @Test fun instructionsCaseStudyReplays() = replays("case-instructions")
+    @Test fun devMainCaseStudyReplays() = replays("case-dev-main")
+    @Test fun researcherLoginCaseStudyReplays() = replays("case-researcher-login")
+    @Test fun journalistSourceCaseStudyReplays() = replays("case-journalist-source")
+
+    @Test fun caseStudiesAreASetOfTheirOwnAndAreLabelledAsWrittenToIllustrateThePolicy() {
+        show("case-outreach")
+        // Both sets exist, so each has a heading, and every case study is in the picker.
+        compose.onNodeWithText(app.getString(R.string.lab_set_case_studies)).assertExists()
+        compose.onNodeWithText(app.getString(R.string.lab_set_samples)).assertExists()
+        for (id in listOf("case-outreach", "case-security-hold", "case-instructions", "case-dev-main", "case-researcher-login", "case-journalist-source")) compose.onNodeWithTag(LabTags.scenario(id)).assertExists()
+        // The description quotes the policy and says it runs in observe mode.
+        compose.onNode(hasText("observe mode", substring = true)).assertExists()
+        compose.onNodeWithTag(LabTags.RUN).performClick()
+        compose.waitUntil(15_000) { count(LabTags.SUMMARY_ABP) > 0 }
+        compose.onNode(hasText(app.getString(R.string.lab_chip_case_study))).assertExists()
+        assertEquals("a case study is never labelled as a sample", 0, compose.onAllNodes(hasText(app.getString(R.string.lab_chip_sample))).fetchSemanticsNodes().size)
+    }
+
     @Test fun plantedReplays() = replays("sample-planted")
     @Test fun inventedReplays() = replays("sample-invented")
     @Test fun overreachReplays() = replays("sample-overreach")
@@ -76,8 +99,10 @@ class LabScreenTest {
         assertTrue(d.scenario("sample-invented")!!.graph!!.triplets.isNotEmpty())
     }
 
-    @Test fun theFeatureIsStillOffUntilItWorksOnTheTablet() {
-        assertFalse(LabFeature.enabled)
+    /** On Home as a demo since 10 Nov 2026 (the conductor): replays need no model; every tool is a fake. */
+    @Test fun theFeatureIsOnHomeAsADemo() {
+        assertTrue(LabFeature.enabled)
+        assertEquals("lab", LabFeature.id)
     }
 
     private fun obedient(req: ai.riskmandate.app.llm.LlmRequest): FakeReply {

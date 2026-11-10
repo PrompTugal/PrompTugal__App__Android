@@ -29,7 +29,7 @@ The download is the one time the app contacts Hugging Face and its download serv
 
 A chat with the local model, to show it is a real language model: streamed answers, a stop button, a new chat, a badge that reads "Runs on this device", and the speed of each answer.
 
-- **First run, build 0.1.78 on a Lenovo Idea Tab Plus (12 GB):** Gemma 4 E2B downloaded on the tablet and Chat answered on the device at about 5.4 to 5.5 tokens per second: 68 tokens in 13.6 seconds, and 140 tokens in 26.5 seconds. That is one run on one tablet, from the project's notes; the device bench will give better numbers.
+- **First run, build 0.1.78 on a Lenovo Idea Tab Plus (12 GB):** Gemma 4 E2B downloaded on the tablet and Chat answered on the device at about 5.4 to 5.5 tokens per second as the app reported it. The two timings given with it, 68 tokens in 13.6 seconds and 140 tokens in 26.5 seconds, work out to about 5.0 and 5.3 tokens per second over the whole answer. That is one run on one tablet, from the project's notes; the device bench will give better numbers.
 - **What that means:** a short answer takes several seconds and a long one about half a minute. It is usable for a demonstration, and it is slow.
 - **Still a preview:** the first run turned up a few things to fix, and they have been fixed since. The chat may still have rough edges.
 

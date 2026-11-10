@@ -5,6 +5,25 @@
 ## Doing
 Workbench (brief `briefs/2026-11-09__on-device-llm/workbench.md`, Dinis 9 Nov ~10:00 UTC): tabs 1 (Run) and 2 (Experiments). Step 1 (stats) pushed; next the `workbench` feature and the Run tab, then the run log, sweep and A/B. Earlier work (bench, LlmService/LlmHost, feature G) is on dev; G stays `enabled = false` until Dinis's tablet run.
 
+## The restart (10 Nov): on-device answers over our data, with citations, offline
+
+Brief: conductor, relaying Dinis (10 Nov about 02:40 UTC, PrompTugal__News__Website board/guidance/2026-11-10-the-restart.md): the Android counterpart of Apple Intelligence on the iPad, on-device Gemma answering over our data, fast and offline.
+
+### Spec
+- **Data, bundled** (`assets/knowledge/`, built by `scripts/knowledge/build_knowledge.py` from a pinned pt.news commit; same commit, same bytes):
+  - RiskMandate: only the two sentences quoted verbatim from riskmandate.ai (CLAUDE.md).
+  - pt.news articles with `status: published` (CC BY 4.0, cited by title and link). Articles that mention RiskMandate are left out, so nothing about RiskMandate comes from anywhere but riskmandate.ai.
+  - pt.news company cards (name, what, category, country, attending).
+  - Now: commit `ccd53a70de14`, 167 items (45 articles, 120 companies, 2 RiskMandate), 553 passages of about 120 words, 0.3 MB. The manifest holds the SHA-256 and what was left out; a test checks the file against it.
+  - iOS (v0.4.61) bundles no retrieval data yet, so there is nothing to match; mobile@ can take this bundle (plain JSON lines) as is.
+- **Retrieval** (`llm/knowledge/`, no network, no second model): BM25 over passages, title words indexed with each passage, accents folded (Portuguese questions find English text), stop words in both languages, at most one passage per item. About 550 passages, built in memory in milliseconds.
+- **Answer**: the system block is the base without the device claim (v2) plus `prompts/grounded_answer.v1` (only the numbered sources, cite as [n], say "I do not know that from our data." otherwise). The user message holds up to k numbered sources (2, 4 or 6; at most 4,000 characters) and the question. Temperature 0.2. Citations are checked against the sources given: valid ones map to items, made-up numbers are shown as such.
+- **Screen**: Workbench tab 4, "Our data". Always the on-device model, whatever the Run tab chose; a cloud service is never used there. It shows the answer, the sources with the cited ones marked, the source as plain text (never opened), and measured time to first token (search included), search time and total.
+- **Measure** (the Idea Tab Plus): "Run the 24-question eval" asks each bundled question (22 answerable with the expected items, 2 the data cannot answer). It reports sources found, answers right (cites an expected item and no made-up number, or says it does not know when the data cannot answer), and median and slowest time to first token. "Copy report" gives plain text for this page.
+- **Measured here, no model**: retrieval recall@1 0.86, recall@4 0.95 (21 of 22; the miss is "How many people and startups come to Web Summit 2026?", all generic words). Time to first token and answer quality need the tablet.
+- **Security lows (follow-up)**: R-know-1, agent and mail addresses quoted in articles become "a newsroom agent" in the build (the bundle has none; tested). R-know-2, `GroundedAnswer.attribution` / `attributionLine` ("From pt.news: title (link)"): the cited articles and company cards, or every one given when none is cited; empty only for "I do not know" with no citation. Shown under every answer in "Our data"; chat should show it too.
+- **For dev.chat**: `GroundedAnswerer(service, Bm25Index(Knowledge.load(assets)), GroundedAnswerer.systemBlock(assets)).ask(question)` gives text, sources and cited items, so chat can stop being a demo. On-device only, or label it Cloud.
+
 ## R-wb-8 and R-wb-10 (low): cloud sweeps and the cloud choice
 - R-wb-8: on the cloud, Experiments shows "these N runs cost at most US$x" before Start (sum of CloudLlmService.worstCaseMicros per run; "cannot be estimated" if any run cannot be priced). A run ending with CAP_REACHED ends the sweep at once as "Stopped: the cloud spending cap was reached" (ExperimentStop.CLOUD_CAP), not as three failures.
 - R-wb-10: the cloud choice is never saved or restored (RunForm.save writes false, restore ignores it) and resets whenever the cloud service changes or goes away, so every cloud run follows a fresh choice.
