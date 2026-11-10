@@ -72,7 +72,7 @@ class ModelSetupScreenTest {
             }
         }
         compose.onNodeWithTag(ModelSetupTags.PRIVACY)
-            .assertTextEquals("Downloads a model file once from huggingface.co (and its download servers, hf.co). Nothing you type leaves the device.")
+            .assertTextEquals("Downloads a model file once from huggingface.co (and its download servers, hf.co). With the cloud model off, what you type stays on the device.")
     }
 
     @Test fun theIdleResetIsHeldWhileADownloadRuns() {
@@ -128,7 +128,7 @@ class ModelSetupScreenTest {
         compose.setContent {
             RiskMandateTheme { ModelSetupScreen(installer = offline, adbDir = { null }, cloudInUse = cloud, io = Dispatchers.Unconfined) }
         }
-        compose.onNodeWithTag(ModelSetupTags.PRIVACY).assertTextContains("Nothing you type leaves the device.", substring = true)
+        compose.onNodeWithTag(ModelSetupTags.PRIVACY).assertTextContains("With the cloud model off, what you type stays on the device.", substring = true)
         cloud = true
         compose.waitForIdle()
         compose.onNodeWithTag(ModelSetupTags.PRIVACY).assertTextContains("goes to openrouter.ai", substring = true)
@@ -148,7 +148,7 @@ class ModelSetupScreenTest {
                 )
             }
         }
-        compose.onNodeWithTag(ModelSetupTags.PRIVACY).performScrollTo().assertTextContains("Nothing you type leaves the device.", substring = true)
+        compose.onNodeWithTag(ModelSetupTags.PRIVACY).performScrollTo().assertTextContains("With the cloud model off, what you type stays on the device.", substring = true)
         on = true
         compose.waitForIdle()
         compose.onNodeWithTag(ModelSetupTags.PRIVACY).performScrollTo().assertTextContains("goes to openrouter.ai", substring = true)
