@@ -47,6 +47,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 21. OpenRouter DRAFT: `privacy-policy.md`, `privacy.html` (dashed box) and `data-safety.md` carry a DRAFT cloud-model section written from `work/security` `summit-checklist.md` section M (what is sent, to whom, when, the key, spend, labels), **not from code, which does not exist**. Data safety: a build with the cloud model cannot say "no data collected" or "no data shared"; options for Dinis in `data-safety.md` (declare it, or keep the cloud model out of store builds; I recommend the latter for now). The on-device chat sentences are now conditional on the cloud being off.
 
+22. **Restarted 10 Nov (conductor, Dinis's restart brief, checked against `PrompTugal__News__Website` `board/guidance/2026-11-10-the-restart.md`).** `docs/play/pt-news-on-android.md`: recommendation (installed web app first; a TWA only if a store listing is wanted; for Wednesday's tablets a TWA can go by Firebase without Play), what the site team must change (exact files), what Dinis must do in Google Play and GCP with times. Key facts: the site is at promptugal.news; **pt.news redirects to `/lander` and its owner is unknown**; the manifest link is added only by JavaScript; no `assetlinks.json` yet (404); the Pages artifact step may drop `.well-known`. Not tested on a device.
+
 ## Next
 Nothing until Dinis decides (below).
 
@@ -63,6 +65,7 @@ Screenshots wait on the feature decision and on app.android's render harness.
 - **For security:** please review `privacy.html` and the claims in `minimal-functionality.md` before merge; the quotes come through a fetch tool that returns excerpts.
 
 ## For Dinis
+- Dinis: pt.news on Android (`docs/play/pt-news-on-android.md`): decide the host first (promptugal.news or pt.news; who owns pt.news, which currently redirects to `/lander`), then test the installed web app on one phone; the Play route (a TWA) is only if you want a store listing.
 - Dinis: Data safety with the in-app view: keep "No data collected", declare the IP address, or leave the in-app view out of the store build (`docs/play/data-safety.md`, update of 9 November). The live Console form's wording decides it; please read it before choosing.
 - Dinis: the Play service-account key cannot be created under the organisation policy; choose how Play uploads will authenticate (keyless like Firebase, a policy exception, or manual upload) (`docs/play/README.md` step 9).
 - Dinis: choose the native features for the app (items 1 to 3 in `docs/play/minimal-functionality.md`), or decide the public listing waits and M1 to M3 use Firebase and the private route.
