@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 128 (10 Nov 2026): dev 89bbd0d PASS and signed against main 21dd251 (R-chat-5 closed: the first cloud send of a session shows the exact request and waits for Send; cloud still dormant)
+> Round 129 (10 Nov 2026): dev a59211d PASS and signed against main da9fbf6 ("chat" in CloudHostTest's list, R-models-1 closed; both lists my cloud review named now name chat; the CLOUD_REVIEWED flip waits for dev.chat and its own review)
 
 ## Doing
 Nothing. Stopped until woken.
