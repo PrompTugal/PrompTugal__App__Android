@@ -78,5 +78,11 @@
   "tools": [
    "run_gate"
   ]
+ },
+ "i18n": {
+  "pt-PT": {
+   "title": "O Dev publica em dev, não em main",
+   "description": "Da Política de Comportamento de Agentes real do agente dev do PrompTugal.news (regra R5) (política v1.7.0): “Push to dev only, through newsroom/tools/release.sh. Never push to main, force-push, delete a branch, push tags, rewrite history, disable a check or push an empty commit.” Uma verificação verde não é licença para publicar. A equipa usa as suas próprias políticas em modo de observação: uma chamada fora da concessão fica registada e é revista de hora a hora, e o bloqueio só volta por um disjuntor. O Lab mostra o que a mesma concessão trava quando é aplicada. Todas as ferramentas aqui são falsas."
+  }
  }
 }

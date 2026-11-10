@@ -132,7 +132,7 @@ fun LabScreen(
     val context = LocalContext.current
     val reduce = rememberReduceMotion()
     val loaded by produceState(data) {
-        if (data == null) value = withContext(Dispatchers.IO) { LabAssets.load(context.assets) }
+        if (data == null) value = withContext(Dispatchers.IO) { LabAssets.load(context.assets, context.resources.configuration.locales[0].language) }
     }
     val lab = loaded
     FeatureContent(maxContentWidth = 1200.dp) {

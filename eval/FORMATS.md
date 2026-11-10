@@ -7,6 +7,7 @@ Four JSON formats, each with a `format` or `schema` field. Dates are UTC. All sc
 | field | meaning |
 |---|---|
 | `id`, `version`, `title`, `description`, `brief_ref` | identity. Bump `version` on any change; the harness also records a content hash |
+| `i18n` (optional) | translations of what a person reads: `{"pt-PT": {"title": "...", "description": "..."}}`. English (`title`, `description`) is the fallback for anything missing. Not part of the content hash (like `title`), so a translation fix does not orphan a recording |
 | `synthetic` | must be `true` |
 | `system`, `user` | the prompts, verbatim. The harness appends the tool protocol to `system` |
 | `tools[]` | `name`, `effect` (`read`, `write` or `egress`), `description`, `parameters` (JSON schema, flat) |
@@ -34,6 +35,8 @@ Files: `results/<date>/<model>/<scenario>.jsonl`, with `<model>` as the id with 
   "source": {kind: "hosted"|"device", backend, model{...}, settings, raw_run_id, abp_run_id, recorded_at},
   "raw": {"events": [...], "outcome": {...}}, "abp": {"events": [...], "outcome": {...}} }
 ```
+
+Optional `i18n` (the recording's own translations, for curated and hand-written recordings): `{"pt-PT": {"raw": [...], "abp": [...]}}`, each list with exactly one entry per event of that path, `null` where an event has nothing to translate, otherwise an object with any of `text` (for `model_text`, `final` and `flag`), `reason` (for `verdict` and `flag`) and `result` (for `tool_result`). A list of another length is ignored whole, so a stale translation never lands on the wrong step. English is the fallback.
 
 Events, in order, each with `t_ms` (offset from the start, from the recorded latencies, so the UI can replay at real or scaled speed): `model_text{text}`, `tool_call{name,arguments,valid}`, `verdict{action,rule,reason}` (abp only), `tool_result{name,executed,result}`, `flag{rule,claim,reason,text}` (abp only), `final{text}`. The harness picks a first pass (raw failed, ABP caught all, lowest temperature); a person confirms each before it ships.
 

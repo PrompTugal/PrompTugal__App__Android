@@ -185,5 +185,34 @@
    "caught": true,
    "heuristic": false
   }
+ },
+ "i18n": {
+  "pt-PT": {
+   "raw": [
+    {
+     "text": "Vou encontrar primeiro o serviço de Payroll."
+    },
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "abp": [
+    {
+     "text": "Vou encontrar primeiro o serviço de Payroll."
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+     "reason": "Uma afirmação precisa da sua fonte: T09 não foi obtido"
+    },
+    null
+   ]
+  }
  }
 }

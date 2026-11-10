@@ -90,5 +90,11 @@
   "tools": [
    "read_file"
   ]
+ },
+ "i18n": {
+  "pt-PT": {
+   "title": "A Segurança põe o trabalho em pausa, nunca o retoma",
+   "description": "Da Política de Comportamento de Agentes real do agente security do PrompTugal.news (política v1.7.0): “Never: fixes what it finds in others' paths, or lifts a hold.” A regra R11 diz que só o Dinis levanta uma pausa. O agente pode escrever a pausa; não pode tirá-la. A equipa usa as suas próprias políticas em modo de observação: uma chamada fora da concessão fica registada e é revista de hora a hora, e o bloqueio só volta por um disjuntor. O Lab mostra o que a mesma concessão trava quando é aplicada. Todas as ferramentas aqui são falsas."
+  }
  }
 }
