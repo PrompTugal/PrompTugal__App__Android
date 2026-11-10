@@ -49,6 +49,8 @@ Settled: service-account permission names; free cannot become paid; 100 internal
 
 22. **Restarted 10 Nov (conductor, Dinis's restart brief, checked against `PrompTugal__News__Website` `board/guidance/2026-11-10-the-restart.md`).** `docs/play/pt-news-on-android.md`: recommendation (installed web app first; a TWA only if a store listing is wanted; for Wednesday's tablets a TWA can go by Firebase without Play), what the site team must change (exact files), what Dinis must do in Google Play and GCP with times. Key facts: the site is at promptugal.news; **pt.news redirects to `/lander` and its owner is unknown**; the manifest link is added only by JavaScript; no `assetlinks.json` yet (404); the Pages artifact step may drop `.well-known`. Not tested on a device.
 
+23. Architect's condition on Chat's cloud use: the OpenRouter section of the policy and `privacy.html` and the Data safety update now describe the **merged** behaviour (code on `dev` at `4d0708a`), no longer a draft: Chat and the Workbench send to openrouter.ai only when a key is saved, the staff switch is on and stand mode is off; Chat sends the message plus the system text, earlier messages only with an off-by-default switch; the caps (US$1 session, US$5 tablet, 2 s gap, 32 KB, 2,048 tokens, ledger); the Keystore key, never backed up; `provider.data_collection: deny` as a request. Data safety: a build with the cloud cannot say no data collected or shared (options in `data-safety.md`).
+
 ## Next
 Nothing until Dinis decides (below).
 
