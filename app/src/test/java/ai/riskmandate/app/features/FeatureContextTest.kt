@@ -186,7 +186,8 @@ class FeatureCloudTest {
     @Test fun onlyFeaturesThatDeclareItAreCloudFeatures() {
         val cloud = FEATURES.filter { it.usesCloud }.map { it.id }
         // Each id here must have privacy, Data safety and mandate wording for the cloud (review gate).
-        org.junit.Assert.assertTrue("cloud features: $cloud", cloud.all { it in setOf("workbench") })
+        // workbench: 9 Nov ruling; chat: architect review of dev.chat 0cf6aec (docs/architecture/reviews/2026-11-10-dev.chat-0cf6aec-cloud.md).
+        org.junit.Assert.assertTrue("cloud features: $cloud", cloud.all { it in setOf("workbench", "chat") })
     }
 }
 
