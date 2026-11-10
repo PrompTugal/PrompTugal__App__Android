@@ -56,4 +56,24 @@ class StandVisibilityTest {
         assertEquals(Routes.HOME, resolveRoute("chat", standOn = true, featureEnabled = featureVisible("chat", true)))
         assertEquals("chat", resolveRoute("chat", standOn = false, featureEnabled = featureVisible("chat", false)))
     }
+
+    // One test per LLM feature, on the real feature object (so a renamed id fails here), asking the rule the host uses.
+    @Test fun labIsHiddenInStandModeEvenWhenEnabled() = hiddenInStandMode(ai.riskmandate.app.features.lab.LabFeature)
+
+    @Test fun chatIsHiddenInStandModeEvenWhenEnabled() = hiddenInStandMode(ai.riskmandate.app.features.chat.ChatFeature)
+
+    @Test fun workbenchIsHiddenInStandModeEvenWhenEnabled() = hiddenInStandMode(ai.riskmandate.app.features.workbench.WorkbenchFeature)
+
+    @Test fun modelsIsHiddenInStandModeEvenWhenEnabled() = hiddenInStandMode(ai.riskmandate.app.features.models.ModelsFeature)
+
+    private fun hiddenInStandMode(real: Feature) {
+        assertTrue("${real.id} is one of the LLM features this test names", real.id in llmFeatures)
+        assertFalse("${real.id} must not be visible in stand mode", featureVisible(real.id, standOn = true))
+        // the same id, as an owner would ship it switched on: still hidden in stand mode, shown for staff
+        val switchedOn = on(real.id, cloud = real.usesCloud)
+        assertEquals(emptyList<String>(), visibleFeatures(listOf(switchedOn), standOn = true).map { it.id })
+        assertEquals(listOf(real.id), visibleFeatures(listOf(switchedOn), standOn = false).map { it.id })
+        // and a restored route to it goes Home in stand mode
+        assertEquals(Routes.HOME, resolveRoute(real.id, standOn = true, featureEnabled = featureVisible(real.id, true)))
+    }
 }
