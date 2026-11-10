@@ -73,6 +73,10 @@ class CloudLlmService(
     private val _state = MutableStateFlow<LlmState>(LlmState.NoModel)
     override val state: StateFlow<LlmState> = _state.asStateFlow()
 
+    init {
+        refresh() // a service built after the key was saved starts Ready, not NoModel
+    }
+
     private val _lastRun = MutableStateFlow<CloudRunInfo?>(null)
     val lastRun: StateFlow<CloudRunInfo?> = _lastRun.asStateFlow()
 

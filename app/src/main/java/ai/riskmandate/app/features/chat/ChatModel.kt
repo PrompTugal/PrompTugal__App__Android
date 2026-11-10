@@ -19,9 +19,21 @@ data class ChatMessage(
     val tokensPerSecond: Double = 0.0,
     val stopped: Boolean = false,
     val failed: Boolean = false,
-    /** Why it failed, as the service's error reason name (NO_MODEL, LOAD_FAILED, TOO_LONG, INFERENCE_FAILED), or null. Never content. */
+    /** Why it failed, as the service's error reason name (NO_MODEL, LOAD_FAILED, TOO_LONG, INFERENCE_FAILED, CAP_REACHED), or null. Never content. */
     val failure: String? = null,
+    /** Which service answered, see [ChatVia]; null for messages saved before the cloud existed (they were on the device). */
+    val via: String? = null,
+    /** Cloud answers: what it cost in US dollars (reported or estimated by the service); null on the device. */
+    val costUsd: Double? = null,
 )
+
+/** The source label saved with every model answer: `cloud:<model id>` or `device:<model id>`. */
+object ChatVia {
+    fun cloud(model: String) = "cloud:$model"
+    fun device(model: String) = "device:$model"
+    fun isCloud(via: String?) = via?.startsWith("cloud:") == true
+    fun model(via: String?): String? = via?.substringAfter(':', "")?.takeIf { it.isNotEmpty() }
+}
 
 data class Conversation(val id: String, val messages: List<ChatMessage> = emptyList()) {
     val isEmpty: Boolean get() = messages.isEmpty()
@@ -87,12 +99,9 @@ object ChatSampling {
     const val TOP_P = 0.9
 }
 
-/**
- * Which shared base block chat sends: v1 says "running on this device", which is true only for a local service, so a
- * service that runs elsewhere gets v2 (the same words without that claim).
- */
+/** The shared base block chat sends with every request that has no preset text: v2, which makes no claim about where the model runs. */
 object ChatBasePrompt {
-    fun idFor(local: Boolean): PromptId = if (local) Prompts.RISKMANDATE_BASE else Prompts.RISKMANDATE_BASE_ANYWHERE
+    val ID: PromptId = Prompts.RISKMANDATE_BASE_ANYWHERE
 }
 
 /**
@@ -130,6 +139,15 @@ object ChatPresets {
         // Needs the graph tools from the lab and eval roles. Stays off until they exist.
         Preset("triplets", R.string.chat_preset_triplets_title, R.string.chat_preset_triplets_prompt, PresetMode.SEND, null, false, R.string.chat_preset_triplets_note),
     )
+
+    /**
+     * The cloud route's reference block: the bundled riskmandate.ai texts, for RiskMandate and ABP questions only.
+     * Other questions are answered normally. (The presets use [system], which answers only from the text.)
+     */
+    fun systemWithReference(referenceText: String): String =
+        "For questions about RiskMandate or the Agent Behaviour Policy, answer only from the text between the markers; " +
+            "if the text does not say, reply that you do not know. Do not invent facts about RiskMandate. " +
+            "Answer other questions normally. Keep answers short.\n--- TEXT ---\n" + referenceText.trim() + "\n--- END ---"
 
     /** The instruction block for a grounded preset. Plain English: it is for the model, not shown. */
     fun system(groundingText: String): String =

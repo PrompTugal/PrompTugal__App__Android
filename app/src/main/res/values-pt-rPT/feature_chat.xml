@@ -6,7 +6,7 @@
     <string name="chat_history_close">Voltar à conversa</string>
     <string name="chat_history_empty">Ainda não há conversas guardadas.</string>
     <string name="chat_history_untitled">(conversa vazia)</string>
-    <string name="chat_history_note">As conversas ficam guardadas só neste tablet. Não há cópia de segurança, envio nem partilha.</string>
+    <string name="chat_history_note">As conversas guardadas ficam só neste tablet: não há cópia de segurança nem partilha. Uma mensagem só vai para a nuvem quando a nuvem está escolhida para ela.</string>
     <string name="chat_clear">Limpar histórico</string>
     <string name="chat_clear_title">Apagar todas as conversas guardadas?</string>
     <string name="chat_clear_body">Todas as conversas são apagadas deste tablet. Não é possível desfazer.</string>
@@ -23,7 +23,7 @@
     <string name="chat_failed">O modelo parou com um erro.</string>
     <string name="chat_stats">%1$s tokens por segundo, %2$s segundos, %3$s tokens</string>
     <string name="chat_open_link">Abrir %1$s</string>
-    <string name="chat_empty_hint">Pergunte alguma coisa ao modelo, ou experimente uma sugestão. Tudo fica neste dispositivo.</string>
+    <string name="chat_empty_hint">Pergunte alguma coisa ao modelo, ou experimente uma sugestão. O selo acima diz onde corre.</string>
     <string name="chat_no_model_title">Nenhum modelo instalado</string>
     <string name="chat_no_model_body">Configure um modelo e volte depois. A conversa precisa de um modelo neste dispositivo.</string>
     <string name="chat_loading">A procurar modelos instalados…</string>
@@ -40,12 +40,27 @@
     <string name="chat_preset_triplets_note">Precisa das ferramentas do grafo, que ainda não existem.</string>
     <string name="chat_network_on">Rede: ligada</string>
     <string name="chat_network_off">Rede: desligada</string>
-    <string name="chat_kicker">No dispositivo</string>
-    <string name="chat_summary">Converse com um modelo de linguagem que corre neste tablet. Nada do que escrever sai do dispositivo.</string>
+    <string name="chat_kicker">Modelo de linguagem</string>
+    <string name="chat_summary">Pergunte a um modelo de linguagem sobre o RiskMandate e mais. Corre neste tablet, ou na nuvem quando a equipa o ativar; o ecrã diz sempre qual.</string>
     <string name="chat_model_active">Modelo: %1$s</string>
     <string name="chat_open_models">Abrir Modelos</string>
     <string name="chat_failed_no_model">Não há nenhum modelo instalado. Configure um em Modelos.</string>
     <string name="chat_failed_load">Não foi possível carregar o modelo. Tente de novo ou escolha um modelo mais pequeno em Modelos.</string>
     <string name="chat_failed_too_long">Esta conversa é demasiado longa para o modelo. Comece uma nova conversa.</string>
     <string name="chat_badge_cloud">Nuvem: openrouter.ai</string>
+    <string name="chat_source_label">Responder com</string>
+    <string name="chat_source_device">Este dispositivo</string>
+    <string name="chat_cloud_note">Nuvem: só são enviados a sua mensagem e os textos do RiskMandate, não as mensagens anteriores, a menos que ative essa opção.</string>
+    <string name="chat_include_history">Enviar para a nuvem as mensagens anteriores desta conversa</string>
+    <string name="chat_show_sent">Mostrar o que vai ser enviado</string>
+    <string name="chat_sent_title">O que a nuvem receberia</string>
+    <string name="chat_sent_system">Instruções</string>
+    <string name="chat_sent_messages">Mensagens</string>
+    <string name="chat_sent_placeholder">(a mensagem que escrever a seguir)</string>
+    <string name="chat_close">Fechar</string>
+    <string name="chat_via_cloud">Nuvem, openrouter.ai, %1$s</string>
+    <string name="chat_via_device">No dispositivo, %1$s</string>
+    <string name="chat_stats_cost">%1$s tokens por segundo, %2$s segundos, %3$s tokens, US$%4$s</string>
+    <string name="chat_failed_cap">O limite de gastos da nuvem foi atingido, nesta sessão ou neste tablet. Mude para este dispositivo ou peça ajuda à equipa.</string>
+    <string name="chat_use_device">Responder neste dispositivo</string>
 </resources>

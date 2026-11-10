@@ -49,7 +49,7 @@ class LlmServiceChat(
             when (e) {
                 is LlmEvent.Token -> emit(e.text)
                 is LlmEvent.Error -> throw ChatLlmException(e.reason.name)
-                is LlmEvent.Done -> onStats(ChatAnswerStats(e.stats.outputTokens, e.stats.decodeTokensPerSecond, e.stats.totalMs))
+                is LlmEvent.Done -> onStats(ChatAnswerStats(e.stats.outputTokens, e.stats.decodeTokensPerSecond, e.stats.totalMs, e.stats.costUsd))
                 is LlmEvent.ToolCallProposed -> Unit
             }
         }
