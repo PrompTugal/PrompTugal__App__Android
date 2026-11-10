@@ -64,4 +64,13 @@
     <string name="chat_stats_cost">%1$s tokens per second, %2$s seconds, %3$s tokens, US$%4$s</string>
     <string name="chat_failed_cap">The cloud spending cap is reached, for this session or this tablet. Switch to this device, or ask staff.</string>
     <string name="chat_use_device">Answer on this device</string>
+    <string name="chat_preset_data_title">Ask our data</string>
+    <string name="chat_preset_data_prompt">Ask a question about RiskMandate or the companies in our data.</string>
+    <string name="chat_data_banner">Your next question is answered on this device from the bundled RiskMandate and pt.news texts. Sources are shown.</string>
+    <string name="chat_via_data">On device, %1$s, our data</string>
+    <string name="chat_sources_heading">Sources</string>
+    <string name="chat_source_kind_riskmandate">RiskMandate</string>
+    <string name="chat_source_kind_article">pt.news article</string>
+    <string name="chat_source_kind_company">company card</string>
+    <string name="chat_bad_refs">Not a real source: %1$s</string>
 </resources>

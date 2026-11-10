@@ -27,6 +27,10 @@ object ChatTags {
     const val BADGE_CLOUD = "chat_badge_cloud"
     const val NETWORK = "chat_network"
     const val OPEN_MODELS = "chat_open_models"
+    const val ASK_DATA = "chat_ask_data"
+    const val ASK_DATA_BANNER = "chat_ask_data_banner"
+    const val ASK_DATA_CANCEL = "chat_ask_data_cancel"
+    fun sources(index: Int) = "chat_sources_$index"
     const val SOURCE_CLOUD = "chat_source_cloud"
     const val SOURCE_DEVICE = "chat_source_device"
     const val INCLUDE_HISTORY = "chat_include_history"
@@ -86,7 +90,10 @@ object ChatFeature : Feature {
         val local = remember(context.llm) { context.llm?.let { LlmServiceChat(it) } ?: NoLlm }
         // The cloud one, only if the host gave it and it really says CLOUD; chat never mixes the two fields.
         val cloud = remember(context.cloudLlm) { context.cloudLlm?.takeIf { it.location == LlmLocation.CLOUD }?.let { LlmServiceChat(it) } }
-        ChatContent(context, local, cloud)
+        // "Ask our data" answers on this device only: it gets context.llm (never cloudLlm), and refuses anything not local.
+        val assets = LocalContext.current.assets
+        val data = remember(context.llm) { context.llm?.takeIf { it.location == LlmLocation.LOCAL }?.let { GroundedDataAsker(it, assets) } }
+        ChatContent(context, local, cloud, data)
     }
 }
 
@@ -97,16 +104,16 @@ private const val CLOUD_REVIEWED = false
 
 /** The chat for a given on-device [llm] and optional [cloud] service. Internal so tests can use [FakeChatLlm] directly. */
 @Composable
-internal fun ChatContent(context: FeatureContext, llm: ChatLlm, cloud: ChatLlm? = null) {
+internal fun ChatContent(context: FeatureContext, llm: ChatLlm, cloud: ChatLlm? = null, dataAsker: DataAsker? = null) {
     val android = LocalContext.current
     val provided = LocalChatStore.current
     val io = LocalChatIo.current
     val scope = rememberCoroutineScope()
-    val controller = remember(llm, cloud, provided, io) {
+    val controller = remember(llm, cloud, dataAsker, provided, io) {
         val store = provided ?: FileChatHistoryStore(File(android.applicationContext.noBackupFilesDir, "feature_chat"))
         ChatController(
             llm, store, scope, baseSystem = { Prompts.load(android.assets, ChatBasePrompt.ID) }, io = io,
-            cloud = cloud,
+            cloud = cloud, dataAsker = dataAsker,
             // The two bundled riskmandate.ai texts, read off the main thread, only used on the cloud route.
             cloudReference = {
                 withContext(io) {

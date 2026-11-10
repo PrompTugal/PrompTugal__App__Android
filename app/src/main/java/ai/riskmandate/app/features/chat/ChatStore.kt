@@ -57,11 +57,29 @@ class FileChatHistoryStore(private val dir: File) : ChatHistoryStore {
                     msgs.put(JSONObject().put("r", m.role.name).put("t", m.text.take(ChatLimits.MAX_MESSAGE_CHARS))
                         .put("n", m.tokens).put("ms", m.millis).put("tps", m.tokensPerSecond)
                         .put("s", m.stopped).put("f", m.failed).put("fr", m.failure ?: JSONObject.NULL)
-                        .put("via", m.via ?: JSONObject.NULL).put("cost", m.costUsd ?: JSONObject.NULL))
+                        .put("via", m.via ?: JSONObject.NULL).put("cost", m.costUsd ?: JSONObject.NULL)
+                        .put("g", m.grounding?.let(::encodeGrounding) ?: JSONObject.NULL))
                 }
                 arr.put(JSONObject().put("id", c.id).put("m", msgs))
             }
             return JSONObject().put("v", VERSION).put("c", arr).toString()
+        }
+
+        private fun encodeGrounding(g: ChatGrounding): JSONObject = JSONObject()
+            .put("s", JSONArray().also { arr ->
+                for (x in g.sources.take(8)) arr.put(JSONObject().put("n", x.n).put("t", x.title.take(300)).put("k", x.kind).put("u", x.source.take(300)))
+            })
+            .put("a", g.attribution.take(1_000))
+            .put("b", JSONArray(g.badRefs.take(20)))
+
+        private fun decodeGrounding(o: JSONObject): ChatGrounding {
+            val s = o.optJSONArray("s")
+            val sources = (0 until minOf(s?.length() ?: 0, 8)).mapNotNull { i ->
+                val x = s!!.optJSONObject(i) ?: return@mapNotNull null
+                ChatSource(x.optInt("n"), x.optString("t").take(300), x.optString("k"), x.optString("u").take(300))
+            }
+            val b = o.optJSONArray("b")
+            return ChatGrounding(sources, o.optString("a").take(1_000), (0 until minOf(b?.length() ?: 0, 20)).map { b!!.optInt(it) })
         }
 
         fun decode(text: String): List<Conversation> {
@@ -77,7 +95,8 @@ class FileChatHistoryStore(private val dir: File) : ChatHistoryStore {
                     val role = ChatRole.entries.firstOrNull { it.name == m.optString("r") } ?: return@mapNotNull null
                     ChatMessage(role, m.optString("t").take(ChatLimits.MAX_MESSAGE_CHARS), m.optInt("n"), m.optLong("ms"),
                         m.optDouble("tps", 0.0), m.optBoolean("s"), m.optBoolean("f"), m.optString("fr").takeIf { it.isNotEmpty() && it != "null" },
-                        m.optString("via").takeIf { it.isNotEmpty() && it != "null" }, if (m.isNull("cost")) null else m.optDouble("cost"))
+                        m.optString("via").takeIf { it.isNotEmpty() && it != "null" }, if (m.isNull("cost")) null else m.optDouble("cost"),
+                        m.optJSONObject("g")?.let(::decodeGrounding))
                 }
                 out += Conversation(o.getString("id"), messages)
             }
