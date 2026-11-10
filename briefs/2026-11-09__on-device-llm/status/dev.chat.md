@@ -157,6 +157,9 @@ A preset "Ask our data" and a chip of the same name above the message box arm it
 - Not claimed: the answer is only as good as the 2B model and the passages found; the label and the sources let the audience check it. RiskMandate content in the bundle is only the two riskmandate.ai quotes (dev.llm's rule).
 - Tests: controller (plain JVM, fake asker), store round trip, screen (real asker over a fake on-device service and the real bundled data: sources, labels, bad citation, "do not know", cloud never used, no model means no chip, the asker refuses a cloud service). Full suite 945 tests, 0 failed.
 
+## First cloud send asks (security R-chat-5)
+The first send through the cloud in a session is held: a dialog "Send this to the cloud?" shows the exact request (the same builder as "Show what will be sent"), with Send and Cancel. Cancel sends nothing and puts the text back in the box; Send goes, and later cloud sends in that session do not ask again (a flag in the controller, never saved, so a restart asks again). Device sends and "Ask our data" are never held. Tests: controller (held, exact request equals what was sent, cancel, device), screen (dialog shows the message, cancel keeps the text).
+
 ## Doing
 Waiting for dev.llm's `LlmService` to land, then swapping the stand-in for an adapter.
 

@@ -10,6 +10,7 @@ import ai.riskmandate.app.llm.LlmLocation
 import ai.riskmandate.app.llm.LlmService
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -68,7 +69,25 @@ class ChatCloudScreenTest {
     private fun send(text: String) {
         tag(ChatTags.INPUT).performTextInput(text)
         tag(ChatTags.SEND).performClick()
+        compose.waitForIdle()
+        if (count(ChatTags.FIRST_SEND_CONFIRM) == 1) tag(ChatTags.FIRST_SEND_CONFIRM).performClick() // the first cloud send of a session asks
         compose.waitUntil(15_000) { count(ChatTags.STATS) == 1 || textCount("Answer on this device") > 0 || textCount("spending cap") > 0 }
+    }
+
+    @Test fun theFirstCloudSendShowsWhatWillBeSentAndCancelKeepsTheTextAndSendsNothing() {
+        val cloud = cloudFake()
+        show(cloud)
+        loaded()
+        tag(ChatTags.INPUT).performTextInput("my question")
+        tag(ChatTags.SEND).performClick()
+        compose.waitForIdle()
+        assertEquals(1, count(ChatTags.FIRST_SEND_DIALOG))
+        assertTrue(compose.onAllNodes(hasText("my question", substring = true) and hasAnyAncestor(hasTestTag(ChatTags.FIRST_SEND_DIALOG))).fetchSemanticsNodes().isNotEmpty())
+        tag(ChatTags.FIRST_SEND_CANCEL).performClick()
+        compose.waitForIdle()
+        assertEquals(0, count(ChatTags.FIRST_SEND_DIALOG))
+        assertEquals(0, count(ChatTags.STATS))
+        tag(ChatTags.INPUT).assertTextContains("my question")
     }
 
     @Test fun theSourceChoiceShowsWhichServiceAnswersAndSwitches() {
