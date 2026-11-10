@@ -25,6 +25,8 @@ data class ChatMessage(
     val via: String? = null,
     /** Cloud answers: what it cost in US dollars (reported or estimated by the service); null on the device. */
     val costUsd: Double? = null,
+    /** An "Ask our data" answer: its sources, the pt.news credit and any made-up citation numbers; null for a normal answer. */
+    val grounding: ChatGrounding? = null,
 )
 
 /** The source label saved with every model answer: `cloud:<model id>` or `device:<model id>`. */
@@ -76,7 +78,7 @@ object ChatPrompt {
 }
 
 /** How a preset behaves when tapped. */
-enum class PresetMode { SEND, FILL_INPUT }
+enum class PresetMode { SEND, FILL_INPUT, ASK_DATA }
 
 /**
  * A preset prompt. [groundingRaw] is a bundled text (res/raw, from riskmandate.ai only) the model is told to
@@ -136,6 +138,8 @@ object ChatPresets {
         Preset("riskmandate", R.string.chat_preset_rm_title, R.string.chat_preset_rm_prompt, PresetMode.SEND, R.raw.feature_chat_riskmandate),
         Preset("abp", R.string.chat_preset_abp_title, R.string.chat_preset_abp_prompt, PresetMode.SEND, R.raw.feature_chat_abp),
         Preset("risk", R.string.chat_preset_risk_title, R.string.chat_preset_risk_prompt, PresetMode.FILL_INPUT),
+        // Arms "Ask our data": the next question is answered from the bundled data, on this device, with its sources.
+        Preset("data", R.string.chat_preset_data_title, R.string.chat_preset_data_prompt, PresetMode.ASK_DATA),
         // Needs the graph tools from the lab and eval roles. Stays off until they exist.
         Preset("triplets", R.string.chat_preset_triplets_title, R.string.chat_preset_triplets_prompt, PresetMode.SEND, null, false, R.string.chat_preset_triplets_note),
     )

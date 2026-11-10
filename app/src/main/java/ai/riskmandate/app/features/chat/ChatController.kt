@@ -32,6 +32,10 @@ data class ChatState(
     val useCloud: Boolean = false,
     /** Cloud only: send the earlier messages of this chat too. Off by default, never saved. */
     val includeHistory: Boolean = false,
+    /** True when "Ask our data" can be used: a data asker exists and a model is installed on this device. */
+    val dataAvailable: Boolean = false,
+    /** True while the next question is armed to be answered from our data (once; never saved). */
+    val askData: Boolean = false,
     val generating: Boolean = false,
     val error: ChatError? = null,
 ) {
@@ -63,12 +67,15 @@ class ChatController(
     private val cloud: ChatLlm? = null,
     /** The bundled riskmandate.ai texts the cloud route carries as its reference for RiskMandate questions, or null. */
     private val cloudReference: suspend () -> String? = { null },
+    /** Answers questions from the bundled data on this device (never the cloud), or null when there is none. */
+    private val dataAsker: DataAsker? = null,
 ) {
     var state by mutableStateOf(ChatState())
         private set
 
     private var job: Job? = null
     private val saveLock = Mutex()
+    private var deviceModelId: String? = null
 
     /**
      * Reads saved history and the installed models. Call once. [reopen] is the id of the chat that was open before a
@@ -79,7 +86,9 @@ class ChatController(
         // The cloud is offered only when its service reports a model ready; otherwise chat is on the device only.
         val cloudModels = cloud?.installedModels().orEmpty()
         val useCloud = cloud != null && cloudModels.isNotEmpty()
-        val models = if (useCloud) cloudModels else llm.installedModels()
+        val deviceModels = llm.installedModels()
+        deviceModelId = deviceModels.firstOrNull()?.id
+        val models = if (useCloud) cloudModels else deviceModels
         val fresh = Conversation(newId())
         // Open on a new empty chat; old chats are one tap away in the history list.
         val conversations = (listOf(fresh) + saved.filter { !it.isEmpty }).take(ChatLimits.MAX_CONVERSATIONS)
@@ -88,6 +97,7 @@ class ChatController(
             modelId = state.modelId?.takeIf { id -> models.any { it.id == id } } ?: models.firstOrNull()?.id,
             modelsLoaded = true, local = if (useCloud) cloud!!.isLocal else llm.isLocal,
             cloudAvailable = useCloud, useCloud = useCloud, includeHistory = false,
+            dataAvailable = dataAsker != null && deviceModels.isNotEmpty(), askData = false,
         )
     }
 
@@ -104,6 +114,12 @@ class ChatController(
     /** Cloud only: whether the earlier messages of this chat go with the next message. Off by default, never saved. */
     fun setIncludeHistory(on: Boolean) {
         if (state.useCloud) state = state.copy(includeHistory = on)
+    }
+
+    /** Arms (or disarms) "Ask our data" for the next question only. Ignored when it is not available or while answering. */
+    fun armAskData(on: Boolean) {
+        if (state.generating || (on && !state.dataAvailable)) return
+        state = state.copy(askData = on)
     }
 
     fun selectModel(id: String) {
@@ -167,6 +183,7 @@ class ChatController(
         val model = state.modelId
         val input = text.trim().take(ChatLimits.MAX_INPUT_CHARS)
         if (model == null || input.isEmpty() || state.generating) return
+        if (state.askData && dataAsker != null && state.dataAvailable) return sendData(input, dataAsker)
         val convId = state.currentId
         val history = state.current.messages
         val viaCloud = state.useCloud && cloud != null
@@ -212,6 +229,47 @@ class ChatController(
                 ))
                 state = state.copy(generating = false)
                 // Also when the scope is ending (a rotation, leaving the screen): the partial answer is written anyway.
+                withContext(NonCancellable) { persistNow() }
+            }
+        }
+    }
+
+    /**
+     * "Ask our data": the question goes to the data asker, which searches the bundled data and has the on-device model
+     * answer from it. Always the device (the asker only accepts a local service), whichever service is chosen for
+     * normal messages. One question, no earlier messages. The answer keeps its sources, credit and made-up numbers.
+     */
+    private fun sendData(input: String, asker: DataAsker) {
+        val convId = state.currentId
+        val via = ChatVia.device(deviceModelId ?: "device")
+        update(convId) { it + ChatMessage(ChatRole.USER, input) + ChatMessage(ChatRole.ASSISTANT, "", via = via) }
+        state = state.copy(generating = true, error = null, askData = false)
+        scope.launch { persistNow() }
+        val started = clock()
+        job = scope.launch {
+            var partial = ""
+            var result: DataAnswer? = null
+            var stopped = false
+            var failed = false
+            var failure: String? = null
+            try {
+                result = asker.ask(input) { text ->
+                    partial = text.take(ChatLimits.MAX_MESSAGE_CHARS)
+                    replaceLast(convId, ChatMessage(ChatRole.ASSISTANT, partial, via = via))
+                }
+            } catch (e: CancellationException) {
+                stopped = true
+            } catch (e: Exception) {
+                failed = true
+                failure = (e as? ChatLlmException)?.reason
+            } finally {
+                val r = result
+                val text = (r?.text ?: partial).take(ChatLimits.MAX_MESSAGE_CHARS)
+                replaceLast(convId, ChatMessage(
+                    ChatRole.ASSISTANT, text, r?.outputTokens ?: 0, r?.totalMs ?: (clock() - started), r?.tokensPerSecond ?: 0.0,
+                    stopped, failed || r?.errorReason != null, failure ?: r?.errorReason, via = via, grounding = r?.grounding,
+                ))
+                state = state.copy(generating = false)
                 withContext(NonCancellable) { persistNow() }
             }
         }

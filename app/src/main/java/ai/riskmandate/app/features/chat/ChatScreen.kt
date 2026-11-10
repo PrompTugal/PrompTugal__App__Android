@@ -75,6 +75,7 @@ fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
         val prompt = androidContext.getString(p.prompt)
         when (p.mode) {
             PresetMode.FILL_INPUT -> input = prompt
+            PresetMode.ASK_DATA -> controller.armAskData(true)
             PresetMode.SEND -> {
                 val raw = p.groundingRaw
                 scope.launch {
@@ -161,7 +162,11 @@ fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
                         for (p in ChatPresets.ALL) {
                             AssistChip(
                                 onClick = { runPreset(p) },
-                                enabled = p.enabled && (p.mode == PresetMode.FILL_INPUT || state.canSend),
+                                enabled = p.enabled && when (p.mode) {
+                                    PresetMode.FILL_INPUT -> true
+                                    PresetMode.ASK_DATA -> state.dataAvailable && state.canSend
+                                    PresetMode.SEND -> state.canSend
+                                },
                                 label = { Text(stringResource(p.title)) },
                                 modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(ChatTags.preset(p.id)),
                             )
@@ -177,6 +182,20 @@ fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
             }
         }
 
+        if (!showHistory && state.dataAvailable) {
+            // "Ask our data": armed for the next question only. Says plainly where it runs and what it shows.
+            FlowRow(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
+                FilterChip(selected = state.askData, onClick = { controller.armAskData(!state.askData) }, enabled = !state.generating,
+                    label = { Text(stringResource(R.string.chat_preset_data_title)) }, modifier = Modifier.testTag(ChatTags.ASK_DATA))
+                if (state.askData) {
+                    Text(stringResource(R.string.chat_data_banner), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f, fill = false).testTag(ChatTags.ASK_DATA_BANNER))
+                    TextButton(onClick = { controller.armAskData(false) }, modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(ChatTags.ASK_DATA_CANCEL)) {
+                        Text(stringResource(R.string.chat_cancel))
+                    }
+                }
+            }
+        }
         if (!showHistory && state.models.isNotEmpty()) {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
                 OutlinedTextField(
@@ -304,6 +323,20 @@ private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int, onUseDev
             Text(sourceLabel(m, mine), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             // Plain Text: the model's output is never parsed as markup, links or code.
             Text(if (m.text.isEmpty() && running) stringResource(R.string.chat_thinking) else shown, style = MaterialTheme.typography.bodyLarge)
+            m.grounding?.let { g ->
+                // Plain text only: titles and where each source comes from. Nothing here is a link and nothing opens.
+                Column(Modifier.testTag(ChatTags.sources(index)), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    if (g.sources.isNotEmpty()) Text(stringResource(R.string.chat_sources_heading), style = MaterialTheme.typography.labelLarge)
+                    for (x in g.sources) {
+                        val line = "[${x.n}] ${x.title}, ${stringResource(sourceKind(x.kind))}, ${x.source}"
+                        Text(line, style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (g.badRefs.isNotEmpty()) {
+                        Text(stringResource(R.string.chat_bad_refs, g.badRefs.joinToString(", ") { "[$it]" }), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                    if (g.attribution.isNotBlank()) Text(g.attribution, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             if (m.stopped) Text(stringResource(R.string.chat_stopped), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (m.failed) Text(stringResource(failureText(m.failure)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
             onUseDevice?.let { go ->
@@ -337,5 +370,14 @@ private fun sourceLabel(m: ChatMessage, mine: Boolean): String {
     if (mine) return stringResource(R.string.chat_you)
     val model = ChatVia.model(m.via) ?: return stringResource(R.string.chat_model)
     return if (ChatVia.isCloud(m.via)) stringResource(R.string.chat_via_cloud, model)
+    else if (m.grounding != null) stringResource(R.string.chat_via_data, ModelCatalog.ALL.firstOrNull { it.id == model }?.displayName ?: model)
     else stringResource(R.string.chat_via_device, ModelCatalog.ALL.firstOrNull { it.id == model }?.displayName ?: model)
+}
+
+/** The kind of a data source, in words: RiskMandate, a pt.news article or a pt.news company card. */
+@androidx.annotation.StringRes
+private fun sourceKind(kind: String): Int = when (kind) {
+    "ARTICLE" -> R.string.chat_source_kind_article
+    "COMPANY" -> R.string.chat_source_kind_company
+    else -> R.string.chat_source_kind_riskmandate
 }

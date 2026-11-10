@@ -63,4 +63,13 @@
     <string name="chat_stats_cost">%1$s tokens por segundo, %2$s segundos, %3$s tokens, US$%4$s</string>
     <string name="chat_failed_cap">O limite de gastos da nuvem foi atingido, nesta sessão ou neste tablet. Mude para este dispositivo ou peça ajuda à equipa.</string>
     <string name="chat_use_device">Responder neste dispositivo</string>
+    <string name="chat_preset_data_title">Perguntar aos nossos dados</string>
+    <string name="chat_preset_data_prompt">Faça uma pergunta sobre o RiskMandate ou as empresas nos nossos dados.</string>
+    <string name="chat_data_banner">A sua próxima pergunta é respondida neste dispositivo a partir dos textos incluídos do RiskMandate e do pt.news. As fontes são mostradas.</string>
+    <string name="chat_via_data">No dispositivo, %1$s, nossos dados</string>
+    <string name="chat_sources_heading">Fontes</string>
+    <string name="chat_source_kind_riskmandate">RiskMandate</string>
+    <string name="chat_source_kind_article">artigo do pt.news</string>
+    <string name="chat_source_kind_company">ficha de empresa</string>
+    <string name="chat_bad_refs">Não é uma fonte real: %1$s</string>
 </resources>
