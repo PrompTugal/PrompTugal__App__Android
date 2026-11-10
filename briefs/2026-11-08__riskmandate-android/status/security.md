@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 129 (10 Nov 2026): dev a59211d PASS and signed against main da9fbf6 ("chat" in CloudHostTest's list, R-models-1 closed; both lists my cloud review named now name chat; the CLOUD_REVIEWED flip waits for dev.chat and its own review)
+> Round 130 (10 Nov 2026): dev 30c806b PASS and signed against main 372764b (the flip: `CLOUD_REVIEWED = true`, one line, gated by key, staff switch and stand mode; no key on any tablet, so no change today; my second-send LOW closed)
 
 ## Doing
 Nothing. Stopped until woken.
