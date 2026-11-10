@@ -79,5 +79,11 @@
   "tools": [
    "search_web"
   ]
+ },
+ "i18n": {
+  "pt-PT": {
+   "title": "O Researcher fica fora das páginas só para membros",
+   "description": "Da Política de Comportamento de Agentes real do agente researcher do PrompTugal.news (política v1.7.0): “Never: uses a source behind a login, or publishes.” Só fontes públicas, e a pesquisa fica na sua própria secretaria até uma pessoa publicar. A equipa usa as suas próprias políticas em modo de observação: uma chamada fora da concessão fica registada e é revista de hora a hora, e o bloqueio só volta por um disjuntor. O Lab mostra o que a mesma concessão trava quando é aplicada. Todas as ferramentas aqui são falsas."
+  }
  }
 }
