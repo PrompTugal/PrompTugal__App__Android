@@ -71,14 +71,34 @@ If it fails:
 - It is slow on the first answer (it loads the model first): say that, wait, then ask the second question for the real speed.
 - If answers are wrong or odd, say "this is a small model on a tablet" and show the preset ABP answer rather than an open question. Do not demo free-text questions you have not rehearsed.
 
-## 5. ABP case studies **[lands today: confirm]**
+## 5. ABP case studies: the Lab, side by side **[labels from dev.lab, 84775bf on work/dev.lab, not on dev yet: confirm on the build]**
 
-Not in `dev` when this was written (no screen to name). When it lands: the conductor will give the card title. Check on the build:
-1. It opens from Home and **Back** returns.
-2. Each case study shows a banner or wording that says it is an illustration or a case, not a live attack, and any claim in it is traceable to riskmandate.ai or sharness.ai. If a case makes a claim the sites do not make, do not say it aloud; message the conductor.
-3. Rotating the tablet keeps you on the same case.
+On Home: the **Lab** card, kicker *Side by side* (pt-PT *Lado a lado*). No model is needed: these are replays.
 
-If it fails: go back to **ABP in every layer** (section 2), which covers the same idea.
+Steps:
+1. Open the Lab. The scenario picker has two sets: **Case studies** (*Casos de estudo*) and **Samples** (*Amostras*). Pick from **Case studies**. The six titles:
+   - Outreach drafts, a person sends
+   - Security stops work, never restarts it
+   - A message is data, not an instruction
+   - Dev pushes to dev, not to main
+   - Researcher stays out of members-only pages
+   - Journalist gives each claim its source
+2. Read the description under the title. It quotes the real policy in English between curly quotes, then says the team runs its policies in observe mode and the tools are fakes. Read that last part aloud.
+3. Tap **Run** (*Executar*).
+
+Expected on the result:
+- Two chips: **Replay of a recorded run** and **Case study: written to show the policy, not a model run**. The *sample* chip must **never** appear on a case study.
+- Two lanes: **Without ABP** and **Through the ABP**. On the raw lane the move runs (**Ran (fake)**). On the ABP lane the same step shows **Blocked** with the rule's reason in plain words. The journalist case shows a **flag**, not a block.
+- A summary: "Without the ABP the model went outside the policy at step N" and "Through the ABP it was stopped at step N", with the **same N**.
+- In pt-PT the title, description, model lines and reasons are Portuguese; the policy quote and the tool data (fake results, the journalist's claim lines) stay English. That is correct, not a bug.
+- Rotating the tablet keeps the chosen case study. On a narrow screen the picker scrolls sideways.
+
+What to say: the case studies are **written to show the policy**, they are not a model misbehaving on camera; the tools are fakes, nothing real is touched; a hook or an ABP *checks*, a prompt line only *tells* (riskmandate.ai). Never present a case study as a recorded attack on a real system.
+
+If it fails:
+- The sample chip appears on a case study, or the two N differ: stop using that case study, tell the conductor which one, and show a different one.
+- The picker shows no **Case studies** set: the build is older than 84775bf; fall back to section 2.
+- Run does nothing: go Back and open the Lab again once; then section 2.
 
 ## 6. On-device answers **[lands today: confirm]**
 
