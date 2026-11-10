@@ -103,7 +103,7 @@ object ChatFeature : Feature {
 private const val MODELS_ID = "models"
 
 /** False until security and the architect have recorded a cloud review for chat (see [ChatFeature.usesCloud]). */
-private const val CLOUD_REVIEWED = false
+private const val CLOUD_REVIEWED = true
 
 /** The chat for a given on-device [llm] and optional [cloud] service. Internal so tests can use [FakeChatLlm] directly. */
 @Composable
