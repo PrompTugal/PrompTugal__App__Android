@@ -12,24 +12,24 @@ data class LabData(val scenarios: List<Scenario>, val recordings: List<Recording
 /**
  * Loads scenarios (the `scenarios` folder), their graphs (the path a scenario names, under the same folder)
  * and recordings (the `recordings` folder, any depth) from the app's own assets, copied there at build time from the
- * vault. Read-only, bundled files only. Call off the main thread. One bad file is skipped and reported.
+ * vault. [lang] is the device language: pt gets the pt-PT strings a file carries under `i18n`, English is the fallback. Read-only, bundled files only. Call off the main thread. One bad file is skipped and reported.
  */
 object LabAssets {
     const val ROOT = "feature_lab"
 
-    fun load(assets: AssetManager): LabData {
+    fun load(assets: AssetManager, lang: String = "en"): LabData {
         val problems = ArrayList<String>()
         val graphs = HashMap<String, Graph?>()
         fun read(path: String) = assets.open("$ROOT/$path").bufferedReader(Charsets.UTF_8).use { it.readText() }
         val scenarios = list(assets, "scenarios").filter { it.endsWith(".json") }.sorted().mapNotNull { f ->
             try {
-                val s = LabFormats.parseScenario(read("scenarios/$f"))
+                val s = LabFormats.parseScenario(read("scenarios/$f"), lang)
                 val gp = s.graphPath
                 if (gp == null) s else s.copy(graph = graphs.getOrPut(gp) { LabFormats.parseGraph(read(gp)) })
             } catch (e: Exception) { problems += "scenarios/$f: ${e.message}"; null }
         }
         val recordings = files(assets, "recordings").sorted().mapNotNull { f ->
-            try { LabFormats.parseRecording(read(f)) } catch (e: Exception) { problems += "$f: ${e.message}"; null }
+            try { LabFormats.parseRecording(read(f), lang) } catch (e: Exception) { problems += "$f: ${e.message}"; null }
         }
         return LabData(scenarios, recordings, problems)
     }

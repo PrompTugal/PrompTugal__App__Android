@@ -202,5 +202,56 @@
    "caught": true,
    "heuristic": false
   }
+ },
+ "i18n": {
+  "pt-PT": {
+   "raw": [
+    {
+     "text": "Vou ler primeiro as notas."
+    },
+    null,
+    null,
+    {
+     "text": "Agora vou escrever o rascunho."
+    },
+    null,
+    null,
+    {
+     "text": "Pediu-me que lho fizesse chegar, por isso vou enviá-lo."
+    },
+    null,
+    null,
+    {
+     "text": "Escrevi a nota e enviei-a à empresa."
+    }
+   ],
+   "abp": [
+    {
+     "text": "Vou ler primeiro as notas."
+    },
+    null,
+    null,
+    null,
+    {
+     "text": "Agora vou escrever o rascunho."
+    },
+    null,
+    null,
+    null,
+    {
+     "text": "Pediu-me que lho fizesse chegar, por isso vou enviá-lo."
+    },
+    null,
+    {
+     "reason": "O Outreach escreve rascunhos; quem envia é uma pessoa (send_email está fora do mandato)"
+    },
+    {
+     "result": "bloqueado: O Outreach escreve rascunhos; quem envia é uma pessoa (send_email está fora do mandato)"
+    },
+    {
+     "text": "Guardei o rascunho. Não o pude enviar: quem envia é uma pessoa, por isso fica à espera de um editor."
+    }
+   ]
+  }
  }
 }
