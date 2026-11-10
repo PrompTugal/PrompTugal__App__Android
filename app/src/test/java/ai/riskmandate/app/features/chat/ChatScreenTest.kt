@@ -106,8 +106,11 @@ class ChatScreenTest {
         compose.onNodeWithText("hello there").assertIsDisplayed()
     }
 
-    @Test fun featureStaysOffUntilItWorksOnTheTablet() {
-        assertFalse(ChatFeature.enabled)
+    @Test fun chatIsAFeatureForStaffAndVisitorsAndAsksForTheCloudOnlyOnceItIsReviewed() {
+        assertTrue(ChatFeature.enabled)
+        // usesCloud follows the review records (FeatureContextTest and CloudHostTest list the reviewed features).
+        val reviewed = setOf("workbench")
+        assertEquals("chat declares usesCloud only when it is on the review lists", "chat" in reviewed, ChatFeature.usesCloud)
         assertTrue(FEATURES.any { it === ChatFeature })
     }
 

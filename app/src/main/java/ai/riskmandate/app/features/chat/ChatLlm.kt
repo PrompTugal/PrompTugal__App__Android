@@ -14,7 +14,7 @@ enum class ChatRole { USER, ASSISTANT }
 data class ChatTurn(val role: ChatRole, val text: String)
 
 /** What the service reports when an answer ends. Null where the runtime did not say; chat then counts pieces and times it itself. */
-data class ChatAnswerStats(val outputTokens: Int?, val tokensPerSecond: Double?, val totalMs: Long?)
+data class ChatAnswerStats(val outputTokens: Int?, val tokensPerSecond: Double?, val totalMs: Long?, val costUsd: Double? = null)
 
 /**
  * What chat needs from the shared LLM service (dev.llm's `LlmService`). This is a stand-in inside the
@@ -48,6 +48,7 @@ class FakeChatLlm(
     var delayMs: Long = 0,
     var failAfter: Int = -1,
     var local: Boolean = true,
+    var failWith: Exception? = null,
 ) : ChatLlm {
     override val isLocal: Boolean get() = local
 
@@ -63,6 +64,7 @@ class FakeChatLlm(
 
     override fun stream(modelId: String, system: String?, turns: List<ChatTurn>, onStats: (ChatAnswerStats) -> Unit): Flow<String> = flow {
         calls += Call(modelId, system, turns)
+        failWith?.let { throw it }
         try {
             pieces.forEachIndexed { i, p ->
                 if (failAfter == i) throw IllegalStateException("fake failure")
