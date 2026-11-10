@@ -90,7 +90,7 @@ class SiteTest(unittest.TestCase):
         paths = {p['path'] for p in self.pages}
         for need in ('index.html', 'features.html', 'install.html', 'privacy.html', 'open-source.html', 'releases.html',
                      'articles/index.html', 'articles/2026-11-09-m1-ci-to-a-tablet-in-one-night.html',
-                     'articles/2026-11-09-web-summit-build.html'):
+                     'articles/2026-11-09-web-summit-build.html', 'articles/gcp-examples.html'):
             self.assertIn(need, paths)
 
     # --- facts come from the source ------------------------------------------
