@@ -6,7 +6,7 @@
     <string name="models_setup_intro">Choose a model and download it once. After that it runs on this tablet, without a network.</string>
     <string name="models_privacy_host">huggingface.co (and its download servers, hf.co)</string>
     <string name="models_privacy_cloud">Downloads a model file once from %1$s. The cloud model is switched on: what you send to it goes to openrouter.ai. Answers from the on-device model stay on the device.</string>
-    <string name="models_privacy">Downloads a model file once from %1$s. Nothing you type leaves the device.</string>
+    <string name="models_privacy">Downloads a model file once from %1$s. With the cloud model off, what you type stays on the device.</string>
     <string name="models_wifi">This device is not on Wi-Fi or another unmetered network. The files are large (2.6 to 3.7 GB): Wi-Fi is recommended.</string>
     <string name="models_size_licence">%1$s, licence %2$s</string>
     <string name="models_state_none">Not installed</string>

@@ -243,6 +243,15 @@ class CloudWiringTest {
         assertTrue("usesCloud features not reviewed: ${declared - reviewed}", reviewed.containsAll(declared))
     }
 
+    @Test fun theModelsPrivacyLineIsTrueNowThatTheCloudExists() {
+        // R-models-1: "Nothing you type leaves the device" is wrong once Chat and the Workbench have a cloud route.
+        for (file in listOf("src/main/res/values/feature_models.xml", "src/main/res/values-pt-rPT/feature_models.xml")) {
+            val line = Regex("""<string name="models_privacy">(.*?)</string>""").find(File(file).readText())!!.groupValues[1].lowercase()
+            assertFalse("$file: unconditional claim", line.contains("nothing you type leaves") || line.contains("nada do que escreve sai"))
+            assertTrue("$file: the claim is conditional on the cloud being off", line.contains("cloud model off") || line.contains("nuvem desligado"))
+        }
+    }
+
     @Test fun hostStringsMakeNoOnDeviceOnlyPromise() {
         // The cloud makes "stays on this device" claims conditional: the host's own strings must not make them.
         val text = listOf("src/main/res/values/strings.xml", "src/main/res/values-pt-rPT/strings.xml").joinToString("\n") { File(it).readText() }.lowercase()
