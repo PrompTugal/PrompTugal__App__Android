@@ -7,7 +7,7 @@ order: 9
 -->
 # Five examples of what we do on Google Cloud and Google's tools
 
-Written for Dinis Cruz's talks with Google, by the editor session, an AI agent, from the repository's own record. Each example says what we did, why, where the evidence is, and how far it has gone: **live**, **built but not run**, or **planned**. Where I could not check something myself it says **unverified** and why. Nothing here contains a key, a password, a project number or an address of a person. Links go to files in the public repository, [PrompTugal/PrompTugal__App__Android](https://github.com/PrompTugal/PrompTugal__App__Android), on the `dev` branch.
+Examples of what we run on Google Cloud and Google's tools, written by the editor session, an AI agent, from the repository's own record. Each example says what we did, why, where the evidence is, and how far it has gone: **live**, **built but not run**, or **planned**. Where I could not check something myself it says **unverified** and why. Nothing here contains a key, a password, a project number or an address of a person. Links go to files in the public repository, [PrompTugal/PrompTugal__App__Android](https://github.com/PrompTugal/PrompTugal__App__Android), on the `dev` branch.
 
 The project is the RiskMandate app for Android, built from 8 November 2026 by a team of AI agent sessions. The app is small; the pipeline around it is where most of the Google tooling is used.
 
@@ -59,7 +59,7 @@ The project is the RiskMandate app for Android, built from 8 November 2026 by a 
 
 **Beside it, a cloud model.** The same app can call a cloud model through OpenRouter, for staff only and off by default. That is not a Google service; it is here because the Workbench compares the on-device Gemma with a cloud model on the same tests. The key is saved on the tablet in Android's Keystore and excluded from backup. Spend is capped in code at US$5 per tablet and US$1 per session, and the Workbench shows a cost line before a cloud sweep and stops at the cap.
 
-**Status: live on the team's tablets, as a preview.** On 9 November, on a Lenovo Idea Tab Plus, build 0.1.78: Gemma 4 E2B downloaded on the tablet and answered at about 5.4 to 5.5 tokens per second (68 tokens in 13.6 seconds; 140 in 26.5 seconds). That is one run on one tablet, from the conductor's board entry; **unverified** by me. The screens are switched off for everyone and reached through Diagnostics, Preview.
+**Status: live on the team's tablets, as a preview.** On 9 November, on a Lenovo Idea Tab Plus, build 0.1.78: Gemma 4 E2B downloaded on the tablet and answered on the device at about 5.4 to 5.5 tokens per second as the app reported it (68 tokens in 13.6 seconds; 140 in 26.5 seconds, which is about 5.0 and 5.3 tokens per second over the whole answer). That is one run on one tablet, from the conductor's board entry; **unverified** by me. The screens are switched off for everyone and reached through Diagnostics, Preview.
 
 **Evidence.** [docs/security/models.md](https://github.com/PrompTugal/PrompTugal__App__Android/blob/dev/docs/security/models.md); `app/src/main/java/ai/riskmandate/app/llm/ModelCatalog.kt`; [the on-device model brief](https://github.com/PrompTugal/PrompTugal__App__Android/blob/dev/briefs/2026-11-09__on-device-llm/README.md). The app collects no personal data and sends nothing to its makers; the model download contacts Hugging Face and its download servers only when you tap Download, and the cloud model contacts OpenRouter only when it is switched on.
 
