@@ -117,13 +117,17 @@ fun cloudIsOn(keySet: Boolean, switchOn: Boolean, standOn: Boolean): Boolean = k
 
 /** Which sidebar section a feature sits in, by id (design spec table); unknown ids go to Explore. */
 fun sectionOf(id: String): Int = when (id) {
+    "abpdemo", "lab", "chat", "workbench" -> R.string.nav_section_demos
     "site", "releases" -> R.string.nav_section_today
     "mandate", "models" -> R.string.nav_section_device
     else -> R.string.nav_section_explore
 }
 
 /** The order of features inside their sections (design spec table). */
-private val NAV_ORDER = listOf("site", "releases", "abpdemo", "lab", "chat", "mandate", "models")
+private val NAV_ORDER = listOf("abpdemo", "lab", "chat", "workbench", "site", "releases", "mandate", "models")
+
+/** Where a feature sits in the order (Demos first); an id this list does not know goes last. */
+fun navRank(id: String): Int = NAV_ORDER.indexOf(id).let { if (it < 0) NAV_ORDER.size else it }
 
 /** A line icon per known feature id, until each feature gives its own (Feature.icon). */
 fun iconFor(id: String): Int = when (id) {
@@ -182,12 +186,15 @@ class MainActivity : ComponentActivity() {
                     // Destinations, grouped as in docs/design/android-theme.md. Features are grouped by id (a
                     // `section` on Feature is the architect's to add) and use their own icon when they give one.
                     val enabledFeatureIds = FEATURES.filter { it.enabled }.map { it.id }.toSet()
-                    val featureItems = FEATURES.filter { it.enabled }.map { f ->
+                    // Home cards and the sidebar share one order, the demos first (docs/parity-ios.md, H1).
+                    val homeFeatures = FEATURES.filter { it.enabled }.sortedBy { navRank(it.id) }
+                    val featureItems = homeFeatures.map { f ->
                         NavItem(f.id, f.title, iconFor(f.id), f.homeBadge(), vector = f.icon)
                     }
                     fun inSection(section: Int) = featureItems.filter { sectionOf(it.route) == section }
-                        .sortedBy { NAV_ORDER.indexOf(it.route).let { i -> if (i < 0) NAV_ORDER.size else i } }
                     val sections = listOf(
+                        // "Demos" is the first entry (H2): the demonstrations a visitor or a colleague is shown first.
+                        NavSection(R.string.nav_section_demos, inSection(R.string.nav_section_demos)),
                         NavSection(
                             R.string.nav_section_today,
                             listOf(NavItem(Routes.HOME, R.string.home_now_title, R.drawable.ic_nav_home)) + inSection(R.string.nav_section_today),
@@ -316,7 +323,7 @@ class MainActivity : ComponentActivity() {
                                     showDiagnostics = !standOn,
                                     permissions = permissionCount,
                                     attention = (if (config.startUrlRefused) 1 else 0) + (if (message != null) 1 else 0),
-                                    features = FEATURES.filter { it.enabled }.mapIndexed { i, f ->
+                                    features = homeFeatures.mapIndexed { i, f ->
                                         FeatureButton(f.id, f.title, featureItems[i].badge, f.kicker, f.summary) { screen = f.id }
                                     },
                                 )

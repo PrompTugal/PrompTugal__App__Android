@@ -1,6 +1,7 @@
 package ai.riskmandate.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RouteTest {
@@ -76,5 +77,18 @@ class RouteTest {
 
     @Test fun noFeatureCanOpenTheCloudKeyScreenThroughOpenFeature() {
         assertEquals(null, resolveOpenFeature(Routes.CLOUD, standOn = false, enabledIds = setOf("site"), previewIds = setOf("models")))
+    }
+
+    @Test fun demosComeFirstAndEveryDemoIsInTheDemosSection() {
+        val demos = listOf("abpdemo", "lab", "chat", "workbench")
+        for (id in demos) assertEquals(R.string.nav_section_demos, sectionOf(id))
+        val others = listOf("site", "releases", "mandate", "models")
+        for (d in demos) for (o in others) assertTrue("$d before $o", navRank(d) < navRank(o))
+        assertTrue("an unknown id goes last", navRank("something-new") > navRank("models"))
+        assertEquals("the RiskMandate pages stay under Today", R.string.nav_section_today, sectionOf("site"))
+    }
+
+    @Test fun everyFeatureInTheListHasASectionAndARank() {
+        for (f in ai.riskmandate.app.features.FEATURES) assertTrue("${f.id} is not in the nav order", navRank(f.id) < navRank("something-new"))
     }
 }
