@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 127 (10 Nov 2026): dev 28ddbba PASS and signed against main 1648b27 (Chat "Ask our data": on-device only by construction, sources as plain text, invented citations flagged; cloud still dormant)
+> Round 128 (10 Nov 2026): dev 89bbd0d PASS and signed against main 21dd251 (R-chat-5 closed: the first cloud send of a session shows the exact request and waits for Send; cloud still dormant)
 
 ## Doing
 Nothing. Stopped until woken.
