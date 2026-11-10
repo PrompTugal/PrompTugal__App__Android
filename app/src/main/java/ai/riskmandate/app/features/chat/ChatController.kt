@@ -36,12 +36,17 @@ data class ChatState(
     val dataAvailable: Boolean = false,
     /** True while the next question is armed to be answered from our data (once; never saved). */
     val askData: Boolean = false,
+    /** The first cloud send of a session waits here, with exactly what would be sent, until the visitor confirms. */
+    val pendingSend: PendingSend? = null,
     val generating: Boolean = false,
     val error: ChatError? = null,
 ) {
     val current: Conversation get() = conversations.firstOrNull { it.id == currentId } ?: Conversation(currentId)
     val canSend: Boolean get() = modelId != null && !generating
 }
+
+/** A cloud send held for confirmation (security R-chat-5): the text, its preset text if any, and the exact request. */
+data class PendingSend(val text: String, val groundingText: String?, val preview: SendPreview)
 
 /** Exactly what the next send would hand to the service, for the "show what will be sent" view. Plain text. */
 data class SendPreview(val system: String?, val turns: List<ChatTurn>, val viaCloud: Boolean, val modelId: String?)
@@ -178,12 +183,40 @@ class ChatController(
         return SendPreview(system, turns, viaCloud, state.modelId)
     }
 
-    /** Sends [text] (optionally grounded in [groundingText]). Ignored when blank, busy or no model is installed. */
+    /** True once the visitor has seen (and confirmed) what a cloud send hands over, in this session. Never saved. */
+    private var cloudPreviewSeen = false
+
+    /** The visitor confirmed the held cloud send: it goes now, and later cloud sends this session do not ask again. */
+    fun confirmPendingSend() {
+        val p = state.pendingSend ?: return
+        cloudPreviewSeen = true
+        state = state.copy(pendingSend = null)
+        send(p.text, p.groundingText)
+    }
+
+    /** The visitor cancelled the held cloud send: nothing was sent. Returns its text so the screen can put it back. */
+    fun cancelPendingSend(): String? {
+        val p = state.pendingSend ?: return null
+        state = state.copy(pendingSend = null)
+        return p.text
+    }
+
+    /**
+     * Sends [text] (optionally grounded in [groundingText]). Ignored when blank, busy or no model is installed.
+     * The first send through the cloud in a session is held, with the exact request, until [confirmPendingSend].
+     */
     fun send(text: String, groundingText: String? = null) {
         val model = state.modelId
         val input = text.trim().take(ChatLimits.MAX_INPUT_CHARS)
-        if (model == null || input.isEmpty() || state.generating) return
+        if (model == null || input.isEmpty() || state.generating || state.pendingSend != null) return
         if (state.askData && dataAsker != null && state.dataAvailable) return sendData(input, dataAsker)
+        if (state.useCloud && cloud != null && !cloudPreviewSeen) {
+            val grounded = groundingText?.let(ChatPresets::system)
+            val history = state.current.messages
+            val withHistory = state.includeHistory
+            scope.launch { state = state.copy(pendingSend = PendingSend(input, groundingText, buildRequest(input, grounded, history, true, withHistory))) }
+            return
+        }
         val convId = state.currentId
         val history = state.current.messages
         val viaCloud = state.useCloud && cloud != null

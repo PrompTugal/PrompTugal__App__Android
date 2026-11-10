@@ -207,7 +207,7 @@ fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
                     Button(onClick = controller::stop, modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(ChatTags.STOP)) { Text(stringResource(R.string.chat_stop)) }
                 } else {
                     Button(
-                        onClick = { controller.send(input); input = "" },
+                        onClick = { controller.send(input); if (controller.state.pendingSend == null) input = "" },
                         enabled = state.canSend && input.isNotBlank(),
                         modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(ChatTags.SEND),
                     ) { Text(stringResource(R.string.chat_send)) }
@@ -220,18 +220,23 @@ fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
         AlertDialog(
             onDismissRequest = { sentPreview = null },
             title = { Text(stringResource(R.string.chat_sent_title)) },
-            text = {
-                // Plain text, exactly what the next send hands to the service. Scrolls: the reference texts are long.
-                Column(Modifier.testTag(ChatTags.SENT_DIALOG).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.chat_sent_system), style = MaterialTheme.typography.labelLarge)
-                    Text(p.system ?: "", style = MaterialTheme.typography.bodySmall)
-                    Text(stringResource(R.string.chat_sent_messages), style = MaterialTheme.typography.labelLarge)
-                    for (t in p.turns) {
-                        Text(stringResource(if (t.role == ChatRole.USER) R.string.chat_you else R.string.chat_model) + ": " + t.text, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            },
+            text = { SentBody(p) },
             confirmButton = { TextButton(onClick = { sentPreview = null }) { Text(stringResource(R.string.chat_close)) } },
+        )
+    }
+
+    // The first cloud send of a session: the exact request, and the visitor decides. Cancel sends nothing and keeps the text.
+    state.pendingSend?.let { pending ->
+        AlertDialog(
+            onDismissRequest = { controller.cancelPendingSend()?.let { if (input.isBlank()) input = it } },
+            title = { Text(stringResource(R.string.chat_first_send_title)) },
+            text = { SentBody(pending.preview, ChatTags.FIRST_SEND_DIALOG) },
+            confirmButton = {
+                TextButton(onClick = { controller.confirmPendingSend(); input = "" }, modifier = Modifier.testTag(ChatTags.FIRST_SEND_CONFIRM)) { Text(stringResource(R.string.chat_send)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { controller.cancelPendingSend()?.let { if (input.isBlank()) input = it } }, modifier = Modifier.testTag(ChatTags.FIRST_SEND_CANCEL)) { Text(stringResource(R.string.chat_cancel)) }
+            },
         )
     }
 
@@ -380,4 +385,17 @@ private fun sourceKind(kind: String): Int = when (kind) {
     "ARTICLE" -> R.string.chat_source_kind_article
     "COMPANY" -> R.string.chat_source_kind_company
     else -> R.string.chat_source_kind_riskmandate
+}
+
+/** Plain text, exactly what the send hands to the service. Scrolls: the reference texts are long. */
+@Composable
+private fun SentBody(p: SendPreview, tag: String = ChatTags.SENT_DIALOG) {
+    Column(Modifier.testTag(tag).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.chat_sent_system), style = MaterialTheme.typography.labelLarge)
+        Text(p.system ?: "", style = MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.chat_sent_messages), style = MaterialTheme.typography.labelLarge)
+        for (t in p.turns) {
+            Text(stringResource(if (t.role == ChatRole.USER) R.string.chat_you else R.string.chat_model) + ": " + t.text, style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }
