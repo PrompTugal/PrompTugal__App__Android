@@ -91,6 +91,28 @@ What to say: "this answer was written on the tablet; nothing was sent". Do not a
 
 If it fails: show the same question once more; if still wrong, move to section 2 and say you will follow up.
 
+## 6b. "Our data": ask the bundled pt.news and RiskMandate data, offline **[labels from dev.llm, d67105b: confirm on the build]**
+
+This is tab 4 of the **Workbench** (tab name **Our data**, pt-PT **Os nossos dados**). The Workbench stays off the home screen until it is verified on the tablet, so open it from **Diagnostics, Preview, Workbench**. It is a staff screen: show it, do not leave it running at a table.
+
+What the screen has (English labels as dev.llm gave them; check each on the build):
+- Card **Ask our data**, kicker *On this device, offline*, chip **No network**. A line says what the bundle holds ("45 articles and 120 company cards from pt.news, in 553 passages.").
+- Field **Question**; chips **2 sources**, **4 sources** (the default), **6 sources**; buttons **Ask**, **Stop**, **Run the 24-question eval**.
+- No model installed: *No model on this device yet. Set one up first.* and a **Change model** button. Install one first (section 0.5).
+- Answer card **Answer** (kicker *On this device*) with the figures **Time to first token**, **Search**, **Total, load included**, **Decode speed**. Notes when they apply: *This answer cites no source.* or *Cited sources that do not exist: N.*
+- **Sources given to the model**: each line "[n] title", a **Cited** chip when the answer cites it, then the kind (pt.news article, pt.news company card or RiskMandate), the source and the date. If nothing matched: *Nothing in the bundled data matched the question.*
+- **Eval** card: "X of 24 questions: sources found A, answers right B, median time to first token T ms.", one line per question, and **Copy report**.
+
+Checks to run in rehearsal (from dev.llm):
+1. **Airplane mode on.** Ask *Where is Portugal's stand at Web Summit?* The answer cites [1] "Where to find Portugal at Web Summit", and that source shows the **Cited** chip.
+2. Ask *What is the capital of Australia?* The answer says it does not know from our data, and cites nothing (*This answer cites no source.*). If it answers from general knowledge, say nothing about it on the day and tell the conductor.
+3. On the Run tab choose **Cloud**; then open **Our data** again. It must still say *On this device* and **No network**. If not, do not demo it.
+4. **Run the 24-question eval**, tap **Copy report**, and send it to dev.llm by message (it has no keys or personal data; check before sending).
+
+What to say: the answer is produced on this tablet from a bundled set of pt.news articles and company cards and RiskMandate's own texts, and it shows which passages it was given. Do not say it is always right, and do not quote the eval score as a quality claim; read it out as what it is ("X of 24 on this test").
+
+If it fails: *Nothing in the bundled data matched*: rephrase using words from an article title. Slow first answer: it is loading the model; ask again. Stop and say "this is a staff test screen" if it errors; go to section 2.
+
 ## 7. Parity with iOS **[lands today: confirm]**
 
 Only claim parity for what you have seen side by side. Before the demo, open the same screen on the iPad (if one is present) and the tablet and compare: the same wording, the same order of steps, the same banner. Anything that differs, you do not call "the same". If asked which is ahead, say "the iPad app and this one are built from the same texts; some screens are ahead on one or the other", and look at the build numbers.
@@ -116,5 +138,6 @@ Long-press the bottom-right corner of Home for stand mode. It resets to Home aft
 | ABP in every layer | Home card, landscape | told, checked, held; a walk-through, not a live attack | Next by hand |
 | Mandate | "Live on this device" card | reach versus mandate, of this app | reopen once, move on |
 | Chat | Chat, badge **Runs on this device** | runs and stays on the tablet | New chat; smaller model; show the preset |
+| Our data (Workbench tab 4) | Diagnostics, Preview, Workbench, Our data | answered on the tablet from bundled data, with its sources | rephrase; show ABP in every layer |
 | Case studies, on-device answers, iOS parity | confirm on the build | only what the screen and the sites say | back to ABP in every layer |
 | Anything | Home | nothing beyond riskmandate.ai and sharness.ai | the website |
