@@ -17,8 +17,8 @@ import org.junit.Test
 class ChatControllerTest {
     private var now = 0L
 
-    /** The shared prompt as bundled (assets/prompts/riskmandate_base.v1.txt), read the way the app's loader trims it. */
-    private val BASE = java.io.File("src/main/assets/prompts/riskmandate_base.v1.txt").readText().trimEnd('\n', '\r')
+    /** The shared prompt as bundled (assets/prompts/riskmandate_base.v2.txt), read the way the app's loader trims it. */
+    private val BASE = java.io.File("src/main/assets/prompts/riskmandate_base.v2.txt").readText().trimEnd('\n', '\r')
     private var ids = 0
     private val scope = CoroutineScope(Dispatchers.Unconfined)
 
@@ -269,12 +269,10 @@ class ChatControllerTest {
         assertTrue("keep prefill small: about 4 characters a token", system.length < 600)
     }
 
-    @Test fun aServiceThatIsNotLocalGetsTheBaseBlockWithoutTheOnThisDeviceClaim() {
-        assertEquals(ai.riskmandate.app.llm.prompts.Prompts.RISKMANDATE_BASE, ChatBasePrompt.idFor(local = true))
-        assertEquals(ai.riskmandate.app.llm.prompts.Prompts.RISKMANDATE_BASE_ANYWHERE, ChatBasePrompt.idFor(local = false))
-        val v1 = java.io.File("src/main/assets/prompts/riskmandate_base.v1.txt").readText()
+    @Test fun chatAlwaysSendsBasePromptV2WhichMakesNoOnThisDeviceClaim() {
+        assertEquals(ai.riskmandate.app.llm.prompts.Prompts.RISKMANDATE_BASE_ANYWHERE, ChatBasePrompt.ID)
         val v2 = java.io.File("src/main/assets/prompts/riskmandate_base.v2.txt").readText()
-        assertTrue(v1.contains("on this device")); assertFalse(v2.contains("on this device"))
+        assertFalse(v2.contains("on this device"))
     }
 
     @Test fun aPresetGroundingReplacesTheBaseBlock() {

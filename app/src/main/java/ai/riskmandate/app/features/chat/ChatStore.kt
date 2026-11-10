@@ -56,7 +56,8 @@ class FileChatHistoryStore(private val dir: File) : ChatHistoryStore {
                 for (m in c.messages.takeLast(ChatLimits.MAX_MESSAGES)) {
                     msgs.put(JSONObject().put("r", m.role.name).put("t", m.text.take(ChatLimits.MAX_MESSAGE_CHARS))
                         .put("n", m.tokens).put("ms", m.millis).put("tps", m.tokensPerSecond)
-                        .put("s", m.stopped).put("f", m.failed).put("fr", m.failure ?: JSONObject.NULL))
+                        .put("s", m.stopped).put("f", m.failed).put("fr", m.failure ?: JSONObject.NULL)
+                        .put("via", m.via ?: JSONObject.NULL).put("cost", m.costUsd ?: JSONObject.NULL))
                 }
                 arr.put(JSONObject().put("id", c.id).put("m", msgs))
             }
@@ -75,7 +76,8 @@ class FileChatHistoryStore(private val dir: File) : ChatHistoryStore {
                     val m = ms.getJSONObject(j)
                     val role = ChatRole.entries.firstOrNull { it.name == m.optString("r") } ?: return@mapNotNull null
                     ChatMessage(role, m.optString("t").take(ChatLimits.MAX_MESSAGE_CHARS), m.optInt("n"), m.optLong("ms"),
-                        m.optDouble("tps", 0.0), m.optBoolean("s"), m.optBoolean("f"), m.optString("fr").takeIf { it.isNotEmpty() && it != "null" })
+                        m.optDouble("tps", 0.0), m.optBoolean("s"), m.optBoolean("f"), m.optString("fr").takeIf { it.isNotEmpty() && it != "null" },
+                        m.optString("via").takeIf { it.isNotEmpty() && it != "null" }, if (m.isNull("cost")) null else m.optDouble("cost"))
                 }
                 out += Conversation(o.getString("id"), messages)
             }

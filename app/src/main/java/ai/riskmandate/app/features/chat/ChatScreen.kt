@@ -2,6 +2,7 @@ package ai.riskmandate.app.features.chat
 
 import ai.riskmandate.app.Browser
 import ai.riskmandate.app.R
+import ai.riskmandate.app.llm.ModelCatalog
 import ai.riskmandate.app.ui.ChipKind
 import ai.riskmandate.app.ui.FeatureContent
 import ai.riskmandate.app.ui.NoticeBanner
@@ -9,6 +10,9 @@ import ai.riskmandate.app.ui.StatusChip
 import ai.riskmandate.app.ui.UiTokens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -61,6 +65,7 @@ fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
     var input by rememberSaveable { mutableStateOf("") }
     var showHistory by rememberSaveable { mutableStateOf(false) }
     var confirmClear by rememberSaveable { mutableStateOf(false) }
+    var sentPreview by remember { mutableStateOf<SendPreview?>(null) }
 
     // Back steps out of the history list before the host takes the user home.
     BackHandler(enabled = showHistory) { showHistory = false }
@@ -91,6 +96,31 @@ fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
                 else StatusChip(stringResource(R.string.chat_badge_cloud), ChipKind.Held, Modifier.testTag(ChatTags.BADGE_CLOUD))
             }
             StatusChip(stringResource(if (offline) R.string.chat_network_off else R.string.chat_network_on), if (offline) ChipKind.Neutral else ChipKind.Held, Modifier.testTag(ChatTags.NETWORK))
+            if (state.cloudAvailable) {
+                // Both services exist: say which answers, and let staff choose. Never saved.
+                Text(stringResource(R.string.chat_source_label), style = MaterialTheme.typography.labelLarge, modifier = Modifier.align(androidx.compose.ui.Alignment.CenterVertically))
+                FilterChip(selected = state.useCloud, onClick = { controller.setUseCloud(true) }, enabled = !state.generating,
+                    label = { Text(stringResource(R.string.chat_badge_cloud)) }, modifier = Modifier.testTag(ChatTags.SOURCE_CLOUD))
+                FilterChip(selected = !state.useCloud, onClick = { controller.setUseCloud(false) }, enabled = !state.generating,
+                    label = { Text(stringResource(R.string.chat_source_device)) }, modifier = Modifier.testTag(ChatTags.SOURCE_DEVICE))
+            }
+        }
+        if (state.useCloud) {
+            // One compact row: whether earlier messages go too (off by default), and the exact preview.
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
+                Row(Modifier.heightIn(min = UiTokens.MinTouch), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Switch(checked = state.includeHistory, onCheckedChange = controller::setIncludeHistory, modifier = Modifier.testTag(ChatTags.INCLUDE_HISTORY))
+                    Text(stringResource(R.string.chat_include_history), style = MaterialTheme.typography.bodyMedium)
+                }
+                TextButton(
+                    onClick = { scope.launch { sentPreview = controller.previewSend(input.ifBlank { androidContext.getString(R.string.chat_sent_placeholder) }) } },
+                    modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(ChatTags.SHOW_SENT),
+                ) { Text(stringResource(R.string.chat_show_sent)) }
+            }
+            // The long note only on an empty chat: once talking, the messages get the room (the switch label says the same).
+            if (state.current.isEmpty) {
+                Text(stringResource(R.string.chat_cloud_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         FlowRow(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { controller.newChat(); showHistory = false }, modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(ChatTags.NEW)) {
@@ -143,7 +173,7 @@ fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
                 } else if (!state.modelsLoaded) {
                     Text(stringResource(R.string.chat_loading), modifier = Modifier.padding(top = 8.dp))
                 }
-                Messages(state.current, state.generating, Modifier.weight(1f))
+                Messages(state.current, state.generating, canUseDevice = state.useCloud, onUseDevice = { controller.setUseCloud(false) }, modifier = Modifier.weight(1f))
             }
         }
 
@@ -165,6 +195,25 @@ fun ChatScreen(controller: ChatController, onOpenModels: () -> Unit = {}) {
                 }
             }
         }
+    }
+
+    sentPreview?.let { p ->
+        AlertDialog(
+            onDismissRequest = { sentPreview = null },
+            title = { Text(stringResource(R.string.chat_sent_title)) },
+            text = {
+                // Plain text, exactly what the next send hands to the service. Scrolls: the reference texts are long.
+                Column(Modifier.testTag(ChatTags.SENT_DIALOG).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.chat_sent_system), style = MaterialTheme.typography.labelLarge)
+                    Text(p.system ?: "", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.chat_sent_messages), style = MaterialTheme.typography.labelLarge)
+                    for (t in p.turns) {
+                        Text(stringResource(if (t.role == ChatRole.USER) R.string.chat_you else R.string.chat_model) + ": " + t.text, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { sentPreview = null }) { Text(stringResource(R.string.chat_close)) } },
+        )
     }
 
     if (confirmClear) {
@@ -209,7 +258,7 @@ private fun HistoryList(state: ChatState, onPick: (String) -> Unit, modifier: Mo
 }
 
 @Composable
-private fun Messages(conversation: Conversation, generating: Boolean, modifier: Modifier) {
+private fun Messages(conversation: Conversation, generating: Boolean, canUseDevice: Boolean, onUseDevice: () -> Unit, modifier: Modifier) {
     val list = rememberLazyListState()
     val last = conversation.messages.lastOrNull()
     LaunchedEffect(conversation.id, conversation.messages.size, last?.text?.length) {
@@ -222,21 +271,26 @@ private fun Messages(conversation: Conversation, generating: Boolean, modifier: 
     Column(modifier) {
         LazyColumn(Modifier.weight(1f).testTag(ChatTags.MESSAGES), state = list, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(conversation.messages) { i, m ->
-                MessageBubble(m, running = generating && i == conversation.messages.lastIndex, index = i)
+                MessageBubble(
+                    m, running = generating && i == conversation.messages.lastIndex, index = i,
+                    // After the cloud stopped on its cap, one tap answers on the device.
+                    onUseDevice = onUseDevice.takeIf { canUseDevice && !generating && i == conversation.messages.lastIndex && m.failure == "CAP_REACHED" },
+                )
             }
         }
         val answer = conversation.messages.lastOrNull()?.takeIf { it.role == ChatRole.ASSISTANT && !generating && it.tokens > 0 }
         if (answer != null) {
             val tps = String.format(Locale.US, "%.1f", answer.tokensPerSecond)
             val secs = String.format(Locale.US, "%.1f", answer.millis / 1000.0)
-            Text(stringResource(R.string.chat_stats, tps, secs, answer.tokens.toString()), style = MaterialTheme.typography.labelMedium,
+            val cost = answer.costUsd?.let { String.format(Locale.US, "%.4f", it) }
+            Text(if (cost != null) stringResource(R.string.chat_stats_cost, tps, secs, answer.tokens.toString(), cost) else stringResource(R.string.chat_stats, tps, secs, answer.tokens.toString()), style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp).testTag(ChatTags.STATS))
         }
     }
 }
 
 @Composable
-private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int) {
+private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int, onUseDevice: (() -> Unit)? = null) {
     val mine = m.role == ChatRole.USER
     val android = LocalContext.current
     // Cleaned once per text, not on every recomposition.
@@ -247,11 +301,14 @@ private fun MessageBubble(m: ChatMessage, running: Boolean, index: Int) {
         border = BorderStroke(1.dp, if (mine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(if (mine) R.string.chat_you else R.string.chat_model), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(sourceLabel(m, mine), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             // Plain Text: the model's output is never parsed as markup, links or code.
             Text(if (m.text.isEmpty() && running) stringResource(R.string.chat_thinking) else shown, style = MaterialTheme.typography.bodyLarge)
             if (m.stopped) Text(stringResource(R.string.chat_stopped), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (m.failed) Text(stringResource(failureText(m.failure)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
+            onUseDevice?.let { go ->
+                TextButton(onClick = go, modifier = Modifier.heightIn(min = UiTokens.MinTouch).testTag(ChatTags.USE_DEVICE)) { Text(stringResource(R.string.chat_use_device)) }
+            }
             if (!mine && !running) {
                 // The only thing taken from the output: riskmandate.ai links, checked by Links.isAllowed, opened only on a tap.
                 ChatLinks.allowed(m.text).forEachIndexed { i, url ->
@@ -270,5 +327,15 @@ internal fun failureText(reason: String?): Int = when (reason) {
     "NO_MODEL" -> R.string.chat_failed_no_model
     "LOAD_FAILED" -> R.string.chat_failed_load
     "TOO_LONG" -> R.string.chat_failed_too_long
+    "CAP_REACHED" -> R.string.chat_failed_cap
     else -> R.string.chat_failed
+}
+
+/** "You", or where a model answer came from: Cloud with the model id, or On device with its name. Older messages: just "Model". */
+@Composable
+private fun sourceLabel(m: ChatMessage, mine: Boolean): String {
+    if (mine) return stringResource(R.string.chat_you)
+    val model = ChatVia.model(m.via) ?: return stringResource(R.string.chat_model)
+    return if (ChatVia.isCloud(m.via)) stringResource(R.string.chat_via_cloud, model)
+    else stringResource(R.string.chat_via_device, ModelCatalog.ALL.firstOrNull { it.id == model }?.displayName ?: model)
 }

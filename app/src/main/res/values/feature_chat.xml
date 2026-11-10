@@ -7,7 +7,7 @@
     <string name="chat_history_close">Back to chat</string>
     <string name="chat_history_empty">No saved chats yet.</string>
     <string name="chat_history_untitled">(empty chat)</string>
-    <string name="chat_history_note">Chats are saved on this tablet only. They are not backed up, sent or shared.</string>
+    <string name="chat_history_note">Saved chats stay on this tablet only: they are not backed up or shared. A message goes to the cloud only when the cloud is selected for it.</string>
     <string name="chat_clear">Clear history</string>
     <string name="chat_clear_title">Delete every saved chat?</string>
     <string name="chat_clear_body">All chats are deleted from this tablet. This cannot be undone.</string>
@@ -24,7 +24,7 @@
     <string name="chat_failed">The model stopped with an error.</string>
     <string name="chat_stats">%1$s tokens per second, %2$s seconds, %3$s tokens</string>
     <string name="chat_open_link">Open %1$s</string>
-    <string name="chat_empty_hint">Ask the model something, or try a preset. Everything stays on this device.</string>
+    <string name="chat_empty_hint">Ask the model something, or try a preset. The badge above says where it runs.</string>
     <string name="chat_no_model_title">No model installed</string>
     <string name="chat_no_model_body">Set up a model, then come back. Chat needs a model on this device.</string>
     <string name="chat_loading">Looking for installed models…</string>
@@ -41,12 +41,27 @@
     <string name="chat_preset_triplets_note">Needs the graph tools, which are not built yet.</string>
     <string name="chat_network_on">Network: on</string>
     <string name="chat_network_off">Network: off</string>
-    <string name="chat_kicker">On device</string>
-    <string name="chat_summary">Talk to a language model that runs on this tablet. Nothing you type leaves the device.</string>
+    <string name="chat_kicker">Language model</string>
+    <string name="chat_summary">Ask a language model about RiskMandate and more. It runs on this tablet, or in the cloud when staff switch that on; the screen always says which.</string>
     <string name="chat_model_active">Model: %1$s</string>
     <string name="chat_open_models">Open Models</string>
     <string name="chat_failed_no_model">No model is installed. Set one up in Models.</string>
     <string name="chat_failed_load">The model could not be loaded. Try again, or pick a smaller model in Models.</string>
     <string name="chat_failed_too_long">This chat is too long for the model. Start a new chat.</string>
     <string name="chat_badge_cloud">Cloud: openrouter.ai</string>
+    <string name="chat_source_label">Answer with</string>
+    <string name="chat_source_device">This device</string>
+    <string name="chat_cloud_note">Cloud: only your message and the RiskMandate texts are sent, not earlier messages, unless you switch that on.</string>
+    <string name="chat_include_history">Send earlier messages of this chat to the cloud</string>
+    <string name="chat_show_sent">Show what will be sent</string>
+    <string name="chat_sent_title">What the cloud would receive</string>
+    <string name="chat_sent_system">Instructions</string>
+    <string name="chat_sent_messages">Messages</string>
+    <string name="chat_sent_placeholder">(the message you type next)</string>
+    <string name="chat_close">Close</string>
+    <string name="chat_via_cloud">Cloud, openrouter.ai, %1$s</string>
+    <string name="chat_via_device">On device, %1$s</string>
+    <string name="chat_stats_cost">%1$s tokens per second, %2$s seconds, %3$s tokens, US$%4$s</string>
+    <string name="chat_failed_cap">The cloud spending cap is reached, for this session or this tablet. Switch to this device, or ask staff.</string>
+    <string name="chat_use_device">Answer on this device</string>
 </resources>
