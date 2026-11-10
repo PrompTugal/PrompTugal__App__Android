@@ -1,0 +1,48 @@
+# Parity with the iOS RiskMandate app
+
+Written 10 Nov 2026 by app.android.dinis for the conductor, for Wednesday's demos: team members carry Android and iOS tablets, and what they show must match.
+
+**Sources.** iOS: `PrompTugal/PrompTugal__App__iOS`, branch `dev` at `bbf88d1` (release v0.4.61), folder `Apps/RiskMandate/` only (the Swift sources `HomeView.swift`, `RiskMandateApp.swift`, `Workbench/*.swift`, the `ToolTests/*.json` resources and the tests). mobile@ is parked under the stop and has no fresh list; its own note says the iOS app was a placeholder at v0.4.26 and `PrompTugal__App__Mobile` has no iOS feature list. Android: this branch (`work/app`, merged with `dev` on 10 Nov). Nothing about iOS below comes from a message; if iOS has changed since `bbf88d1`, this table is out of date to that extent. Read-only: I did not touch the iOS repository.
+
+**The finding in one line.** On this reading Android is **ahead**, not behind. iOS RiskMandate has two things (a home with a link to riskmandate.ai, and a Workbench on Apple's on-device model); Android has those two equivalents and six more screens. The gaps that matter for Wednesday are mostly on the iOS side, and on Android they are about *which* features visitors and staff see, and in what order.
+
+## 1. What iOS RiskMandate has today (v0.4.61)
+
+| # | iOS feature | What it does | Needs |
+|---|---|---|---|
+| I1 | **Home** | Title "RiskMandate", one line ("Agent Behaviour Policies, demos and explanations. Coming after Web Summit."), a link "Read about Agent Behaviour Policies" that opens `https://riskmandate.ai/abp.html` (the system's browser, not in the app), and a link to the Workbench. | nothing |
+| I2 | **Workbench: an AI model on this device** | Runs Apple Foundation Models (iOS 26 or later with Apple Intelligence): a prompt field with a default prompt, a Run button, the answer streamed as selectable text, metrics (time to first token, tokens per second, tokens, total time; tokens are an estimate, marked "≈"), a "Runs on this device" badge, and a plain-words reason when the model cannot run (device not eligible, Apple Intelligence off, model still downloading, iOS too old). | iOS 26 and Apple Intelligence; no network, no key |
+| I3 | **Tool-test cases (not on screen)** | The 13 shared `abp-tooltest/1` case files and a reader with tests are in the app (`ToolTestCase.swift`, `Resources/ToolTests/`), but no screen runs them yet ("the checker and the runner come with Stage B", in the source). | none |
+
+Not in `Apps/RiskMandate/`: an ABP demo, a mandate or reach view, the riskmandate.ai pages inside the app, a chat, a model download, a stand or kiosk mode, managed configuration, a Diagnostics or licences screen. (iOS may have some of these elsewhere in the repository for other apps; I read only the RiskMandate app folder.)
+
+## 2. Parity table
+
+Status is Android's. "Visitors" means a normal build with stand mode on or off and nobody having used Diagnostics; "staff" means someone who opens Diagnostics > Preview.
+
+| iOS feature | Android equivalent | Android status | Gap |
+|---|---|---|---|
+| I1 Home with link to riskmandate.ai/abp.html | **Now** (home page of cards) and **RiskMandate** (`site`, the riskmandate.ai pages inside the app with an offline copy), plus the Custom Tab "Open riskmandate.ai" link | Live, enabled for everyone | Android is ahead: pages open **inside** the app and work offline. iOS opens Safari. Parity is met; no Android work. The iOS line says "Coming after Web Summit"; Android has no such line. |
+| I2 Workbench on the device's own model, with metrics | **Workbench** (`workbench`): on-device Gemma 4 through LiteRT-LM, the same prompt, streamed plain text, "Last run" stats, mean and spread over repeated runs; **Chat** (`chat`) and **Models** (`models`: download Gemma 4 once, check it, delete it) | Built, **switched off for visitors** (`enabled = false`); staff reach all three today through Diagnostics > Preview. Workbench is the one that may also use the cloud model (key, switch and spend in Diagnostics, staff only, off in stand mode) | **Gap A1:** the nearest iOS match (a prompt, a Run, an answer, speed figures) is the Android **Workbench**, which visitors cannot see. **Gap A2:** the models differ: iOS runs Apple Foundation Models, Android runs Gemma 4 (E2B, E4B); iOS says "Gemma 4 comes next behind the same shape". Speed numbers are therefore not comparable until iOS has Gemma too. **Gap A3:** Android's model needs a one-off download (about 2.6 GB for E2B) on the tablet before the first run; iOS needs none. For Wednesday a tablet must have the model **installed beforehand**. |
+| I2 "Runs on this device" badge | The "Runs on this device" badge in Chat and the Workbench, and "Cloud: openrouter.ai" with the model whenever the cloud is on | Live | None. Android is stricter: the badge says Cloud, in amber, on every screen while the cloud switch is on. |
+| I2 plain-words reason when the model cannot run | "No model yet" with a button to Models; error texts per failure | Live | None; Android has more states (loading, failed, no model). |
+| I3 tool-test cases (reader only) | **Lab** (`lab`): the same `abp-tooltest/1` cases, five synthetic scenarios side by side without and through the ABP, with all tools fake and every call checked in code | Built, **switched off for visitors**; staff via Preview | Android is ahead (iOS has the files and a reader, no runner). The 13 case files are the same in both apps, from `PrompTugal__App__Mobile`. |
+| (none) | **ABP in every layer** (`abpdemo`): one Agent Behaviour Policy stopping a planted instruction at six layers, labelled as a demonstration, not a live attack | Live, enabled | **Gap on iOS.** For "match": iOS has no ABP demo screen. |
+| (none) | **This app's mandate** (`mandate`): reach, mandate and gap read from the device as you open it | Live, enabled | **Gap on iOS.** |
+| (none) | **What's new** (`releases`): one article per version | Live, enabled | iOS has no in-app release notes in this folder. |
+| (none) | Stand mode (screen pinning, keep screen on, back to Now when idle), Diagnostics, key and spend screen, licences | Live, staff-only parts hidden in stand mode | iOS RiskMandate has none of these in its folder. Not needed for the demos; stand mode is what makes a tablet safe to hand to a visitor. |
+
+## 3. What this means for Wednesday
+
+1. **Demos that exist on both**: the riskmandate.ai ABP page and a prompt-and-answer Workbench on the tablet's own model. These can be shown side by side today, with the caveat in A2 (different models, so no like-for-like speed comparison) and A3 (Android model installed in advance).
+2. **Demos that only Android has**: ABP in every layer, This app's mandate, the ABP Lab (staff, Preview), Chat (staff, Preview). If the iOS tablet must "match", iOS has to gain them or the demo script must not promise them on iOS. That is the iOS conductor's call; this document only reports the difference.
+3. **Android host gaps** (my files only: `MainActivity.kt`, `HomeScreen.kt`, `Shell.kt`). **H1 and H2 are done in the push that carries this document; H3 needs a decision.**
+   - **H1. Order with the demos first. Done.** The sidebar and the cards on Now share one order: ABP in every layer, Lab, Chat, Workbench, then RiskMandate (the pages), What's new, This app's mandate, Models. (Before: the riskmandate.ai pages came first and the demos sat under "Explore".)
+   - **H2. A "Demos" entry at the top. Done.** The first sidebar section is "Demos" (en) / "Demonstrações" (pt-PT) and lists the demo features that are switched on; Lab, Chat and Workbench appear in it as soon as their owners switch them on. A section with nothing switched on is not shown. The cards on Now follow the same order.
+   - **H3. Which features are enabled for staff. Not done: needs a decision.** `enabled` is each feature's own flag and `Features.kt` is the conductor's; the host's only lever for staff is **Diagnostics > Preview** (the switched-off features, hidden in stand mode). If Chat, Lab, Workbench and Models should be on Home for staff on Wednesday's tablets, the owners (or the conductor) switch `enabled` on; the host then lists them, in the new order, with no further change. Two bigger options, **neither started**: a staff-only "Show preview features on Home" switch in Diagnostics (off at start and in stand mode, like the cloud switch), or a per-person toggle (the `feature-toggles/1` format in the shared repository). The first is small but puts unfinished screens on Home if a tablet is left switched on, so I want a person to choose it.
+
+## 4. Decisions needed from people, not from me
+
+- **Which Android screens are demos** (the "Demos" list): I propose ABP in every layer, Lab, Chat and Workbench, in that order, with Models after them as set-up.
+- **Whether visitors may see Chat, Lab, Workbench and Models** on Wednesday (they are off by design until their owners and security say so; Workbench with the cloud also needs a key per tablet from Dinis).
+- **Whether iOS gains the Android-only demos** before Wednesday, or the script avoids them.
