@@ -85,6 +85,21 @@ data class GroundedAnswer(
 ) {
     /** The cited items, in citation order, each once. */
     val cited: List<KnowledgeItem> get() = citations.valid.mapNotNull { sources[it]?.item }.distinctBy { it.id }
+
+    /**
+     * The pt.news items to credit under the answer (security R-know-2: every answer about third-party companies
+     * keeps the news site's citation, and the articles are CC BY): the cited articles and company cards, or, when
+     * the model cited none, every article and card it was given. Empty only when there is no answer or the answer
+     * says the data does not hold it and cites nothing.
+     */
+    val attribution: List<KnowledgeItem> get() {
+        if (text.isBlank() || (citations.valid.isEmpty() && Citations.saysUnknown(text))) return emptyList()
+        val thirdParty = cited.filter { it.kind != KnowledgeKind.RISKMANDATE }
+        return thirdParty.ifEmpty { sources.hits.map { it.item }.filter { it.kind != KnowledgeKind.RISKMANDATE }.distinctBy { it.id } }
+    }
+
+    /** [attribution] as one plain-text line, for chat bubbles and copied text ("" when there is nothing to credit). */
+    val attributionLine: String get() = if (attribution.isEmpty()) "" else "From pt.news: " + attribution.joinToString("; ") { "${it.title} (${it.source})" }
 }
 
 /**

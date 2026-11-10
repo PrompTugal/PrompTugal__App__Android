@@ -16,7 +16,7 @@
  ],
  "licence": "pt.news articles: CC BY 4.0, cited by title and link; RiskMandate: verbatim from riskmandate.ai",
  "passages": 553,
- "sha256": "a8322687d5d1c26312b408fc9f6b936544f9356796c7e9e31ee6a4b9232e03e1",
+ "sha256": "99574ae41225facdd32fa6cc124c68a7529493740f9ed46cbba629edd5c47602",
  "source_commit": "ccd53a70de14aef36f035933599c76e6bfe1f3ff",
  "source_repository": "PrompTugal/PrompTugal__News__Website",
  "version": 1

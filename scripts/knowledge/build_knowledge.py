@@ -10,7 +10,8 @@ Items:
         nothing about RiskMandate comes from anywhere but riskmandate.ai.
   c:*   pt.news company cards (name, what, category, country, attending), from data/companies/<id>/company.json.
 Each item is cut into passages of about 120 words; the app's index works on passages and cites the item.
-Plain text only: markdown, links, images and directive blocks are removed. No network.
+Plain text only: markdown, links, images and directive blocks are removed, and address-shaped handles
+(agent or mail addresses) become "a newsroom agent" (security R-know-1). No network.
 """
 import hashlib, json, os, re, subprocess, sys
 
@@ -92,7 +93,12 @@ def passages(paras):
     return out
 
 
+# Agent and mailbox addresses (journalist@PrompTugal.vicky, ...) quoted in articles are not bundled (security R-know-1).
+ADDRESS = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
+
+
 def clean(s, cap):
+    s = ADDRESS.sub("a newsroom agent", s)
     s = re.sub(r"[\x00-\x1f\x7f]", " ", s)
     return re.sub(r"\s+", " ", s).strip()[:cap]
 

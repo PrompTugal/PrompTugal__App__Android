@@ -64,6 +64,7 @@ object AskTags {
     const val EVAL = "ask_eval"
     const val EVAL_SUMMARY = "ask_eval_summary"
     const val NO_MODEL = "ask_no_model"
+    const val ATTRIBUTION = "ask_attribution"
     const val LOADING = "ask_loading"
     fun k(n: Int) = "ask_k_$n"
     fun source(n: Int) = "ask_source_$n"
@@ -184,6 +185,13 @@ internal fun AskTab(
         if (shown != null || streaming.isNotEmpty()) {
             TitledCard(stringResource(R.string.ask_answer_title), kicker = stringResource(R.string.workbench_where_device)) {
                 Text(shown?.text ?: streaming, modifier = Modifier.testTag(AskTags.ANSWER).semantics { liveRegion = LiveRegionMode.Polite })
+                if (shown != null && shown.attribution.isNotEmpty()) {
+                    // Always under the answer, cited or not (R-know-2): the pt.news items it rests on.
+                    Text(
+                        stringResource(R.string.ask_attribution, shown.attribution.joinToString("; ") { "${it.title} (${it.source})" }),
+                        style = MaterialTheme.typography.bodySmall, modifier = Modifier.testTag(AskTags.ATTRIBUTION),
+                    )
+                }
                 if (shown != null) {
                     StatRow(stringResource(R.string.ask_ttft), shown.firstTokenMs?.let { "$it ms" } ?: "-", source = stringResource(R.string.workbench_src_app), modifier = Modifier.testTag(AskTags.TTFT))
                     StatRow(stringResource(R.string.ask_search), "${shown.retrievalMs} ms", source = stringResource(R.string.workbench_src_app))
