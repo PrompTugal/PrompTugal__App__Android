@@ -57,6 +57,7 @@
     <string name="chat_sent_title">What the cloud would receive</string>
     <string name="chat_sent_system">Instructions</string>
     <string name="chat_sent_messages">Messages</string>
+    <string name="chat_first_send_title">Send this to the cloud?</string>
     <string name="chat_sent_placeholder">(the message you type next)</string>
     <string name="chat_close">Close</string>
     <string name="chat_via_cloud">Cloud, openrouter.ai, %1$s</string>

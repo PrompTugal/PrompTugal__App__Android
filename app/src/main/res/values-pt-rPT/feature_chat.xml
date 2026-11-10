@@ -56,6 +56,7 @@
     <string name="chat_sent_title">O que a nuvem receberia</string>
     <string name="chat_sent_system">Instruções</string>
     <string name="chat_sent_messages">Mensagens</string>
+    <string name="chat_first_send_title">Enviar isto para a nuvem?</string>
     <string name="chat_sent_placeholder">(a mensagem que escrever a seguir)</string>
     <string name="chat_close">Fechar</string>
     <string name="chat_via_cloud">Nuvem, openrouter.ai, %1$s</string>
