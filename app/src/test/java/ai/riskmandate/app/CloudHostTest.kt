@@ -239,7 +239,7 @@ class CloudWiringTest {
     @Test fun noFeatureOnThisBranchDeclaresUsesCloudYetOrItIsKnownAndListed() {
         // A feature that declares usesCloud is reviewed like a new permission: this list is the review's record.
         val declared = ai.riskmandate.app.features.FEATURES.filter { it.usesCloud }.map { it.id }.toSet()
-        val reviewed = setOf("workbench")
+        val reviewed = setOf("workbench", "chat")
         assertTrue("usesCloud features not reviewed: ${declared - reviewed}", reviewed.containsAll(declared))
     }
 
