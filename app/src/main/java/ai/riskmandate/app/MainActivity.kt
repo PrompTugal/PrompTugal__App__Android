@@ -115,6 +115,21 @@ fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean, know
 /** The cloud can be used at all: the staff switch is on, a key is stored and stand mode is off. */
 fun cloudIsOn(keySet: Boolean, switchOn: Boolean, standOn: Boolean): Boolean = keySet && switchOn && !standOn
 
+/**
+ * The features a visitor on a stand-mode tablet may see: the vetted ones that run no model (the pages, the scripted
+ * ABP demo, the mandate view, the release notes). Every other feature, so every feature that uses an LLM (Chat, Lab,
+ * Workbench, Models), is hidden while stand mode is on, **even when its owner has switched it on**; a new feature is
+ * hidden in stand mode until it is added here on purpose (fail closed). Outside stand mode `enabled` decides alone.
+ */
+private val STAND_VISITOR_FEATURES = setOf("site", "abpdemo", "mandate", "releases")
+
+/** Whether the feature may be shown (Home, sidebar, its route) given stand mode. Not about `enabled`. */
+fun featureVisible(id: String, standOn: Boolean): Boolean = !standOn || id in STAND_VISITOR_FEATURES
+
+/** The enabled features that may be shown now: `enabled`, and in stand mode only the vetted ones. */
+fun visibleFeatures(all: List<ai.riskmandate.app.features.Feature>, standOn: Boolean): List<ai.riskmandate.app.features.Feature> =
+    all.filter { it.enabled && featureVisible(it.id, standOn) }
+
 /** Which sidebar section a feature sits in, by id (design spec table); unknown ids go to Explore. */
 fun sectionOf(id: String): Int = when (id) {
     "abpdemo", "lab", "chat", "workbench" -> R.string.nav_section_demos
@@ -164,10 +179,12 @@ class MainActivity : ComponentActivity() {
                     val goHome = { screen = Routes.HOME }
                     // A route that no longer exists or is switched off (restored after an app update or
                     // process death) shows Home, and the saved route is reset after composition.
-                    val feature = FEATURES.firstOrNull { it.id == screen && it.enabled }
                     // Stand mode (a visitor at a stand): Diagnostics and the model bench are staff tools, so they
                     // are hidden and unreachable while it is on (R-shell-1). Set from StandHost, see standOn below.
                     var standOn by remember { mutableStateOf(false) }
+                    // In stand mode only vetted visitor features are shown: every feature that uses an LLM (Chat, Lab,
+                    // Workbench, Models) is hidden even when its owner has switched it on (featureVisible).
+                    val feature = FEATURES.firstOrNull { it.id == screen && it.enabled && featureVisible(it.id, standOn) }
                     // Features not switched on yet: reachable only from Diagnostics > Preview (hidden in stand mode).
                     val cloud = remember { CloudProcess.get(this@MainActivity) }
                     // Cloud state the screens depend on (the truth lives in CloudHost; this makes the UI follow it).
@@ -187,7 +204,7 @@ class MainActivity : ComponentActivity() {
                     // `section` on Feature is the architect's to add) and use their own icon when they give one.
                     val enabledFeatureIds = FEATURES.filter { it.enabled }.map { it.id }.toSet()
                     // Home cards and the sidebar share one order, the demos first (docs/parity-ios.md, H1).
-                    val homeFeatures = FEATURES.filter { it.enabled }.sortedBy { navRank(it.id) }
+                    val homeFeatures = visibleFeatures(FEATURES, standOn).sortedBy { navRank(it.id) }
                     val featureItems = homeFeatures.map { f ->
                         NavItem(f.id, f.title, iconFor(f.id), f.homeBadge(), vector = f.icon)
                     }
