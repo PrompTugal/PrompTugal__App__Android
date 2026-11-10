@@ -70,6 +70,7 @@ class AskTabTest {
         compose.onNode(androidx.compose.ui.test.hasText("[1] Where to find Portugal", substring = true) and androidx.compose.ui.test.hasAnyAncestor(hasTestTag(AskTags.source(1))), useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Cited", useUnmergedTree = true).assertTextContains("Cited", substring = true)
         compose.onNodeWithTag(AskTags.TTFT).assertTextContains("ms", substring = true)
+        compose.onNodeWithTag(AskTags.ATTRIBUTION).assertTextContains("From pt.news: Where to find Portugal", substring = true)
         // The request held numbered sources and the grounding rules, and no device claim.
         val req = fake.requests.single()
         assertTrue(req.messages[1].text.startsWith("Sources:\n[1] "))
