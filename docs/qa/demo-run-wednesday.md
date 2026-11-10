@@ -58,7 +58,7 @@ Steps:
 1. Tap **Chat**. Look at the chips at the top. Exactly one source chip must show: **Runs on this device** (good) or **Cloud: openrouter.ai**. Beside it, **Network: on** or **Network: off** shows the real state. If it says **Cloud: openrouter.ai**, **stop**: do not say "on this device" (section 8).
 2. **Model: <name>** is shown read-only. If you see *No model installed* and a button **Open Models**, install one first (section 0.5).
 3. On an empty chat tap a preset: **What is RiskMandate?** or **Explain an ABP** (the answers use bundled text from riskmandate.ai). The answer streams. Its label reads **On device, <model>**. Under the last answer: "N tokens per second, S seconds, T tokens".
-4. **Stop** mid-answer: the text so far stays and **Stopped** shows. **New chat**. **History** lists saved chats (Back steps out of it). **Clear history** asks "Delete every saved chat?" with **Delete** / **Cancel**.
+4. **Stop** mid-answer: the text so far stays and **Stopped** shows. **New chat**. **History** lists saved chats (Back steps out of it) and says: "Saved chats stay on this tablet only: they are not backed up or shared. A message goes to the cloud only when the cloud is selected for it." Read that line as it is; do not paraphrase it. **Clear history** asks "Delete every saved chat?" with **Delete** / **Cancel**.
 5. For the offline point: turn on **Airplane mode**; **Network: off** shows; send another message; it still answers.
 
 Seven checks to run in rehearsal (from dev.chat):
@@ -81,7 +81,7 @@ If it fails:
 - *This chat is too long for the model*: **New chat**.
 - Slow first answer: it loads the model first; say so, wait, then ask the second question for the real speed.
 - Odd or wrong answers: "this is a small model on a tablet"; stay with the presets.
-- After the demo, **Clear history** so the next person does not see your chat (history persists on a shared tablet; Dinis has not yet decided to wipe it automatically).
+- After the demo, **Clear history** so the next person does not see your chat (history persists on a shared tablet; Dinis decided not to clear it automatically when the stand resets after idle: "let that be a manual process", 9 Nov).
 
 ## 5. ABP case studies: the Lab, side by side **[labels from dev.lab, 84775bf on work/dev.lab, not on dev yet: confirm on the build]**
 
@@ -145,9 +145,17 @@ What to say: the answer is produced on this tablet from a bundled set of pt.news
 
 If it fails: *Nothing in the bundled data matched*: rephrase using words from an article title. Slow first answer: it is loading the model; ask again. Stop and say "this is a staff test screen" if it errors; go to section 2.
 
-## 7. Parity with iOS **[lands today: confirm]**
+## 7. Side by side with the iOS tablet (from `docs/parity-ios.md`: iOS RiskMandate v0.4.61 against Android)
 
-Only claim parity for what you have seen side by side. Before the demo, open the same screen on the iPad (if one is present) and the tablet and compare: the same wording, the same order of steps, the same banner. Anything that differs, you do not call "the same". If asked which is ahead, say "the iPad app and this one are built from the same texts; some screens are ahead on one or the other", and look at the build numbers.
+Only two demos exist on **both** tablets, so only those can be shown side by side:
+1. **The ABP page.** iOS: Home, **Read about Agent Behaviour Policies**, opens riskmandate.ai/abp.html in Safari. Android: the RiskMandate (site) card shows the riskmandate.ai pages inside the app, with an offline copy (or **Open riskmandate.ai** opens the system browser). Same content, different frame: say that Android keeps it inside the app and offline.
+2. **A prompt and an answer from a model on the tablet.** iOS: the Workbench ("Runs on this device") on Apple's own model. Android: **Chat** (or the Workbench) on Gemma 4. **The models differ, so never compare speeds across the two tablets** and never say one model is better. The iOS team plans to move the iPad to Gemma 4 E2B (the same model as Android) around 11 to 12 November; do not mention it as done until you see it on the iPad.
+
+Only Android has: **ABP in every layer**, **the mandate card**, **What's new**, the **Lab** (case studies) and **Our data** (Workbench). If the iPad is next to the tablet, do not promise any of these on the iPad.
+
+Before the demo: the Android model must be **installed beforehand** (section 0.5; about 2.6 GB for the smaller model), the iPad needs no download, and iOS tokens are an estimate (marked with an approximate sign) while Android's figures are counted: say so if asked.
+
+If asked "which is ahead": say the two apps are built from the same texts and the same shared test cases; Android has more screens today, iOS runs on Apple's own on-device model. Check both build numbers (Android: bottom of Home) before you say anything more.
 
 ## 8. The cloud switch (check before every "on this device" demo)
 

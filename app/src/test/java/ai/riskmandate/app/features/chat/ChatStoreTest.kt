@@ -87,6 +87,15 @@ class ChatStoreTest {
         assertEquals(null, m[1].via); assertEquals(null, m[1].costUsd)
     }
 
+    @Test fun theSourcesAndCreditOfADataAnswerSurviveTheFile() {
+        val g = ChatGrounding(listOf(ChatSource(1, "Cerebras", "COMPANY", "https://promptugal.news/companies/cerebras/index.html"), ChatSource(3, "RiskMandate", "RISKMANDATE", "riskmandate.ai")),
+            "From pt.news: Cerebras (https://promptugal.news/companies/cerebras/index.html)", listOf(7))
+        val m = ChatMessage(ChatRole.ASSISTANT, "Chips [1].", via = ChatVia.device("m"), grounding = g)
+        val back = FileChatHistoryStore.decode(FileChatHistoryStore.encode(listOf(Conversation("a", listOf(ChatMessage(ChatRole.USER, "q"), m)))))
+        assertEquals(g, back.single().messages.last().grounding)
+        assertEquals(null, back.single().messages.first().grounding)
+    }
+
     @Test fun limitsAreEnforced() {
         val big = ChatMessage(ChatRole.USER, "z".repeat(ChatLimits.MAX_MESSAGE_CHARS + 10))
         val convs = (1..40).map { Conversation("c$it", listOf(big)) }
