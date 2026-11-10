@@ -58,7 +58,7 @@ Steps:
 1. Tap **Chat**. Look at the chips at the top. Exactly one source chip must show: **Runs on this device** (good) or **Cloud: openrouter.ai**. Beside it, **Network: on** or **Network: off** shows the real state. If it says **Cloud: openrouter.ai**, **stop**: do not say "on this device" (section 8).
 2. **Model: <name>** is shown read-only. If you see *No model installed* and a button **Open Models**, install one first (section 0.5).
 3. On an empty chat tap a preset: **What is RiskMandate?** or **Explain an ABP** (the answers use bundled text from riskmandate.ai). The answer streams. Its label reads **On device, <model>**. Under the last answer: "N tokens per second, S seconds, T tokens".
-4. **Stop** mid-answer: the text so far stays and **Stopped** shows. **New chat**. **History** lists saved chats (Back steps out of it). **Clear history** asks "Delete every saved chat?" with **Delete** / **Cancel**.
+4. **Stop** mid-answer: the text so far stays and **Stopped** shows. **New chat**. **History** lists saved chats (Back steps out of it) and says: "Saved chats stay on this tablet only: they are not backed up or shared. A message goes to the cloud only when the cloud is selected for it." Read that line as it is; do not paraphrase it. **Clear history** asks "Delete every saved chat?" with **Delete** / **Cancel**.
 5. For the offline point: turn on **Airplane mode**; **Network: off** shows; send another message; it still answers.
 
 Seven checks to run in rehearsal (from dev.chat):
