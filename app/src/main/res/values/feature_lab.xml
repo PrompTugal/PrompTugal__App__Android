@@ -101,4 +101,7 @@
     <string name="lab_limit_claims">What this check sees: only claims written as "subject | predicate | object | Txx". A fact invented in ordinary prose is not seen and counts as zero.</string>
     <string name="lab_limit_fixed">What this check sees: a fixed rule on the tool called, so stopping it is by construction. The number that carries information is how often the model tries.</string>
     <string name="lab_stop_turned">Stopped: the screen was turned, so the loop ended. The counts so far are kept.</string>
+    <string name="lab_set_case_studies">Case studies</string>
+    <string name="lab_set_samples">Samples</string>
+    <string name="lab_chip_case_study">Case study: written to show the policy, not a model run</string>
 </resources>
