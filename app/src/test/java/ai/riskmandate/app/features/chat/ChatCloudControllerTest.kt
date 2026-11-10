@@ -55,6 +55,18 @@ class ChatCloudControllerTest {
         assertEquals(2, cloud.calls.size)
     }
 
+    @Test fun aSecondCloudSendInTheSameSessionIsNotHeld() {
+        val c = started()
+        c.send("first"); c.confirmPendingSend()
+        c.send("second")
+        assertNull(c.state.pendingSend)
+        assertEquals(2, cloud.calls.size)
+        assertEquals(listOf("second"), cloud.calls.last().turns.map { it.text }) // history stays off, so only the new message goes
+        c.newChat(); c.send("third in a new chat")
+        assertNull("a new chat in the same session does not ask again", c.state.pendingSend)
+        assertEquals(3, cloud.calls.size)
+    }
+
     @Test fun cancellingTheHeldSendSendsNothingAndGivesTheTextBack() {
         val c = started()
         c.send("secret-ish")

@@ -109,7 +109,7 @@ class ChatScreenTest {
     @Test fun chatIsAFeatureForStaffAndVisitorsAndAsksForTheCloudOnlyOnceItIsReviewed() {
         assertTrue(ChatFeature.enabled)
         // usesCloud follows the review records (FeatureContextTest and CloudHostTest list the reviewed features).
-        val reviewed = setOf("workbench")
+        val reviewed = setOf("workbench", "chat")
         assertEquals("chat declares usesCloud only when it is on the review lists", "chat" in reviewed, ChatFeature.usesCloud)
         assertTrue(FEATURES.any { it === ChatFeature })
     }
