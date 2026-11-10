@@ -50,26 +50,38 @@ Say: this is the idea of reach versus mandate, applied to the app itself. Only c
 
 If it fails: go back and reopen once. If the numbers look odd, say "this is a first version" and move on; note the build number and what you saw.
 
-## 4. Chat: a model on this tablet **[lands today: confirm]**
+## 4. Chat: a model on this tablet **[labels from dev.chat, 0cf6aec and later: confirm on the build]**
 
-Real Chat is landing today. It is switched off in builds before that (it lives under Diagnostics, Preview). Confirm on the Wednesday build that **Chat** is a card on Home (kicker *On device*); if it still sits under Preview, tell the conductor and demo from Preview, saying it is not finished.
+Where: the **Chat** card on Home and the sidebar, under **Demos**. It is **hidden for visitors in stand mode** (section 9), so you show it, a visitor does not run it. If the build still has Chat under Diagnostics, Preview, tell the conductor and demo from there, saying it is not finished.
 
 Steps:
-1. Tap **Chat**. The badge must read **Runs on this device**. If it reads **Cloud: openrouter.ai**, the cloud switch is on: **stop and fix it before any demo that says "on this device"** (see section 8).
-2. Check the line **Model: <name>**. If you see *No model installed*, tap **Open Models** and install one (section 0.5), then return.
-3. Tap a preset: **What is RiskMandate?** or **Explain an ABP**. Watch it type. When it ends, a line shows tokens per second, seconds and tokens.
-4. Show **Stop** mid-answer (it says *Stopped*), **New chat**, then **History** (*Chats are saved on this tablet only. They are not backed up, sent or shared.*).
-5. For the privacy point: turn on **Airplane mode**, send another message, and show it still answers. Turn it back as needed.
+1. Tap **Chat**. Look at the chips at the top. Exactly one source chip must show: **Runs on this device** (good) or **Cloud: openrouter.ai**. Beside it, **Network: on** or **Network: off** shows the real state. If it says **Cloud: openrouter.ai**, **stop**: do not say "on this device" (section 8).
+2. **Model: <name>** is shown read-only. If you see *No model installed* and a button **Open Models**, install one first (section 0.5).
+3. On an empty chat tap a preset: **What is RiskMandate?** or **Explain an ABP** (the answers use bundled text from riskmandate.ai). The answer streams. Its label reads **On device, <model>**. Under the last answer: "N tokens per second, S seconds, T tokens".
+4. **Stop** mid-answer: the text so far stays and **Stopped** shows. **New chat**. **History** lists saved chats (Back steps out of it). **Clear history** asks "Delete every saved chat?" with **Delete** / **Cancel**.
+5. For the offline point: turn on **Airplane mode**; **Network: off** shows; send another message; it still answers.
 
-Expected: answers appear within a few seconds of the first word; the **Network: off** line is shown while the chat runs on the device.
+Seven checks to run in rehearsal (from dev.chat):
+1. A preset streams, labelled On device, with the stats line; any markup in the answer (`<b>`, `**bold**`) shows as plain words.
+2. Stop mid-answer keeps the text and shows **Stopped**.
+3. Rotate mid-chat and mid-answer: the same chat is open; a half answer comes back marked **Stopped**.
+4. Close and reopen Chat: **History** lists the chat; **Clear history** empties it.
+5. Ask about RiskMandate in your own words, not a preset ("what is risk mandate?"): the answer is about the product at riskmandate.ai, not the finance term. If it is the finance term, do not ask free questions on the day.
+6. Cloud route off (the usual state): Chat shows no cloud choice.
+7. Stand mode on: Chat is not in the list a visitor sees.
 
-What to say: the model runs on this tablet and the chat stays on it. Do **not** quote a speed or say it is as good as a big cloud model; read the numbers on screen if asked.
+The presets **Summarise a risk** (fills the box for your text) and **Explain graph triplets** (disabled, with a note that the graph tools are not built) are not for the demo; do not tap the disabled one.
+
+Cloud route: **not for Wednesday.** It has only met fakes, not a real key or device, and is checkable only after security and the architect enable it. If a **Answer with: Cloud / This device** row appears, the cloud route is on: choose **This device**, or stop and ask the conductor. With Cloud chosen no line may say "Runs on this device"; if one does, tell the conductor at once.
+
+What to say: the model runs on this tablet and the chat stays on it (history is kept on this tablet only, not backed up, sent or shared; **Clear history** deletes it). Speed on this tablet was about 5.5 tokens per second in the last measurement (build 0.1.78): do not promise more. Do not say it is as good as a large cloud model.
 
 If it fails:
 - *The model could not be loaded*: close other apps, retry once, then pick the smaller model in Models.
 - *This chat is too long for the model*: **New chat**.
-- It is slow on the first answer (it loads the model first): say that, wait, then ask the second question for the real speed.
-- If answers are wrong or odd, say "this is a small model on a tablet" and show the preset ABP answer rather than an open question. Do not demo free-text questions you have not rehearsed.
+- Slow first answer: it loads the model first; say so, wait, then ask the second question for the real speed.
+- Odd or wrong answers: "this is a small model on a tablet"; stay with the presets.
+- After the demo, **Clear history** so the next person does not see your chat (history persists on a shared tablet; Dinis has not yet decided to wipe it automatically).
 
 ## 5. ABP case studies: the Lab, side by side **[labels from dev.lab, 84775bf on work/dev.lab, not on dev yet: confirm on the build]**
 
@@ -143,7 +155,7 @@ If the build has an optional cloud mode for Chat (a key kept on the tablet), it 
 
 ## 9. Stand mode (leaving the tablet running at a table)
 
-Long-press the bottom-right corner of Home for stand mode. It resets to Home after idle. Anything staff-only is hidden in stand mode. In stand mode do **not** leave the app on Chat if visitors will type: history is kept on the tablet. Use the ABP walk-through with Auto-play instead.
+Long-press the bottom-right corner of Home for stand mode. It resets to Home after idle. Anything staff-only is hidden in stand mode. Chat is hidden from visitors in stand mode; leave the ABP walk-through on Auto-play instead. If you used Chat, tap **Clear history** before you leave the tablet.
 
 ## 10. If everything fails
 
