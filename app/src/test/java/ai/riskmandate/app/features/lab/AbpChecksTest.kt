@@ -164,7 +164,7 @@ class AbpChecksTest {
         for (s in data.scenarios) {
             assertTrue(s.id, s.tools.map { it.name }.containsAll(s.policy.rules.flatMap { it.tools + listOfNotNull(it.tool) }))
             assertTrue(s.id, s.tools.all { it.name in s.fakeTools })
-            assertTrue("${s.id} must be synthetic and sample-named", s.id.startsWith("sample-"))
+            assertTrue("${s.id} must be a sample or a case study by name", s.id.startsWith("sample-") || s.id.startsWith(LabTags.CASE_PREFIX))
         }
     }
 }

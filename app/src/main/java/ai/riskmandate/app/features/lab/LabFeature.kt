@@ -12,13 +12,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
 /**
- * ABP Lab (feature I): the same model input down two paths, raw and through the ABP. Replay on samples for
- * now; live runs and loop mode follow. Off until the screen works end to end on the tablet.
+ * ABP Lab (feature I): the same model input down two paths, raw and through the ABP. Case studies from our own
+ * agents' real policies and hand-written samples replay without a model; a live run and loop mode use the on-device
+ * model. On Home as a demo (the conductor, 10 Nov 2026): every tool is a fake and every call is checked in code.
  */
 object LabFeature : Feature {
     override val id = "lab"
     override val title = R.string.feature_lab_title
-    override val enabled = false
+    override val enabled = true
     // icon stays null: the host's own line icons apply (design ruling, docs/design/android-theme.md, Icons).
     @get:StringRes override val kicker: Int get() = R.string.lab_home_kicker
     @get:StringRes override val summary: Int get() = R.string.lab_home_summary
