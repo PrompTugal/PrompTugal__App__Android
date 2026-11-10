@@ -29,7 +29,7 @@ O descarregamento é a única vez em que a app contacta o Hugging Face e os seus
 
 Um chat com o modelo local, para mostrar que é um modelo de linguagem a sério: respostas em fluxo, um botão de parar, uma nova conversa, uma etiqueta que diz "Funciona neste dispositivo", e a velocidade de cada resposta.
 
-- **Primeira execução, versão 0.1.78 num Lenovo Idea Tab Plus (12 GB):** o Gemma 4 E2B foi descarregado no tablet e o Chat respondeu no dispositivo a cerca de 5,4 a 5,5 tokens por segundo: 68 tokens em 13,6 segundos e 140 tokens em 26,5 segundos. É uma execução num só tablet, a partir das notas do projeto; o teste de desempenho do dispositivo dará números melhores.
+- **Primeira execução, versão 0.1.78 num Lenovo Idea Tab Plus (12 GB):** o Gemma 4 E2B foi descarregado no tablet e o Chat respondeu no dispositivo a cerca de 5,4 a 5,5 tokens por segundo, como a app o indicou. Os dois tempos indicados, 68 tokens em 13,6 segundos e 140 tokens em 26,5 segundos, dão cerca de 5,0 e 5,3 tokens por segundo na resposta inteira. É uma execução num só tablet, a partir das notas do projeto; o teste de desempenho do dispositivo dará números melhores.
 - **O que isso significa:** uma resposta curta demora alguns segundos e uma longa cerca de meio minuto. Serve para uma demonstração, e é lento.
 - **Ainda uma pré-visualização:** a primeira execução revelou algumas coisas a corrigir, e já foram corrigidas. O chat pode ainda ter arestas por limar.
 

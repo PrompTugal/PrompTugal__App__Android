@@ -168,15 +168,16 @@ internal fun WorkbenchContent(
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Provenance: where it runs (the service says), and the model and backend actually in use.
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (service?.location == LlmLocation.CLOUD) {
+                if (service?.location == LlmLocation.CLOUD && tab != 3) {
                     StatusChip(stringResource(R.string.workbench_cloud_label, cloudModel(state)), ChipKind.Held, modifier = Modifier.testTag(WorkbenchTags.WHERE_CHIP))
                 } else {
                     StatusChip(stringResource(R.string.workbench_where_device), ChipKind.Neutral, modifier = Modifier.testTag(WorkbenchTags.WHERE_CHIP))
-                    activeModel?.let { StatusChip(it, ChipKind.Neutral, modifier = Modifier.testTag(WorkbenchTags.MODEL_CHIP)) }
+                    // On "Our data" the cloud is never used: do not name the cloud model beside "On this device".
+                    if (!(tab == 3 && service?.location == LlmLocation.CLOUD)) activeModel?.let { StatusChip(it, ChipKind.Neutral, modifier = Modifier.testTag(WorkbenchTags.MODEL_CHIP)) }
                 }
             }
             SegmentedControl(
-                labels = listOf(stringResource(R.string.workbench_tab_run), stringResource(R.string.workbench_tab_experiments), stringResource(R.string.workbench_tab_tools)),
+                labels = listOf(stringResource(R.string.workbench_tab_run), stringResource(R.string.workbench_tab_experiments), stringResource(R.string.workbench_tab_tools), stringResource(R.string.workbench_tab_ask)),
                 selected = tab,
                 onSelect = { if (!running) tab = it },
                 modifier = Modifier.widthIn(max = 420.dp).testTag(WorkbenchTags.TABS),
@@ -200,6 +201,10 @@ internal fun WorkbenchContent(
                         { s: RunSettings -> runCatching { svc.maxCostMicros(s.request()) }.getOrNull()?.let { it / 1_000_000.0 } }
                     },
                 )
+                3 -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    // Always the on-device model: the offline path over the bundled data.
+                    AskTab(llm = local, io = io, onOpenModels = { context.openFeature("models") }, onRunning = { running = it })
+                }
                 else -> {
                     // dev.lab's tab (features/workbench/tooltests): a plain column; the Workbench owns scrolling.
                     // Always the on-device model, whatever the Run tab's choice (security R-wb-9): tool tests and the

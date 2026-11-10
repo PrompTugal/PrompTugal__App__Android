@@ -16,6 +16,8 @@ Written 10 Nov 2026 by app.android.dinis for the conductor, for Wednesday's demo
 
 Not in `Apps/RiskMandate/`: an ABP demo, a mandate or reach view, the riskmandate.ai pages inside the app, a chat, a model download, a stand or kiosk mode, managed configuration, a Diagnostics or licences screen. (iOS may have some of these elsewhere in the repository for other apps; I read only the RiskMandate app folder.)
 
+**The iOS team's own plan** (`PrompTugal__App__iOS`, `briefs/2026-11-09__m-ipad-and-the-conductors/reply.md`; a plan and estimate by them, not something I checked): *Stage A* is the Foundation Models Workbench above (v0.4.48 on TestFlight; first run on the iPad Air M4 after the next TestFlight build). *Stage B* is **Gemma 4 E2B on the iPad, the same model as Android**, through LiteRT-LM (the very same `.litertlm` file) or MLX Swift as the fallback, with a one-off download of about 2.5 to 3 GB from Hugging Face and memory added to the metrics; their estimate is **11 to 12 Nov**, which is Wednesday or after. Their Workbench keeps the "tokens are an estimate (≈)" label until an exact count exists, so as to stay comparable with Android's figures. So **gap A2 (different models) is expected to close only around Wednesday, not before it**; plan a demo that does not depend on a like-for-like speed comparison.
+
 ## 2. Parity table
 
 Status is Android's. "Visitors" means a normal build with stand mode on or off and nobody having used Diagnostics; "staff" means someone who opens Diagnostics > Preview.

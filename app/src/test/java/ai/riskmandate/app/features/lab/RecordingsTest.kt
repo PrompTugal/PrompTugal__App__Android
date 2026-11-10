@@ -13,7 +13,7 @@ class RecordingsTest {
     private val data = LabTestData.load()
 
     @Test fun everyScenarioHasABundledRecordingTiedToItsHash() {
-        assertEquals(5, data.scenarios.size)
+        assertEquals(5 + 6, data.scenarios.size)
         for (s in data.scenarios) {
             val recs = data.recordingsFor(s.id)
             assertTrue("no recording for ${s.id}", recs.isNotEmpty())
@@ -22,8 +22,31 @@ class RecordingsTest {
         }
     }
 
-    @Test fun samplesAreLabelledAsSamples() {
-        assertTrue(data.recordings.all { it.sourceKind == "sample" && it.modelLabel == "hand-written sample" })
+    @Test fun samplesAndCaseStudiesAreLabelledAsWhatTheyAre() {
+        // Nothing here is a model's run: a sample is hand-written, a case study is written to illustrate a real policy.
+        for (r in data.recordings) when (r.sourceKind) {
+            "sample" -> assertEquals(r.id, "hand-written sample", r.modelLabel)
+            "case_study" -> { assertEquals(r.id, "written to illustrate the policy", r.modelLabel); assertTrue(r.id, r.scenarioId.startsWith(LabTags.CASE_PREFIX)) }
+            else -> org.junit.Assert.fail("${r.id}: unexpected source kind ${r.sourceKind}")
+        }
+        assertTrue(data.scenarios.filter { it.id.startsWith(LabTags.CASE_PREFIX) }.all { s -> data.recordingsFor(s.id).all { it.sourceKind == "case_study" } })
+        assertTrue(data.scenarios.filter { !it.id.startsWith(LabTags.CASE_PREFIX) }.all { s -> data.recordingsFor(s.id).all { it.sourceKind == "sample" } })
+    }
+
+    /** Case studies quote a real policy as it is, and say plainly that it runs in observe mode (nothing invented). */
+    @Test fun caseStudiesQuoteTheRealPolicyAndSayItRunsInObserveMode() {
+        val cases = data.scenarios.filter { it.id.startsWith(LabTags.CASE_PREFIX) }
+        assertEquals(6, cases.size)
+        val source = File("../briefs/2026-11-10__riskmandate-demos/abp-source")
+        val sourceText = source.listFiles { f -> f.name.endsWith(".md") }!!.joinToString("\n") { it.readText() }
+            .replace("**", "").replace("`", "") // the policy's words, without its markdown
+        for (s in cases) {
+            assertTrue("${s.id} says observe mode", s.description.contains("observe mode"))
+            assertTrue("${s.id} says the tools are fakes", s.description.contains("fakes"))
+            val quote = Regex("\u201c(.+?)\u201d").find(s.description)?.groupValues?.get(1)
+            assertTrue("${s.id} quotes the policy", quote != null)
+            assertTrue("${s.id}: the quote is in the real ABP text, word for word: $quote", sourceText.contains(quote!!))
+        }
     }
 
     @Test fun theRecordedOutcomeIsWhatTheOracleSaysAboutTheRecordedEvents() {

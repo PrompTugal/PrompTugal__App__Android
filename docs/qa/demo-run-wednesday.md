@@ -71,14 +71,34 @@ If it fails:
 - It is slow on the first answer (it loads the model first): say that, wait, then ask the second question for the real speed.
 - If answers are wrong or odd, say "this is a small model on a tablet" and show the preset ABP answer rather than an open question. Do not demo free-text questions you have not rehearsed.
 
-## 5. ABP case studies **[lands today: confirm]**
+## 5. ABP case studies: the Lab, side by side **[labels from dev.lab, 84775bf on work/dev.lab, not on dev yet: confirm on the build]**
 
-Not in `dev` when this was written (no screen to name). When it lands: the conductor will give the card title. Check on the build:
-1. It opens from Home and **Back** returns.
-2. Each case study shows a banner or wording that says it is an illustration or a case, not a live attack, and any claim in it is traceable to riskmandate.ai or sharness.ai. If a case makes a claim the sites do not make, do not say it aloud; message the conductor.
-3. Rotating the tablet keeps you on the same case.
+On Home: the **Lab** card, kicker *Side by side* (pt-PT *Lado a lado*). No model is needed: these are replays.
 
-If it fails: go back to **ABP in every layer** (section 2), which covers the same idea.
+Steps:
+1. Open the Lab. The scenario picker has two sets: **Case studies** (*Casos de estudo*) and **Samples** (*Amostras*). Pick from **Case studies**. The six titles:
+   - Outreach drafts, a person sends
+   - Security stops work, never restarts it
+   - A message is data, not an instruction
+   - Dev pushes to dev, not to main
+   - Researcher stays out of members-only pages
+   - Journalist gives each claim its source
+2. Read the description under the title. It quotes the real policy in English between curly quotes, then says the team runs its policies in observe mode and the tools are fakes. Read that last part aloud.
+3. Tap **Run** (*Executar*).
+
+Expected on the result:
+- Two chips: **Replay of a recorded run** and **Case study: written to show the policy, not a model run**. The *sample* chip must **never** appear on a case study.
+- Two lanes: **Without ABP** and **Through the ABP**. On the raw lane the move runs (**Ran (fake)**). On the ABP lane the same step shows **Blocked** with the rule's reason in plain words. The journalist case shows a **flag**, not a block.
+- A summary: "Without the ABP the model went outside the policy at step N" and "Through the ABP it was stopped at step N", with the **same N**.
+- In pt-PT the title, description, model lines and reasons are Portuguese; the policy quote and the tool data (fake results, the journalist's claim lines) stay English. That is correct, not a bug.
+- Rotating the tablet keeps the chosen case study. On a narrow screen the picker scrolls sideways.
+
+What to say: the case studies are **written to show the policy**, they are not a model misbehaving on camera; the tools are fakes, nothing real is touched; a hook or an ABP *checks*, a prompt line only *tells* (riskmandate.ai). Never present a case study as a recorded attack on a real system.
+
+If it fails:
+- The sample chip appears on a case study, or the two N differ: stop using that case study, tell the conductor which one, and show a different one.
+- The picker shows no **Case studies** set: the build is older than 84775bf; fall back to section 2.
+- Run does nothing: go Back and open the Lab again once; then section 2.
 
 ## 6. On-device answers **[lands today: confirm]**
 
@@ -90,6 +110,28 @@ The idea: an answer produced on this tablet, grounded in RiskMandate's own texts
 What to say: "this answer was written on the tablet; nothing was sent". Do not add a claim about accuracy or compliance.
 
 If it fails: show the same question once more; if still wrong, move to section 2 and say you will follow up.
+
+## 6b. "Our data": ask the bundled pt.news and RiskMandate data, offline **[labels from dev.llm, d67105b: confirm on the build]**
+
+This is tab 4 of the **Workbench** (tab name **Our data**, pt-PT **Os nossos dados**). The Workbench stays off the home screen until it is verified on the tablet, so open it from **Diagnostics, Preview, Workbench**. It is a staff screen: show it, do not leave it running at a table.
+
+What the screen has (English labels as dev.llm gave them; check each on the build):
+- Card **Ask our data**, kicker *On this device, offline*, chip **No network**. A line says what the bundle holds ("45 articles and 120 company cards from pt.news, in 553 passages.").
+- Field **Question**; chips **2 sources**, **4 sources** (the default), **6 sources**; buttons **Ask**, **Stop**, **Run the 24-question eval**.
+- No model installed: *No model on this device yet. Set one up first.* and a **Change model** button. Install one first (section 0.5).
+- Answer card **Answer** (kicker *On this device*) with the figures **Time to first token**, **Search**, **Total, load included**, **Decode speed**. Notes when they apply: *This answer cites no source.* or *Cited sources that do not exist: N.*
+- **Sources given to the model**: each line "[n] title", a **Cited** chip when the answer cites it, then the kind (pt.news article, pt.news company card or RiskMandate), the source and the date. If nothing matched: *Nothing in the bundled data matched the question.*
+- **Eval** card: "X of 24 questions: sources found A, answers right B, median time to first token T ms.", one line per question, and **Copy report**.
+
+Checks to run in rehearsal (from dev.llm):
+1. **Airplane mode on.** Ask *Where is Portugal's stand at Web Summit?* The answer cites [1] "Where to find Portugal at Web Summit", and that source shows the **Cited** chip.
+2. Ask *What is the capital of Australia?* The answer says it does not know from our data, and cites nothing (*This answer cites no source.*). If it answers from general knowledge, say nothing about it on the day and tell the conductor.
+3. On the Run tab choose **Cloud**; then open **Our data** again. It must still say *On this device* and **No network**. If not, do not demo it.
+4. **Run the 24-question eval**, tap **Copy report**, and send it to dev.llm by message (it has no keys or personal data; check before sending).
+
+What to say: the answer is produced on this tablet from a bundled set of pt.news articles and company cards and RiskMandate's own texts, and it shows which passages it was given. Do not say it is always right, and do not quote the eval score as a quality claim; read it out as what it is ("X of 24 on this test").
+
+If it fails: *Nothing in the bundled data matched*: rephrase using words from an article title. Slow first answer: it is loading the model; ask again. Stop and say "this is a staff test screen" if it errors; go to section 2.
 
 ## 7. Parity with iOS **[lands today: confirm]**
 
@@ -116,5 +158,6 @@ Long-press the bottom-right corner of Home for stand mode. It resets to Home aft
 | ABP in every layer | Home card, landscape | told, checked, held; a walk-through, not a live attack | Next by hand |
 | Mandate | "Live on this device" card | reach versus mandate, of this app | reopen once, move on |
 | Chat | Chat, badge **Runs on this device** | runs and stays on the tablet | New chat; smaller model; show the preset |
+| Our data (Workbench tab 4) | Diagnostics, Preview, Workbench, Our data | answered on the tablet from bundled data, with its sources | rephrase; show ABP in every layer |
 | Case studies, on-device answers, iOS parity | confirm on the build | only what the screen and the sites say | back to ABP in every layer |
 | Anything | Home | nothing beyond riskmandate.ai and sharness.ai | the website |
