@@ -33,7 +33,7 @@ class SmokeTest {
         compose.onNodeWithTag(LicenceTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(LicenceTags.APACHE).assertExists()
         systemBack()
-        compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+        homeIsShown()
     }
 
     @Test fun diagnosticsScreenShowsTextAndGoesBack() {
@@ -41,11 +41,20 @@ class SmokeTest {
         compose.onNodeWithTag(DiagnosticsTags.TEXT).assertIsDisplayed()
         compose.onNodeWithTag(DiagnosticsTags.COPY).assertIsDisplayed()
         systemBack()
-        compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+        homeIsShown()
     }
 
     /** System Back: works on the old home and on the new shell (which has no Back button on these screens). */
     private fun systemBack() = back()
+
+    /**
+     * Home is back: its last card ("Open riskmandate.ai") is at the end of the scrolling page, and Home starts at
+     * the top again after Back, so scroll to it first. On a small screen it is below the fold.
+     */
+    private fun homeIsShown() {
+        compose.waitForIdle()
+        compose.onNodeWithTag(HomeTags.OPEN).performScrollTo().assertIsDisplayed()
+    }
 
     private fun back() {
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
@@ -59,7 +68,7 @@ class SmokeTest {
             compose.waitForIdle()
             compose.onNodeWithTag(HomeTags.OPEN).assertDoesNotExist()
             back()
-            compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+            homeIsShown()
         }
     }
 
@@ -72,7 +81,7 @@ class SmokeTest {
             compose.waitForIdle()
             compose.onNodeWithTag(HomeTags.OPEN).assertDoesNotExist()
             back()
-            compose.onNodeWithTag(HomeTags.OPEN).assertIsDisplayed()
+            homeIsShown()
         }
     }
 

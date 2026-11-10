@@ -147,13 +147,15 @@ class MandateScreenTest {
         }
         java.io.File(app.cacheDir, "c.bin").writeText("x")
         val chat = java.io.File(app.noBackupFilesDir, "feature_chat/history.json").also { it.parentFile!!.mkdirs(); it.writeText("x") }
+        val wb = java.io.File(app.noBackupFilesDir, "feature_workbench/runs.jsonl").also { it.parentFile!!.mkdirs(); it.writeText("x") }
+        val cloud = java.io.File(app.noBackupFilesDir, "$CLOUD_DIR/${ai.riskmandate.app.cloud.CloudKey.FILE}").also { it.parentFile!!.mkdirs(); it.writeText("x") }
         val stray = java.io.File(app.noBackupFilesDir, "stray.bin").also { it.writeText("x") }
         val modelName = ai.riskmandate.app.llm.ModelCatalog.ALL.first().fileName
         val ext = java.io.File(app.getExternalFilesDir(null), "models/$modelName").also { it.parentFile!!.mkdirs(); it.writeText("x") }
         try {
             val items = ReachCollector.storage(app).associateBy { it.id }
             assertEquals(
-                setOf("files/x.txt", "shared_prefs/stand_mode.xml", "app_webview", "cache", "no_backup/feature_chat", "no_backup/stray.bin", "external/models/$modelName"),
+                setOf("files/x.txt", "shared_prefs/stand_mode.xml", "app_webview", "cache", "no_backup/feature_chat", "no_backup/feature_workbench/runs.jsonl", "no_backup/$CLOUD_DIR/${ai.riskmandate.app.cloud.CloudKey.FILE}", "no_backup/stray.bin", "external/models/$modelName"),
                 items.keys,
             )
             assertEquals(2, items.getValue("app_webview").count)
@@ -164,7 +166,7 @@ class MandateScreenTest {
             made.forEach { it.delete() }
             java.io.File(app.cacheDir, "c.bin").delete()
             java.io.File(data, "app_webview").deleteRecursively()
-            chat.parentFile!!.deleteRecursively(); stray.delete(); ext.parentFile!!.deleteRecursively()
+            chat.parentFile!!.deleteRecursively(); wb.parentFile!!.deleteRecursively(); cloud.parentFile!!.deleteRecursively(); stray.delete(); ext.parentFile!!.deleteRecursively()
         }
     }
 

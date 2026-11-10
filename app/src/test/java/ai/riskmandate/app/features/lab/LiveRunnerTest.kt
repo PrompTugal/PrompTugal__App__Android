@@ -1,5 +1,6 @@
 package ai.riskmandate.app.features.lab
 
+import ai.riskmandate.app.experiments.RunSettings
 import ai.riskmandate.app.llm.FakeLlmService
 import ai.riskmandate.app.llm.FakeReply
 import ai.riskmandate.app.llm.LlmError
@@ -135,6 +136,6 @@ class LiveRunnerTest {
         val llm = FakeLlmService(reply = ::obedient)
         LiveRunner.runPath(llm, big, abp = false)
         val tool = llm.requests[1].messages.last()
-        assertEquals(LiveRunner.MAX_RESULT_CHARS, tool.text.length)
+        assertEquals(RunSettings.MAX_RESULT_CHARS, tool.text.length)
     }
 }

@@ -1,27 +1,39 @@
 package ai.riskmandate.app.features.workbench
 
 import ai.riskmandate.app.R
+import ai.riskmandate.app.llm.RunSettings
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
+import ai.riskmandate.app.experiments.AndroidDeviceGuard
+import ai.riskmandate.app.experiments.DeviceGuard
+import ai.riskmandate.app.experiments.RunSettings as ToolRunSettings
+import ai.riskmandate.app.features.workbench.tooltests.ToolTestsTab
 import ai.riskmandate.app.llm.DeviceProbe
 import ai.riskmandate.app.llm.DeviceSample
 import ai.riskmandate.app.llm.RunRecord
-import ai.riskmandate.app.llm.LlmHost
+import ai.riskmandate.app.llm.LlmLocation
+import ai.riskmandate.app.llm.LlmState
+import ai.riskmandate.app.ui.ChipKind
+import ai.riskmandate.app.ui.SegmentedControl
+import ai.riskmandate.app.ui.StatusChip
+import ai.riskmandate.app.llm.prompts.Prompts
 import ai.riskmandate.app.llm.LlmRunner
-import ai.riskmandate.app.llm.ModelCatalog
-import ai.riskmandate.app.llm.ModelFiles
-import ai.riskmandate.app.llm.ModelSpec
 import ai.riskmandate.app.ui.FeatureContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import java.io.File
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -51,16 +64,33 @@ object WorkbenchFeature : Feature {
     // The conductor moves the title to features.xml (feature_workbench_title) when adding this to FEATURES.
     override val title = R.string.workbench_title
     override val enabled = false
+    // Staff may compare against the cloud model (OpenRouter); the host passes cloudLlm only with a key stored and
+    // stand mode off. Every cloud run, figure and verdict is labelled "Cloud" (checklist M.4.3).
+    override val usesCloud = true
 
     @Composable
     override fun Content(context: FeatureContext) = WorkbenchContent(context)
 }
 
 object WorkbenchTags {
-    fun tab(i: Int) = "workbench_tab_$i"
+    const val TABS = "workbench_tabs"
+    const val MODEL_CHIP = "workbench_model_chip"
+    const val WHERE_CHIP = "workbench_where_chip"
 }
 
-/** The system-prompt presets. The chat's RiskMandate block is dev.chat's and joins when it is shared in llm/. */
+/** The cloud model's id from the service's state (CloudLlmService reports Ready(modelId, ...)). */
+internal fun cloudModel(state: LlmState): String = when (state) {
+    is LlmState.Ready -> state.modelId
+    is LlmState.Idle -> state.modelId
+    is LlmState.Loading -> state.modelId
+    is LlmState.Failed -> state.modelId ?: "-"
+    LlmState.NoModel -> "-"
+}
+
+/**
+ * The fixed system-prompt presets; the RiskMandate base block is added from llm/prompts when it has loaded, as
+ * v2 (no "running on this device" claim), because a Workbench run may go to the cloud model (R-llm-13).
+ */
 val WORKBENCH_PRESETS = listOf(
     SystemPreset(R.string.workbench_system_none, ""),
     SystemPreset(R.string.workbench_system_brief, "You are a helpful assistant. Answer briefly and plainly."),
@@ -70,26 +100,50 @@ val WORKBENCH_PRESETS = listOf(
     ),
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun WorkbenchContent(context: FeatureContext, io: CoroutineDispatcher = Dispatchers.IO) {
+internal fun WorkbenchContent(
+    context: FeatureContext,
+    io: CoroutineDispatcher = Dispatchers.IO,
+    /** Device readings and the clock, injectable for tests (QA); the app reads the real ones. */
+    probe: (() -> DeviceSample?)? = null,
+    guard: DeviceGuard? = null,
+    clock: () -> Long = { System.nanoTime() / 1_000_000 },
+    wallClock: () -> Long = { System.currentTimeMillis() },
+) {
     val app = LocalContext.current.applicationContext
     val scope = rememberCoroutineScope()
-    val service = context.llm
-    val probe: () -> DeviceSample? = remember { { DeviceProbe.sample(app) } }
-    val runner = remember(service) {
-        service?.let { s -> LlmRunner(s, select = { m, b -> (s as? LlmHost)?.select(m, b) }, probe = probe) }
+    val local = context.llm
+    val cloud = context.cloudLlm
+    val read: () -> DeviceSample? = remember(probe) { probe ?: { DeviceProbe.sample(app) } }
+    // The caps decide on experiments/'s guard (shared with the Lab and the tool tests); the probe records readings.
+    val capsGuard: DeviceGuard = remember(guard) { guard ?: AndroidDeviceGuard(app) }
+    // The Run tab's form says which service: on the device (default) or the cloud (only offered when cloudLlm exists).
+    var savedForm by rememberSaveable { mutableStateOf(RunForm.save(RunForm())) }
+    // The cloud choice is never saved or restored (security R-wb-10): it starts on the device after a rotation or a
+    // restart, and resets whenever the cloud service changes or goes away, so a cloud run always follows a fresh choice.
+    var cloudChoice by remember(cloud) { mutableStateOf(false) }
+    val form = RunForm.restore(savedForm).copy(useCloud = cloudChoice)
+    val useCloud = form.useCloud && cloud != null
+    val service = if (useCloud) cloud else local
+    val runner = remember(service) { service?.let { LlmRunner(it, probe = read, clock = clock, wallClock = wallClock) } }
+    val state by (service?.state ?: remember { MutableStateFlow<LlmState>(LlmState.NoModel) }).collectAsState()
+    val activeModel = when (val s = state) {
+        is LlmState.Ready -> "${s.modelId} (${s.backend})"
+        is LlmState.Idle -> s.modelId
+        is LlmState.Loading -> s.modelId
+        is LlmState.Failed -> s.modelId
+        LlmState.NoModel -> null
+    }
+    var presets by remember { mutableStateOf(WORKBENCH_PRESETS) }
+    LaunchedEffect(Unit) {
+        withContext(io) { runCatching { Prompts.loadBlocking(app.assets, Prompts.RISKMANDATE_BASE_ANYWHERE) }.getOrNull() }?.let { base ->
+            presets = WORKBENCH_PRESETS.take(1) + SystemPreset(R.string.workbench_system_riskmandate, base) + WORKBENCH_PRESETS.drop(1)
+        }
     }
     val store = remember { RunLogStore(File(app.noBackupFilesDir, RunLogStore.DIR)) }
-    var models by remember { mutableStateOf<List<ModelSpec>>(emptyList()) }
     var log by remember { mutableStateOf<List<LogEntry>>(emptyList()) }
-    LaunchedEffect(Unit) {
-        val (m, l) = withContext(io) {
-            val dir = ModelFiles.internalDir(app)
-            ModelCatalog.ALL.filter { it.downloadable && File(dir, it.fileName).isFile } to store.load()
-        }
-        models = m
-        log = l
-    }
+    LaunchedEffect(Unit) { log = withContext(io) { store.load() } }
     fun record(label: String, r: RunRecord) {
         val e = LogEntry.of(label, r)
         log = (listOf(e) + log).take(RunLogStore.MAX_ENTRIES)
@@ -97,8 +151,6 @@ internal fun WorkbenchContent(context: FeatureContext, io: CoroutineDispatcher =
     }
 
     // The Run tab's form and last run live here, so switching tabs keeps them; the form survives rotation.
-    var savedForm by rememberSaveable { mutableStateOf(RunForm.save(RunForm())) }
-    val form = RunForm.restore(savedForm)
     var last by remember { mutableStateOf<RunRecord?>(null) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var running by remember { mutableStateOf(false) }
@@ -106,31 +158,60 @@ internal fun WorkbenchContent(context: FeatureContext, io: CoroutineDispatcher =
     context.HoldIdleWhile(running)
     val view = LocalView.current
     DisposableEffect(running) {
+        // Restore what was there before, not false: another screen may hold it on (security R-wb-7).
+        val previous = view.keepScreenOn
         if (running) view.keepScreenOn = true
-        onDispose { if (running) view.keepScreenOn = false }
+        onDispose { if (running) view.keepScreenOn = previous }
     }
 
-    FeatureContent {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            TabRow(selectedTabIndex = tab) {
-                listOf(R.string.workbench_tab_run, R.string.workbench_tab_experiments, R.string.workbench_tab_tools).forEachIndexed { i, label ->
-                    Tab(selected = tab == i, onClick = { if (!running) tab = i }, text = { Text(stringResource(label)) },
-                        modifier = Modifier.heightIn(min = 48.dp).testTag(WorkbenchTags.tab(i)))
+    FeatureContent(scrollable = false, maxContentWidth = androidx.compose.ui.unit.Dp.Unspecified) {
+        Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Provenance: where it runs (the service says), and the model and backend actually in use.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (service?.location == LlmLocation.CLOUD) {
+                    StatusChip(stringResource(R.string.workbench_cloud_label, cloudModel(state)), ChipKind.Held, modifier = Modifier.testTag(WorkbenchTags.WHERE_CHIP))
+                } else {
+                    StatusChip(stringResource(R.string.workbench_where_device), ChipKind.Neutral, modifier = Modifier.testTag(WorkbenchTags.WHERE_CHIP))
+                    activeModel?.let { StatusChip(it, ChipKind.Neutral, modifier = Modifier.testTag(WorkbenchTags.MODEL_CHIP)) }
                 }
             }
+            SegmentedControl(
+                labels = listOf(stringResource(R.string.workbench_tab_run), stringResource(R.string.workbench_tab_experiments), stringResource(R.string.workbench_tab_tools)),
+                selected = tab,
+                onSelect = { if (!running) tab = it },
+                modifier = Modifier.widthIn(max = 420.dp).testTag(WorkbenchTags.TABS),
+            )
             when (tab) {
                 0 -> RunTab(
-                    runner = runner, models = models, presets = WORKBENCH_PRESETS, toolSets = emptyList(),
-                    form = form, onForm = { savedForm = RunForm.save(it) }, last = last, onLast = { last = it },
+                    runner = runner, activeModel = activeModel, onOpenModels = { context.openFeature("models") },
+                    cloudAvailable = cloud != null,
+                    presets = presets, toolSets = emptyList(),
+                    form = form, onForm = { cloudChoice = it.useCloud; savedForm = RunForm.save(it) }, last = last, onLast = { last = it },
                     onRunning = { running = it }, onRecord = { record("run", it) },
                 )
                 1 -> ExperimentsTab(
-                    runner = runner, base = form.settings(emptyList()), models = models.map { it.id }, probe = probe, log = log,
+                    runner = runner, base = form.settings(emptyList()), probe = read, guard = capsGuard, log = log,
                     onRecord = ::record,
-                    onClearLog = { log = emptyList(); scope.launch { withContext(io) { store.clear() } } },
-                    onRunning = { running = it },
+                    onClearLog = { log = emptyList(); last = null; scope.launch { withContext(io) { store.clear() } } },
+                    onRunning = { running = it }, clock = clock,
+                    // R-wb-8: a cloud sweep shows its worst-case cost before it starts.
+                    // Through LlmService only (security note): no class check, no cloud/ import.
+                    worstCaseUsd = service?.takeIf { it.location == LlmLocation.CLOUD }?.let { svc ->
+                        { s: RunSettings -> runCatching { svc.maxCostMicros(s.request()) }.getOrNull()?.let { it / 1_000_000.0 } }
+                    },
                 )
-                else -> Text(stringResource(R.string.workbench_tools_soon))
+                else -> {
+                    // dev.lab's tab (features/workbench/tooltests): a plain column; the Workbench owns scrolling.
+                    // Always the on-device model, whatever the Run tab's choice (security R-wb-9): tool tests and the
+                    // on-device judge must not reach the cloud unlabelled. The cloud service goes only to the cloud judge.
+                    val s = form.settings(emptyList())
+                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        ToolTestsTab(
+                            llm = local, cloudLlm = cloud, openFeature = context.openFeature, onBusy = { running = it },
+                            settings = if (s == null) ToolRunSettings() else ToolRunSettings(sampling = s.sampling, maxTokens = s.maxTokens),
+                        )
+                    }
+                }
             }
         }
     }

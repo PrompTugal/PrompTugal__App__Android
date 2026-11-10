@@ -53,4 +53,18 @@ class LlmStatsTest {
         assertEquals(false, Thermal.MODERATE.severeOrWorse)
         assertEquals(true, Thermal.CRITICAL.severeOrWorse)
     }
+
+    @Test fun locationDefaultsToThisDevice() {
+        assertEquals(LlmLocation.LOCAL, stats(outT = 1, decT = 1.0).location)
+        assertEquals(LlmLocation.LOCAL, FakeLlmService().location)
+        val cloud = object : LlmService by FakeLlmService() { override val location = LlmLocation.CLOUD }
+        assertEquals(LlmLocation.CLOUD, cloud.location)
+    }
+
+    @Test fun costIsNullOnTheDeviceAndCapReachedIsAnErrorCode() {
+        assertEquals(null, stats(outT = 1, decT = 1.0).costUsd)
+        assertEquals(0.0012, stats(outT = 1, decT = 1.0).copy(costUsd = 0.0012).costUsd!!, 0.0)
+        assertEquals(LlmError.CAP_REACHED, LlmError.valueOf("CAP_REACHED"))
+        assertEquals(listOf("NO_MODEL", "LOAD_FAILED", "TOO_LONG", "INFERENCE_FAILED", "CAP_REACHED"), LlmError.entries.map { it.name })
+    }
 }

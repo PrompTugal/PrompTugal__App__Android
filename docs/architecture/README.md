@@ -169,11 +169,49 @@ A feature with `enabled = false` is never on Home, in the sidebar, or reachable 
 - **Stats and run options live in `llm/` (dev.llm), additive only, defaults keep every caller compiling:**
   - `LlmStats` gains `stopReason` (DONE, MAX_TOKENS, CANCELLED, ERROR), `backendUsed` and `fellBack`, and `coldLoad`, alongside the existing prompt/output tokens, TTFT, prefill and decode tokens/s, load ms and total ms. Each value says whether it is runtime-reported or measured in Kotlin.
   - `MemoryProbe` stays in `llm/`.
+  - **Shared prompts:** the RiskMandate base system block (and any prompt more than one feature uses) lives as a versioned asset `assets/prompts/<name>.v<N>.txt` with a small loader in `llm/prompts/` (dev.llm). The Workbench and chat both read it from there; nobody imports `features/chat`. Its claims come only from riskmandate.ai, and security checks the text like any claim.
   - `LlmRequest.backend: BackendPreference = AUTO` (AUTO, GPU, CPU). The host reloads when it must, still serialised.
   - `suspend fun unload()` on `LlmService` (default no-op in the interface) for an honest cold-load measurement. Not `LlmHost` casts.
   - **No model parameter:** the model is chosen in G (`openFeature("models")`). The Workbench shows the active model from `Ready(modelId, backend)` and logs it per run. A model sweep is not offered for now (compare by switching in G; the log keeps both).
 - **Storage:** `noBackupFilesDir/feature_workbench/`, JSON through `llm/StrictJson`, written off the main thread, with a clear button. mandate lists it with its own reason in the same merge. No export path yet beyond "Copy run" (plain text, no identifiers). Results use the Lab's export format, so eval can read them later.
 - **Output:** plain text only; tools are fakes that record calls; nothing executes.
+
+## Cloud model via OpenRouter (Dinis, 9 Nov, about 10:35 UTC; architect ruling)
+### The service
+- `cloud/CloudLlmService : LlmService` in its **own top-level package `ai.riskmandate.app.cloud`** (owned by **dev.chat**; revised from `llm/cloud/` at dev.chat's request), with the same contract as the on-device service: a cold `stream`, exactly one Done or Error, coroutine cancellation, main-safe, tool calls only **proposed**, never executed. `cloud/` may import `llm/` (the contract, `StrictJson`, `checkToolCall`); **`llm/` never imports `cloud/`**. `cloud/` is the one reviewed exception to the network ban outside `llm/`'s model download: qa's `LlmSandboxTest` gets an explicit allowance for `cloud/` only, with its own guard (only the pinned host, redirects off), and adds `experiments/` to the scanned roots.
+- Network: **one pinned host, `openrouter.ai`**, HTTPS only, in a list in `cloud/` separate from `Links.isAllowed` and from the model-download list, checked on every request URL. `HttpURLConnection` with `instanceFollowRedirects = false` (a redirect is an error), the server-sent-events stream parsed by hand. **No new dependency** (no OkHttp, no SDK). Request JSON built with `org.json`; tool arguments come back through `llm/StrictJson` and `checkToolCall` like local ones.
+- **Models:** an allow-list of OpenRouter model ids pinned in code. Cost per run from OpenRouter's `usage` field (`cost`), persisted. A spending cap enforced in code per install (**one constant** in `cloud/`, e.g. `CloudBudget`, holding the per-session and per-install limits; the numbers are Dinis's call: security proposes US$0.50 a session and US$2 per tablet), shown as a counter, and a credit limit on the key itself in OpenRouter (Dinis). On the cap, stop with `LlmError` and a clear message.
+- **Location is part of the contract:** `LlmService.location: LlmLocation` (LOCAL or CLOUD, default LOCAL in the interface; dev.llm adds it, `CloudLlmService` returns CLOUD), and `LlmStats.location` the same. Badges come from it, never from which field a feature used.
+- **History is sent only by explicit choice:** the service is stateless, so a cloud request contains exactly the messages the caller passes. A feature sends earlier turns to the cloud only on an explicit per-request choice made visible on screen ("include this conversation"); the default is the current prompt alone.
+- No user data unless a person typed it on that screen for a cloud run. Synthetic scenario and tool-test data only for judging. Nothing from other features, the device or the managed configuration goes into a prompt.
+
+### How a feature gets it
+- **A separate field, never mixed with `llm`:** `FeatureContext.cloudLlm: LlmService? = null`. `llm` stays **on-device only**, so a feature can never send text to the cloud by accident through the field it already uses.
+- **Opt-in per feature:** `Feature.usesCloud: Boolean = false`. The host passes `cloudLlm` only when (a) the feature declares `usesCloud = true`, (b) a key is stored, and (c) stand mode is off. At first only the Workbench declares it. Chat stays on-device unless Dinis asks.
+- **Contract (architect, pushed with the conductor's OK):** `Feature.usesCloud = false` and `FeatureContext.cloudLlm: LlmService? = null`, plus `FeatureCloudTest` (only ids on the reviewed list may declare it; workbench today). The host wiring is app's.
+
+- **`FeatureContext.cloudOn: Boolean = false`** (architect, 9 Nov, at the conductor's request): a read-only fact given to **every** feature. It is true while the cloud switch is on, a key is stored and stand mode is off. No service and no key go with it. On-device screens use it to stay honest: Model setup shows "Nothing you type leaves the device" only while `cloudOn` is false. The host includes it in the `remember` keys that build the context, so screens update when it changes.
+
+### The "Cloud" badge rule
+- Every answer, judgement or stat that came from the cloud carries a visible **"Cloud"** badge with the model id and "via openrouter.ai". On-device ones carry **"On device"**. Never an unlabelled mix on one screen.
+- While a screen can use the cloud, it shows a persistent "Cloud on" indicator. Screenshots must keep the badges.
+
+### The key
+- Entered by staff in **Diagnostics** (host UI, app owns it): pasted once, never shown again (only the last 4 characters), with a delete button, and hidden in stand mode.
+- Stored by `cloud/CloudKey` (dev.chat): AES-GCM with a key in the **Android Keystore** (`javax.crypto` and `AndroidKeyStore`, no `security-crypto` dependency), ciphertext in `noBackupFilesDir/feature_cloud/`, so never backed up. It is never logged, never in a crash or diagnostics text, never in results or screenshots, and never sent anywhere but `openrouter.ai` as `Authorization: Bearer`.
+- Security reviews it before merge.
+
+### Judges (experiments/, dev.lab)
+- `interface Judge { val layer: JudgeLayer; suspend fun judge(case, output): JudgeVerdict }` with `CodeJudge` (pure), `LocalModelJudge(llm)` and `CloudJudge(cloudLlm)`. A verdict is pass, fail or unsure, with a reason, the layer, the model id and the prompt version.
+- A `JudgePanel` runs the layers in order: code, then local, then cloud. Where `CodeJudge` can decide, it is authoritative, and the model judges are recorded but never override it. Where code cannot decide, the model verdicts are reported side by side.
+- **Every disagreement between layers is recorded** (case, outputs, each verdict) and counted per case and per kind.
+- Judge prompts are versioned files. Judge output is parsed as strict JSON; unparseable output is "unsure", never "pass". The cloud judge sees only the synthetic case and the output under test.
+
+### Platform-neutral formats (for the shared PrompTugal__App__Mobile repo)
+- Scenario, tool-test, judge-prompt and result files are JSON with a `format` and `version` field, lowercase string enums, explicit units (`_ms`, `_tokens`, `_usd`), no Kotlin or Android names, UTF-8, and documented once in a spec file (eval's FORMATS.md today, the shared repo later). App code parses them through `llm/StrictJson`. iOS must be able to read the same files unchanged.
+
+### Claims change in the same merge
+The app has said "nothing you type leaves the device" and "connects only to riskmandate.ai". With OpenRouter in the app, security, play and mandate update the privacy page, Data safety, the in-app privacy and about screens, and mandate's network and data lines **in the same merge** as the first cloud call. openrouter.ai is named as a new destination for staff-entered cloud runs.
 
 ## Post-summit items (approved, not before the summit build)
 - **P8, feature icons as drawables** (conductor's go for after the build; design chose drawables):

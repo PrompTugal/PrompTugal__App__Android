@@ -62,6 +62,7 @@ class MandateModelTest {
             ReachItem(ReachKind.STORAGE, "shared_prefs/feature_models.xml", count = 1),
             ReachItem(ReachKind.STORAGE, "shared_prefs/feature_releases.xml", count = 1),
             ReachItem(ReachKind.STORAGE, "no_backup/feature_chat", count = 1),
+            ReachItem(ReachKind.STORAGE, "no_backup/feature_workbench/runs.jsonl", count = 1),
         )
         assertTrue(MandateReport(cleanReach + mandated, mandate).gapIsEmpty)
         val stray = ReachItem(ReachKind.STORAGE, "shared_prefs/other.xml", count = 1)
@@ -69,8 +70,8 @@ class MandateModelTest {
     }
 
     @Test fun siteViewConnectionsAreReachOnlyWhenSiteIsOn_andMandated() {
-        // Without the site view only the model download hosts are reach (the code is in the build either way).
-        assertEquals(modelDownloadReach(), networkReach(setOf("abpdemo", "mandate")))
+        // Without the site view only the model download and cloud hosts are reach (the code is in the build either way).
+        assertEquals(modelDownloadReach() + cloudReach(), networkReach(setOf("abpdemo", "mandate")))
         val site = networkReach(setOf("site", "mandate"))
         assertEquals(listOf("connects:riskmandate.ai", "connects:www.riskmandate.ai"), site.map { it.id }.filter { it.contains("riskmandate") })
         assertTrue(MandateReport(cleanReach + site, mandate).gapIsEmpty)
@@ -81,11 +82,12 @@ class MandateModelTest {
 
     @Test fun modelDownloadHostsAreAskedOfTheRealPolicy_alwaysCounted_andMandated() {
         // Counted whenever the code is in the build: no feature switch needed.
-        val models = networkReach(emptySet())
+        val models = networkReach(emptySet()).filter { it.id.contains("hf.co") || it.id.contains("huggingface") }
         assertEquals(listOf("connects:huggingface.co", "connects:hf.co", "connects:*.hf.co"), models.map { it.id })
         assertTrue(MandateReport(cleanReach + models, mandate).gapIsEmpty)
         // The look-alike candidates are refused by the policy itself, so they are not reach.
         assertEquals(models.map { it.id }, modelDownloadReach().map { it.id })
+        assertTrue(networkReach(emptySet()).all { mandate.allows(it) })
         val other = ReachItem(ReachKind.NETWORK, "connects:example.org")
         assertEquals(listOf(other), MandateReport(cleanReach + models + other, mandate).gap)
     }
@@ -103,6 +105,34 @@ class MandateModelTest {
         // An adb folder never holds a ".part".
         val part = ReachItem(ReachKind.STORAGE, "external/models/${spec.fileName}.part", count = 1)
         assertEquals(listOf(part), MandateReport(cleanReach + part, mandate).gap)
+    }
+
+    @Test fun workbenchRunLogIsMandatedByExactName_otherFilesThereAreGap() {
+        val log = ReachItem(ReachKind.STORAGE, "no_backup/feature_workbench/runs.jsonl", count = 1)
+        assertTrue(MandateReport(cleanReach + log, mandate).gapIsEmpty)
+        val other = ReachItem(ReachKind.STORAGE, "no_backup/feature_workbench/runs.jsonl.tmp", count = 1)
+        assertEquals(listOf(other), MandateReport(cleanReach + log + other, mandate).gap)
+    }
+
+    @Test fun cloudHostIsAskedOfTheRealPolicy_lookalikesAreRefused_andMandated() {
+        assertEquals(listOf("connects:openrouter.ai"), cloudReach().map { it.id })
+        assertTrue(cloudReach().all { mandate.allows(it) })
+        // The policy itself refuses what the candidates imitate.
+        listOf("api.openrouter.ai", "openrouter.ai.example.com", "evilopenrouter.ai", "huggingface.co", "riskmandate.ai")
+            .forEach { assertFalse(it, ai.riskmandate.app.cloud.CloudEndpoint.isAllowed(cloudUrl(it))) }
+        val other = ReachItem(ReachKind.NETWORK, "connects:api.openrouter.ai")
+        assertEquals(listOf(other), MandateReport(cleanReach + cloudReach() + other, mandate).gap)
+    }
+
+    @Test fun cloudFilesAreMandatedByExactName_otherFilesThereAreGap() {
+        val d = "no_backup/$CLOUD_DIR/"
+        val ok = listOf(
+            ai.riskmandate.app.cloud.CloudKey.FILE, ai.riskmandate.app.cloud.CloudKey.FILE + ".tmp",
+            ai.riskmandate.app.cloud.CloudSpend.FILE, ai.riskmandate.app.cloud.CloudSpend.FILE + ".tmp",
+        ).map { ReachItem(ReachKind.STORAGE, d + it, count = 1) }
+        assertTrue(MandateReport(cleanReach + ok, mandate).gapIsEmpty)
+        val other = ReachItem(ReachKind.STORAGE, d + "key.txt", count = 1)
+        assertEquals(listOf(other), MandateReport(cleanReach + ok + other, mandate).gap)
     }
 
     @Test fun sameIdOfAnotherKindIsNotCovered() {

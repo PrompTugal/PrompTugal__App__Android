@@ -40,6 +40,13 @@ interface Feature {
     @get:StringRes val summary: Int? get() = null
 
     /**
+     * True if this feature may use the cloud model (OpenRouter). The host then passes
+     * [FeatureContext.cloudLlm] only when a key is stored and stand mode is off. Default false: on-device only.
+     * Declaring it is reviewed (privacy, mandate) like a new permission.
+     */
+    val usesCloud: Boolean get() = false
+
+    /**
      * An optional short badge on this feature's home-screen button (a string resource such as "New"),
      * or null for none. The home screen calls it for every enabled feature without knowing which one it
      * is, so the host never imports a feature's package. Read from the composition: keep it cheap, and do
@@ -86,6 +93,19 @@ class FeatureContext(
      * `ToolSpec` list (`checkToolCall`) before acting on it. Show model output as plain text.
      */
     val llm: LlmService? = null,
+    /**
+     * The cloud model (OpenRouter), or null. Passed only to a feature whose [Feature.usesCloud] is true, while a
+     * key is stored and stand mode is off. Never mixed with [llm]: label every answer from it "Cloud" (its
+     * `location` is CLOUD), and send history only on an explicit, visible per-request choice.
+     */
+    val cloudLlm: LlmService? = null,
+    /**
+     * True while the app can use the cloud model at all: the cloud switch is on, a key is stored and stand mode
+     * is off. Given to every feature, cloud or not, so on-device screens can say honestly whether anything may
+     * leave the device (for example Model setup's "Nothing you type leaves the device" only while this is
+     * false). A fact only: it carries no service and no key. The host rebuilds the context when it changes.
+     */
+    val cloudOn: Boolean = false,
 )
 
 /**

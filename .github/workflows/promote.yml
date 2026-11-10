@@ -1,0 +1,161 @@
+name: promote
+
+# Promotes an approved dev commit to main (option B, docs/release-workflow-proposal.md): when the gate is green
+# AND security.android has signed a PASS for that exact commit, main is fast-forwarded to it. Without the
+# GitHub App secrets it opens a pull request pinned to the commit instead, and the run summary says why.
+#
+# Safety design (docs/ci.md, "Release flow"):
+# - The default branch of this repository is `dev`, so a `workflow_run` trigger would execute DEV's copy of this
+#   file, which anyone who can push to dev can edit (security.repos' HIGH). So there is no workflow_run trigger.
+#   This workflow runs only as a workflow_dispatch ON THE REF `main` (the dispatch uses main's copy of the
+#   file), started by a small job at the end of android.yml (`gh workflow run promote.yml --ref main`) or by a
+#   person. Dev can only ask for an evaluation, which promotes nothing without a signed approval.
+# - The App secrets are ENVIRONMENT secrets of the Environment `promote` whose deployment branches are `main`
+#   only (Dinis), never repository secrets. GitHub then refuses to hand them to a run on any other ref, whatever
+#   the file on that ref says: a copy edited on dev, or dispatched with --ref dev, gets no App key.
+#   The `if` on the job and the first step are only a clear message (an edited copy can delete them); the
+#   protection is the Environment rule, which lives in the repository settings, outside any file.
+# - The verifier (security.android's, docs/security/approvals.md) runs from main's checkout, and it reads the
+#   keys and the approvals file as they are on main; dev's commits are data. Any non-zero exit is "not approved".
+# - It only ever fast-forwards: a push that is not a fast-forward is refused by git. No force.
+# Third-party action pinned by SHA: actions/checkout v4.2.2, actions/create-github-app-token v3.1.1.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: promote
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: promote (dev to main)
+    # Evaluated after each dev push by android.yml's `promote-dispatch` job (and by a person); whether anything
+    # is promotable is decided below, from the signed approvals and the gate on the commit. Like the first step,
+    # this `if` is cosmetic (a copy edited on dev can drop it): the control is the Environment rule below.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: promote
+    defaults:
+      run:
+        shell: bash   # -eo pipefail: a failing command before `| tee` must fail the step
+    permissions:
+      contents: write         # the pinned branch for the fallback pull request
+      pull-requests: write    # the fallback pull request
+      checks: read            # the result of `security-gate` on the commit
+      statuses: write         # the `security-approval` status on a verified promotion pull request (below)
+    env:
+      HAS_APP: ${{ secrets.PROMOTE_APP_ID != '' && secrets.PROMOTE_APP_PRIVATE_KEY != '' }}
+    steps:
+      - name: Only from main
+        run: |
+          [ "$GITHUB_REF" = refs/heads/main ] || { echo "promote must run on the ref main (it ran on $GITHUB_REF): refusing" | tee -a "$GITHUB_STEP_SUMMARY" >&2; exit 1; }
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Bootstrapped = main already carries the verifier and a security key. Until then main is still the initial
+      # commit: it is NEVER fast-forwarded, a pull request is opened for a person (the first release flow reaches
+      # main by Dinis's merge).
+      - name: Pick the commit to promote
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          summary() { echo "$1" | tee -a "$GITHUB_STEP_SUMMARY"; }
+          echo "## promote (run ${{ github.run_number }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "sha=" >> "$GITHUB_OUTPUT"; echo "bootstrapped=false" >> "$GITHUB_OUTPUT"
+          git fetch -q origin dev
+          if [ -f scripts/verify-approval.mjs ] && [ -f scripts/promote-select.sh ] && node -e '
+              const k = JSON.parse(require("fs").readFileSync("board/keys.json","utf8")).keys || [];
+              process.exit(k.some(x => x.role === "security" && x.status === "active") ? 0 : 1)' 2>/dev/null; then
+            echo "bootstrapped=true" >> "$GITHUB_OUTPUT"
+            sha=$(bash scripts/promote-select.sh origin/main origin/dev 2> "$RUNNER_TEMP/why.txt")
+            if [ -z "$sha" ]; then summary "- nothing promotable: $(cat "$RUNNER_TEMP/why.txt")"; exit 0; fi
+            gate=$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == "security-gate" and .app.slug == "github-actions")] | sort_by(.started_at) | last | .conclusion // "none"' 2>/dev/null || echo error)
+            if [ "$gate" != success ]; then summary "- ${sha:0:7} has a security PASS but its security-gate is: $gate. Not promoted now; a later run re-evaluates."; exit 0; fi
+            summary "- promoting ${sha:0:12}: valid signed PASS (verifier from main) and green security-gate"
+          else
+            sha=$(git rev-parse origin/dev)
+            summary "- main is not bootstrapped (no verifier or no active security key on main): nothing is verified by automation, main is never fast-forwarded, and a pull request for the dev head ${sha:0:12} is opened for a person"
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      # With the App secrets AND a bootstrapped main: fast-forward main. The token is minted for this job only.
+      - name: Token of the promote App
+        id: app
+        if: steps.pick.outputs.sha != '' && steps.pick.outputs.bootstrapped == 'true' && env.HAS_APP == 'true'
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        with:
+          app-id: ${{ secrets.PROMOTE_APP_ID }}
+          private-key: ${{ secrets.PROMOTE_APP_PRIVATE_KEY }}
+
+      - name: Fast-forward main
+        if: steps.app.outcome == 'success'
+        env:
+          TOKEN: ${{ steps.app.outputs.token }}
+          SHA: ${{ steps.pick.outputs.sha }}
+        run: |
+          git merge-base --is-ancestor origin/main "$SHA" || { echo "main is not an ancestor of $SHA: refusing (not a fast-forward)" >&2; exit 1; }
+          # The token goes in an Authorization header, not in a URL (the secret scan rejects credentials in URLs).
+          basic=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
+          echo "::add-mask::$basic"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $basic" push "https://github.com/${GITHUB_REPOSITORY}.git" "$SHA:refs/heads/main"
+          echo "- main fast-forwarded to ${SHA:0:12} (the App token). play.yml runs on that push." | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Otherwise a pull request pinned to the commit (branch promote/<sha12>), for a person to merge. Needs
+      # Settings, Actions, General, "Allow GitHub Actions to create and approve pull requests".
+      - name: Pull request instead
+        if: steps.pick.outputs.sha != '' && steps.app.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.pick.outputs.sha }}
+          BOOT: ${{ steps.pick.outputs.bootstrapped }}
+        run: |
+          branch="promote/${SHA:0:12}"
+          if [ "$BOOT" != true ]; then why="main is not bootstrapped (no verifier or no active security key on main yet)"
+          else why="the promote App secrets (PROMOTE_APP_ID, PROMOTE_APP_PRIVATE_KEY) are not set in the environment promote"; fi
+          echo "- opening a pull request instead of fast-forwarding main: $why" | tee -a "$GITHUB_STEP_SUMMARY"
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/heads/$branch" -f sha="$SHA" >/dev/null 2>&1 || echo "(branch $branch already exists)"
+          if [ -n "$(gh pr list --head "$branch" --base main --state open --json number --jq '.[0].number')" ]; then
+            echo "- a pull request for $branch is already open" | tee -a "$GITHUB_STEP_SUMMARY"; exit 0
+          fi
+          tag=$(bash scripts/find-release-tag.sh "$SHA" 2>/dev/null || echo "none found")
+          {
+            echo "Promotes dev commit \`${SHA}\` to main (fast-forward). Opened by the promote workflow because $why."
+            echo
+            if [ "$BOOT" = true ]; then echo "- security: a valid signed PASS for this commit (security.android's verifier, run from main) and a green \`security-gate\` on it"
+            else echo "- security: NOT verified by automation (main has no verifier or key yet): a person reviews this one, and it adds the release flow itself"; fi
+            echo "- build that Google Play will receive after the merge: GitHub release \`$tag\`, uploaded unchanged by play.yml (checked against its SHA256SUMS)"
+            echo
+            echo "Changes since main (newest 30):"
+            git log --no-merges --max-count=30 --pretty='- %s (%h)' "origin/main..$SHA"
+          } > "$RUNNER_TEMP/pr-body.md"
+          if gh pr create --base main --head "$branch" --title "Promote ${SHA:0:12} to main" --body-file "$RUNNER_TEMP/pr-body.md" >/dev/null 2> "$RUNNER_TEMP/pr-err.txt"; then
+            echo "- pull request opened from $branch" | tee -a "$GITHUB_STEP_SUMMARY"
+            # A pull request opened with GITHUB_TOKEN starts no workflows, so the android.yml jobs never run
+            # on it. security-gate needs nothing: the pinned commit already has its check run from the dev run.
+            # security-approval is a pull_request job, so for a VERIFIED promotion this workflow, which has just
+            # run the verifier from main, records the result as a commit status with the same name.
+            if [ "$BOOT" = true ]; then
+              gh api -X POST "repos/$GITHUB_REPOSITORY/statuses/$SHA" -f state=success -f context=security-approval \
+                -f description="signed PASS verified by promote.yml with the verifier from main" >/dev/null \
+                && echo "- status security-approval: success on ${SHA:0:12} (set by promote.yml after its own verification)" | tee -a "$GITHUB_STEP_SUMMARY"
+            fi
+          elif grep -q "not permitted to create or approve pull requests" "$RUNNER_TEMP/pr-err.txt"; then
+            # A setting only Dinis can change (Settings, Actions, General). It is waiting on him, not broken: a
+            # warning with the reason and the branch to merge, not a red run on every android run.
+            echo "::warning title=promote: no pull request::GitHub Actions may not create pull requests here (Settings, Actions, General, 'Allow GitHub Actions to create and approve pull requests'). Branch $branch is at ${SHA:0:12}: open the pull request by hand or change the setting."
+            echo "- could NOT open the pull request: Actions is not permitted to create pull requests (Dinis: Settings, Actions, General, allow it; or open a pull request from $branch to main by hand). Not treated as a failure: it waits on a setting." | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- could NOT open the pull request: $(tr '\n' ' ' < "$RUNNER_TEMP/pr-err.txt") (Dinis: Settings, Actions, General, allow GitHub Actions to create pull requests; or merge the branch $branch by hand)" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi

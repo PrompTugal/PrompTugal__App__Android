@@ -3,31 +3,18 @@ name: android
 on:
   push:
     branches: [dev]
-    # A push that changes nothing the app or the pipeline is built from (docs, board, briefs, devices/)
-    # runs nothing: no tests, no build, no Firebase notification for testers (docs/ci.md).
-    paths:
-      - 'app/**'
-      - 'gradle/**'
-      - '*.gradle.kts'
-      - '**/*.gradle.kts'
-      - 'gradle.properties'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - '.github/**'
-      - 'scripts/**'
   pull_request:
     branches: [dev, main]
   workflow_dispatch:
-    inputs:
-      play_track:
-        description: Google Play track for the upload (needs the Play secrets and the upload key)
-        type: choice
-        options: [internal, alpha]
-        default: internal
 
 permissions:
   contents: read
 
+# Every push to dev runs the security gate (secret scan, licences, OSV, lint, tests), whatever it changes: a
+# docs commit can leak a secret too. Only a push that changes what the app is built from builds and
+# distributes (the `changes` job, docs/ci.md). The store is not reached from here: Google Play is uploaded
+# by play.yml from a push to main, after promote.yml (docs/ci.md, "Release flow").
+#
 # Concurrency is per job, not per workflow (docs/ci.md): a newer push cancels the older run's check,
 # licences and smoke jobs, but a release job that is running is never cancelled (cancel-in-progress
 # false: at most one runs and one waits per ref, a newer waiting one replaces an older waiting one).
@@ -40,9 +27,55 @@ env:
 # Third-party actions are pinned by full commit SHA, the tag is in the comment.
 # actions/checkout v4.2.2, actions/setup-java v4.7.1, gradle/actions v4.4.4,
 # actions/upload-artifact v4.6.2, actions/download-artifact v4.3.0, actions/cache v4.2.3,
-# r0adkll/upload-google-play v1.1.3, reactivecircus/android-emulator-runner v2.37.0,
-# google-github-actions/auth v2.1.13.
+# reactivecircus/android-emulator-runner v2.37.0, google-github-actions/auth v2.1.13,
+# actions/attest-build-provenance v4.1.1.
 jobs:
+  # Did this push change anything the app is built from? Decides whether `release` builds and distributes.
+  changes:
+    name: changes (does this push touch the build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      build: ${{ steps.diff.outputs.build }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      # Compared with the commit of the LATEST DEV RELEASE, not with this push's `before`: a run that was
+      # cancelled by a newer push (or failed before releasing) must not drop its changes, or a real app change
+      # could go unreleased and unsmoked (found live on run 113/114).
+      - name: Changed build paths since the latest dev release
+        id: diff
+        run: |
+          # Only the script's exit status 1 means "nothing changed". Any other status (0 changed, or a crash such
+          # as a git error) builds: this must fail towards building, never towards silently skipping a release.
+          rc=0
+          if [ "$GITHUB_EVENT_NAME" = push ]; then bash scripts/changed-since-release.sh "$GITHUB_SHA" > "$RUNNER_TEMP/changed.txt" || rc=$?; else rc=0; fi
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$rc" -eq 1 ]; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            { echo "## changes: nothing the app is built from changed since the latest dev release"; head -1 "$RUNNER_TEMP/changed.txt"; echo "so no build and no Firebase notification for this push"; } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            { echo "## changes: build paths changed since the latest dev release (or not a push): the release job will build"; head -8 "$RUNNER_TEMP/changed.txt" 2>/dev/null || true; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # The secret scan over the full history and every ref (scripts/secret-scan.sh, security.android's).
+  scan:
+    name: scan (secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: scan-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0   # the whole history: the scan reads every commit
+
+      - name: Secret scan
+        run: bash scripts/secret-scan.sh
+
   check:
     name: check (tests and lint)
     runs-on: ubuntu-latest
@@ -71,6 +104,18 @@ jobs:
 
       # Every screenshot an in-app release article lists (assets/releases/*/screenshots.txt) must have been
       # written by the tests: fail here, early, not in the release job.
+      - name: Script tests (release notes)
+        run: bash scripts/test-release-notes.sh
+
+      # The release flow's scripts: the signed-approval verifier, the promotion selector, the build-path
+      # rule and the release finder (keys generated at run time, throwaway git repositories).
+      - name: Script tests (release flow)
+        run: node --test scripts/test/*.test.mjs
+
+      # security.android's own self-test of the signed approvals (throwaway keys made in memory).
+      - name: Approvals self-test (security.android)
+        run: node docs/security/approvals/selftest.mjs
+
       - name: Release article screenshots exist
         run: bash scripts/release-screenshots.sh --verify
 
@@ -131,24 +176,76 @@ jobs:
           GRADLE_USER_HOME: ${{ runner.temp }}/gradle-licences   # fresh: no cache restored, so POMs are fetched
         run: bash scripts/ci-licences.sh
 
+      # Known vulnerabilities (OSV.dev, public data only), from the list the licence step just wrote.
+      # Exit 1: a known vulnerability, 2: OSV could not be reached: both fail the gate (fail closed).
+      - name: Known vulnerabilities (OSV)
+        run: bash scripts/osv-check.sh
+
       - name: Upload the licence list
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: licences-${{ github.run_number }}
-          path: docs/security/licences.md
+          path: |
+            docs/security/licences.md
+            docs/security/vulns.md
           if-no-files-found: ignore
           retention-days: 14
 
       - name: Summary
         if: always()
         run: |
-          echo "## licences (run ${{ github.run_number }}): ${{ job.status }}, list in artifact licences-${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "## licences and OSV (run ${{ github.run_number }}): ${{ job.status }}, list in artifact licences-${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+
+  # ONE check named `security-gate`: it passes only if the secret scan, licences and OSV, lint and the tests
+  # all passed. This is the name promote.yml reads on a commit before it may reach main, and the name
+  # to require when main is protected. always(): it reports a failure, not a skipped job, when a part failed.
+  security-gate:
+    name: security-gate
+    needs: [scan, check, licences]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All parts passed
+        env:
+          SCAN: ${{ needs.scan.result }}
+          CHECK: ${{ needs.check.result }}
+          LICENCES: ${{ needs.licences.result }}
+        run: |
+          echo "secret scan: $SCAN, tests and lint: $CHECK, licences and OSV: $LICENCES" | tee -a "$GITHUB_STEP_SUMMARY"
+          [ "$SCAN" = success ] && [ "$CHECK" = success ] && [ "$LICENCES" = success ]
+
+  # Ask for a promotion evaluation after the gate of every dev push. The run it starts is promote.yml AS IT IS ON
+  # `main` (`--ref main` makes GitHub use main's copy of the file and the ref main, which is what the Environment
+  # `promote` accepts): this dev-editable job can only request an evaluation, and an evaluation promotes nothing
+  # without a signed approval. It replaces a workflow_run trigger, which would have run DEV's copy (the default
+  # branch is dev). A workflow_dispatch started with the built-in token is allowed to start a run.
+  promote-dispatch:
+    name: promote-dispatch
+    needs: security-gate
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/dev' && needs.security-gate.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write   # to dispatch promote.yml
+      contents: read   # and nothing else; no environment, no secrets
+    steps:
+      - name: Dispatch promote.yml on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh workflow run promote.yml --repo "$GITHUB_REPOSITORY" --ref main; then
+            echo "## promote-dispatch: promote.yml dispatched on main (it evaluates the signed approvals and the gate)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=promote-dispatch::could not dispatch promote.yml on main (is it on main yet?)"
+            echo "## promote-dispatch: could NOT dispatch promote.yml on main (is it on main yet?)" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   release:
     name: release (build, sign, distribute)
-    needs: [check, licences]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/dev'
+    needs: [security-gate, changes]
+    if: needs.changes.outputs.build == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Never cancelled once running (it may be distributing to testers): a newer release waits its turn.
@@ -158,15 +255,14 @@ jobs:
     # The GitHub Environment `release` holds the release secrets and can require a reviewer (docs/ci.md).
     environment: release
     permissions:
-      contents: write   # to create the GitHub release
-      id-token: write   # keyless Google auth (Workload Identity Federation) for Firebase
+      contents: write       # to create the GitHub release
+      id-token: write       # keyless Google auth (Workload Identity Federation) for Firebase, and the build attestation
+      attestations: write   # the build provenance of the signed APK and AAB
     env:
       HAS_UPLOAD_KEY: ${{ secrets.UPLOAD_KEYSTORE_BASE64 != '' && secrets.UPLOAD_KEYSTORE_PASSWORD != '' && secrets.UPLOAD_KEY_ALIAS != '' && secrets.UPLOAD_KEY_PASSWORD != '' }}
       # Firebase via Workload Identity Federation: the provider and service account are variables (not secrets).
       # FIREBASE_APP_ID may be a variable or a secret.
       HAS_FIREBASE: ${{ vars.GCP_WIF_PROVIDER != '' && vars.GCP_SERVICE_ACCOUNT != '' && (vars.FIREBASE_APP_ID != '' || secrets.FIREBASE_APP_ID != '') }}
-      HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
-      PLAY_TRACK: ${{ github.event_name == 'workflow_dispatch' && inputs.play_track || 'internal' }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -226,7 +322,20 @@ jobs:
           if [ -z "$app_id" ]; then echo "could not read the application ID" >&2; exit 1; fi
           echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
           echo "suffix=$suffix" >> "$GITHUB_OUTPUT"
+          # SHA256SUMS travels with the build: play.yml checks the AAB it uploads from main against it.
+          (cd out && sha256sum "riskmandate-$VERSION_NAME$suffix.apk" "riskmandate-$VERSION_NAME$suffix.aab" > SHA256SUMS)
           ls -la out
+
+      # Build provenance (SLSA, Sigstore, stored by GitHub): a signed statement that THIS workflow built these exact
+      # files from this commit. play.yml verifies it with `gh attestation verify` before uploading the AAB to Play.
+      # SHA256SUMS, in the same release as the AAB, only catches corruption; this catches tampering.
+      - name: Attest the build provenance of the signed APK and AAB
+        if: env.HAS_UPLOAD_KEY == 'true'
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: |
+            out/*.apk
+            out/*.aab
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -258,43 +367,22 @@ jobs:
             --app "$FIREBASE_APP_ID" --groups team \
             --release-notes-file "$RUNNER_TEMP/release-notes.md"
 
-      - name: Write the Play service account
-        if: env.HAS_PLAY == 'true' && env.HAS_UPLOAD_KEY == 'true'
-        env:
-          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-        run: |
-          umask 077
-          printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/play.json"
-          chmod 600 "$RUNNER_TEMP/play.json"
-
-      # status: draft keeps it safe: the release is created on the track but not rolled out
-      # until a person completes it in the Play Console.
-      - name: Google Play (draft release on the chosen track)
-        id: play
-        if: env.HAS_PLAY == 'true' && env.HAS_UPLOAD_KEY == 'true'
-        uses: r0adkll/upload-google-play@935ef9c68bb393a8e6116b1575626a7f5be3a7fb # v1.1.3
-        with:
-          serviceAccountJson: ${{ runner.temp }}/play.json
-          packageName: ${{ steps.out.outputs.app_id }}
-          releaseFiles: out/riskmandate-${{ env.VERSION_NAME }}.aab
-          track: ${{ env.PLAY_TRACK }}
-          status: draft
-          releaseName: ${{ env.VERSION_NAME }}
-
-      - name: GitHub release with the APK
+      # The release carries the signed APK, the signed AAB and SHA256SUMS: this is the build play.yml uploads to
+      # Google Play, unchanged, once its commit reaches main. The tag points at the built commit.
+      - name: GitHub release with the APK and AAB
         id: ghrelease
         if: github.event_name == 'push' && env.HAS_UPLOAD_KEY == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v$VERSION_NAME" "out/riskmandate-$VERSION_NAME.apk" \
+          gh release create "v$VERSION_NAME" "out/riskmandate-$VERSION_NAME.apk" "out/riskmandate-$VERSION_NAME.aab" out/SHA256SUMS \
             --target "$GITHUB_SHA" --prerelease \
             --title "RiskMandate $VERSION_NAME" \
             --notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Remove the keys
         if: always()
-        run: rm -f "$RUNNER_TEMP/upload.jks" "$RUNNER_TEMP/play.json"
+        run: rm -f "$RUNNER_TEMP/upload.jks"
 
       - name: Summary
         if: always()
@@ -302,7 +390,6 @@ jobs:
           APP_ID: ${{ steps.out.outputs.app_id }}
           FIREBASE_OUTCOME: ${{ steps.firebase.outcome }}
           GAUTH_OUTCOME: ${{ steps.gauth.outcome }}
-          PLAY_OUTCOME: ${{ steps.play.outcome }}
           GH_OUTCOME: ${{ steps.ghrelease.outcome }}
           EVENT: ${{ github.event_name }}
         run: |
@@ -322,7 +409,7 @@ jobs:
             echo "- version: ${VERSION_NAME} (versionCode ${VERSION_CODE}), application ID: ${APP_ID:-unknown}"
             echo "- signing: $([ "$HAS_UPLOAD_KEY" = true ] && echo 'signed with the upload key' || echo 'UNSIGNED: UPLOAD_KEYSTORE_* and UPLOAD_KEY_* secrets missing')"
             echo "- Firebase App Distribution: $([ "$GAUTH_OUTCOME" = failure ] && echo 'FAILED at Google auth (Workload Identity Federation: check the provider, service account and the release environment)' || reason "$FIREBASE_OUTCOME" "$HAS_FIREBASE" 'variables GCP_WIF_PROVIDER, GCP_SERVICE_ACCOUNT or FIREBASE_APP_ID (variable or secret)' push))"
-            echo "- Google Play (${PLAY_TRACK}, draft): $(reason "$PLAY_OUTCOME" "$HAS_PLAY" 'PLAY_SERVICE_ACCOUNT_JSON secret' any)"
+            echo "- Google Play: not from dev; play.yml uploads from main after promotion"
             echo "- GitHub release: $(reason "$GH_OUTCOME" true '' push)"
             echo "- artifact: riskmandate-${VERSION_NAME}"
           } >> "$GITHUB_STEP_SUMMARY"

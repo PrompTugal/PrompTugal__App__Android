@@ -4,7 +4,10 @@ import ai.riskmandate.app.R
 import ai.riskmandate.app.features.Feature
 import ai.riskmandate.app.features.FeatureContext
 import ai.riskmandate.app.features.HoldIdleWhile
+import ai.riskmandate.app.llm.prompts.Prompts
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -19,6 +22,7 @@ import java.io.File
 
 object ChatTags {
     const val BADGE = "chat_badge"
+    const val BADGE_CLOUD = "chat_badge_cloud"
     const val NETWORK = "chat_network"
     const val OPEN_MODELS = "chat_open_models"
     const val MODEL_LABEL = "chat_model_label"
@@ -39,6 +43,13 @@ object ChatTags {
     fun conversation(index: Int) = "chat_conversation_$index"
     fun link(index: Int) = "chat_link_$index"
 }
+
+/**
+ * The dispatcher for reading and writing history. The app uses the default (IO). Tests provide an immediate one, so
+ * loading history does not hop to a real thread that the compose test clock cannot see (a slow CI runner made that
+ * hop a flake).
+ */
+internal val LocalChatIo = compositionLocalOf<CoroutineDispatcher> { Dispatchers.IO }
 
 /** Where history is kept. Null (the default) means the app-private file; tests provide a memory store. */
 val LocalChatStore = compositionLocalOf<ChatHistoryStore?> { null }
@@ -70,10 +81,11 @@ private const val MODELS_ID = "models"
 internal fun ChatContent(context: FeatureContext, llm: ChatLlm) {
     val android = LocalContext.current
     val provided = LocalChatStore.current
+    val io = LocalChatIo.current
     val scope = rememberCoroutineScope()
-    val controller = remember(llm, provided) {
+    val controller = remember(llm, provided, io) {
         val store = provided ?: FileChatHistoryStore(File(android.applicationContext.noBackupFilesDir, "feature_chat"))
-        ChatController(llm, store, scope)
+        ChatController(llm, store, scope, baseSystem = { Prompts.load(android.assets, ChatBasePrompt.idFor(llm.isLocal)) }, io = io)
     }
     // The open chat survives a rotation (the Activity is recreated): its id is saved, small, and reselected after loading.
     var openId by rememberSaveable { mutableStateOf<String?>(null) }

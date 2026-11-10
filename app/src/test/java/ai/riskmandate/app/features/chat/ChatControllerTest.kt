@@ -16,11 +16,14 @@ import org.junit.Test
 /** Pure logic: a fake LlmService, an in-memory store, Unconfined dispatchers so everything runs in line. */
 class ChatControllerTest {
     private var now = 0L
+
+    /** The shared prompt as bundled (assets/prompts/riskmandate_base.v1.txt), read the way the app's loader trims it. */
+    private val BASE = java.io.File("src/main/assets/prompts/riskmandate_base.v1.txt").readText().trimEnd('\n', '\r')
     private var ids = 0
     private val scope = CoroutineScope(Dispatchers.Unconfined)
 
     private fun controller(llm: ChatLlm, store: ChatHistoryStore = MemoryChatHistoryStore()) =
-        ChatController(llm, store, scope, io = Dispatchers.Unconfined, clock = { now }, newId = { "c${ids++}" })
+        ChatController(llm, store, scope, baseSystem = { BASE }, io = Dispatchers.Unconfined, clock = { now }, newId = { "c${ids++}" })
 
     private fun started(llm: ChatLlm, store: ChatHistoryStore = MemoryChatHistoryStore()) =
         controller(llm, store).also { runBlocking { it.start() } }
@@ -153,7 +156,7 @@ class ChatControllerTest {
         val job = kotlinx.coroutines.Job()
         val ch = Channel<String>(Channel.UNLIMITED)
         val store = MemoryChatHistoryStore()
-        val c = ChatController(channelLlm(ch), store, CoroutineScope(Dispatchers.Unconfined + job), Dispatchers.Unconfined, { now }, { "c${ids++}" })
+        val c = ChatController(channelLlm(ch), store, CoroutineScope(Dispatchers.Unconfined + job), { BASE }, Dispatchers.Unconfined, { now }, { "c${ids++}" })
         runBlocking { c.start() }
         c.send("question")
         ch.trySend("half an "); ch.trySend("answer")
@@ -256,7 +259,7 @@ class ChatControllerTest {
         val c = started(llm)
         c.send("what is risk mandate?")
         val system = llm.calls.single().system!!
-        assertEquals(ChatPresets.BASE_SYSTEM, system)
+        assertEquals(BASE, system)
         assertTrue(system.contains("riskmandate.ai"))
         // The two quoted sentences are verbatim from the bundled riskmandate.ai text.
         val page = java.io.File("src/main/res/raw/feature_chat_riskmandate.txt").readText()
@@ -264,6 +267,14 @@ class ChatControllerTest {
             assertTrue("not verbatim from the page: $quote", page.contains(quote))
         }
         assertTrue("keep prefill small: about 4 characters a token", system.length < 600)
+    }
+
+    @Test fun aServiceThatIsNotLocalGetsTheBaseBlockWithoutTheOnThisDeviceClaim() {
+        assertEquals(ai.riskmandate.app.llm.prompts.Prompts.RISKMANDATE_BASE, ChatBasePrompt.idFor(local = true))
+        assertEquals(ai.riskmandate.app.llm.prompts.Prompts.RISKMANDATE_BASE_ANYWHERE, ChatBasePrompt.idFor(local = false))
+        val v1 = java.io.File("src/main/assets/prompts/riskmandate_base.v1.txt").readText()
+        val v2 = java.io.File("src/main/assets/prompts/riskmandate_base.v2.txt").readText()
+        assertTrue(v1.contains("on this device")); assertFalse(v2.contains("on this device"))
     }
 
     @Test fun aPresetGroundingReplacesTheBaseBlock() {

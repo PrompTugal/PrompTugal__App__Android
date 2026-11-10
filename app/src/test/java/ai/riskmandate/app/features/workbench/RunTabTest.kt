@@ -5,7 +5,7 @@ import ai.riskmandate.app.ManagedConfig
 import ai.riskmandate.app.Management
 import ai.riskmandate.app.RiskMandateTheme
 import ai.riskmandate.app.features.FeatureContext
-import ai.riskmandate.app.llm.BenchBackend
+import ai.riskmandate.app.llm.BackendPreference
 import ai.riskmandate.app.llm.FakeLlmService
 import ai.riskmandate.app.llm.FakeReply
 import ai.riskmandate.app.llm.LlmRunner
@@ -19,8 +19,11 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -43,16 +46,17 @@ class RunTabTest {
     @get:Rule val compose = createComposeRule()
     private val app: Application = ApplicationProvider.getApplicationContext()
 
-    private fun show(fake: FakeLlmService?, selected: MutableList<Pair<String?, BenchBackend?>> = mutableListOf(), records: MutableList<RunRecord> = mutableListOf()) =
+    private fun show(fake: FakeLlmService?, records: MutableList<RunRecord> = mutableListOf(), opened: MutableList<Unit> = mutableListOf()) =
         compose.setContent {
             RiskMandateTheme {
-                ai.riskmandate.app.ui.FeatureContent {
+                ai.riskmandate.app.ui.FeatureContent(scrollable = false) {
                 var form by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(RunForm()) }
                 var last by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<RunRecord?>(null) }
                 RunTab(
                     form = form, onForm = { form = it }, last = last, onLast = { last = it },
-                    runner = fake?.let { LlmRunner(it, select = { m, b -> selected += m to b }) },
-                    models = listOf(ModelCatalog.GEMMA4_E2B, ModelCatalog.GEMMA4_E4B),
+                    runner = fake?.let { LlmRunner(it) },
+                    activeModel = if (fake == null) null else "gemma4e2b (GPU)",
+                    onOpenModels = { opened += Unit },
                     presets = WORKBENCH_PRESETS,
                     toolSets = emptyList(),
                     onRecord = { records += it },
@@ -69,7 +73,7 @@ class RunTabTest {
             if (compose.onAllNodes(hasTestTag(tag)).fetchSemanticsNodes().isNotEmpty()) return
             Thread.sleep(20)
         }
-        fail("no node tagged $tag")
+        fail("no node tagged $tag\n" + compose.onRoot(useUnmergedTree = false).printToString(maxDepth = 6).take(3000))
     }
 
     @Test fun withoutAServiceItSaysSoAndCannotRun() {
@@ -90,24 +94,33 @@ class RunTabTest {
     }
 
     @Test fun aRunUsesTheSettingsShowsFiguresAndCanBeCopiedAndRepeated() {
-        val sel = mutableListOf<Pair<String?, BenchBackend?>>()
         val records = mutableListOf<RunRecord>()
+        val opened = mutableListOf<Unit>()
         val fake = FakeLlmService { FakeReply("Two short words.") }
-        show(fake, sel, records)
-        compose.onNodeWithTag(RunTags.model(ModelCatalog.GEMMA4_E4B.id)).performClick()
+        show(fake, records, opened)
+        compose.onNodeWithTag(RunTags.MODEL).assertTextContains("gemma4e2b (GPU)")
+        compose.onNodeWithTag(RunTags.OPEN_MODELS).performClick()
+        assertEquals(1, opened.size)
         compose.onNodeWithTag(RunTags.backend("CPU")).performClick()
+        compose.onNodeWithTag(RunTags.COLD).performClick()
         compose.onNodeWithTag(RunTags.systemPreset(1)).performScrollTo().performClick()
         compose.onNodeWithTag(RunTags.PROMPT).performScrollTo().performTextInput("Say two words")
         compose.onNodeWithTag(RunTags.TOP_K).performScrollTo().performTextClearance()
         compose.onNodeWithTag(RunTags.TOP_K).performTextInput("1")
+        compose.onNodeWithTag(RunTags.PROMPT).assertTextContains("Say two words")
         compose.onNodeWithTag(RunTags.RUN).performScrollTo().performClick()
         waitFor(RunTags.COPY)
-        assertEquals(ModelCatalog.GEMMA4_E4B.id to BenchBackend.CPU, sel.single())
         val req = fake.requests.single()
+        assertEquals(BackendPreference.CPU, req.backend)
+        assertEquals(1, fake.unloads)
+        compose.onNodeWithTag(RunTags.DONE).assertTextContains("Done. 3 tokens", substring = true)
         assertEquals(1, req.settings.topK)
         assertEquals("You are a helpful assistant. Answer briefly and plainly.", req.messages.first().text)
         compose.onNodeWithTag(RunTags.ANSWER).assertTextContains("Two short words.")
-        compose.onNodeWithTag(RunTags.REPORT).assertTextContains("Stop: done", substring = true)
+        compose.onNodeWithTag(RunTags.STAT_STOP).performScrollTo().assertTextContains("Done")
+        compose.onNodeWithTag(RunTags.STAT_OUTPUT).assertTextContains("3")
+        compose.onNodeWithTag(RunTags.STAT_OUTPUT).assertTextContains("app")
+        compose.onNodeWithTag(RunTags.STAT_DECODE).assertTextContains("not available")
         assertEquals(LlmStopReason.DONE, records.single().stopReason)
 
         compose.onNodeWithTag(RunTags.COPY).performScrollTo().performClick()
@@ -129,9 +142,125 @@ class RunTabTest {
         compose.onNodeWithTag(RunTags.RUN).performScrollTo().performClick()
         waitFor(RunTags.STOP)
         compose.onNodeWithTag(RunTags.STOP).performScrollTo().performClick()
-        waitFor(RunTags.REPORT)
-        assertEquals(LlmStopReason.STOPPED, records.single().stopReason)
-        compose.onNodeWithTag(RunTags.REPORT).assertTextContains("Stop: stopped", substring = true)
+        waitFor(RunTags.RERUN)
+        assertEquals(LlmStopReason.CANCELLED, records.single().stopReason)
+        compose.onNodeWithTag(RunTags.STAT_STOP).performScrollTo().assertTextContains("Stopped")
+    }
+
+    @Test fun theStatsLabelEveryFigureAndShowAFallBack() {
+        val scripted = ai.riskmandate.app.llm.LlmStats("gemma4e2b", "CPU", 120, 40, 300.0, 5.5, 900, 8000, loadedModel = true, loadMs = 6000,
+            countsFrom = ai.riskmandate.app.llm.StatSource.RUNTIME, speedsFrom = ai.riskmandate.app.llm.StatSource.RUNTIME, requestedBackend = "AUTO", fellBackToCpu = true)
+        show(FakeLlmService { FakeReply("ok", stats = scripted) })
+        compose.onNodeWithTag(RunTags.PROMPT).performTextInput("x")
+        compose.onNodeWithTag(RunTags.RUN).performScrollTo().performClick()
+        waitFor(RunTags.RERUN)
+        compose.onNodeWithTag(RunTags.STAT_LOAD).performScrollTo().assertTextContains("Model load (cold)")
+        compose.onNodeWithTag(RunTags.STAT_LOAD).assertTextContains("6000 ms")
+        compose.onNodeWithTag(RunTags.STAT_DECODE).assertTextContains("5.5")
+        compose.onNodeWithTag(RunTags.STAT_DECODE).assertTextContains("runtime")
+        compose.onNodeWithTag(RunTags.STAT_TTFT).assertTextContains("app")
+        compose.onNodeWithTag(RunTags.STAT_BACKEND).assertTextContains("CPU, fell back")
+    }
+
+    @Test fun promptsAreCappedAt2000Characters() {
+        show(FakeLlmService())
+        compose.onNodeWithTag(RunTags.PROMPT).performTextInput("x".repeat(2_100))
+        compose.onNodeWithTag(RunTags.PROMPT).assertTextContains("x".repeat(2_000))
+        val f = RunForm.restore(RunForm.save(RunForm(prompt = "y".repeat(3_000), backend = "NPU", toolSet = 999)))
+        assertEquals(2_000, f.prompt.length)
+        assertEquals("AUTO", f.backend)
+        assertEquals(50, f.toolSet)
+    }
+
+    private fun cloudFake() = object : ai.riskmandate.app.llm.LlmService by FakeLlmService(initial = ai.riskmandate.app.llm.LlmState.Ready("google/gemma-3-4b-it", "cloud"), reply = {
+        FakeReply("From the cloud.", stats = ai.riskmandate.app.llm.LlmStats("google/gemma-3-4b-it", "cloud", 8, 3, null, 20.0, 300, 700, location = ai.riskmandate.app.llm.LlmLocation.CLOUD, costUsd = 0.0002))
+    }) {
+        override val location = ai.riskmandate.app.llm.LlmLocation.CLOUD
+        override fun maxCostMicros(request: ai.riskmandate.app.llm.LlmRequest): Long = 2_500
+    }
+
+    private fun showWorkbench(cloud: ai.riskmandate.app.llm.LlmService?, local: FakeLlmService) = compose.setContent {
+        RiskMandateTheme {
+            WorkbenchContent(
+                FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), llm = local, cloudLlm = cloud),
+                io = kotlinx.coroutines.Dispatchers.Unconfined, probe = { null }, guard = ai.riskmandate.app.experiments.NoGuard,
+            )
+        }
+    }
+
+    @Test fun theCloudChoiceAppearsOnlyWithACloudServiceAndLabelsEverything() {
+        assertTrue(WorkbenchFeature.usesCloud)
+        val local = FakeLlmService { FakeReply("local") }
+        showWorkbench(cloud = cloudFake(), local = local)
+        compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("On this device")
+        compose.onNodeWithTag(RunTags.CLOUD).performScrollTo().performClick()
+        compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("Cloud \u00b7 google/gemma-3-4b-it via openrouter.ai")
+        compose.onNodeWithTag(RunTags.PROMPT).performScrollTo().performTextInput("Hello")
+        compose.onNodeWithTag(RunTags.RUN).performScrollTo().performClick()
+        waitFor(RunTags.RERUN)
+        assertTrue("the cloud answered, not the device", local.requests.isEmpty())
+        compose.onNodeWithTag(RunTags.ANSWER).performScrollTo().assertTextContains("From the cloud.")
+        compose.onNodeWithTag(RunTags.WHERE).performScrollTo().assertTextContains("Cloud \u00b7 google/gemma-3-4b-it via openrouter.ai")
+        // Header chip and the answer card's kicker carry it too (the stats row is checked above).
+        assertTrue(compose.onAllNodes(androidx.compose.ui.test.hasText("Cloud \u00b7 google/gemma-3-4b-it via openrouter.ai", substring = true)).fetchSemanticsNodes().size >= 2)
+    }
+
+    @Test fun toolTestsRunOnTheDeviceEvenWhenCloudIsChosen() {
+        val local = FakeLlmService { FakeReply("local") }
+        val cloudInner = FakeLlmService { FakeReply("cloud") }
+        val cloud = object : ai.riskmandate.app.llm.LlmService by cloudInner { override val location = ai.riskmandate.app.llm.LlmLocation.CLOUD }
+        showWorkbench(cloud = cloud, local = local)
+        compose.onNodeWithTag(RunTags.CLOUD).performScrollTo().performClick()
+        compose.onNodeWithText("Tool tests").performClick()
+        waitFor(ai.riskmandate.app.features.workbench.tooltests.ToolTestTags.RUN)
+        // The cloud service reaches the tab only as the opt-in cloud judge (off by default).
+        assertTrue(compose.onAllNodes(hasTestTag(ai.riskmandate.app.features.workbench.tooltests.ToolTestTags.JUDGE_CLOUD)).fetchSemanticsNodes().isNotEmpty())
+        compose.onNodeWithTag(ai.riskmandate.app.features.workbench.tooltests.ToolTestTags.RUN).performScrollTo().performClick()
+        val end = System.currentTimeMillis() + 10_000
+        while (local.requests.isEmpty() && System.currentTimeMillis() < end) {
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle(); compose.waitForIdle(); Thread.sleep(20)
+        }
+        assertTrue("tool tests ran on the device (R-wb-9)", local.requests.isNotEmpty())
+        assertTrue("nothing went to the cloud", cloudInner.requests.isEmpty())
+    }
+
+    @Test fun aCloudSweepShowsTheServicesWorstCaseCost() {
+        showWorkbench(cloud = cloudFake(), local = FakeLlmService())
+        compose.onNodeWithTag(RunTags.CLOUD).performScrollTo().performClick()
+        compose.onNodeWithTag(RunTags.PROMPT).performScrollTo().performTextInput("Hello")
+        compose.onNodeWithText("Experiments").performClick()
+        // 9 runs (the default plan) at most 2,500 micro-dollars each, read through LlmService.maxCostMicros.
+        compose.onNodeWithTag(ExperimentTags.CLOUD_COST).performScrollTo().assertTextContains("these 9 runs cost at most US$0.0225", substring = true)
+    }
+
+    @Test fun theCloudChoiceResetsWhenTheCloudServiceGoesAndComesBack() {
+        var cloud by androidx.compose.runtime.mutableStateOf<ai.riskmandate.app.llm.LlmService?>(cloudFake())
+        val local = FakeLlmService { FakeReply("local") }
+        compose.setContent {
+            RiskMandateTheme {
+                WorkbenchContent(
+                    FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), llm = local, cloudLlm = cloud),
+                    io = kotlinx.coroutines.Dispatchers.Unconfined, probe = { null }, guard = ai.riskmandate.app.experiments.NoGuard,
+                )
+            }
+        }
+        compose.onNodeWithTag(RunTags.CLOUD).performScrollTo().performClick()
+        compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("Cloud", substring = true)
+        cloud = null
+        compose.waitForIdle()
+        cloud = cloudFake()
+        compose.waitForIdle()
+        // R-wb-10: back on the device until someone chooses the cloud again.
+        compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("On this device")
+    }
+
+    @Test fun withoutACloudServiceThereIsNoCloudChoice() {
+        showWorkbench(cloud = null, local = FakeLlmService())
+        assertTrue(compose.onAllNodes(hasTestTag(RunTags.CLOUD)).fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithTag(WorkbenchTags.WHERE_CHIP).assertTextContains("On this device")
+        // The cloud choice is never saved or restored (R-wb-10): it needs a fresh choice after a rotation or restart.
+        assertEquals(false, RunForm.restore(RunForm.save(RunForm(useCloud = true))).useCloud)
+        assertEquals(false, RunForm.restore(listOf("true") + RunForm.save(RunForm()).drop(1)).useCloud)
     }
 
     @Test fun theFeatureIsOffAndShowsTheRunTab() {
@@ -141,7 +270,12 @@ class RunTabTest {
                 WorkbenchContent(FeatureContext(onBack = {}, config = ManagedConfig.DEFAULT, device = DeviceStatus(Management.NOT_DETECTED, null), llm = FakeLlmService()), io = kotlinx.coroutines.Dispatchers.Unconfined)
             }
         }
-        compose.onNodeWithTag(WorkbenchTags.tab(0)).assertIsEnabled()
+        compose.onNodeWithTag(WorkbenchTags.TABS).assertExists()
         compose.onNodeWithTag(RunTags.PROMPT).performScrollTo()
+        // The RiskMandate base block comes from llm/prompts once it has loaded.
+        waitFor(RunTags.systemPreset(3))
+        compose.onNodeWithTag(RunTags.systemPreset(1)).assertTextContains("RiskMandate base block")
+        compose.onNodeWithTag(RunTags.systemPreset(1)).performScrollTo().performClick()
+        compose.onNodeWithTag(RunTags.SYSTEM).performScrollTo().assertTextContains("This is the RiskMandate app. RiskMandate means", substring = true)
     }
 }
