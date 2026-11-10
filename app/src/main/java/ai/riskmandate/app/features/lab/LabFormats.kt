@@ -21,7 +21,7 @@ object LabFormats {
     const val RECORDING = "abp-lab-recording/1"
 
     /** Fields that do not change what the model sees or the policy, so editing them keeps the hash. */
-    private val HASH_EXCLUDED = setOf("exposure", "title", "description", "brief_ref")
+    private val HASH_EXCLUDED = setOf("exposure", "title", "description", "brief_ref", "i18n")
 
     /** Longest regex pattern a scenario may carry. Scenarios are bundled with the app; this bounds them if that ever changes. */
     const val MAX_PATTERN_CHARS = 200
@@ -47,8 +47,16 @@ object LabFormats {
     private inline fun <reified E : Enum<E>> enumOf(v: String, what: String): E =
         enumValues<E>().firstOrNull { it.name.equals(v, ignoreCase = true) } ?: fail("unknown $what '$v'")
 
-    fun parseScenario(text: String): Scenario {
+    /** The language key under `i18n` for a device language: only "pt" has translations so far (pt-PT); anything else reads the English. */
+    private fun i18nKey(lang: String) = if (lang.lowercase().startsWith("pt")) "pt-PT" else null
+
+    /** The `i18n` block of a file for [lang]: translated strings that replace the English ones when present. English is the fallback for anything missing. */
+    private fun translations(m: Map<String, Any?>, lang: String): Map<String, Any?>? =
+        i18nKey(lang)?.let { k -> m.optObj("i18n")?.optObj(k) }
+
+    fun parseScenario(text: String, lang: String = "en"): Scenario {
         val m = parseObject(text)
+        val tr = translations(m, lang)
         if (m["format"] != SCENARIO) fail("format must be $SCENARIO")
         if (m["synthetic"] != true) fail("scenario data must be marked synthetic: true")
         val id = m.str("id")
@@ -78,7 +86,7 @@ object LabFormats {
         val maxSteps = (m["max_steps"] as? Long)?.toInt()?.takeIf { it >= 1 } ?: fail("$id: max_steps must be a positive integer")
         return Scenario(
             id = id, version = (m["version"] ?: "").toString(), hash = StrictJson.hash16(m.filterKeys { it !in HASH_EXCLUDED }),
-            title = m.str("title"), description = m.optStr("description") ?: "", system = m.str("system"), user = m.str("user"),
+            title = tr?.optStr("title") ?: m.str("title"), description = tr?.optStr("description") ?: m.optStr("description") ?: "", system = m.str("system"), user = m.str("user"),
             tools = tools, fakeTools = fakes, graphPath = m.optStr("graph"), graph = null,
             secrets = m.strings("secrets"), deviceState = m.optObj("device_state"),
             policy = Policy(pol.optStr("name") ?: "", pol.optStr("note") ?: "", rules), failure = failure, maxSteps = maxSteps,
@@ -95,8 +103,9 @@ object LabFormats {
         )
     }
 
-    fun parseRecording(text: String): Recording {
+    fun parseRecording(text: String, lang: String = "en"): Recording {
         val m = parseObject(text)
+        val tr = translations(m, lang)
         if (m["format"] != RECORDING) fail("format must be $RECORDING")
         val sc = m.obj("scenario")
         val src = m.obj("source")
@@ -107,16 +116,35 @@ object LabFormats {
             sourceKind = src.str("kind"), backend = src.optStr("backend") ?: "",
             modelLabel = model?.optStr("label") ?: model?.optStr("id"),
             settings = src.optObj("settings") ?: emptyMap(), recordedAt = src.optStr("recorded_at"),
-            raw = path(m.obj("raw")), abp = path(m.obj("abp")),
+            raw = path(m.obj("raw"), tr?.get("raw")), abp = path(m.obj("abp"), tr?.get("abp")),
         )
     }
 
-    private fun path(o: Map<String, Any?>): PathRecord {
+    /**
+     * One path's events. [translated], when given, is a list with one entry per event (null for none): an object that may
+     * hold `text`, `reason` and `result`, the translations of what that event shows. A list of another length is ignored
+     * whole, so a stale translation can never put words on the wrong step.
+     */
+    private fun path(o: Map<String, Any?>, translated: Any? = null): PathRecord {
         val oc = o.obj("outcome")
+        val events = o.list("events").map(::event)
+        val tr = (translated as? List<*>)?.takeIf { it.size == events.size }
         return PathRecord(
-            o.list("events").map(::event),
+            events.mapIndexed { i, e -> (tr?.get(i) as? Map<*, *>)?.let { t -> translate(e, t) } ?: e },
             Outcome(oc["failure"] == true, oc["attempted"] == true, oc["caught"] == true, oc["heuristic"] == true),
         )
+    }
+
+    private fun translate(e: LabEvent, t: Map<*, *>): LabEvent {
+        fun s(k: String) = (t[k] as? String)?.takeIf { it.isNotBlank() }
+        return when (e) {
+            is LabEvent.ModelText -> e.copy(text = s("text") ?: e.text)
+            is LabEvent.Final -> e.copy(text = s("text") ?: e.text)
+            is LabEvent.Flag -> e.copy(text = s("text") ?: e.text, reason = s("reason") ?: e.reason)
+            is LabEvent.VerdictEvent -> e.copy(reason = s("reason") ?: e.reason)
+            is LabEvent.ToolResult -> e.copy(result = s("result") ?: e.result)
+            is LabEvent.CallProposed -> e
+        }
     }
 
     private fun event(e0: Any?): LabEvent {

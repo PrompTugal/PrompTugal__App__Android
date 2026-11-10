@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
@@ -101,6 +102,8 @@ object LabTags {
     const val STAT_HEADLINE = "lab_stat_headline"
     const val STAT_UNFINISHED = "lab_stat_unfinished"
     const val SMALL_SAMPLE = "lab_small_sample"
+    /** Scenario ids that start with this are case studies from our own ABPs (the picker shows them as their own set). */
+    const val CASE_PREFIX = "case-"
     const val STOP_REASON = "lab_stop_reason"
     const val LIMIT = "lab_limit"
     fun scenario(id: String) = "lab_scenario_$id"
@@ -129,7 +132,7 @@ fun LabScreen(
     val context = LocalContext.current
     val reduce = rememberReduceMotion()
     val loaded by produceState(data) {
-        if (data == null) value = withContext(Dispatchers.IO) { LabAssets.load(context.assets) }
+        if (data == null) value = withContext(Dispatchers.IO) { LabAssets.load(context.assets, context.resources.configuration.locales[0].language) }
     }
     val lab = loaded
     FeatureContent(maxContentWidth = 1200.dp) {
@@ -303,15 +306,22 @@ private fun LabBody(
         onExport?.invoke(text)
     }
 
-    Row(
-        Modifier.padding(vertical = UiTokens.Gap).horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        for (s in lab.scenarios) {
-            val selected = s.id == scenario.id
-            val selectedText = stringResource(R.string.lab_selected)
-            val mod = Modifier.heightIn(min = 56.dp).testTag(LabTags.scenario(s.id)).semantics { if (selected) stateDescription = selectedText }
-            if (selected) Button({ scenarioId = s.id }, mod) { Text(s.title, fontSize = 20.sp) } else OutlinedButton({ scenarioId = s.id }, mod) { Text(s.title, fontSize = 20.sp) }
+    // Case studies (built from our own ABPs, ids start with "case-") first, then the other scenarios; each set has a heading
+    // only when there are two sets to tell apart.
+    val caseStudies = lab.scenarios.filter { it.id.startsWith(LabTags.CASE_PREFIX) }
+    val others = lab.scenarios - caseStudies.toSet()
+    Column(Modifier.padding(vertical = UiTokens.Gap), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        for ((setTitle, set) in listOf(R.string.lab_set_case_studies to caseStudies, R.string.lab_set_samples to others)) {
+            if (set.isEmpty()) continue
+            if (caseStudies.isNotEmpty() && others.isNotEmpty()) Text(stringResource(setTitle), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (s in set) {
+                    val selected = s.id == scenario.id
+                    val selectedText = stringResource(R.string.lab_selected)
+                    val mod = Modifier.heightIn(min = 56.dp).testTag(LabTags.scenario(s.id)).semantics { if (selected) stateDescription = selectedText }
+                    if (selected) Button({ scenarioId = s.id }, mod) { Text(s.title, fontSize = 20.sp) } else OutlinedButton({ scenarioId = s.id }, mod) { Text(s.title, fontSize = 20.sp) }
+                }
+            }
         }
     }
 
@@ -426,6 +436,7 @@ private fun Provenance(live: Boolean, recording: Recording?, scenario: Scenario,
         } else if (recording != null) {
             StatusChip(stringResource(R.string.lab_chip_replay), ChipKind.Held)
             if (recording.sourceKind == "sample") StatusChip(stringResource(R.string.lab_chip_sample), ChipKind.Neutral)
+            if (recording.sourceKind == "case_study") StatusChip(stringResource(R.string.lab_chip_case_study), ChipKind.Neutral)
             recording.modelLabel?.let { StatusChip(stringResource(R.string.lab_model_line, it), ChipKind.Neutral) }
         }
         if (scenario.failure.heuristic) StatusChip(stringResource(R.string.lab_chip_heuristic), ChipKind.Held)

@@ -22,6 +22,7 @@
     <string name="licences_models_note">These files are not part of the app. The tablet downloads one only when asked to. The licence is the one the model\'s page states.</string>
     <string name="licences_apache_heading">Apache License, Version 2.0 (full text)</string>
 
+    <string name="nav_section_demos">Demos</string>
     <string name="nav_section_today">Today</string>
     <string name="nav_section_explore">Explore</string>
     <string name="nav_section_device">This device</string>

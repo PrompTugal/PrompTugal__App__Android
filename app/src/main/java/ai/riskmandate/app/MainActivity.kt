@@ -115,15 +115,34 @@ fun resolveRoute(screen: String, standOn: Boolean, featureEnabled: Boolean, know
 /** The cloud can be used at all: the staff switch is on, a key is stored and stand mode is off. */
 fun cloudIsOn(keySet: Boolean, switchOn: Boolean, standOn: Boolean): Boolean = keySet && switchOn && !standOn
 
+/**
+ * The features a visitor on a stand-mode tablet may see: the vetted ones that run no model (the pages, the scripted
+ * ABP demo, the mandate view, the release notes). Every other feature, so every feature that uses an LLM (Chat, Lab,
+ * Workbench, Models), is hidden while stand mode is on, **even when its owner has switched it on**; a new feature is
+ * hidden in stand mode until it is added here on purpose (fail closed). Outside stand mode `enabled` decides alone.
+ */
+private val STAND_VISITOR_FEATURES = setOf("site", "abpdemo", "mandate", "releases")
+
+/** Whether the feature may be shown (Home, sidebar, its route) given stand mode. Not about `enabled`. */
+fun featureVisible(id: String, standOn: Boolean): Boolean = !standOn || id in STAND_VISITOR_FEATURES
+
+/** The enabled features that may be shown now: `enabled`, and in stand mode only the vetted ones. */
+fun visibleFeatures(all: List<ai.riskmandate.app.features.Feature>, standOn: Boolean): List<ai.riskmandate.app.features.Feature> =
+    all.filter { it.enabled && featureVisible(it.id, standOn) }
+
 /** Which sidebar section a feature sits in, by id (design spec table); unknown ids go to Explore. */
 fun sectionOf(id: String): Int = when (id) {
+    "abpdemo", "lab", "chat", "workbench" -> R.string.nav_section_demos
     "site", "releases" -> R.string.nav_section_today
     "mandate", "models" -> R.string.nav_section_device
     else -> R.string.nav_section_explore
 }
 
 /** The order of features inside their sections (design spec table). */
-private val NAV_ORDER = listOf("site", "releases", "abpdemo", "lab", "chat", "mandate", "models")
+private val NAV_ORDER = listOf("abpdemo", "lab", "chat", "workbench", "site", "releases", "mandate", "models")
+
+/** Where a feature sits in the order (Demos first); an id this list does not know goes last. */
+fun navRank(id: String): Int = NAV_ORDER.indexOf(id).let { if (it < 0) NAV_ORDER.size else it }
 
 /** A line icon per known feature id, until each feature gives its own (Feature.icon). */
 fun iconFor(id: String): Int = when (id) {
@@ -160,10 +179,12 @@ class MainActivity : ComponentActivity() {
                     val goHome = { screen = Routes.HOME }
                     // A route that no longer exists or is switched off (restored after an app update or
                     // process death) shows Home, and the saved route is reset after composition.
-                    val feature = FEATURES.firstOrNull { it.id == screen && it.enabled }
                     // Stand mode (a visitor at a stand): Diagnostics and the model bench are staff tools, so they
                     // are hidden and unreachable while it is on (R-shell-1). Set from StandHost, see standOn below.
                     var standOn by remember { mutableStateOf(false) }
+                    // In stand mode only vetted visitor features are shown: every feature that uses an LLM (Chat, Lab,
+                    // Workbench, Models) is hidden even when its owner has switched it on (featureVisible).
+                    val feature = FEATURES.firstOrNull { it.id == screen && it.enabled && featureVisible(it.id, standOn) }
                     // Features not switched on yet: reachable only from Diagnostics > Preview (hidden in stand mode).
                     val cloud = remember { CloudProcess.get(this@MainActivity) }
                     // Cloud state the screens depend on (the truth lives in CloudHost; this makes the UI follow it).
@@ -182,12 +203,15 @@ class MainActivity : ComponentActivity() {
                     // Destinations, grouped as in docs/design/android-theme.md. Features are grouped by id (a
                     // `section` on Feature is the architect's to add) and use their own icon when they give one.
                     val enabledFeatureIds = FEATURES.filter { it.enabled }.map { it.id }.toSet()
-                    val featureItems = FEATURES.filter { it.enabled }.map { f ->
+                    // Home cards and the sidebar share one order, the demos first (docs/parity-ios.md, H1).
+                    val homeFeatures = visibleFeatures(FEATURES, standOn).sortedBy { navRank(it.id) }
+                    val featureItems = homeFeatures.map { f ->
                         NavItem(f.id, f.title, iconFor(f.id), f.homeBadge(), vector = f.icon)
                     }
                     fun inSection(section: Int) = featureItems.filter { sectionOf(it.route) == section }
-                        .sortedBy { NAV_ORDER.indexOf(it.route).let { i -> if (i < 0) NAV_ORDER.size else i } }
                     val sections = listOf(
+                        // "Demos" is the first entry (H2): the demonstrations a visitor or a colleague is shown first.
+                        NavSection(R.string.nav_section_demos, inSection(R.string.nav_section_demos)),
                         NavSection(
                             R.string.nav_section_today,
                             listOf(NavItem(Routes.HOME, R.string.home_now_title, R.drawable.ic_nav_home)) + inSection(R.string.nav_section_today),
@@ -316,7 +340,7 @@ class MainActivity : ComponentActivity() {
                                     showDiagnostics = !standOn,
                                     permissions = permissionCount,
                                     attention = (if (config.startUrlRefused) 1 else 0) + (if (message != null) 1 else 0),
-                                    features = FEATURES.filter { it.enabled }.mapIndexed { i, f ->
+                                    features = homeFeatures.mapIndexed { i, f ->
                                         FeatureButton(f.id, f.title, featureItems[i].badge, f.kicker, f.summary) { screen = f.id }
                                     },
                                 )

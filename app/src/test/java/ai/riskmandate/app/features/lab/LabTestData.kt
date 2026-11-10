@@ -10,15 +10,15 @@ object LabTestData {
 
     fun text(path: String): String = File(root, path).readText(Charsets.UTF_8)
 
-    fun load(): LabData {
+    fun load(lang: String = "en"): LabData {
         val graphs = HashMap<String, Graph>()
         val scenarios = File(root, "scenarios").listFiles { f -> f.name.endsWith(".json") }!!.sortedBy { it.name }.map { f ->
-            val s = LabFormats.parseScenario(f.readText())
+            val s = LabFormats.parseScenario(f.readText(), lang)
             val gp = s.graphPath
             if (gp == null) s else s.copy(graph = graphs.getOrPut(gp) { LabFormats.parseGraph(text(gp)) })
         }
         val recordings = File(root, "recordings").walkTopDown().filter { it.isFile && it.name.endsWith(".json") }
-            .sortedBy { it.path }.map { LabFormats.parseRecording(it.readText()) }.toList()
+            .sortedBy { it.path }.map { LabFormats.parseRecording(it.readText(), lang) }.toList()
         return LabData(scenarios, recordings, emptyList())
     }
 

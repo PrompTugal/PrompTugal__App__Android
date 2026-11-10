@@ -1,0 +1,23 @@
+{
+ "items": 167,
+ "kinds": {
+  "article": 45,
+  "company": 120,
+  "riskmandate": 2
+ },
+ "left_out": [
+  "agent-setup-guide (mentions RiskMandate)",
+  "angelos-communication-graph (mentions RiskMandate)",
+  "how-agents-avoid-collisions (mentions RiskMandate)",
+  "how-the-agents-talk (mentions RiskMandate)",
+  "mistakes-we-made (mentions RiskMandate)",
+  "the-first-night-of-promptugal-news (mentions RiskMandate)",
+  "who-does-the-work (mentions RiskMandate)"
+ ],
+ "licence": "pt.news articles: CC BY 4.0, cited by title and link; RiskMandate: verbatim from riskmandate.ai",
+ "passages": 553,
+ "sha256": "99574ae41225facdd32fa6cc124c68a7529493740f9ed46cbba629edd5c47602",
+ "source_commit": "ccd53a70de14aef36f035933599c76e6bfe1f3ff",
+ "source_repository": "PrompTugal/PrompTugal__News__Website",
+ "version": 1
+}

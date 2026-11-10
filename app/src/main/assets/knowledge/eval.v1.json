@@ -1,0 +1,30 @@
+{
+ "version": 1,
+ "about": "Questions over the bundled data with the items that answer them (dev.llm). Empty expect: the data does not hold the answer, and the model should say it does not know. Written by hand against the pt.news commit in manifest.json.",
+ "questions": [
+  {"q": "How many AI agents does Glovo use on WhatsApp for its restaurants?", "expect": ["a:glovo-restaurant-agents-getvocal"]},
+  {"q": "What does 1Password do for AI agents?", "expect": ["c:1password"]},
+  {"q": "Where is Portugal's stand at Web Summit?", "expect": ["a:where-to-find-portugal"]},
+  {"q": "How many people and startups come to Web Summit 2026?", "expect": ["a:web-summit-2026-in-numbers"]},
+  {"q": "What did Gravitee's survey find about the security of AI agents?", "expect": ["a:gravitee-agent-security-survey"]},
+  {"q": "How does WPP turn call transcripts into Jira plans?", "expect": ["a:wpp-call-transcripts-to-jira"]},
+  {"q": "What does RiskMandate do?", "expect": ["rm:what", "rm:tagline"]},
+  {"q": "What failed first when Teamworks built an AI assistant for coaches?", "expect": ["a:teamworks-coaches-agent"]},
+  {"q": "How many startups is Rio sending to Lisbon, and who pays for the flights?", "expect": ["a:rio-ten-startups-to-lisbon"]},
+  {"q": "Which roads are closed for people driving to the summit?", "expect": ["a:driving-to-web-summit"]},
+  {"q": "What is AgroGrINTech doing with pineapple waste?", "expect": ["a:pineapple-waste-to-fish-feed"]},
+  {"q": "Which company offers a search API built for AI agents?", "expect": ["c:exa"]},
+  {"q": "What does Cerebras build?", "expect": ["c:cerebras"]},
+  {"q": "How much has Web Summit been worth to Lisbon, according to EY?", "expect": ["a:web-summit-ten-lisbon-years"]},
+  {"q": "What do the colours of the Web Summit passes mean?", "expect": ["a:web-summit-passes-and-colours"]},
+  {"q": "Where and when are the wristband queues short?", "expect": ["a:web-summit-wristband-queues"]},
+  {"q": "What did the Gender in Tech report find about women in leadership?", "expect": ["a:gender-in-tech-report-2026"]},
+  {"q": "What is Octo Health launching?", "expect": ["a:octo-health-launches"]},
+  {"q": "Which health startups are at Web Summit, and what problems do they tackle?", "expect": ["a:health-startups-by-problem"]},
+  {"q": "What does Delinea govern for AI agents?", "expect": ["c:delinea"]},
+  {"q": "What is the European Commission doing in Pavilion 4?", "expect": ["a:europe-in-pavilion-4"]},
+  {"q": "Onde fica o stand de Portugal na Web Summit?", "expect": ["a:where-to-find-portugal"]},
+  {"q": "What is the capital of Australia?", "expect": []},
+  {"q": "What will the weather be in Lisbon tomorrow?", "expect": []}
+ ]
+}
