@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 126 (10 Nov 2026): dev f624e4e PASS and signed against main 21bd9dc (test and text changes; play texts checked claim by claim against the code). My review of chat's cloud use (M.3 to M.7) is PASS for the flip, once app adds "chat" to CloudHostTest; LOW findings R-chat-5, R-chat-6, R-models-1
+> Round 127 (10 Nov 2026): dev 28ddbba PASS and signed against main 1648b27 (Chat "Ask our data": on-device only by construction, sources as plain text, invented citations flagged; cloud still dormant)
 
 ## Doing
 Nothing. Stopped until woken.
