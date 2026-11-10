@@ -162,4 +162,5 @@
     <string name="workbench_tab_ask">Os nossos dados</string>
     <string name="ask_source_line">[%1$d] %2$s</string>
     <string name="ask_eval_line">%1$d. %2$s · %3$s ms · %4$s</string>
+    <string name="ask_attribution">Do pt.news: %1$s</string>
 </resources>

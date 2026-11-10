@@ -99,6 +99,28 @@ class KnowledgeTest {
         assertTrue(EvalResult(eval.first { it.expect == listOf("a:where-to-find-portugal") }, a).right)
     }
 
+    @Test fun noAddressShapedHandleIsBundled() {
+        val addr = Regex("[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+")
+        knowledge.items.forEach { i -> (listOf(i.title) + i.passages).forEach { assertFalse("${i.id}: ${addr.find(it)?.value}", addr.containsMatchIn(it)) } }
+    }
+
+    @Test fun everyAnswerAboutThirdPartiesKeepsThePtNewsCitation() = runBlocking {
+        // Cited: the cited card only.
+        val cited = GroundedAnswerer(FakeLlmService { FakeReply("Wafer-scale systems [1].") }, index, "S").ask("What does Cerebras build?")
+        assertEquals(listOf("c:cerebras"), cited.attribution.map { it.id })
+        assertTrue(cited.attributionLine.startsWith("From pt.news: Cerebras (https://promptugal.news/companies/cerebras/index.html)"))
+        // Not cited: every pt.news item it was given, so the credit is never lost.
+        val uncited = GroundedAnswerer(FakeLlmService { FakeReply("Wafer-scale systems.") }, index, "S").ask("What does Cerebras build?", k = 2)
+        assertEquals(uncited.sources.hits.map { it.item.id }.filter { !it.startsWith("rm:") }, uncited.attribution.map { it.id })
+        assertTrue(uncited.attribution.isNotEmpty())
+        // "I do not know" with no citation: nothing to credit.
+        val unknown = GroundedAnswerer(FakeLlmService { FakeReply("I do not know that from our data.") }, index, "S").ask("What does Cerebras build?")
+        assertTrue(unknown.attribution.isEmpty())
+        // RiskMandate quotes are riskmandate.ai's, not pt.news.
+        val rm = GroundedAnswerer(FakeLlmService { FakeReply("Agent Behaviour Policies [1].") }, index, "S").ask("What does RiskMandate do?")
+        assertTrue(rm.attribution.none { it.kind == KnowledgeKind.RISKMANDATE })
+    }
+
     @Test fun anUnknownAnswerIsRightOnlyForAQuestionTheDataCannotAnswer() = runBlocking {
         val answerer = GroundedAnswerer(FakeLlmService { FakeReply("I do not know that from our data.") }, index, "SYSTEM")
         val unknown = eval.first { it.expect.isEmpty() }
