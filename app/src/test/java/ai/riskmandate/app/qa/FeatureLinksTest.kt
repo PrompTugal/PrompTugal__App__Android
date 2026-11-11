@@ -31,6 +31,10 @@ class FeatureLinksTest {
             "https://appassets.androidplatform.net/assets/feature_site/",
             "https://\$ASSET_HOST/assets/feature_site/",
         ),
+        // The X-Ray kiosk's one start page (Silvio's page on web-summit.sgit.ai), in the xray package only. Its
+        // navigation and fetches are limited by XrayPolicy (tested in XrayPolicyTest); added for review by QA and
+        // security.android with the feature (riskmandate-android-demo, WS-203).
+        "xray" to setOf("https://web-summit.sgit.ai/people/silvio/app/index.html#xray"),
     )
 
     @Test fun sourcesWereFound() = assertTrue("features dir not found: wrong working directory?", sources.isNotEmpty())
