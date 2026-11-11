@@ -135,7 +135,8 @@ const val XRAY_PROFILE = "xray"
  * device for it) stays across reloads and app restarts. Where WebView supports profiles (WebView 110+), the
  * kiosk has its own profile; otherwise it shares the default one, and opening the site screen clears it.
  * Otherwise as the site screen: no file:// or content:// access from the page, Safe Browsing on, no mixed content,
- * no third-party cookies, no JavaScript interface, no second window, remote debugging off. The caller sets the
+ * no third-party cookies, no JavaScript interface, no second window, remote debugging off. For less lag, the page
+ * is rastered ahead (offscreen pre-raster) and its renderer has an important priority. The caller sets the
  * chrome client ([XrayChromeClient]) and the download listener.
  *
  * Returns true when the kiosk has its own profile.
@@ -170,7 +171,13 @@ fun WebView.applyXraySettings(): Boolean {
         setGeolocationEnabled(false)
         mediaPlaybackRequiresUserGesture = true
         cacheMode = WebSettings.LOAD_DEFAULT
+        // Less lag on the stand (Angelo, 11 Nov): the page is rastered ahead, so its animated SVG and moving
+        // panels draw without waiting for tiles. Costs some memory; one page, one WebView.
+        offscreenPreRaster = true
     }
+    // The page is the screen: its renderer keeps the app's priority, and is not lowered when the WebView
+    // is briefly not visible (moving between full screen and the window).
+    setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, false)
     (profileCookies ?: CookieManager.getInstance()).apply {
         setAcceptCookie(true)
         setAcceptThirdPartyCookies(this@applyXraySettings, false)

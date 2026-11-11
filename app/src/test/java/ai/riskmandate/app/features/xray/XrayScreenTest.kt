@@ -115,6 +115,9 @@ class XrayScreenTest {
             assertFalse(allowFileAccess)
             assertFalse(allowContentAccess)
             assertFalse(javaScriptCanOpenWindowsAutomatically)
+            assertTrue("rastered ahead, less lag", offscreenPreRaster)
         }
+        assertEquals("the renderer keeps the app's priority", WebView.RENDERER_PRIORITY_IMPORTANT, view.rendererRequestedPriority)
+        assertFalse(view.rendererPriorityWaivedWhenNotVisible)
     }
 }
