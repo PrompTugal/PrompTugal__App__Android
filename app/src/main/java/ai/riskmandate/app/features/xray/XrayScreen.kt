@@ -1,38 +1,53 @@
 package ai.riskmandate.app.features.xray
 
+import ai.riskmandate.app.Browser
 import ai.riskmandate.app.Pt
 import ai.riskmandate.app.R
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,7 +55,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -65,41 +80,157 @@ import kotlinx.coroutines.delay
 object XrayTags {
     const val WEBVIEW = "xray_webview"
     const val COVER = "xray_cover"
-    const val STAFF_CORNER = "xray_staff_corner"
-    const val EXIT_DIALOG = "xray_exit_dialog"
-    const val EXIT_LEAVE = "xray_exit_leave"
-    const val EXIT_STAY = "xray_exit_stay"
-    const val EXIT_RELOAD = "xray_exit_reload"
+    const val TOOLBAR = "xray_toolbar"
+    const val RELOAD = "xray_reload"
+    const val FULLSCREEN_ENTER = "xray_fullscreen_enter"
+    const val FULLSCREEN_EXIT = "xray_fullscreen_exit"
+    const val FULLSCREEN = "xray_fullscreen"
 }
 
+/** How long the Exit full screen button stays before it fades; a tap anywhere brings it back. */
+const val XRAY_TOGGLE_SHOWN_MS = 4_000L
 
 /**
- * The X-Ray page as a stand kiosk: a window over the whole app (so no app chrome), system bars hidden and coming
- * back hidden after a swipe, the screen kept on, Back doing nothing. Staff leave by holding the bottom-start
- * corner for [exitHoldMs] and confirming. The page reloads by itself after an error, a stall or a lost network.
+ * Silvio's X-Ray page in an embedded browser (Android System WebView, which is Chromium), in two ways:
+ * - **full screen** (the start): a window over the whole app, system bars hidden (immersive sticky), the screen kept
+ *   on; a small Exit full screen tab on the start edge, half way down, that fades after [XRAY_TOGGLE_SHOWN_MS] and returns on a
+ *   tap; Back also leaves full screen. The page's own full-screen button works too.
+ * - **in the app**: inside the app's frame (its top bar or sidebar, its Back to the menu), with a small bar above
+ *   the page: Reload and Full screen.
+ * The same WebView moves between the two, so the page keeps its place. It reloads by itself after an error, a stall
+ * or a lost network.
  */
 @Composable
 fun XrayScreen(
-    onExit: () -> Unit,
     startUrl: String = XrayPolicy.START_URL,
-    exitHoldMs: Long = 3_000,
     clock: () -> Long = SystemClock::elapsedRealtime,
     /** False in screenshot tests: Robolectric draws no web content. */
     showWebView: Boolean = true,
     /** For tests: start with the offline cover showing. */
     startFailed: Boolean = false,
+    startFullScreen: Boolean = true,
 ) {
-    Dialog(
-        onDismissRequest = {},
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false,
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false,
-        ),
-    ) {
-        KioskWindow()
-        XrayKiosk(onExit, startUrl, exitHoldMs, clock, showWebView, startFailed)
+    val context = LocalContext.current
+    val watchdog = remember { XrayWatchdog().also { if (startFailed) it.onMainFrameError(clock()) } }
+    var cover by remember { mutableStateOf(watchdog.coverShown) }
+    var view by remember { mutableStateOf(XrayView(fullScreen = startFullScreen)) }
+    var pageView by remember { mutableStateOf<View?>(null) }
+    var pageViewCallback by remember { mutableStateOf<WebChromeClient.CustomViewCallback?>(null) }
+    var webViewKey by remember { mutableIntStateOf(0) }
+
+    fun sync() { cover = watchdog.coverShown }
+    fun endPageFullScreen() {
+        val cb = pageViewCallback
+        pageView = null
+        pageViewCallback = null
+        cb?.onCustomViewHidden()
+    }
+    fun toggle() {
+        val ending = view.leavingEndsPageFullScreen
+        view = view.toggled()
+        if (ending) endPageFullScreen()
+    }
+
+    // File inputs on the page: the system picker, as in Chrome.
+    var pendingFiles by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        pendingFiles?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data))
+        pendingFiles = null
+    }
+
+    val webView: WebView? = remember(webViewKey) {
+        if (!showWebView) return@remember null
+        WebView(context).apply {
+            applyXraySettings()
+            setBackgroundColor(0) // transparent: the theme's paper behind it shows while it loads
+            keepScreenOn = true // in the app's window and in full screen
+            contentDescription = context.getString(R.string.feature_xray_webview_description)
+            webChromeClient = XrayChromeClient(
+                onPageFullScreen = { v, cb ->
+                    pageView = v
+                    pageViewCallback = cb
+                    view = view.pageEntered()
+                },
+                onPageFullScreenEnd = {
+                    pageView = null
+                    pageViewCallback = null
+                    view = view.pageExited()
+                },
+                onFiles = { cb, params ->
+                    pendingFiles?.onReceiveValue(null)
+                    pendingFiles = cb
+                    try {
+                        filePicker.launch(params.createIntent())
+                    } catch (e: ActivityNotFoundException) {
+                        pendingFiles = null
+                        cb.onReceiveValue(null)
+                    }
+                    true
+                },
+            )
+            webViewClient = XrayWebViewClient(
+                onStarted = { watchdog.onLoadStarted(clock()); sync() },
+                onFinished = { failed -> watchdog.onLoadFinished(clock(), failed); sync() },
+                onMainFrameError = { watchdog.onMainFrameError(clock()); sync() },
+                onRenderGone = {
+                    // A new WebView (and renderer); the old one is released by the effect below.
+                    endPageFullScreen()
+                    watchdog.onMainFrameError(clock())
+                    sync()
+                    webViewKey++
+                },
+                onOutside = { url -> openOutside(context, url) },
+            )
+            // A download link to https opens outside (the browser downloads it); blob: exports need a JS bridge, which this screen never has.
+            setDownloadListener { url, _, _, _, _ -> if (XrayPolicy.navigation(url, hasGesture = true) == XrayPolicy.Nav.OPEN_OUTSIDE) openOutside(context, url) }
+            watchdog.onLoadStarted(clock())
+            loadUrl(startUrl)
+        }
+    }
+    DisposableEffect(webView) {
+        onDispose { webView?.apply { stopLoading(); destroy() } }
+    }
+    fun reload() {
+        webView?.loadUrl(startUrl)
+        sync()
+    }
+    val currentReload by rememberUpdatedState(::reload)
+
+    // Every 5 s: a stalled load or a failed page whose retry time has come is reloaded.
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(5_000)
+            if (watchdog.tick(clock()) == XrayAction.RELOAD) currentReload()
+            sync()
+        }
+    }
+    // The network came back: reload at once if the page had failed.
+    DisposableEffect(Unit) {
+        val unregister = watchNetwork(context) { if (watchdog.onNetworkAvailable(clock()) == XrayAction.RELOAD) currentReload() }
+        onDispose(unregister)
+    }
+
+    if (view.fullScreen) {
+        Dialog(
+            onDismissRequest = { toggle() }, // Back leaves full screen
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false,
+            ),
+        ) {
+            KioskWindow()
+            FullScreenContent(onExit = { toggle() }) {
+                Page(webView, cover)
+                pageView?.let { v -> AndroidView(factory = { v.also { (it.parent as? ViewGroup)?.removeView(it) } }, modifier = Modifier.fillMaxSize()) }
+            }
+        }
+    } else {
+        Column(Modifier.fillMaxSize()) {
+            Toolbar(onReload = { reload() }, onFullScreen = { toggle() })
+            Box(Modifier.weight(1f).fillMaxWidth()) { Page(webView, cover) }
+        }
     }
 }
 
@@ -138,104 +269,83 @@ private fun KioskWindow() {
     }
 }
 
-/** The kiosk's content: the WebView, the cover while it recovers, the staff corner and the exit confirmation. */
+/** The WebView (moved here from wherever it was) with the calm cover over it while the page recovers. */
 @Composable
-internal fun XrayKiosk(
-    onExit: () -> Unit,
-    startUrl: String,
-    exitHoldMs: Long,
-    clock: () -> Long,
-    showWebView: Boolean,
-    startFailed: Boolean,
-) {
-    val context = LocalContext.current
-    val watchdog = remember { XrayWatchdog().also { if (startFailed) it.onMainFrameError(clock()) } }
-    var cover by remember { mutableStateOf(watchdog.coverShown) }
-    var webView by remember { mutableStateOf<WebView?>(null) }
-    var webViewKey by remember { mutableIntStateOf(0) }
-    var askExit by remember { mutableStateOf(false) }
-
-    fun sync() { cover = watchdog.coverShown }
-    fun reload() {
-        webView?.loadUrl(startUrl)
-        sync()
-    }
-    val currentReload by rememberUpdatedState(::reload)
-
-    // Every 5 s: a stalled load or a failed page whose retry time has come is reloaded.
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(5_000)
-            if (watchdog.tick(clock()) == XrayAction.RELOAD) currentReload()
-            sync()
-        }
-    }
-    // The network came back: reload at once if the page had failed.
-    DisposableEffect(Unit) {
-        val unregister = watchNetwork(context) { if (watchdog.onNetworkAvailable(clock()) == XrayAction.RELOAD) currentReload() }
-        onDispose(unregister)
-    }
-
-    // The theme's paper behind the page and the cover (colours come from Theme.kt only).
-    val paper = Pt.colors.paper
-    Box(Modifier.fillMaxSize().background(paper)) {
-        if (showWebView) {
-            key(webViewKey) {
-                AndroidView(
-                    factory = { c ->
-                        WebView(c).apply {
-                            applyXraySettings()
-                            setBackgroundColor(paper.toArgb())
-                            contentDescription = c.getString(R.string.feature_xray_webview_description)
-                            webViewClient = XrayWebViewClient(
-                                onStarted = { watchdog.onLoadStarted(clock()); sync() },
-                                onFinished = { failed -> watchdog.onLoadFinished(clock(), failed); sync() },
-                                onMainFrameError = { watchdog.onMainFrameError(clock()); sync() },
-                                onRenderGone = {
-                                    // A new WebView (and renderer) on the next composition; the old one is released below.
-                                    webView = null
-                                    watchdog.onMainFrameError(clock())
-                                    sync()
-                                    webViewKey++
-                                },
-                            )
-                            webView = this
-                            watchdog.onLoadStarted(clock())
-                            loadUrl(startUrl)
-                        }
-                    },
-                    onRelease = { it.stopLoading(); it.destroy() },
-                    modifier = Modifier.fillMaxSize().testTag(XrayTags.WEBVIEW),
-                )
-            }
+private fun Page(webView: WebView?, cover: Boolean) {
+    Box(Modifier.fillMaxSize().background(Pt.colors.paper)) {
+        if (webView != null) {
+            AndroidView(
+                // The same WebView moves between the window and full screen: take it from its old parent first.
+                factory = { webView.also { (it.parent as? ViewGroup)?.removeView(it) } },
+                // Destroyed by XrayScreen, not here: leaving one mode is not leaving the page.
+                onRelease = {},
+                modifier = Modifier.fillMaxSize().testTag(XrayTags.WEBVIEW),
+            )
         }
         if (cover) Cover()
-        StaffCorner(exitHoldMs, Modifier.align(Alignment.BottomStart)) { askExit = true }
     }
+}
 
-    if (askExit) {
-        AlertDialog(
-            onDismissRequest = { askExit = false },
-            modifier = Modifier.testTag(XrayTags.EXIT_DIALOG),
-            title = { Text(stringResource(R.string.feature_xray_exit_title)) },
-            text = { Text(stringResource(R.string.feature_xray_exit_body)) },
-            confirmButton = {
-                TextButton(onClick = { askExit = false; onExit() }, modifier = Modifier.testTag(XrayTags.EXIT_LEAVE)) {
-                    Text(stringResource(R.string.feature_xray_exit_leave))
-                }
-            },
-            dismissButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(onClick = { askExit = false; reload() }, modifier = Modifier.testTag(XrayTags.EXIT_RELOAD)) {
-                        Text(stringResource(R.string.feature_xray_exit_reload))
-                    }
-                    TextButton(onClick = { askExit = false }, modifier = Modifier.testTag(XrayTags.EXIT_STAY)) {
-                        Text(stringResource(R.string.feature_xray_exit_stay))
-                    }
-                }
-            },
-        )
+/** In the app's window: a slim bar above the page, never over it. */
+@Composable
+private fun Toolbar(onReload: () -> Unit, onFullScreen: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 8.dp).testTag(XrayTags.TOOLBAR),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(onClick = onReload, modifier = Modifier.testTag(XrayTags.RELOAD)) { Text(stringResource(R.string.feature_xray_reload)) }
+        TextButton(onClick = onFullScreen, modifier = Modifier.testTag(XrayTags.FULLSCREEN_ENTER)) { Text(stringResource(R.string.feature_xray_fullscreen_enter)) }
     }
+}
+
+/**
+ * Full screen: [content] fills the display; a small Exit full screen tab on the start edge shows for
+ * [XRAY_TOGGLE_SHOWN_MS], then fades; any tap brings it back (the tap still reaches the page).
+ */
+@Composable
+internal fun FullScreenContent(onExit: () -> Unit, content: @Composable () -> Unit) {
+    var taps by remember { mutableIntStateOf(0) }
+    var shown by remember { mutableStateOf(true) }
+    LaunchedEffect(taps) {
+        shown = true
+        delay(XRAY_TOGGLE_SHOWN_MS)
+        shown = false
+    }
+    Box(
+        Modifier
+            .fillMaxSize()
+            .testTag(XrayTags.FULLSCREEN)
+            .pointerInput(Unit) {
+                // Watch, never consume: the page gets every touch.
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    taps++
+                }
+            },
+    ) {
+        content()
+        val exitLabel = stringResource(R.string.feature_xray_fullscreen_exit)
+        AnimatedVisibility(visible = shown, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.CenterStart)) {
+            // A slim tab on the start edge, half way down: on the page at 412 and 1280 px wide that is margin, while
+            // the corners hold the page's own buttons (its menu, full screen, bottom bar and voice button).
+            Surface(
+                onClick = onExit,
+                shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp),
+                color = Pt.colors.ink.copy(alpha = 0.72f),
+                contentColor = Pt.colors.paper,
+                modifier = Modifier.size(width = 28.dp, height = 64.dp).testTag(XrayTags.FULLSCREEN_EXIT).semantics { contentDescription = exitLabel },
+            ) {
+                Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(18.dp)) }
+            }
+        }
+    }
+}
+
+/** Another site, tapped on the page: a Custom Tab is not used for it (Browser.open is riskmandate.ai only), the system browser is. */
+private fun openOutside(context: Context, url: String) {
+    val message = Browser.message(Browser.openExternal(context, url)) ?: return
+    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 }
 
 /** A calm cover while the page is away: no error text from WebView, just that it is coming back. */
@@ -258,26 +368,6 @@ private fun Cover() {
             )
         }
     }
-}
-
-/** An invisible 56 dp corner: held for [holdMs], it asks to leave. A tap does nothing. */
-@Composable
-private fun StaffCorner(holdMs: Long, modifier: Modifier = Modifier, onHeld: () -> Unit) {
-    val description = stringResource(R.string.feature_xray_staff_corner)
-    val held by rememberUpdatedState(onHeld)
-    Box(
-        modifier
-            .size(56.dp)
-            .testTag(XrayTags.STAFF_CORNER)
-            .semantics { contentDescription = description }
-            .pointerInput(holdMs) {
-                awaitEachGesture {
-                    awaitFirstDown(requireUnconsumed = false)
-                    val up = withTimeoutOrNull(holdMs) { waitForUpOrCancellation() }
-                    if (up == null) held()
-                }
-            },
-    )
 }
 
 /** Calls [onAvailable] on the main thread whenever the default network becomes available. Returns the unregister. */

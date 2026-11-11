@@ -1,41 +1,48 @@
 package ai.riskmandate.app.features.xray
 
 /**
- * Where the X-Ray kiosk may go. Pure Kotlin, so it runs on the JVM.
+ * Where the X-Ray screen may go. Pure Kotlin, so it runs on the JVM.
  *
- * Top-level pages: https://web-summit.sgit.ai only (Silvio's command centre lives there). Every other main-frame
- * navigation is ignored: a kiosk opens nothing else, not even the system browser (that would leave the kiosk).
- * Sub-resources (scripts, fonts, fetches): the hosts the page was seen to use on 11 Nov 2026 (headless Chromium:
- * web-summit.sgit.ai, cdn.jsdelivr.net for three.js, Google Fonts, promptugal.news for the company list,
- * dev.send.sgraph.ai for the vault) plus openrouter.ai, which the page calls once a demo key is set. Everything
- * else over the network is refused.
+ * Build 2 (Angelo, 11 Nov 2026: "run it as an embedded app in a browser ... keep the features"): the page behaves
+ * as it does in Chrome. Sub-resources from any host over TLS (https, wss); plain http and ws refused (WebView's
+ * mixed-content rule refuses them too). Top-level pages stay on https://web-summit.sgit.ai in this view; a link or
+ * window.open elsewhere, tapped by a person, opens outside (Custom Tab or browser); one the page makes by itself is
+ * ignored.
  */
 object XrayPolicy {
     const val START_URL = "https://web-summit.sgit.ai/people/silvio/app/index.html#xray"
     const val HOME_HOST = "web-summit.sgit.ai"
 
-    /** Hosts a page may fetch from (https only). Adding one is a security review, as for the site feature's list. */
-    val SUBRESOURCE_HOSTS: Set<String> = setOf(
-        HOME_HOST,
-        "cdn.jsdelivr.net",
-        "fonts.googleapis.com",
-        "fonts.gstatic.com",
-        "promptugal.news",
-        "dev.send.sgraph.ai",
-        "openrouter.ai",
-    )
+    /** What to do with a top-level navigation. */
+    enum class Nav { LOAD, OPEN_OUTSIDE, IGNORE }
 
-    /** A main-frame page that may load: https on [HOME_HOST], port 443 at most. */
+    /** A main-frame page that may load in this view: https on [HOME_HOST], port 443 at most. */
     fun allowPage(url: String): Boolean = httpsHost(url) == HOME_HOST
 
-    /** True when a sub-resource must be refused: network schemes to a host off [SUBRESOURCE_HOSTS], or plain http. */
+    /**
+     * A top-level navigation (a link, target=_blank or window.open, which open in this same view): on the site,
+     * load it; another https page tapped by a person, open it outside; anything else (another scheme, a redirect
+     * the page made without a tap), ignore.
+     */
+    fun navigation(url: String, hasGesture: Boolean): Nav = when {
+        allowPage(url) -> Nav.LOAD
+        hasGesture && httpsHost(url) != null -> Nav.OPEN_OUTSIDE
+        else -> Nav.IGNORE
+    }
+
+    /** True when a sub-resource must be refused: plain http or ws, or a TLS URL with a suspicious authority. */
     fun blockSubresource(url: String): Boolean {
         val scheme = url.trim().substringBefore(':', "").lowercase()
-        val network = scheme == "http" || scheme == "https" || scheme == "ws" || scheme == "wss"
-        if (!network) return false // data:, blob: and about: never reach the network
-        val host = if (scheme == "wss") httpsHost("https" + url.trim().substring(3)) else httpsHost(url)
-        return host == null || host !in SUBRESOURCE_HOSTS
+        return when (scheme) {
+            "http", "ws" -> true
+            "https" -> httpsHost(url) == null
+            "wss" -> httpsHost("https" + url.trim().substring(3)) == null
+            else -> false // data:, blob: and about: never reach the network
+        }
     }
+
+    /** Camera, microphone and the like: only ever for the site itself (and only if the app holds the permission). */
+    fun mayAskForMedia(origin: String): Boolean = httpsHost(origin) == HOME_HOST
 
     /**
      * The lower-case host of an https URL, or null when the URL is not plain https or is suspicious: a backslash,
@@ -123,4 +130,25 @@ class XrayWatchdog(
         val shift = (failures - 1).coerceIn(0, 10)
         return (firstRetryMs shl shift).coerceAtMost(maxRetryMs)
     }
+}
+
+/**
+ * Full screen or in the app's window. Pure state, tested on the JVM.
+ *
+ * [fullScreen]: the page fills the display, system bars hidden. [pageFullScreen]: the page's own full-screen button
+ * is in force (WebView hands over a view to show). [byPage]: full screen was entered by the page from the window,
+ * so the page leaving it goes back to the window.
+ */
+data class XrayView(val fullScreen: Boolean = true, val pageFullScreen: Boolean = false, val byPage: Boolean = false) {
+    /** The toggle (or Back while full screen): in and out. Leaving also ends the page's own full screen. */
+    fun toggled(): XrayView = if (fullScreen) XrayView(fullScreen = false) else copy(fullScreen = true)
+
+    /** True when leaving now must tell WebView the page's full screen is over. */
+    val leavingEndsPageFullScreen: Boolean get() = fullScreen && pageFullScreen
+
+    /** The page asked for full screen (its own button). */
+    fun pageEntered(): XrayView = XrayView(fullScreen = true, pageFullScreen = true, byPage = byPage || !fullScreen)
+
+    /** The page left full screen: back to the window if the page had brought us to full screen. */
+    fun pageExited(): XrayView = if (byPage) XrayView(fullScreen = false) else copy(pageFullScreen = false)
 }

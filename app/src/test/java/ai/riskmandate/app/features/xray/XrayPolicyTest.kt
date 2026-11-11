@@ -30,26 +30,34 @@ class XrayPolicyTest {
         )) assertFalse(u, XrayPolicy.allowPage(u))
     }
 
-    @Test fun subresourcesOnlyFromThePagesHosts() {
+    @Test fun subresourcesFromAnyHostOverTls() {
         for (u in listOf(
-            "https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js", "https://fonts.googleapis.com/css2?family=x",
-            "https://fonts.gstatic.com/s/x.woff2", "https://promptugal.news/api/v1/companies.json",
-            "https://dev.send.sgraph.ai/api/vault/append/write/x", "https://openrouter.ai/api/v1/chat/completions",
-            "https://web-summit.sgit.ai/people/silvio/app/assets/cc/xray.js", "wss://web-summit.sgit.ai/socket",
+            "https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js", "https://fonts.gstatic.com/s/x.woff2",
+            "https://swarm.promptugal.news/api/x", "https://api.github.com/repos/x", "https://openrouter.ai/api/v1/chat/completions",
+            "https://web-summit.sgit.ai/people/silvio/app/assets/cc/xray.js", "wss://web-summit.sgit.ai/socket", "wss://example.com/s",
         )) assertFalse(u, XrayPolicy.blockSubresource(u))
         for (u in listOf(
-            "https://tracker.example/p.js", "http://web-summit.sgit.ai/a.js", "ws://web-summit.sgit.ai/s",
-            "https://cdn.jsdelivr.net.evil.example.com/x.js", USERINFO_ON_AN_ALLOWED_HOST, "wss://evil.example.com/s",
-            "https://api.openai.com/v1/x",
+            "http://web-summit.sgit.ai/a.js", "ws://web-summit.sgit.ai/s", "http://tracker.example/p.js",
+            USERINFO_ON_AN_ALLOWED_HOST, "https://cdn.jsdelivr.net:8443/x.js", "https://cdn.jsdelivr.net%2e.evil.example.com/x.js",
         )) assertTrue(u, XrayPolicy.blockSubresource(u))
         // Not the network: left to WebView.
         for (u in listOf("data:image/png;base64,AAAA", "blob:https://web-summit.sgit.ai/1234", "about:blank")) assertFalse(u, XrayPolicy.blockSubresource(u))
     }
 
-    @Test fun theHostListIsTheOneReviewed() {
-        assertEquals(
-            setOf("web-summit.sgit.ai", "cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com", "promptugal.news", "dev.send.sgraph.ai", "openrouter.ai"),
-            XrayPolicy.SUBRESOURCE_HOSTS,
-        )
+    @Test fun aTappedLinkOffTheSiteOpensOutsideAndAnUntappedOneIsIgnored() {
+        assertEquals(XrayPolicy.Nav.LOAD, XrayPolicy.navigation(XrayPolicy.START_URL, hasGesture = false))
+        assertEquals(XrayPolicy.Nav.LOAD, XrayPolicy.navigation("https://web-summit.sgit.ai/team/", hasGesture = true))
+        // The page's Summit desk link (target=_blank) and Ask Claude (window.open) both go to claude.ai.
+        assertEquals(XrayPolicy.Nav.OPEN_OUTSIDE, XrayPolicy.navigation("https://claude.ai/new?q=x", hasGesture = true))
+        assertEquals(XrayPolicy.Nav.OPEN_OUTSIDE, XrayPolicy.navigation("https://github.com/SGit-AI/x", hasGesture = true))
+        assertEquals(XrayPolicy.Nav.IGNORE, XrayPolicy.navigation("https://claude.ai/new", hasGesture = false))
+        for (u in listOf("http://example.com/", "intent://x#Intent;end", "javascript:alert(1)", "file:///sdcard/x", "https://web-summit.sgit.ai@evil.example.com/"))
+            assertEquals(u, XrayPolicy.Nav.IGNORE, XrayPolicy.navigation(u, hasGesture = true))
+    }
+
+    @Test fun mediaOnlyEverForTheSite() {
+        assertTrue(XrayPolicy.mayAskForMedia("https://web-summit.sgit.ai/"))
+        assertFalse(XrayPolicy.mayAskForMedia("https://evil.example.com/"))
+        assertFalse(XrayPolicy.mayAskForMedia("http://web-summit.sgit.ai/"))
     }
 }

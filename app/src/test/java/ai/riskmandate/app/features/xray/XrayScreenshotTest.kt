@@ -18,7 +18,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
 /**
- * The kiosk's own screen, the offline cover (Robolectric draws no web content, so the page itself needs a device),
+ * The screen in the app's window (the bar above the page) with the offline cover (Robolectric draws no web content, so the page itself needs a device),
  * on a phone (portrait) and a 10" tablet (landscape). PNGs go to app/build/screenshots/xray-cover-<device>-<orientation>.png.
  */
 @RunWith(AndroidJUnit4::class)
@@ -28,16 +28,16 @@ class XrayScreenshotTest {
 
     @Test fun theCover() {
         val outDir = File("build/screenshots").apply { mkdirs() }
-        for ((name, qualifiers) in listOf(
-            "phone-portrait" to "w360dp-h800dp-port-xxhdpi",
-            "tablet10-landscape" to "w1280dp-h800dp-land-xhdpi",
+        for ((name, qualifiers, fullScreen) in listOf(
+            Triple("phone-portrait", "w360dp-h800dp-port-xxhdpi", false),
+            Triple("tablet10-landscape", "w1280dp-h800dp-land-xhdpi", false),
         )) {
             RuntimeEnvironment.setQualifiers(qualifiers)
             ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
                 scenario.onActivity {
                     it.setContent {
                         RiskMandateTheme(darkTheme = true) {
-                            Surface { XrayKiosk(onExit = {}, startUrl = XrayPolicy.START_URL, exitHoldMs = 3_000, clock = { 0L }, showWebView = false, startFailed = true) }
+                            Surface { XrayScreen(startUrl = XrayPolicy.START_URL, clock = { 0L }, showWebView = false, startFailed = true, startFullScreen = fullScreen) }
                         }
                     }
                 }

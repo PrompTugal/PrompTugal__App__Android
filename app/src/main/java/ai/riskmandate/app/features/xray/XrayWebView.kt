@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Message
+import android.view.View
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
@@ -24,22 +25,29 @@ import androidx.webkit.WebViewFeature
 import java.io.ByteArrayInputStream
 
 /**
- * The kiosk's WebView client: main-frame pages only on web-summit.sgit.ai ([XrayPolicy.allowPage]), anything else
- * ignored (never handed to a browser: that would leave the kiosk); sub-resources off [XrayPolicy.SUBRESOURCE_HOSTS]
- * refused; load progress reported to the watchdog.
+ * The X-Ray screen's WebView client. Top-level pages: web-summit.sgit.ai loads here; another https page a person
+ * tapped (a link, target=_blank, window.open, which all open in this same view) goes to [onOutside]; anything else
+ * is ignored ([XrayPolicy.navigation]). Sub-resources from any host over TLS; plain http and ws refused. Load
+ * progress goes to the watchdog.
  */
 class XrayWebViewClient(
     private val onStarted: () -> Unit,
     private val onFinished: (failedMeanwhile: Boolean) -> Unit,
     private val onMainFrameError: () -> Unit,
     private val onRenderGone: () -> Unit,
+    private val onOutside: (url: String) -> Unit = {},
 ) : WebViewClient() {
     private var failedThisLoad = false
 
-    /** True cancels: a page off web-summit.sgit.ai, or a frame to a host the page may not fetch from. */
+    /** True cancels: a page off web-summit.sgit.ai (opened outside if a person tapped it), or a frame over plain http. */
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
         val url = request.url.toString()
-        return if (request.isForMainFrame) !XrayPolicy.allowPage(url) else XrayPolicy.blockSubresource(url)
+        if (!request.isForMainFrame) return XrayPolicy.blockSubresource(url)
+        return when (XrayPolicy.navigation(url, request.hasGesture())) {
+            XrayPolicy.Nav.LOAD -> false
+            XrayPolicy.Nav.OPEN_OUTSIDE -> { onOutside(url); true }
+            XrayPolicy.Nav.IGNORE -> true
+        }
     }
 
     override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
@@ -87,20 +95,34 @@ class XrayWebViewClient(
 }
 
 /**
- * Denies what a page can ask for (camera, microphone, location, files, new windows). JavaScript alert and confirm
- * keep WebView's own dialogs (the page asks `confirm` before some actions), which a WebChromeClient enables.
+ * What the page can ask for. The page's own full-screen button ([onPageFullScreen], [onPageFullScreenEnd]) and file
+ * inputs ([onFiles], the system picker) work as in Chrome; JavaScript alert, confirm and prompt keep WebView's own
+ * dialogs. Camera, microphone and location stay refused: the app holds none of those permissions, and the page never
+ * asks for camera or microphone (its voice input is Web Speech, which WebView does not have).
  */
-class XrayChromeClient : WebChromeClient() {
+class XrayChromeClient(
+    private val onPageFullScreen: (view: View, callback: CustomViewCallback) -> Unit = { _, cb -> cb.onCustomViewHidden() },
+    private val onPageFullScreenEnd: () -> Unit = {},
+    private val onFiles: (callback: ValueCallback<Array<Uri>>, params: FileChooserParams) -> Boolean = { _, _ -> false },
+) : WebChromeClient() {
     override fun onPermissionRequest(request: PermissionRequest) = request.deny()
 
     override fun onGeolocationPermissionsShowPrompt(origin: String?, callback: GeolocationPermissions.Callback) =
         callback.invoke(origin, false, false)
 
     override fun onShowFileChooser(webView: WebView?, filePathCallback: ValueCallback<Array<Uri>>?, fileChooserParams: FileChooserParams?): Boolean {
-        filePathCallback?.onReceiveValue(null)
-        return true
+        if (filePathCallback == null || fileChooserParams == null) return false
+        return onFiles(filePathCallback, fileChooserParams)
     }
 
+    override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+        if (view == null || callback == null) return
+        onPageFullScreen(view, callback)
+    }
+
+    override fun onHideCustomView() = onPageFullScreenEnd()
+
+    /** No second window: with multiple windows off, target=_blank and window.open load in this view (then the client decides). */
     override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message?): Boolean = false
 }
 
@@ -112,8 +134,9 @@ const val XRAY_PROFILE = "xray"
  * cookies accepted and never cleared, so the demo key a staff member unlocks once (Silvio's page asks a new
  * device for it) stays across reloads and app restarts. Where WebView supports profiles (WebView 110+), the
  * kiosk has its own profile; otherwise it shares the default one, and opening the site screen clears it.
- * Otherwise as locked down as the site screen: no file or content access, Safe Browsing on, no mixed content,
- * no third-party cookies, no JavaScript interface, no downloads, no new windows, remote debugging off.
+ * Otherwise as the site screen: no file:// or content:// access from the page, Safe Browsing on, no mixed content,
+ * no third-party cookies, no JavaScript interface, no second window, remote debugging off. The caller sets the
+ * chrome client ([XrayChromeClient]) and the download listener.
  *
  * Returns true when the kiosk has its own profile.
  */
@@ -148,7 +171,6 @@ fun WebView.applyXraySettings(): Boolean {
         mediaPlaybackRequiresUserGesture = true
         cacheMode = WebSettings.LOAD_DEFAULT
     }
-    webChromeClient = XrayChromeClient()
     (profileCookies ?: CookieManager.getInstance()).apply {
         setAcceptCookie(true)
         setAcceptThirdPartyCookies(this@applyXraySettings, false)
