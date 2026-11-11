@@ -1,10 +1,12 @@
 package ai.riskmandate.app.features.xray
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Message
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
@@ -124,6 +126,24 @@ class XrayChromeClient(
 
     /** No second window: with multiple windows off, target=_blank and window.open load in this view (then the client decides). */
     override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message?): Boolean = false
+}
+
+/**
+ * The system picker's intent for a file input. WebView's [WebChromeClient.FileChooserParams.createIntent] leaves out
+ * [Intent.EXTRA_ALLOW_MULTIPLE], so an `<input multiple>` would get one file; it is added here (check 2, finding 3).
+ */
+internal fun fileChooserIntent(params: WebChromeClient.FileChooserParams): Intent = params.createIntent().apply {
+    if (params.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+}
+
+/**
+ * Calls [onDown] each time a finger first touches the WebView, without taking the touch (the page gets it, and
+ * WebView does its own click handling and accessibility). Lets the screen tell a person's download from a script's.
+ */
+@SuppressLint("ClickableViewAccessibility") // watches only, never consumes: the WebView's own click handling stands
+internal fun WebView.watchTouches(onDown: () -> Unit) = setOnTouchListener { _, e ->
+    if (e.actionMasked == MotionEvent.ACTION_DOWN) onDown()
+    false
 }
 
 /** The WebView profile the kiosk uses, so the site screen's wipe of the default profile never clears the demo key. */
