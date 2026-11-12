@@ -1,8 +1,9 @@
 {
   "agent": "conductor.android@promptugal.ai.dinis",
-  "updated": "2026-11-10T07:30Z",
-  "state": "RESTARTED and shipping the demos (Dinis 10 Nov 02:40 UTC). main 372764b has: stand mode shows only vetted visitor features (fail closed); Lab case studies from our real ABPs (en, pt-PT; enabled, hidden in stand mode); Chat as a real feature on the device with Ask our data (grounded answers over bundled pt.news data with sources and credit); Workbench Our data tab (Workbench off until a tablet run); privacy and Data safety texts describe the cloud. Next: Chat cloud flip (dev.chat, reviewed by architect and security).",
+  "updated": "2026-11-12T00:45Z",
+  "state": "dev: X-Ray (Angelo's agents) has security's signed PASS on 5badada (record 5178a91); its XR-1 fix (22dafce, downloads only on a tap) merged by the conductor and in the gate; the fixed head goes to security, then to main. main 67bb936 until then.",
   "done": [
+    "12 Nov 00:30 UTC: first Android change since 10 Nov 07:59: 683f9f7 and 5badada (X-Ray, riskmandate-android-demo.build@PrompTugal.angelo) on dev, CI 166 green; sent to security.android for review. angelo/riskmandate-xray-fixes (22dafce) not yet on dev.",
     "10 Nov 02:40-07:30 UTC (the restart): iOS parity table (Android ahead); demos first with a Demos section; stand-mode allow-list; six ABP case studies (en, pt-PT); Chat real (device) with Ask our data; on-device answers over our data (0.3 MB bundle, citations, pt.news credit, no addresses); pt.news on Android answered (docs/play/pt-news-on-android.md); GCP examples page; Wednesday demo checklist with a label test; privacy and Data safety updated; eight promotions to main, each on security's signed PASS.",
     "9 Nov ~18:01 UTC: the first complete Play dry run is green (play.yml run 42670119381, dispatched by the conductor on main 8e1ea47, base a1d326c): signed approval ok (security PASS c48aafb), build v0.1.125 found, SHA-256 ok, build attestation verified (android.yml, from dev, GitHub-hosted runner), application ID ai.riskmandate.app; upload skipped (no Play credential).",
     "9 Nov ~17:58 UTC: Dinis merged PR #2 (main 8e1ea47): promote dispatch-only on main, the new approval lib, find-release-tag on shipped paths, changes since the last release tag.",
@@ -38,6 +39,9 @@
     "Dinis picks the summit features (A RiskMandate inside the app, B ABP-in-every-layer demo screen, C this app's own mandate live, D stand mode, E demo videos); the sessions build them and each merge reaches the tablets through the M1 pipeline"
   ],
   "asks": [
+    "Dinis: X-Ray (XR-2, security.android 12 Nov): Silvio's page calls openrouter.ai with a demo key typed on the tablet, outside the app's cloud rules. Use a key made only for this demo with a small credit limit, never a tablet's own key.",
+    "Dinis: X-Ray (XR-3): privacy and Data safety must name X-Ray as a screen that sends what is typed to a web page; X-Ray stays out of any store build until the Data safety form (R-play-9) is answered.",
+    "Dinis: X-Ray (XR-5): Angelo's agents (riskmandate-android-demo.build@PrompTugal.angelo) push to dev with no key in board/keys.json. I treat them as covered by 'everybody pushes to dev' and security reviews their code; say if they should publish keys or work through a branch instead.",
     "Dinis: one tablet run unlocks the Workbench for staff: Model setup, download Gemma 4 E2B; Workbench, Our data, Run the 24-question eval, Copy report; send the report to the conductor.",
     "Dinis (play, 10 Nov): pt.news on Android is answered in docs/play/pt-news-on-android.md: the installed web app is enough for the summit (nothing needed from Google); first decide the HOST: the site is promptugal.news and pt.news currently redirects to /lander (looks parked, owner unknown). A Play listing (TWA) is a week or more; Wednesday's tablets can get a TWA build by Firebase without Play.",
     "Dinis (security R-play-14): the org policy that blocks service-account keys also blocks the Play upload credential: choose a narrow policy exception for one Play service account, or a keyless route, before the Play secret can exist.",
