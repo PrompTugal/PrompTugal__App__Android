@@ -94,7 +94,7 @@ const val XRAY_TOGGLE_SHOWN_MS = 4_000L
  * Silvio's X-Ray page in an embedded browser (Android System WebView, which is Chromium), in two ways:
  * - **full screen** (the start): a window over the whole app, system bars hidden (immersive sticky), the screen kept
  *   on; a small Exit full screen tab on the start edge, half way down, that fades after [XRAY_TOGGLE_SHOWN_MS] and returns on a
- *   tap; Back also leaves full screen. The page's own full-screen button works too.
+ *   tap; Back also leaves full screen. The page's own full-screen button works too; during it, Back ends only that.
  * - **in the app**: inside the app's frame (its top bar or sidebar, its Back to the menu), with a small bar above
  *   the page: Reload and Full screen.
  * The same WebView moves between the two, so the page keeps its place. It reloads by itself after an error, a stall
@@ -124,6 +124,11 @@ fun XrayScreen(
         pageView = null
         pageViewCallback = null
         cb?.onCustomViewHidden()
+    }
+    fun back() {
+        val ending = view.pageFullScreen
+        view = view.back()
+        if (ending) endPageFullScreen()
     }
     fun toggle() {
         val ending = view.leavingEndsPageFullScreen
@@ -160,7 +165,7 @@ fun XrayScreen(
                     pendingFiles?.onReceiveValue(null)
                     pendingFiles = cb
                     try {
-                        filePicker.launch(params.createIntent())
+                        filePicker.launch(fileChooserIntent(params))
                     } catch (e: ActivityNotFoundException) {
                         pendingFiles = null
                         cb.onReceiveValue(null)
@@ -181,8 +186,11 @@ fun XrayScreen(
                 },
                 onOutside = { url -> openOutside(context, url) },
             )
-            // A download link to https opens outside (the browser downloads it); blob: exports need a JS bridge, which this screen never has.
-            setDownloadListener { url, _, _, _, _ -> if (XrayPolicy.navigation(url, hasGesture = true) == XrayPolicy.Nav.OPEN_OUTSIDE) openOutside(context, url) }
+            // A download link to https a person tapped opens outside (the browser downloads it); one started by a script
+            // or a frame is ignored. blob: exports need a JS bridge, which this screen never has.
+            var lastTouch: Long? = null
+            watchTouches { lastTouch = clock() }
+            setDownloadListener { url, _, _, _, _ -> if (XrayPolicy.downloadOpensOutside(url, lastTouch, clock())) openOutside(context, url) }
             watchdog.onLoadStarted(clock())
             loadUrl(startUrl)
         }
@@ -212,7 +220,7 @@ fun XrayScreen(
 
     if (view.fullScreen) {
         Dialog(
-            onDismissRequest = { toggle() }, // Back leaves full screen
+            onDismissRequest = { back() }, // Back: ends the page's own full screen if on, else leaves full screen
             properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = false,

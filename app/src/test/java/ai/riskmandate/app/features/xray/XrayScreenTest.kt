@@ -2,7 +2,11 @@ package ai.riskmandate.app.features.xray
 
 import ai.riskmandate.app.RiskMandateTheme
 import android.app.Application
+import android.content.Intent
 import android.net.Uri
+import android.os.SystemClock
+import android.view.MotionEvent
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.compose.foundation.layout.Box
@@ -115,6 +119,52 @@ class XrayScreenTest {
             assertFalse(allowFileAccess)
             assertFalse(allowContentAccess)
             assertFalse(javaScriptCanOpenWindowsAutomatically)
+            // offscreenPreRaster is set too; Robolectric's WebSettings does not keep it, so it is checked on a device.
         }
+    }
+
+    @Test fun theRendererKeepsTheAppsPriority() {
+        // Robolectric's WebView does not keep the renderer priority, so the call itself is recorded.
+        var asked: Pair<Int, Boolean>? = null
+        val view = object : WebView(app) {
+            override fun setRendererPriorityPolicy(priority: Int, waivedWhenNotVisible: Boolean) {
+                asked = priority to waivedWhenNotVisible
+                super.setRendererPriorityPolicy(priority, waivedWhenNotVisible)
+            }
+        }
+        view.applyXraySettings()
+        assertEquals("important, and not lowered when briefly not visible", WebView.RENDERER_PRIORITY_IMPORTANT to false, asked)
+    }
+
+    private fun fileParams(mode: Int) = object : WebChromeClient.FileChooserParams() {
+        override fun getMode() = mode
+        override fun getAcceptTypes() = arrayOf("*/*")
+        override fun isCaptureEnabled() = false
+        override fun getTitle(): CharSequence? = null
+        override fun getFilenameHint(): String? = null
+        override fun createIntent() = Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*")
+    }
+
+    @Test fun aMultipleFileInputAsksThePickerForSeveralFiles() {
+        val many = fileChooserIntent(fileParams(WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE))
+        assertTrue(many.getBooleanExtra(Intent.EXTRA_ALLOW_MULTIPLE, false))
+        assertEquals(Intent.ACTION_GET_CONTENT, many.action)
+        val one = fileChooserIntent(fileParams(WebChromeClient.FileChooserParams.MODE_OPEN))
+        assertFalse(one.hasExtra(Intent.EXTRA_ALLOW_MULTIPLE))
+    }
+
+    @Test fun theWebViewReportsEachTouchOnce() {
+        val view = WebView(app)
+        var downs = 0
+        view.watchTouches { downs++ }
+        fun touch(action: Int): Boolean {
+            val t = SystemClock.uptimeMillis()
+            val e = MotionEvent.obtain(t, t, action, 10f, 10f, 0)
+            return view.dispatchTouchEvent(e).also { e.recycle() }
+        }
+        touch(MotionEvent.ACTION_DOWN)
+        touch(MotionEvent.ACTION_MOVE)
+        touch(MotionEvent.ACTION_UP)
+        assertEquals("one touch, counted once", 1, downs)
     }
 }

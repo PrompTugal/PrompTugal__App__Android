@@ -60,4 +60,18 @@ class XrayPolicyTest {
         assertFalse(XrayPolicy.mayAskForMedia("https://evil.example.com/"))
         assertFalse(XrayPolicy.mayAskForMedia("http://web-summit.sgit.ai/"))
     }
+
+    @Test fun aDownloadOpensOutsideOnlyJustAfterATouch() {
+        val file = "https://example.com/report.pdf"
+        val w = XrayPolicy.DOWNLOAD_TAP_WINDOW_MS
+        assertTrue(XrayPolicy.downloadOpensOutside(file, lastTouchAt = 10_000, now = 10_000))
+        assertTrue(XrayPolicy.downloadOpensOutside(file, lastTouchAt = 10_000, now = 10_000 + w))
+        // A script or a frame started it: never touched, or touched too long ago.
+        assertFalse(XrayPolicy.downloadOpensOutside(file, lastTouchAt = null, now = 10_000))
+        assertFalse(XrayPolicy.downloadOpensOutside(file, lastTouchAt = 10_000, now = 10_001 + w))
+        assertFalse("a clock that went back is no touch", XrayPolicy.downloadOpensOutside(file, lastTouchAt = 10_000, now = 9_000))
+        // Even just after a touch, only what a tapped link may open.
+        for (u in listOf("http://example.com/x.pdf", "intent://x#Intent;end", "javascript:alert(1)", "file:///sdcard/x", XrayPolicy.START_URL))
+            assertFalse(u, XrayPolicy.downloadOpensOutside(u, lastTouchAt = 10_000, now = 10_000))
+    }
 }

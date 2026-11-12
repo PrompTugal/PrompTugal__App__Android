@@ -30,6 +30,19 @@ object XrayPolicy {
         else -> Nav.IGNORE
     }
 
+    /** How long after a person touched the page a download may still open outside (check 2, finding 1). */
+    const val DOWNLOAD_TAP_WINDOW_MS = 2_000L
+
+    /**
+     * A download (WebView's download listener has no gesture flag): it opens outside only as a tapped link would
+     * ([navigation] with a tap), and only when a person touched the page in the last [DOWNLOAD_TAP_WINDOW_MS].
+     * One a script or a frame starts by itself is ignored. [lastTouchAt] is null when the page was never touched.
+     */
+    fun downloadOpensOutside(url: String, lastTouchAt: Long?, now: Long): Boolean {
+        val tapped = lastTouchAt != null && now - lastTouchAt in 0..DOWNLOAD_TAP_WINDOW_MS
+        return navigation(url, hasGesture = tapped) == Nav.OPEN_OUTSIDE
+    }
+
     /** True when a sub-resource must be refused: plain http or ws, or a TLS URL with a suspicious authority. */
     fun blockSubresource(url: String): Boolean {
         val scheme = url.trim().substringBefore(':', "").lowercase()
@@ -142,6 +155,17 @@ class XrayWatchdog(
 data class XrayView(val fullScreen: Boolean = true, val pageFullScreen: Boolean = false, val byPage: Boolean = false) {
     /** The toggle (or Back while full screen): in and out. Leaving also ends the page's own full screen. */
     fun toggled(): XrayView = if (fullScreen) XrayView(fullScreen = false) else copy(fullScreen = true)
+
+    /**
+     * Back while full screen. During the page's own full screen it ends only that, as Chrome's Back does (check 2,
+     * finding 2): the app's full screen stays unless the page had brought us there from the window. Otherwise it
+     * leaves full screen, as the toggle does.
+     */
+    fun back(): XrayView = when {
+        pageFullScreen -> pageExited()
+        fullScreen -> toggled()
+        else -> this // in the window, Back belongs to the app's frame
+    }
 
     /** True when leaving now must tell WebView the page's full screen is over. */
     val leavingEndsPageFullScreen: Boolean get() = fullScreen && pageFullScreen
