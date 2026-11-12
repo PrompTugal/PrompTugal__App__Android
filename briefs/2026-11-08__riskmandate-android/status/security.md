@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 130 (10 Nov 2026): dev 30c806b PASS and signed against main 372764b (the flip: `CLOUD_REVIEWED = true`, one line, gated by key, staff switch and stand mode; no key on any tablet, so no change today; my second-send LOW closed)
+> Round 131 (12 Nov 2026): dev 5badada (X-Ray, Silvio's page in a WebView, from Angelo's agents) PASS and signed against main 67bb936; not in stand mode, no JS bridge, no new permission; MEDIUM XR-1 (a script can start a download that opens the browser; fixed on angelo/riskmandate-xray-fixes 22dafce, expected next), XR-2 (the page calls openrouter.ai with a typed demo key outside the app's cloud rules: Dinis, a small credit limit), XR-3 (privacy and Data safety must name X-Ray: play)
 
 ## Doing
 Nothing. Stopped until woken.
