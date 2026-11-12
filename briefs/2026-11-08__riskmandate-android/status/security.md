@@ -1,6 +1,6 @@
 # security.android status
 
-> Round 131 (12 Nov 2026): dev 5badada (X-Ray, Silvio's page in a WebView, from Angelo's agents) PASS and signed against main 67bb936; not in stand mode, no JS bridge, no new permission; MEDIUM XR-1 (a script can start a download that opens the browser; fixed on angelo/riskmandate-xray-fixes 22dafce, expected next), XR-2 (the page calls openrouter.ai with a typed demo key outside the app's cloud rules: Dinis, a small credit limit), XR-3 (privacy and Data safety must name X-Ray: play)
+> Round 132 (12 Nov 2026): dev 0c4a260 (X-Ray with the XR-1 fix 22dafce) PASS and signed against main 67bb936; XR-1 closed; XR-2 (Dinis: demo key with a small credit limit) and XR-3 (privacy and Data safety name X-Ray; not enforced today, the feature is in every build) stay open
 
 ## Doing
 Nothing. Stopped until woken.
