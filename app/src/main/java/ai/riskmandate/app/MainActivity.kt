@@ -132,14 +132,14 @@ fun visibleFeatures(all: List<ai.riskmandate.app.features.Feature>, standOn: Boo
 
 /** Which sidebar section a feature sits in, by id (design spec table); unknown ids go to Explore. */
 fun sectionOf(id: String): Int = when (id) {
-    "abpdemo", "lab", "chat", "workbench" -> R.string.nav_section_demos
+    "xray", "abpdemo", "lab", "chat", "workbench" -> R.string.nav_section_demos
     "site", "releases" -> R.string.nav_section_today
     "mandate", "models" -> R.string.nav_section_device
     else -> R.string.nav_section_explore
 }
 
 /** The order of features inside their sections (design spec table). */
-private val NAV_ORDER = listOf("abpdemo", "lab", "chat", "workbench", "site", "releases", "mandate", "models")
+private val NAV_ORDER = listOf("xray", "abpdemo", "lab", "chat", "workbench", "site", "releases", "mandate", "models")
 
 /** Where a feature sits in the order (Demos first); an id this list does not know goes last. */
 fun navRank(id: String): Int = NAV_ORDER.indexOf(id).let { if (it < 0) NAV_ORDER.size else it }
@@ -149,6 +149,7 @@ fun iconFor(id: String): Int = when (id) {
     "site" -> R.drawable.ic_nav_globe
     "releases" -> R.drawable.ic_nav_news
     "abpdemo" -> R.drawable.ic_nav_layers
+    "xray" -> R.drawable.ic_nav_pulse
     "lab" -> R.drawable.ic_nav_lab
     "chat" -> R.drawable.ic_nav_chat
     "mandate" -> R.drawable.ic_nav_shield

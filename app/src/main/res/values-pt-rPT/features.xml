@@ -7,4 +7,5 @@
     <string name="feature_models_title">Configurar modelo</string>
     <string name="feature_chat_title">Chat</string>
     <string name="feature_lab_title">Laboratório ABP</string>
+    <string name="feature_xray_title">Demo X-Ray</string>
 </resources>

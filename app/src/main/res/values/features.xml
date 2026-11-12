@@ -9,4 +9,5 @@
     <string name="feature_models_title">Model setup</string>
     <string name="feature_chat_title">Chat</string>
     <string name="feature_lab_title">ABP Lab</string>
+    <string name="feature_xray_title">X-Ray demo</string>
 </resources>

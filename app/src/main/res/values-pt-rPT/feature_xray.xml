@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_xray_kicker">Demo ao vivo</string>
+    <string name="feature_xray_summary">A página X-Ray do Silvio, em ecrã inteiro ou na app. Em ecrã inteiro, toque no ecrã para mostrar o botão Sair do ecrã inteiro.</string>
+    <string name="feature_xray_webview_description">Página X-Ray de web-summit.sgit.ai</string>
+    <string name="feature_xray_cover_title">O X-Ray volta já</string>
+    <string name="feature_xray_cover_body">A ligar de novo a web-summit.sgit.ai. A página recarrega sozinha.</string>
+    <string name="feature_xray_fullscreen_enter">Ecrã inteiro</string>
+    <string name="feature_xray_fullscreen_exit">Sair do ecrã inteiro</string>
+    <string name="feature_xray_reload">Recarregar</string>
+</resources>
